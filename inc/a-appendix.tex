@@ -1,0 +1,109 @@
+\appsection{Appendix A} \label{app-a}
+
+\begin{center}
+\textbf{Sample Code Listing}
+\end{center}
+
+\vspace{\baselineskip}
+
+The following listing demonstrates the notification module used by the monitoring system:
+
+\begin{lstlisting}[language=Python, numbers=left, caption={Notification module (notifier.py)}, label={lst:notifier}]
+#!/usr/bin/env python3
+'''Notification module for the monitoring system.'''
+
+import os
+import json
+import logging
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime
+from typing import List, Optional
+
+logger = logging.getLogger(__name__)
+
+
+class NotificationChannel:
+    '''Base class for notification channels.'''
+
+    def send(self, subject: str, message: str) -> bool:
+        raise NotImplementedError
+
+
+class EmailNotifier(NotificationChannel):
+    '''Send notifications via email.'''
+
+    def __init__(self, smtp_host: str, smtp_port: int, sender: str):
+        self.smtp_host = smtp_host
+        self.smtp_port = smtp_port
+        self.sender = sender
+
+    def send(self, subject: str, message: str,
+             recipients: Optional[List[str]] = None) -> bool:
+        if not recipients:
+            logger.warning("No recipients specified")
+            return False
+        msg = MIMEText(message)
+        msg["Subject"] = subject
+        msg["From"] = self.sender
+        msg["To"] = ", ".join(recipients)
+        try:
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                server.send_message(msg)
+            logger.info(f"Email sent to {len(recipients)} recipients")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email: {e}")
+            return False
+
+
+class WebhookNotifier(NotificationChannel):
+    '''Send notifications via webhook.'''
+
+    def __init__(self, webhook_url: str):
+        self.webhook_url = webhook_url
+
+    def send(self, subject: str, message: str) -> bool:
+        import urllib.request
+        payload = json.dumps({
+            "title": subject,
+            "text": message,
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+        req = urllib.request.Request(
+            self.webhook_url,
+            data=payload.encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            urllib.request.urlopen(req, timeout=10)
+            logger.info("Webhook notification sent")
+            return True
+        except Exception as e:
+            logger.error(f"Webhook failed: {e}")
+            return False
+
+
+def main():
+    '''Example usage of the notification system.'''
+    config_path = os.environ.get("CONFIG_PATH", "config.json")
+    with open(config_path) as f:
+        config = json.load(f)
+
+    notifier = EmailNotifier(
+        smtp_host=config["smtp"]["host"],
+        smtp_port=config["smtp"]["port"],
+        sender=config["smtp"]["sender"],
+    )
+    notifier.send(
+        subject="System Alert",
+        message="A threshold has been exceeded.",
+        recipients=config["smtp"]["recipients"],
+    )
+
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\clearpage

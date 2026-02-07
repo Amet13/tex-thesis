@@ -1,40 +1,39 @@
-%%% Необходимые пакеты для работы с презентацией
+%%% Required packages for presentation
 \usepackage{wrapfig}
 \usepackage{xcolor}
 \usepackage{etoolbox}
 
-\ProvidesPackage{beamerthemeMasterThesis}[2014/06/10] % Название темы и дата создания
-\usefonttheme{default} % Стандартный шрифт темы
+\ProvidesPackage{beamerthemeThesisSlides}[2026/02/06] % Theme name and date
+\usefonttheme{default} % Default font theme
 
-%%% Определение цветовых схем
-\definecolor{Blue}{cmyk}{1,0.66,0,0.02}        % My color
+%%% Color scheme definitions
+\definecolor{Blue}{cmyk}{1,0.66,0,0.02}        % Primary color
 \definecolor{Green}{cmyk}{0.69,0,1,0}          % Pantone 361
 \definecolor{Red}{cmyk}{0,0.95,1,0.29}         % Pantone 484
 \definecolor{Orange}{cmyk}{0,0.42,0.77,0}      % Pantone 131
-\setbeamercolor{WhiteOnBlue}{bg=Blue,fg=white} % White on my color
-\setbeamercolor{BlueOnWhite}{fg=Blue,bg=white} % My color on White
+\setbeamercolor{WhiteOnBlue}{bg=Blue,fg=white} % White text on primary color
+\setbeamercolor{BlueOnWhite}{fg=Blue,bg=white} % Primary color on white
 
-%%% Гиперссылки
-\usepackage{hyperref}
+%%% Hyperlinks (Beamer loads hyperref automatically, just configure it)
 \hypersetup{
-    unicode=true,    % русские буквы в раздела PDF
-    colorlinks=true, % false: ссылки в рамках; true: цветные
-    linkcolor=Blue,  % внутренние ссылки
-    citecolor=Blue,  % на библиографию
-    filecolor=Blue,  % на файлы
-    urlcolor=Blue    % на URL
+    unicode=true,    % Unicode characters in PDF sections
+    colorlinks=true, % false: boxed links; true: colored links
+    linkcolor=Blue,  % Internal links
+    citecolor=Blue,  % Bibliography references
+    filecolor=Blue,  % File links
+    urlcolor=Blue    % URLs
 }
 
-%%% Оформление стиля
-\setbeamertemplate{navigation symbols}{}  % Полупрозрачная панель навигации (закомментировать, если надо включить)
-\setbeamertemplate{itemize items}[circle] % Стиль маркера списка: triangle, circle, square, ball
-\setbeamertemplate{theorems}[numbered]    % Нумерация теорем
+%%% Style settings
+\setbeamertemplate{navigation symbols}{}  % Hide navigation panel (comment out to show)
+\setbeamertemplate{itemize items}[circle] % List marker style: triangle, circle, square, ball
+\setbeamertemplate{theorems}[numbered]    % Numbered theorems
 
-%%% Установка цветов для различных объектов (см. Beamer User Guide)
+%%% Color assignments for various elements (see Beamer User Guide)
 \usecolortheme[named=Blue]{structure}
 \setbeamercolor{background canvas}{bg=white}
-\setbeamercolor{frametitle}{bg=white}  % Белый фон
-\setbeamercolor{frametitle}{fg=Blue}   % Синий текст
+\setbeamercolor{frametitle}{bg=white}  % White background
+\setbeamercolor{frametitle}{fg=Blue}   % Blue text
 
 \setbeamercolor{headline}{bg=Blue}
 \setbeamercolor{alerted text}{fg=Red}
@@ -54,8 +53,8 @@
 \setbeamercolor{palette tertiary}{bg=Blue}
 \setbeamercolor{palette tertiary}{fg=white}
 
-%%% Заголовки и логотипы
-\setbeamertemplate{headline}[default]{} % Пустой заголовок
+%%% Title and logos
+\setbeamertemplate{headline}[default]{} % Empty headline
 \setbeamertemplate{frametitle}{
     \nointerlineskip
     \begin{beamercolorbox}[sep=0.3cm,wd=\paperwidth]{frametitle}
@@ -66,7 +65,7 @@
     \end{beamercolorbox}
 }
 
-%%% Нижний бар
+%%% Bottom bar
 \makeatletter
 \setbeamertemplate{footline}{
     \leavevmode%
@@ -76,7 +75,7 @@
         \end{beamercolorbox}%
         \begin{beamercolorbox}[wd=.6\paperwidth,ht=2ex,dp=1ex,center]{BlueOnWhite}
             \usebeamerfont{title in head/foot}
-            % \insertshorttitle % Не вставляем название презентации в нижний бар
+            % \insertshorttitle % Do not insert presentation title in the bottom bar
         \end{beamercolorbox}%
         \begin{beamercolorbox}[wd=.2\paperwidth,ht=2ex,dp=1ex,right]{BlueOnWhite}
             \usebeamerfont{date in head/foot}

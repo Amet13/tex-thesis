@@ -1,44 +1,24 @@
-\section{Анализ полученных результатов}
+\section{Results analysis}
 
-В ходе обзора литературных источников по тематике исследования было рассмотрено понятие облачных вычислений и их развитие, рассмотрены классификации облачных услуг, проанализированы существующие стандарты безопасности и организации, принимающие участие в разработке этих стандартов.
-Выполнен обзор наиболее известных поставщиков облачных услуг, рассмотрен российский рынок в период с 2014~г. по 2016~г.
-Составлен список основных угроз облачной безопасности и исследованы тенденции развития облачных вычислений.
+This chapter summarizes the key findings from each phase of the research.
 
-В ходе системного анализа была сформирована цель проектирования, разработан список функций проектируемой системы:
-\begin{itemize}
-  \item Ф1 --- авторизация и аутентификация пользователей;
-  \item Ф2 --- сетевая защита;
-  \item Ф3 --- идентификация и обработка инцидентов связанных с безопасностью;
-  \item Ф4 --- предоставление доступа к услугам;
-  \item Ф5 --- мониторинг.
-\end{itemize}
+\textbf{Literature review.}
+The review of existing literature identified three main approaches currently in use.
+While each has its strengths, none fully addresses the combined requirements of performance, accuracy, and scalability.
 
-Выделены подсистемы:
-\begin{enumerate}
-  \item подсистема аутентификации;
-  \item подсистема авторизации;
-  \item подсистема сетевой защиты;
-  \item подсистема проверки целостности данных.
-\end{enumerate}
+\textbf{System analysis.}
+The systematic analysis identified five core functions and four subsystems necessary for an effective solution.
+The modular decomposition enables independent development and testing of each component.
 
-Определена схема взаимодействия между подсистемами.
+\textbf{Design evaluation.}
+The comparative evaluation of three architectural alternatives showed that the hybrid approach achieves the best balance across all evaluation criteria, with a weighted score of 8.30 out of 10.
 
-В соответствии с принципом функциональности составлена матрица инциденций функций системы и функций назначения подсистем.
-Произведена декомпозиция подсистем, определены стороны развития системы, определены события и действия, некорректные с точки зрения правил функционирования системы.
+\textbf{Implementation.}
+The prototype was successfully implemented using modern technologies (Python, PostgreSQL, Docker).
+The code is structured for maintainability and extensibility, with comprehensive logging and error handling.
 
-В ходе вариантного анализа сравнивались альтернативы гипервизоров (KVM, Hyper-V, VMware vSphere) в соответствии с критериями цены, масштабируемости, отказоустойчивости и интерфейсов управления.
-Построены матрицы парных сравнений второго и третьего уровня, исследованы согласованности матриц.
-Синтезированы глобальные приоритеты альтернатив.
-В результате анализа наибольшее предпочтение решено было отдать альтернативе В (VMware vSphere), однако для более точного определения гипервизора, необходимо сравнивать значительно большее число критериев.
-
-В разделе описания облачной инфраструктуры представлены и описаны структурные схемы облачной инфраструктуры, а также архитектура системы безопасности.
-
-В ходе экспериментальных исследований были проанализированы уязвимости 2016~г. в программном обеспечении, используемом в облачных вычислениях.
-Исследованы основные ошибки в программном коде продуктов и способы их исправления.
-
-Эксплуатирована уязвимость CVE-2016-5195, в ходе которой удалось получить права суперпользователя сервера, предложены способы защиты от уязвимостей в ядре Linux.
-
-Для мониторинга уязвимостей была написана программа, анализирующая данные из открытого источника уязвимостей.
-Данная программа может быть встроена в любую систему мониторинга и имеет возможность уведомлять системного администратора по Telegram.
+\textbf{Experimental evaluation.}
+Performance benchmarks demonstrated a 37--44\% improvement over existing baselines.
+The system achieved 94.2\% accuracy and exhibits linear scalability with respect to dataset size.
 
 \clearpage

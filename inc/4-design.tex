@@ -1,0 +1,54 @@
+\section{Design and methodology}
+
+This chapter describes the design methodology used to evaluate alternative approaches and select the most suitable one.
+
+\subsection{Evaluation criteria}
+
+The following criteria are used to compare alternatives:
+\begin{itemize}
+  \item performance --- execution speed under typical workloads;
+  \item accuracy --- correctness of produced results;
+  \item scalability --- ability to handle increasing data volumes;
+  \item maintainability --- ease of extending and modifying the system.
+\end{itemize}
+
+\subsection{Alternatives}
+
+Three alternative design approaches are considered:
+\begin{enumerate}
+  \item Monolithic architecture --- a single, integrated system;
+  \item Microservices architecture --- distributed, independently deployable services;
+  \item Hybrid architecture --- a combination of monolithic core with modular extensions.
+\end{enumerate}
+
+\subsection{Comparison matrix}
+
+Table~\ref{tab:alternatives} presents a comparison of the three alternatives.
+
+\begin{table}[H]
+    \caption{Comparison of design alternatives} \label{tab:alternatives}
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline \textbf{Criterion} & \textbf{Weight} & \textbf{Monolithic} & \textbf{Microservices} & \textbf{Hybrid} \\
+    \hline Performance  & 0.30 & 8 & 7 & 9 \\
+    \hline Accuracy     & 0.25 & 9 & 8 & 9 \\
+    \hline Scalability  & 0.25 & 5 & 9 & 8 \\
+    \hline Maintainability & 0.20 & 6 & 8 & 7 \\
+    \hline \textbf{Weighted score} & --- & \textbf{7.15} & \textbf{7.95} & \textbf{8.30} \\
+    \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Selected approach}
+
+Based on the weighted comparison, the \textbf{hybrid architecture} achieves the highest overall score of 8.30.
+This approach combines the performance benefits of a monolithic core with the scalability advantages of modular extensions.
+
+The effectiveness $E$ of each alternative is calculated as:
+
+\begin{equation} \label{eq:weighted}
+    E = \sum_{j=1}^{m} w_j \cdot s_j
+\end{equation}
+
+where $w_j$ is the weight of criterion $j$ and $s_j$ is the score assigned to that criterion.
+
+\clearpage

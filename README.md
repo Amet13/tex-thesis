@@ -1,125 +1,100 @@
-# master-thesis
+# tex-thesis
 
-[Русская версия](README-ru.md) | [English version](README.md)
+> **Looking for the original Russian version?** See the [1.1.1 tag release](https://github.com/Amet13/tex-thesis/releases/tag/1.1.1).
 
-[![Actions Status](https://github.com/Amet13/master-thesis/workflows/master-thesis/badge.svg)](https://github.com/Amet13/master-thesis/actions)
-[![Source Code License](https://img.shields.io/badge/license-GNU_GPLv3-red.svg)](https://www.gnu.org/licenses/gpl-3.0.ru.html)
-[![Content License](https://img.shields.io/badge/license-CC_BY--SA_4.0-blue.svg)](https://creativecommons.org/licenses/by-sa/4.0/deed.ru)
+[![Build](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml/badge.svg)](https://github.com/Amet13/tex-thesis/actions)
+[![Source Code License](https://img.shields.io/badge/license-GNU_GPLv3-red.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![Content License](https://img.shields.io/badge/license-CC_BY--SA_4.0-blue.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
-Master's thesis in LaTeX, formatted according to the standards of Sevastopol State University in 2017.
+A universal LaTeX thesis template formatted with XeLaTeX.
+Suitable for bachelor's, master's, or PhD theses at any university.
+Features Times New Roman 14pt, 1.5 line spacing, structured chapters, TikZ diagrams, code listings, tables, bibliography, and Beamer defense slides.
 
 ## Features
 
-- use of XeLaTeX, main font Times New Roman, 14pt, 1.5 line spacing
-- XITS Math font for formulas, PT Sans and PT Mono fonts for presentation
-- figure and table captions in format `sectionNumber.figureNumber`
-- page numbers centered at the top
-- ability to specify starting page number
-- ability to configure page margins
-- list marking with `—` symbol
-- numbered lists are denoted by lowercase Cyrillic letters with parentheses
-- section titles in uppercase, including table of contents
-- one line indent after title name
-- one line indents before and after second and third level headings
-- custom functions for adding figures, appendices and bibliography
-- use of `listings` for formatting source code listings in document, FreeMono font
-- ability to add your own PDFs to the document
-- bibliography addition in `0-bibliography.tex` file
-- separate sections for abstract, appendices
-- automatically generated list of illustrative and tabular material
-- references to abbreviations and symbols list
-- presentation slides
-- `Makefile` for project compilation and building
-- `Dockerfile` for building project in isolated environment
+- XeLaTeX with Times New Roman 14pt, 1.5 line spacing
+- XITS Math font for formulas, FreeMono for code listings
+- TikZ diagrams for architecture and system illustrations
+- Figure and table captions in `section.number` format
+- Configurable page margins (default 2.5 cm uniform)
+- Page numbers centered at the bottom
+- Standard bullet lists and numbered lists
+- Section titles in uppercase (including table of contents)
+- Custom commands for inserting figures (`\addimg`, `\addimghere`, `\addtwoimghere`)
+- Custom commands for appendices (`\appsection`) and unnumbered sections (`\anonsection`)
+- Source code listings with `listings` package
+- Manual bibliography in `0-bibliography.tex`
+- Automatic generation of list of figures and list of tables
+- Abbreviations and symbols glossary with hyperlinks
+- Beamer defense slides with matching theme
+- `Makefile` for building the project
+- Multi-stage `Dockerfile` — only final PDFs are extracted, no intermediate build artifacts
+- GitHub Actions CI/CD pipeline with automatic PDF release on tag push
 
-## Source Structure
+## Project Structure
 
 ```
 .
-├── extra
-├── images
-├── inc
-├── presentation
-├── presentation_it_planet
-└── vulncontrol
+├── Dockerfile            # Multi-stage Docker build (produces only PDFs)
+├── Makefile              # Build automation (Docker-only)
+├── main.tex              # Main document, includes all other files
+├── preamble.tex          # LaTeX preamble (packages, formatting, custom commands)
+├── images/               # Your illustrations (place images here)
+├── inc/                  # Chapter/section files included in main.tex
+│   ├── 0-abstract.tex    #   Abstract
+│   ├── 0-intro.tex       #   Introduction
+│   ├── 0-conclusion.tex  #   Conclusion
+│   ├── 0-glossary.tex    #   Abbreviations and symbols
+│   ├── 0-bibliography.tex#   Bibliography (manual)
+│   ├── 1-problem.tex     #   Chapter 1: Problem statement
+│   ├── 2-literature.tex  #   Chapter 2: Literature review
+│   ├── 3-analysis.tex    #   Chapter 3: System analysis
+│   ├── 4-design.tex      #   Chapter 4: Design and methodology
+│   ├── 5-implementation.tex # Chapter 5: Implementation
+│   ├── 6-experiments.tex  #  Chapter 6: Experimental research
+│   ├── 7-results.tex     #   Chapter 7: Results analysis
+│   └── a-appendix.tex    #   Appendices
+└── slides/               # Beamer defense slides
+    ├── beamerthemeThesisSlides.sty # Slide theme
+    ├── main.tex           # Slide preamble (title, author, university)
+    └── slides.tex          # Slide content
 ```
 
-In the root directory are files:
+## Quick Start
 
-- `Dockerfile`, with its help you can build the project in a Docker container without installing LaTeX on your local computer
-- `main.tex` includes all other files
-- `Makefile` can be used to build the project
-- `master-thesis.pdf` is the result of project compilation
-- `preamble.tex` sets the preamble
-- `.gitignore` file contains temporary files that are not included in the repository
-- `.gitmodules` file connects the `vulncontrol` repository to the project
-
-In the `extra/` directory are included PDF files that for some reason were not typeset in LaTeX.
-
-In the `images/` directory are illustrations.
-
-In the `inc/` directory are files that are included in `main.tex`:
-
-- files of format `0-*.tex` are unnumbered sections (e.g., introduction, conclusion, bibliography)
-- files of format `[1-9]-*.tex` are numbered sections (e.g., problem statement, literature review, etc.)
-- files of format `[a-z]-app.tex` are appendix files
-
-In the `presentation/` directory are files necessary for building presentation slides:
-
-- `beamerthemeMasterThesis.sty` is the presentation style file
-- `main.tex` file contains the preamble
-- `Makefile` is necessary for building
-- `slides.tex` is the file containing the presentation text
-- `presentation.pdf` is the result of presentation slides compilation
-- `report.md` contains accompanying text for the presentation slides
-
-The `vulncontrol/` directory is a link to the [repository](https://github.com/Amet13/vulncontrol) containing the source code of the script for collecting vulnerability data.
-
-## Working with LaTeX
-
-Installing required LaTeX packages in Ubuntu:
+Prerequisites: [Docker](https://docs.docker.com/get-docker/) and `make`.
 
 ```bash
-sudo apt install texlive-base texlive-latex-extra texlive-xetex texlive-lang-cyrillic latexmk texlive-fonts-extra texlive-science texlive-latex-recommended
+git clone https://github.com/Amet13/tex-thesis.git
+cd tex-thesis/
+make build
 ```
 
-For building the project, installation of Times New Roman, XITS Math, PT Sans, PT Mono, FreeMono fonts is required:
+Output: `thesis.pdf` and `slides/slides.pdf` — only the final PDFs are extracted from the Docker build (no intermediate artifacts).
 
-```bash
-sudo apt install ttf-mscorefonts-installer fonts-freefont-ttf fontconfig
-sudo wget -O /usr/share/fonts/xits-math.otf https://github.com/khaledhosny/xits-math/raw/master/XITSMath-Regular.otf
-sudo wget https://ponce.cc/slackware/sources/repo/ttf-paratype-pt-fonts/{PTSansOFL,PTMonoOFL}.zip
-sudo unzip -o PTSansOFL.zip -d /usr/share/fonts/ && sudo unzip -o PTMonoOFL.zip -d /usr/share/fonts/
-sudo rm -f {PTSansOFL,PTMonoOFL}.zip && sudo fc-cache -f -v
-```
+## Make Targets
 
-Example of project compilation using Makefile:
+| Target             | Description                                  |
+|--------------------|----------------------------------------------|
+| `make build`       | Build thesis and slides via Docker (default) |
+| `make open`        | Open thesis PDF (macOS / Linux)              |
+| `make open-slides` | Open slides PDF (macOS / Linux)              |
+| `make clean`       | Remove generated PDFs                        |
 
-```bash
-git clone --recursive https://github.com/Amet13/master-thesis
-cd master-thesis/
-make
-```
+## Adapting for Your Thesis
 
-Example of cleaning build files after compilation (except PDF):
+1. Edit `preamble.tex` to adjust formatting (margins, fonts, spacing, PDF metadata)
+2. Replace content in `inc/` directory with your chapters
+3. Update `inc/0-bibliography.tex` with your references
+4. Place your images in `images/`
+5. Modify `slides/slides.tex` for your defense slides
+6. Update `slides/main.tex` with your name, title, and university
 
-```bash
-make clean
-```
+## Contributing
 
-Example of building presentation slides:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-```bash
-make pres
-```
+## License
 
-## Docker
-
-The project can be built in Docker, in which case you won't need to install LaTeX.
-Docker should already be installed on the server or local computer:
-
-```bash
-git clone --recursive https://github.com/Amet13/master-thesis
-cd master-thesis/
-make docker
-```
+- Source code: [GNU GPLv3](LICENSE)
+- Content and template: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
