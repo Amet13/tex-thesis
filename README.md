@@ -40,25 +40,7 @@ Outputs:
 - `thesis.pdf`
 - `slides/slides.pdf`
 
-Other commands: `./build.sh open` / `./build.sh open-slides` to view PDFs, `./build.sh clean` to remove them. Run `./build.sh help` for all options.
-
-## Local Build (without Docker)
-
-If you have TeX Live installed locally with LuaLaTeX:
-
-```bash
-# Install latexmk if not already available
-# sudo apt install latexmk    # Debian/Ubuntu
-# brew install latexmk         # macOS
-
-# Build thesis
-latexmk -jobname=thesis main.tex
-
-# Build slides
-cd slides && latexmk -jobname=slides main.tex
-```
-
-The `.latexmkrc` files configure the LuaLaTeX engine and options automatically.
+Other commands: `./build.sh lint` to lint, `./build.sh open` / `./build.sh open-slides` to view PDFs, `./build.sh clean` to remove them. Run `./build.sh help` for all options.
 
 ## Adapting for Your Thesis
 
@@ -69,61 +51,30 @@ The `.latexmkrc` files configure the LuaLaTeX engine and options automatically.
 5. Modify `slides/slides.tex` for your defense slides
 6. Update `slides/main.tex` with your name, title, and university
 
-## Project Structure
-
-```
-main.tex            # Thesis entry point
-preamble.tex        # All packages, fonts, and formatting
-.latexmkrc          # LuaLaTeX build configuration
-build.sh            # Build script (replaces Makefile)
-Dockerfile          # Multi-stage Docker build
-chapters/           # Chapter content files
-  abstract.tex      # Abstract
-  introduction.tex  # Introduction
-  01-problem.tex    # Problem statement
-  02-literature.tex # Literature review
-  03-analysis.tex   # System analysis
-  04-design.tex     # Design and methodology
-  05-implementation.tex # Implementation
-  06-experiments.tex    # Experimental research
-  07-results.tex    # Results analysis
-  conclusion.tex    # Conclusion
-  glossary.tex      # Abbreviations and symbols
-  bibliography.tex  # Bibliography
-  appendix-a.tex    # Sample code listing
-images/             # Figures and diagrams
-slides/             # Beamer presentation
-  main.tex          # Slides entry point
-  slides.tex        # Slide content
-  beamerthemeThesisSlides.sty  # Beamer theme
-  .latexmkrc        # Slides build configuration
-```
-
 ## Showcase
 
 The template includes working examples of:
 
-| Category | Examples |
-|----------|----------|
-| **Math** | Inline math, numbered equations, multi-line aligned equations, matrices, integrals, fractions, piecewise functions, Greek letters |
+| Category          | Examples                                                                                                                                                           |
+|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Math**          | Inline math, numbered equations, multi-line aligned equations, matrices, integrals, fractions, piecewise functions, Greek letters                                  |
 | **TikZ diagrams** | Architecture diagrams, flowcharts with decision diamonds, state machines, hierarchy trees, pie charts, bar charts, line plots, Gantt timelines, black-box diagrams |
-| **Tables** | Basic tables, multirow/multicolumn cells, comparison matrices, performance benchmarks |
-| **Images** | Single figure, two figures side by side, custom `\addimg` / `\addimghere` / `\addtwoimghere` commands |
-| **Code listings** | Python, SQL, JSON, Dockerfile — with captions, labels, and line numbers |
-| **Lists** | Itemize, enumerate, nested lists, description lists |
-| **References** | Citations, cross-references to equations/figures/tables, hyperlinked glossary, footnotes |
-| **Bibliography** | Manual `thebibliography` with 15 sample entries |
-| **Slides** | Beamer presentation with tables, TikZ diagrams, formulas, and custom theme |
+| **Tables**        | Basic tables, multirow/multicolumn cells, comparison matrices, performance benchmarks                                                                              |
+| **Images**        | Single figure, two figures side by side, custom `\addimg` / `\addimghere` / `\addtwoimghere` commands                                                              |
+| **Code listings** | Python, SQL, JSON, Dockerfile — with captions, labels, and line numbers                                                                                            |
+| **Lists**         | Itemize, enumerate, nested lists, description lists                                                                                                                |
+| **References**    | Citations, cross-references to equations/figures/tables, hyperlinked glossary, footnotes                                                                           |
+| **Bibliography**  | Manual `thebibliography` with 15 sample entries                                                                                                                    |
+| **Slides**        | Beamer presentation with tables, TikZ diagrams, formulas, and custom theme                                                                                         |
 
 All examples are marked with `% === EXAMPLE: ... ===` comments in the source for easy discovery.
 
 ## Linting
 
-The project uses [chktex](https://www.nongnu.org/chktex/) for LaTeX linting. Run locally:
+The project uses [chktex](https://www.nongnu.org/chktex/) for LaTeX linting:
 
 ```bash
-chktex main.tex chapters/*.tex
-chktex slides/main.tex slides/slides.tex
+./build.sh lint
 ```
 
 Linting configuration is in `.chktexrc`. CI runs linting automatically on every push and PR.

@@ -33,6 +33,12 @@ cmd_build() {
     info "Output: thesis.pdf, slides/slides.pdf"
 }
 
+cmd_lint() {
+    info "Linting LaTeX sources via Docker…"
+    DOCKER_BUILDKIT=1 docker build --target lint . 2>&1
+    info "Lint passed"
+}
+
 cmd_open() {
     if [[ ! -f thesis.pdf ]]; then
         error "thesis.pdf not found — run '$0 build' first"
@@ -61,6 +67,7 @@ Usage: $0 <command>
 
 Commands:
   build         Build thesis and slides PDFs via Docker
+  lint          Lint LaTeX sources via Docker (chktex)
   open          Open thesis.pdf
   open-slides   Open slides/slides.pdf
   clean         Remove generated PDFs
@@ -71,6 +78,7 @@ EOF
 # --- main ---
 case "${1:-help}" in
     build)       cmd_build ;;
+    lint)        cmd_lint ;;
     open)        cmd_open ;;
     open-slides) cmd_open_slides ;;
     clean)       cmd_clean ;;

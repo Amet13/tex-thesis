@@ -3,15 +3,27 @@
 
 # Suppress warnings that conflict with our formatting:
 # 1  - Command terminated with space (common with \item, etc.)
+# 2  - Non-breaking space before \cite/\ref (noisy, style preference)
 # 3  - Enclose previous parenthesis with {}  (false positives in math)
 # 8  - Wrong length of dash (we handle intentionally via literate)
+# 9  - `}' expected, found `)' (false positive in \labelenumi definitions)
+# 10 - Solo `}' found (false positive in \labelenumi definitions)
+# 12 - Interword spacing (false positive with abbreviations like "et al.")
+# 13 - Intersentence spacing (false positive with abbreviations like "CPU:")
+# 17 - Number of `(' doesn't match `)' (false positive from complex macros)
 # 24 - Delete from/to `}' (false positive with \makeatother blocks)
 # 36 - Vertical rules in tables (we use them intentionally for academic style)
 # 44 - User Regex (not configured)
 CmdLine {
     --nowarn 1
+    --nowarn 2
     --nowarn 3
     --nowarn 8
+    --nowarn 9
+    --nowarn 10
+    --nowarn 12
+    --nowarn 13
+    --nowarn 17
     --nowarn 24
     --nowarn 36
     --nowarn 44

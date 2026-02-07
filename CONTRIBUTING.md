@@ -6,7 +6,7 @@ Thank you for your interest in improving this LaTeX thesis template!
 
 1. **Fork** the repository and create a feature branch
 2. Make your changes
-3. **Lint** your LaTeX files locally: `chktex main.tex chapters/*.tex`
+3. **Lint** your LaTeX files: `./build.sh lint`
 4. **Build** to verify compilation: `./build.sh build`
 5. Open a **Pull Request** with a clear description of your changes
 
@@ -25,13 +25,12 @@ Thank you for your interest in improving this LaTeX thesis template!
 - Use LuaLaTeX-compatible packages only
 - Test that both thesis and slides compile without errors
 - Follow the existing code style (4-space indentation for `.tex` files)
-- Run `chktex` and address any warnings before submitting
+- Run `./build.sh lint` and address any warnings before submitting
 
 ## Reporting Issues
 
-- Include the full error log from `latexmk`
-- Specify your TeX Live version (`lualatex --version`)
-- Mention whether you're building via Docker or locally
+- Include the full error log from `./build.sh build`
+- Mention your Docker version (`docker --version`)
 
 ## License
 
