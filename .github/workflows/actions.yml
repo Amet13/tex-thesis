@@ -23,12 +23,21 @@ jobs:
           out/thesis.pdf
           out/slides/slides.pdf
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: thesis-pdfs
+        path: out
+
     - name: Create GitHub release
       uses: softprops/action-gh-release@v2
-      if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
           out/thesis.pdf
           out/slides/slides.pdf
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

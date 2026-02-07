@@ -1,7 +1,6 @@
 # tex-thesis
 
 A universal LaTeX thesis template for bachelor's, master's, or PhD theses at any university.
-Builds via Docker — no local LaTeX installation needed.
 
 ## Features
 
@@ -24,7 +23,10 @@ cd tex-thesis/
 make build
 ```
 
-Output: [`thesis.pdf`](thesis.pdf) and [`slides/slides.pdf`](slides/slides.pdf).
+Outputs:
+
+- `thesis.pdf`
+- `slides/slides.pdf`
 
 Other commands: `make open` / `make open-slides` to view PDFs, `make clean` to remove them.
 
