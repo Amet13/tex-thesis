@@ -83,11 +83,6 @@ Linting configuration is in `.chktexrc`. CI runs linting automatically on every 
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## License
-
-- Source code: [GNU GPLv3](LICENSE)
-- Content and template: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-
 ---
 
 > **Ищете оригинальную версию шаблона для магистерского диплома?** Смотрите [старую версию проекта (1.1.1)](https://github.com/Amet13/tex-thesis/tree/1.1.1).
