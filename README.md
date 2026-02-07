@@ -1,6 +1,6 @@
 # tex-thesis
 
-A universal LaTeX thesis template for bachelor's, master's, or PhD theses at any university.
+A universal LaTeX thesis template for bachelor's, master's, or PhD theses.
 
 Check the latest build: [thesis.pdf](https://github.com/Amet13/tex-thesis/releases/latest/download/thesis.pdf) | [slides.pdf](https://github.com/Amet13/tex-thesis/releases/latest/download/slides.pdf)
 
