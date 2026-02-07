@@ -1,0 +1,25 @@
+# chktex configuration for tex-thesis
+# See: https://www.nongnu.org/chktex/ChkTeX.pdf
+
+# Suppress warnings that conflict with our formatting:
+# 1  - Command terminated with space (common with \item, etc.)
+# 3  - Enclose previous parenthesis with {}  (false positives in math)
+# 8  - Wrong length of dash (we handle intentionally via literate)
+# 24 - Delete from/to `}' (false positive with \makeatother blocks)
+# 36 - Vertical rules in tables (we use them intentionally for academic style)
+# 44 - User Regex (not configured)
+CmdLine {
+    --nowarn 1
+    --nowarn 3
+    --nowarn 8
+    --nowarn 24
+    --nowarn 36
+    --nowarn 44
+}
+
+# Environments to ignore (code listings, tikzpicture, etc.)
+VerbEnvir {
+    lstlisting
+    verbatim
+    tikzpicture
+}

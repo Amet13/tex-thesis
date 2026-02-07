@@ -1,0 +1,31 @@
+# Git
+.git/
+.github/
+.gitignore
+
+# Output PDFs (will be generated)
+*.pdf
+
+# Documentation
+README.md
+LICENSE
+
+# Build script (not needed inside container)
+build.sh
+
+# Editor files
+.editorconfig
+.vscode/
+*.swp
+*~
+
+# LaTeX auxiliary files (should not exist in repo, but just in case)
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.fls
+*.fdb_latexmk

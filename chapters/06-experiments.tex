@@ -1,0 +1,179 @@
+\section{Experimental research}
+
+This chapter describes the experiments conducted to evaluate the proposed system.
+
+\subsection{Experimental setup}
+
+The experiments were performed on the following hardware:
+\begin{itemize}
+  \item CPU: 8-core processor, 3.2~GHz;
+  \item RAM: 32~GB DDR4;
+  \item Storage: 512~GB NVMe SSD;
+  \item OS: Ubuntu 24.04 LTS.
+\end{itemize}
+
+\subsection{Test datasets}
+
+Three datasets of varying sizes were used for evaluation:
+
+% === EXAMPLE: Table with multirow cells ===
+\begin{table}[H]
+    \caption{Test datasets} \label{tab:datasets}
+    \begin{tabular}{|l|c|c|c|}
+    \hline \textbf{Dataset} & \textbf{Records} & \textbf{Size (MB)} & \textbf{Description} \\
+    \hline Small   & 1\,000    & 5   & Unit testing \\
+    \hline Medium  & 100\,000  & 450 & Integration testing \\
+    \hline Large   & 1\,000\,000 & 4\,200 & Stress testing \\
+    \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Performance results}
+
+The system was benchmarked against two baseline implementations.
+Table~\ref{tab:performance} shows the results.
+
+% === EXAMPLE: Table with multirow and merged cells ===
+\begin{table}[H]
+    \caption{Performance comparison (processing time in seconds)} \label{tab:performance}
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Method}} & \multicolumn{3}{c|}{\textbf{Dataset size}} & \multirow{2}{*}{\textbf{Avg. improvement}} \\
+    \cline{2-4}
+      & \textbf{Small} & \textbf{Medium} & \textbf{Large} & \\
+    \hline Baseline A       & 0.8  & 45.2  & 512.0 & --- \\
+    \hline Baseline B       & 0.5  & 38.7  & 478.3 & --- \\
+    \hline Proposed approach & 0.3  & 22.1  & 287.5 & 40\% \\
+    \hline
+    \end{tabular}
+\end{table}
+
+The proposed approach demonstrates a \textbf{40--44\%} improvement in processing time compared to Baseline~A, and a \textbf{37--40\%} improvement over Baseline~B.
+
+% === EXAMPLE: TikZ bar chart (manual) ===
+Figure~\ref{fig:bar-chart} visualizes the performance comparison across dataset sizes.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        bar/.style={minimum width=0.5cm, anchor=south},
+        >=Stealth
+    ]
+        % Axes
+        \draw[->] (0,0) -- (9.5,0) node[right] {Dataset};
+        \draw[->] (0,0) -- (0,5.5) node[above] {Time (s)};
+
+        % Scale: 1cm = 100s
+        \foreach \y/\val in {1/100, 2/200, 3/300, 4/400, 5/500} {
+            \draw (-0.1,\y) -- (0.1,\y) node[left=2pt] {\val};
+        }
+
+        % Small dataset (scaled x10 for visibility)
+        \node at (1.5, -0.4) {\small Small};
+        \fill[red!60] (0.8,0) rectangle (1.2,0.08);
+        \fill[blue!60] (1.3,0) rectangle (1.7,0.05);
+        \fill[green!60] (1.8,0) rectangle (2.2,0.03);
+
+        % Medium dataset
+        \node at (4.5, -0.4) {\small Medium};
+        \fill[red!60] (3.8,0) rectangle (4.2,0.452);
+        \fill[blue!60] (4.3,0) rectangle (4.7,0.387);
+        \fill[green!60] (4.8,0) rectangle (5.2,0.221);
+
+        % Large dataset
+        \node at (7.5, -0.4) {\small Large};
+        \fill[red!60] (6.8,0) rectangle (7.2,5.12);
+        \fill[blue!60] (7.3,0) rectangle (7.7,4.783);
+        \fill[green!60] (7.8,0) rectangle (8.2,2.875);
+
+        % Legend
+        \fill[red!60] (9.5,4.5) rectangle (10,4.8);
+        \node[right] at (10,4.65) {\small Baseline A};
+        \fill[blue!60] (9.5,3.8) rectangle (10,4.1);
+        \node[right] at (10,3.95) {\small Baseline B};
+        \fill[green!60] (9.5,3.1) rectangle (10,3.4);
+        \node[right] at (10,3.25) {\small Proposed};
+    \end{tikzpicture}
+    \caption{Performance comparison across dataset sizes} \label{fig:bar-chart}
+\end{figure}
+
+\subsection{Accuracy results}
+
+Accuracy was measured using standard metrics:
+
+\begin{equation} \label{eq:accuracy}
+    \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%
+\end{equation}
+
+where $TP$, $TN$, $FP$, $FN$ denote true positives, true negatives, false positives, and false negatives respectively.
+
+% === EXAMPLE: Additional classification metrics ===
+The precision, recall, and F1-score are defined as:
+
+\begin{align}
+    \text{Precision} &= \frac{TP}{TP + FP} \label{eq:precision} \\[6pt]
+    \text{Recall} &= \frac{TP}{TP + FN} \label{eq:recall} \\[6pt]
+    F_1 &= 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \label{eq:f1}
+\end{align}
+
+The proposed approach achieved an accuracy of \textbf{94.2\%}, compared to 89.5\% for Baseline~A and 91.1\% for Baseline~B.
+
+% === EXAMPLE: Detailed metrics table with multirow ===
+\begin{table}[H]
+    \caption{Detailed classification metrics} \label{tab:metrics}
+    \begin{tabular}{|l|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Method}} & \multicolumn{4}{c|}{\textbf{Metrics (\%)}} \\
+    \cline{2-5}
+      & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{$F_1$-score} \\
+    \hline Baseline A       & 89.5 & 87.3 & 88.1 & 87.7 \\
+    \hline Baseline B       & 91.1 & 90.2 & 89.8 & 90.0 \\
+    \hline Proposed approach & \textbf{94.2} & \textbf{93.5} & \textbf{93.8} & \textbf{93.6} \\
+    \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Scalability analysis}
+
+The system scales linearly with dataset size, as evidenced by the following relationship:
+
+\begin{equation} \label{eq:scalability}
+    T(n) = a \cdot n + b
+\end{equation}
+
+where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ are constants determined through regression analysis ($a = 2.87 \times 10^{-4}$, $b = 0.12$).
+
+% === EXAMPLE: TikZ line plot ===
+Figure~\ref{fig:scalability-plot} shows the scalability curve.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[>=Stealth]
+        % Axes
+        \draw[->] (0,0) -- (8.5,0) node[right] {Records ($\times 10^5$)};
+        \draw[->] (0,0) -- (0,5.5) node[above] {Time (s)};
+
+        % Tick marks
+        \foreach \x/\val in {1/1, 2/2, 3/3, 4/4, 5/5, 6/6, 7/7, 8/8} {
+            \draw (\x,-0.1) -- (\x,0.1) node[below=2pt] {\small \val};
+        }
+        \foreach \y/\val in {1/50, 2/100, 3/150, 4/200, 5/250} {
+            \draw (-0.1,\y) -- (0.1,\y) node[left=2pt] {\small \val};
+        }
+
+        % Data points and line (proposed approach)
+        \draw[thick, green!60!black, mark=*] plot coordinates {
+            (0.1,0.006) (1,0.44) (2,0.88) (4,1.77) (6,2.65) (8,3.53)
+        };
+        \node[green!60!black, right] at (8,3.53) {\small Proposed};
+
+        % Baseline B
+        \draw[thick, blue!60, dashed, mark=square*] plot coordinates {
+            (0.1,0.01) (1,0.77) (2,1.55) (4,3.1) (6,4.65) (8,5.2)
+        };
+        \node[blue!60, right] at (8,5.2) {\small Baseline B};
+    \end{tikzpicture}
+    \caption{Scalability: processing time vs.\ dataset size} \label{fig:scalability-plot}
+\end{figure}
+
+\clearpage

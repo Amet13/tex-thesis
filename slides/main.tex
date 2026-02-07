@@ -1,9 +1,9 @@
-%!TEX TS-program = xelatex
+%!TEX TS-program = lualatex
 
-\documentclass[xetex,t]{beamer}
+\documentclass[t]{beamer}
 \usefonttheme[onlymath]{serif}
 % For 16:9 aspect ratio:
-% \documentclass[aspectratio=169,xetex,t]{beamer}
+% \documentclass[aspectratio=169,t]{beamer}
 
 %%% Preamble
 \usetheme{ThesisSlides} % Theme
@@ -21,9 +21,8 @@
 \newtheorem{rexample}{Example}
 
 %%% Math packages
-\usepackage{amsmath,amsfonts,amssymb,amsthm,mathtools} % AMS
-% \usepackage{icomma} % Uncomment for European decimal comma convention
-
+\usepackage{mathtools} % Loads amsmath automatically
+\usepackage{amsfonts,amssymb,amsthm}
 %%% Custom commands
 \DeclareMathOperator{\sgn}{\mathop{sgn}}
 
@@ -36,7 +35,6 @@
 \graphicspath{{../images/}}
 \setlength\fboxsep{3pt}
 \setlength\fboxrule{1pt}
-\usepackage{wrapfig}
 
 %%% Tables
 \usepackage{array,tabularx,tabulary,booktabs}
@@ -44,10 +42,8 @@
 \usepackage{multirow}
 
 %%% Other packages
-% \usepackage{lastpage} % Not needed: Beamer provides \inserttotalframenumber
 \usepackage{csquotes}
 \usepackage{multicol}
-\usepackage{etoolbox}
 
 %%% Drawing
 \usepackage{tikz,calc,ifthen,color}

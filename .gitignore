@@ -15,11 +15,15 @@
 *.blg
 *.run.xml
 *.bcf
+*.vrb
+*.synctex(busy)
 
 # PDF output
 *.pdf
 
+# OS files
 .DS_Store
+Thumbs.db
 
 # Editor
 *.swp

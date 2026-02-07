@@ -17,7 +17,7 @@ RUN apt-get update && \
         fontconfig \
         texlive-base \
         texlive-latex-extra \
-        texlive-xetex \
+        texlive-luatex \
         texlive-fonts-extra \
         texlive-science \
         texlive-latex-recommended \
@@ -32,16 +32,15 @@ RUN apt-get update && \
 WORKDIR /thesis
 
 # Copy source files
-COPY main.tex preamble.tex ./
-COPY inc/ inc/
+COPY main.tex preamble.tex .latexmkrc ./
+COPY chapters/ chapters/
 COPY images/ images/
 COPY slides/ slides/
 
-# Build thesis
-RUN latexmk -xelatex -synctex=1 -interaction=nonstopmode -jobname=thesis main.tex
-
-# Build slides
-RUN cd slides && latexmk -xelatex -synctex=1 -interaction=nonstopmode -jobname=slides main.tex
+# Build thesis and slides in parallel
+RUN latexmk -jobname=thesis main.tex & \
+    (cd slides && latexmk -jobname=slides main.tex) & \
+    wait
 
 # Output stage: contains only the final PDFs
 FROM scratch

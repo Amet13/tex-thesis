@@ -152,6 +152,59 @@ Selected approach: \textbf{Hybrid architecture}
 
 %-------------------------------------------------------------------------------
 
+\section{Key formulas}
+
+\begin{frame}
+\frametitle{\insertsection}
+\framesubtitle{Mathematical foundations}
+
+\textbf{Weighted effectiveness:}
+$$E = \sum_{i=1}^{n} w_i \cdot f(x_i)$$
+
+\vspace{0.5\baselineskip}
+
+\textbf{Classification accuracy:}
+$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%$$
+
+\vspace{0.5\baselineskip}
+
+\textbf{Scalability model:}
+$$T(n) = a \cdot n + b, \quad a = 2.87 \times 10^{-4}$$
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Architecture diagram}
+
+\begin{frame}
+\frametitle{\insertsection}
+\framesubtitle{State machine of the processing pipeline}
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[scale=0.75, transform shape,
+        state/.style={circle, draw, minimum size=1.2cm, align=center, font=\small},
+        accept/.style={state, double},
+        >=Stealth, auto
+    ]
+        \node[state] (idle) {Idle};
+        \node[state, right=1.5cm of idle] (load) {Loading};
+        \node[state, right=1.5cm of load] (proc) {Processing};
+        \node[accept, right=1.5cm of proc] (done) {Done};
+        \node[state, below=1cm of load] (err) {Error};
+
+        \draw[->] (idle) edge node {\tiny start} (load);
+        \draw[->] (load) edge node {\tiny ready} (proc);
+        \draw[->] (proc) edge node {\tiny ok} (done);
+        \draw[->] (load) edge node[left] {\tiny fail} (err);
+        \draw[->] (proc) edge[bend left] node[right] {\tiny fail} (err);
+        \draw[->] (err) edge[bend right=40] node[below] {\tiny retry} (idle);
+    \end{tikzpicture}
+\end{figure}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
 \section{Results}
 
 \begin{frame}
