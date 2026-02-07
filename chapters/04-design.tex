@@ -12,6 +12,9 @@ The following criteria are used to compare alternatives:
   \item maintainability --- ease of extending and modifying the system.
 \end{itemize}
 
+% === EXAMPLE: Footnote ===
+The evaluation methodology follows the Analytic Hierarchy Process (AHP)\footnote{The AHP was introduced by Thomas L. Saaty in the 1970s and is widely used for multi-criteria decision making.}, which provides a structured framework for comparing alternatives across multiple criteria.
+
 \subsection{Alternatives}
 
 Three alternative design approaches are considered:
@@ -25,6 +28,7 @@ Three alternative design approaches are considered:
 
 Table~\ref{tab:alternatives} presents a comparison of the three alternatives.
 
+% === EXAMPLE: Complex table with multirow header ===
 \begin{table}[H]
     \caption{Comparison of design alternatives} \label{tab:alternatives}
     \begin{tabular}{|l|c|c|c|c|}
@@ -43,12 +47,44 @@ Table~\ref{tab:alternatives} presents a comparison of the three alternatives.
 Based on the weighted comparison, the \textbf{hybrid architecture} achieves the highest overall score of 8.30.
 This approach combines the performance benefits of a monolithic core with the scalability advantages of modular extensions.
 
-The effectiveness $E$ of each alternative is calculated as:
+The effectiveness $E$ of each alternative is calculated using Equation~\eqref{eq:basic} from the literature review (Section~2.2):
 
+% === EXAMPLE: Cross-referencing equations from other chapters ===
 \begin{equation} \label{eq:weighted}
     E = \sum_{j=1}^{m} w_j \cdot s_j
 \end{equation}
 
 where $w_j$ is the weight of criterion $j$ and $s_j$ is the score assigned to that criterion.
+
+% === EXAMPLE: TikZ Gantt-style timeline ===
+The implementation timeline is shown in Figure~\ref{fig:timeline}.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[>=Stealth]
+        % Timeline axis
+        \draw[->] (0,0) -- (13,0) node[right] {Weeks};
+        \foreach \x in {1,...,12} {
+            \draw (\x,-0.1) -- (\x,0.1) node[below=3pt] {\small \x};
+        }
+
+        % Task bars
+        \fill[blue!40] (1,0.5) rectangle (3,1) node[midway, font=\small] {Analysis};
+        \fill[green!40] (3,0.5) rectangle (6,1) node[midway, font=\small] {Design};
+        \fill[orange!40] (5,1.2) rectangle (9,1.7) node[midway, font=\small] {Implementation};
+        \fill[red!30] (8,0.5) rectangle (11,1) node[midway, font=\small] {Testing};
+        \fill[purple!30] (10,1.2) rectangle (12,1.7) node[midway, font=\small] {Writing};
+    \end{tikzpicture}
+    \caption{Project timeline (Gantt chart)} \label{fig:timeline}
+\end{figure}
+
+% === EXAMPLE: Description list ===
+\textbf{Advantages of the hybrid approach:}
+\begin{description}
+    \item[Performance] The monolithic core avoids network overhead for critical operations.
+    \item[Scalability] Extension modules can be independently scaled based on demand.
+    \item[Maintainability] Clear boundaries between core and extensions simplify updates.
+    \item[Deployment] Docker containers enable consistent deployment across environments.
+\end{description}
 
 \clearpage

@@ -17,6 +17,7 @@ The system is implemented using the following technologies:
 The implemented system follows the hybrid architecture selected in Chapter~4.
 The core module handles data processing and analysis, while extension modules provide specialized functionality.
 
+% === EXAMPLE: TikZ deployment architecture with colors and shapes ===
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
@@ -40,11 +41,23 @@ The core module handles data processing and analysis, while extension modules pr
     \caption{Implemented system architecture} \label{fig:impl-arch}
 \end{figure}
 
+% === EXAMPLE: Including an external image with \addimghere ===
+Figure~\ref{fig:sample-photo} demonstrates including an external image from the \texttt{images/} directory using the \verb|\addimghere| custom command.
+
+\addimghere{sample-photo}{0.4}{Sample image included from file}{fig:sample-photo}
+
+% === EXAMPLE: Two images side by side with \addtwoimghere ===
+Figure~\ref{fig:two-images} shows two images placed side by side using the \verb|\addtwoimghere| command.
+This is useful for comparing visual results or showing before/after states.
+
+\addtwoimghere{sample-photo}{0.4}{sample-photo}{0.4}{Two images side by side}{fig:two-images}
+
 \subsection{Key components}
 
 The main processing module is responsible for data ingestion and transformation.
 Listing~\ref{lst:processor} shows a simplified version of the data processor.
 
+% === EXAMPLE: Python code listing with line numbers ===
 \begin{lstlisting}[language=Python, caption={Data processor module}, label={lst:processor}]
 import json
 import logging
@@ -97,6 +110,7 @@ class DataProcessor:
 The system uses a configuration file to manage runtime parameters.
 Listing~\ref{lst:config} shows an example configuration.
 
+% === EXAMPLE: JSON code listing ===
 \begin{lstlisting}[caption={Example configuration file (config.json)}, label={lst:config}]
 {
   "scale": 1.5,
@@ -115,10 +129,52 @@ Listing~\ref{lst:config} shows an example configuration.
 }
 \end{lstlisting}
 
+\subsection{Database schema}
+
+% === EXAMPLE: SQL code listing ===
+Listing~\ref{lst:sql} shows the database schema used for storing experimental results.
+
+\begin{lstlisting}[language=SQL, caption={Database schema (schema.sql)}, label={lst:sql}]
+CREATE TABLE experiments (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status      VARCHAR(50) DEFAULT 'pending'
+);
+
+CREATE TABLE results (
+    id            SERIAL PRIMARY KEY,
+    experiment_id INTEGER REFERENCES experiments(id),
+    metric_name   VARCHAR(100) NOT NULL,
+    metric_value  DOUBLE PRECISION NOT NULL,
+    recorded_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_results_experiment
+    ON results(experiment_id);
+\end{lstlisting}
+
+\subsection{Dockerfile}
+
+% === EXAMPLE: Dockerfile listing ===
+Listing~\ref{lst:dockerfile} shows the Dockerfile used for containerized deployment.
+
+\begin{lstlisting}[caption={Application Dockerfile}, label={lst:dockerfile}]
+FROM python:3.13-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src/ src/
+COPY config/ config/
+EXPOSE 8080
+CMD ["python", "-m", "src.main"]
+\end{lstlisting}
+
 \subsection{Security architecture}
 
 The system implements several security measures, as shown in Figure~\ref{fig:security}.
 
+% === EXAMPLE: TikZ diagram with colored fills ===
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[

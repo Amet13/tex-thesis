@@ -1,7 +1,6 @@
 %%% Preamble %%%
 
-\usepackage{fontspec} % XeTeX font selection
-\usepackage{pdfpages} % Include external PDF pages
+\usepackage{fontspec} % Font selection (LuaLaTeX)
 \usepackage{lastpage} % Reference total page count (\pageref{LastPage})
 
 \usepackage{listings} % Source code listings
@@ -13,13 +12,13 @@
     literate={---}{{-{}-{}-}}3 {--}{{-{}-}}2 % Correct display of double and triple dashes
 }
 
-% Fonts (XeLaTeX)
+% Fonts
 \defaultfontfeatures{Ligatures=TeX}
 \setmainfont{Times New Roman} % Main font
 \setmonofont{FreeMono}        % Monospace font for code listings
 
 % Math formulas
-\usepackage{mathtools,unicode-math} % Not compatible with amsmath
+\usepackage{mathtools,unicode-math} % mathtools supersedes amsmath
 \setmathfont{XITS Math}             % Math font: https://github.com/aliftype/xits
 \numberwithin{equation}{section}    % Equation numbering: section.number
 
@@ -28,8 +27,6 @@
 \setdefaultlanguage{english}
 
 % Paragraphs and lists
-\usepackage{enumerate}   % Fine-tuned lists
-% \usepackage{indentfirst} % Uncomment to indent first paragraph after headings (European convention)
 \usepackage{float}       % Extended float control
 \usepackage{multirow}    % Complex tables
 
@@ -39,11 +36,14 @@
 \usepackage{tikz} % Programmatic diagrams
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, calc}
 
+% Microtypography: character protrusion and font expansion (full support in LuaLaTeX)
+\usepackage{microtype}
+
 % Reset figure and table counters per section (chngcntr no longer needed in LaTeX 2018+)
 \counterwithin{figure}{section}
 \counterwithin{table}{section}
 
-% Hyperlinks
+% Hyperlinks (loaded late per best practice)
 \usepackage{hyperref}
 \hypersetup{
     colorlinks, urlcolor={black}, % All links black and clickable
@@ -51,6 +51,7 @@
     pdfauthor={Your Name},
     pdftitle={Your Thesis Title}
 }
+\usepackage{bookmark} % Faster PDF bookmarks (replaces hyperref's bookmark module)
 
 % Bibliography and caption label formatting with dot separator
 \makeatletter
@@ -61,28 +62,26 @@
 \def\redeflsection{\def\l@section{\@dottedtocline{1}{0em}{10em}}}
 \makeatother
 
-\renewcommand{\baselinestretch}{1.4} % 1.5 line spacing
+\usepackage{setspace}
+\onehalfspacing % 1.5 line spacing (replaces manual \baselinestretch)
 \parindent 1.27cm % Paragraph indent
 
-\sloppy             % Prevent overfull boxes
+\emergencystretch=1em  % Allow slight stretch to avoid overfull boxes
 \hyphenpenalty=1000 % Hyphenation frequency
 \clubpenalty=10000  % Prevent page break after first line of paragraph (orphan)
 \widowpenalty=10000 % Prevent page break after last line of paragraph (widow)
 
 % Page margins
 \usepackage{geometry}
-\geometry{left=2.5cm}
-\geometry{right=2.5cm}
-\geometry{top=2.5cm}
-\geometry{bottom=2.5cm}
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
 
 % Lists
 \usepackage{enumitem}
 \setlist[enumerate,itemize]{leftmargin=12.7mm} % List indentation
 \setlist{nolistsep}                            % No spacing between list items
 \renewcommand{\labelitemi}{\textbullet}         % List marker: bullet
-\renewcommand{\labelenumi}{\arabic{enumi})}     % Second-level list: Arabic numerals
-\renewcommand{\labelenumii}{\arabic{enumii})}  % Third-level list: Arabic numerals
+\renewcommand{\labelenumi}{\arabic{enumi})}     % First-level enumerate: 1) 2) 3)
+\renewcommand{\labelenumii}{\arabic{enumii})}  % Second-level enumerate: 1) 2) 3)
 
 % Table of contents
 \usepackage{tocloft}
@@ -116,7 +115,7 @@
 }
 
 % Figure and table caption formatting
-\RequirePackage{caption}
+\usepackage{caption}
 \DeclareCaptionLabelSeparator{defffis}{. } % Separator (period)
 \captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Figure caption centered
 \captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Table caption left-aligned

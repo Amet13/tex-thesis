@@ -1,9 +1,9 @@
-%!TEX TS-program = xelatex
+%!TEX TS-program = lualatex
 
 % Thesis LaTeX Template
 % https://github.com/Amet13/tex-thesis
 
-\documentclass[xetex,a4paper,14pt]{extarticle} % 14pt font size
+\documentclass[a4paper,14pt]{extarticle} % 14pt font size
 \input{preamble} % Load preamble
 
 %%% Document start
@@ -12,18 +12,18 @@
 \tableofcontents % Table of contents
 \clearpage
 
-\input{inc/0-abstract}     % Abstract
-\input{inc/0-intro}        % Introduction
-\input{inc/1-problem}      % Problem statement
-\input{inc/2-literature}   % Literature review
-\input{inc/3-analysis}     % System analysis
-\input{inc/4-design}       % Design and methodology
-\input{inc/5-implementation} % Implementation
-\input{inc/6-experiments}  % Experimental research
-\input{inc/7-results}      % Results analysis
-\input{inc/0-conclusion}   % Conclusion
-\input{inc/0-glossary}     % Abbreviations and symbols
-\input{inc/0-bibliography} % Bibliography
+\input{chapters/abstract}          % Abstract
+\input{chapters/introduction}      % Introduction
+\input{chapters/01-problem}        % Problem statement
+\input{chapters/02-literature}     % Literature review
+\input{chapters/03-analysis}       % System analysis
+\input{chapters/04-design}         % Design and methodology
+\input{chapters/05-implementation} % Implementation
+\input{chapters/06-experiments}    % Experimental research
+\input{chapters/07-results}        % Results analysis
+\input{chapters/conclusion}        % Conclusion
+\input{chapters/glossary}          % Abbreviations and symbols
+\input{chapters/bibliography}      % Bibliography
 
 % List of figures
 \lof
@@ -34,7 +34,7 @@
 \clearpage
 
 % Appendices
-\input{inc/a-appendix} % Sample code listing
+\input{chapters/appendix-a} % Sample code listing
 
 \end{document}
 %%% Document end
