@@ -1,11 +1,5 @@
 # tex-thesis
 
-> **Looking for the original Russian version?** See the [1.1.1 tag release](https://github.com/Amet13/tex-thesis/releases/tag/1.1.1).
-
-[![Build](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml/badge.svg)](https://github.com/Amet13/tex-thesis/actions)
-[![Source Code License](https://img.shields.io/badge/license-GNU_GPLv3-red.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![Content License](https://img.shields.io/badge/license-CC_BY--SA_4.0-blue.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
-
 A universal LaTeX thesis template formatted with XeLaTeX.
 Suitable for bachelor's, master's, or PhD theses at any university.
 Features Times New Roman 14pt, 1.5 line spacing, structured chapters, TikZ diagrams, code listings, tables, bibliography, and Beamer defense slides.
@@ -31,35 +25,6 @@ Features Times New Roman 14pt, 1.5 line spacing, structured chapters, TikZ diagr
 - Multi-stage `Dockerfile` — only final PDFs are extracted, no intermediate build artifacts
 - GitHub Actions CI/CD pipeline with automatic PDF release on tag push
 
-## Project Structure
-
-```
-.
-├── Dockerfile            # Multi-stage Docker build (produces only PDFs)
-├── Makefile              # Build automation (Docker-only)
-├── main.tex              # Main document, includes all other files
-├── preamble.tex          # LaTeX preamble (packages, formatting, custom commands)
-├── images/               # Your illustrations (place images here)
-├── inc/                  # Chapter/section files included in main.tex
-│   ├── 0-abstract.tex    #   Abstract
-│   ├── 0-intro.tex       #   Introduction
-│   ├── 0-conclusion.tex  #   Conclusion
-│   ├── 0-glossary.tex    #   Abbreviations and symbols
-│   ├── 0-bibliography.tex#   Bibliography (manual)
-│   ├── 1-problem.tex     #   Chapter 1: Problem statement
-│   ├── 2-literature.tex  #   Chapter 2: Literature review
-│   ├── 3-analysis.tex    #   Chapter 3: System analysis
-│   ├── 4-design.tex      #   Chapter 4: Design and methodology
-│   ├── 5-implementation.tex # Chapter 5: Implementation
-│   ├── 6-experiments.tex  #  Chapter 6: Experimental research
-│   ├── 7-results.tex     #   Chapter 7: Results analysis
-│   └── a-appendix.tex    #   Appendices
-└── slides/               # Beamer defense slides
-    ├── beamerthemeThesisSlides.sty # Slide theme
-    ├── main.tex           # Slide preamble (title, author, university)
-    └── slides.tex          # Slide content
-```
-
 ## Quick Start
 
 Prerequisites: [Docker](https://docs.docker.com/get-docker/) and `make`.
@@ -70,7 +35,7 @@ cd tex-thesis/
 make build
 ```
 
-Output: `thesis.pdf` and `slides/slides.pdf` — only the final PDFs are extracted from the Docker build (no intermediate artifacts).
+Output: [`thesis.pdf`](thesis.pdf) and [`slides/slides.pdf`](slides/slides.pdf) — only the final PDFs are extracted from the Docker build (no intermediate artifacts).
 
 ## Make Targets
 
@@ -90,11 +55,11 @@ Output: `thesis.pdf` and `slides/slides.pdf` — only the final PDFs are extract
 5. Modify `slides/slides.tex` for your defense slides
 6. Update `slides/main.tex` with your name, title, and university
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## License
 
 - Source code: [GNU GPLv3](LICENSE)
 - Content and template: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
+---
+
+> **Ищете оригинальную версию шаблона для магистерского диплома?** Смотрите [версию 1.1.1](https://github.com/Amet13/tex-thesis/releases/tag/1.1.1).
