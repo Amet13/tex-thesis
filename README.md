@@ -2,6 +2,8 @@
 
 A universal LaTeX thesis template for bachelor's, master's, or PhD theses at any university.
 
+Check the latest build: [thesis.pdf](https://github.com/Amet13/tex-thesis/releases/latest/download/thesis.pdf) | [slides.pdf](https://github.com/Amet13/tex-thesis/releases/latest/download/slides.pdf)
+
 ## Features
 
 - XeLaTeX with Times New Roman 14pt, 1.5 line spacing, XITS Math for formulas, FreeMono for code
