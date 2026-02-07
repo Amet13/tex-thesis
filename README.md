@@ -48,4 +48,4 @@ Other commands: `make open` / `make open-slides` to view PDFs, `make clean` to r
 
 ---
 
-> **Ищете оригинальную версию шаблона для магистерского диплома?** Смотрите [старую версию проекта (1.1.1)](https://github.com/Amet13/tex-thesis/releases/tag/1.1.1).
+> **Ищете оригинальную версию шаблона для магистерского диплома?** Смотрите [старую версию проекта (1.1.1)](https://github.com/Amet13/tex-thesis/tree/1.1.1).
