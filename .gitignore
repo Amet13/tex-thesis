@@ -16,7 +16,9 @@
 *.run.xml
 *.bcf
 
-# macOS
+# PDF output
+*.pdf
+
 .DS_Store
 
 # Editor
