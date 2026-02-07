@@ -1,53 +1,40 @@
 %!TEX TS-program = xelatex
 
-% Author: Amet Umerov (admin@amet13.name)
-% https://github.com/Amet13/master-thesis
+% Thesis LaTeX Template
+% https://github.com/Amet13/tex-thesis
 
-\documentclass[xetex,a4paper,14pt]{extarticle} % 14й шрифт
-\input{preamble} % Подключаем преамбулу
+\documentclass[xetex,a4paper,14pt]{extarticle} % 14pt font size
+\input{preamble} % Load preamble
 
-%%% Начало документа
+%%% Document start
 \begin{document}
 
-% 1 страница
-% \includepdf{extra/pz} % Пояснительная записка
-
-% 2 страница (не нумеруется, но учитывается)
-% \includepdf[pages={1,2}]{extra/task} % Задание на ВКР печатается на одном листе с двух сторон
-
-% Помимо ПЗ и задания, в ВКР также вкладываются:
-% * отзыв руководителя (otzyv.pdf), на 1 странице с двух сторон
-% * рецензия (review.pdf), на 1 странице с двух сторон
-% * отчет по антиплагиату (antiplagiat.pdf)
-
-% 3 страница
-\input{inc/0-annotation} % Аннотация
-
-\tableofcontents % Содержание 
+\tableofcontents % Table of contents
 \clearpage
 
-\input{inc/0-intro}        % Введение
-\input{inc/1-pz}           % Постановка задачи
-\input{inc/2-literature}   % Обзор литературных источников
-\input{inc/3-sysanalyz}    % Системный анализ
-\input{inc/4-varanalyz}    % Вариантный анализ
-\input{inc/5-description}  % Описание системы информационной безопасности облачной среды
-\input{inc/6-experiment}   % Экспериментальные исследования
-\input{inc/7-results}      % Анализ полученных результатов
-\input{inc/0-conclusion}   % Заключение
-\input{inc/0-glossary}     % Перечень сокращений и условных обозначений
-\input{inc/0-bibliography} % Библиографический список
+\input{inc/0-abstract}     % Abstract
+\input{inc/0-intro}        % Introduction
+\input{inc/1-problem}      % Problem statement
+\input{inc/2-literature}   % Literature review
+\input{inc/3-analysis}     % System analysis
+\input{inc/4-design}       % Design and methodology
+\input{inc/5-implementation} % Implementation
+\input{inc/6-experiments}  % Experimental research
+\input{inc/7-results}      % Results analysis
+\input{inc/0-conclusion}   % Conclusion
+\input{inc/0-glossary}     % Abbreviations and symbols
+\input{inc/0-bibliography} % Bibliography
 
-% Список иллюстративного материала
+% List of figures
 \lof
 \clearpage
 
-% Список табличного материала
+% List of tables
 \lot
 \clearpage
 
-% Приложения
-\input{inc/a-app} % Программа мониторинга уязвимостей в программном обеспечении
+% Appendices
+\input{inc/a-appendix} % Sample code listing
 
 \end{document}
-%%% Конец документа
+%%% Document end

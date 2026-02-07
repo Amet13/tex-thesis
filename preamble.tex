@@ -1,117 +1,106 @@
-%%% Преамбула %%%
+%%% Preamble %%%
 
-\usepackage{fontspec} % XeTeX
-\usepackage{xunicode} % Unicode для XeTeX
-\usepackage{xltxtra}  % Верхние и нижние индексы
-\usepackage{pdfpages} % Вставка PDF
+\usepackage{fontspec} % XeTeX font selection
+\usepackage{pdfpages} % Include external PDF pages
+\usepackage{lastpage} % Reference total page count (\pageref{LastPage})
 
-\usepackage{listings} % Оформление исходного кода
+\usepackage{listings} % Source code listings
 \lstset{
-    basicstyle=\small\ttfamily, % Размер и тип шрифта
-    breaklines=true,            % Перенос строк
-    tabsize=2,                  % Размер табуляции
-    frame=single,               % Рамка
-    literate={--}{{-{}-}}2,     % Корректно отображать двойной дефис
-    literate={---}{{-{}-{}-}}3  % Корректно отображать тройной дефис
+    basicstyle=\small\ttfamily, % Font size and type
+    breaklines=true,            % Line wrapping
+    tabsize=2,                  % Tab size
+    frame=single,               % Frame around listing
+    literate={---}{{-{}-{}-}}3 {--}{{-{}-}}2 % Correct display of double and triple dashes
 }
 
-% Шрифты, xelatex
+% Fonts (XeLaTeX)
 \defaultfontfeatures{Ligatures=TeX}
-\setmainfont{Times New Roman} % Нормоконтроллеры хотят именно его
-\newfontfamily\cyrillicfont{Times New Roman}
-% \setsansfont{Liberation Sans} % Тут я его не использую, но если пригодится
-\setmonofont{FreeMono} % Моноширинный шрифт для оформления кода
+\setmainfont{Times New Roman} % Main font
+\setmonofont{FreeMono}        % Monospace font for code listings
 
-% Формулы
-\usepackage{mathtools,unicode-math} % Не совместим с amsmath
-\setmathfont{XITS Math}             % Шрифт для формул: https://github.com/khaledhosny/xits-math
-\numberwithin{equation}{section}    % Формула вида секция.номер
+% Math formulas
+\usepackage{mathtools,unicode-math} % Not compatible with amsmath
+\setmathfont{XITS Math}             % Math font: https://github.com/aliftype/xits
+\numberwithin{equation}{section}    % Equation numbering: section.number
 
-% Русский язык
+% English language support
 \usepackage{polyglossia}
-\setdefaultlanguage{russian}
+\setdefaultlanguage{english}
 
-% Абзацы и списки
-\usepackage{enumerate}   % Тонкая настройка списков
-\usepackage{indentfirst} % Красная строка после заголовка
-\usepackage{float}       % Расширенное управление плавающими объектами
-\usepackage{multirow}    % Сложные таблицы
+% Paragraphs and lists
+\usepackage{enumerate}   % Fine-tuned lists
+% \usepackage{indentfirst} % Uncomment to indent first paragraph after headings (European convention)
+\usepackage{float}       % Extended float control
+\usepackage{multirow}    % Complex tables
 
-% Пути к каталогам с изображениями
-\usepackage{graphicx} % Вставка картинок и дополнений
+% Image paths
+\usepackage{graphicx} % Insert graphics
 \graphicspath{{images/}}
+\usepackage{tikz} % Programmatic diagrams
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, calc}
 
-% Формат подрисуночных записей
-\usepackage{chngcntr}
-
-% Сбрасываем счетчик таблиц и рисунков в каждой новой главе
+% Reset figure and table counters per section (chngcntr no longer needed in LaTeX 2018+)
 \counterwithin{figure}{section}
 \counterwithin{table}{section}
 
-% Гиперссылки
+% Hyperlinks
 \usepackage{hyperref}
 \hypersetup{
-    colorlinks, urlcolor={black}, % Все ссылки черного цвета, кликабельные
+    colorlinks, urlcolor={black}, % All links black and clickable
     linkcolor={black}, citecolor={black}, filecolor={black},
-    pdfauthor={Амет Умеров},
-    pdftitle={Исследование процессов обеспечения безопасности облачных сред}
+    pdfauthor={Your Name},
+    pdftitle={Your Thesis Title}
 }
 
-% Оформление библиографии и подрисуночных записей через точку
+% Bibliography and caption label formatting with dot separator
 \makeatletter
 \renewcommand*{\@biblabel}[1]{\hfill#1.}
 \renewcommand*\l@section{\@dottedtocline{1}{1em}{1em}}
-\renewcommand{\thefigure}{\thesection.\arabic{figure}} % Формат рисунка секция.номер
-\renewcommand{\thetable}{\thesection.\arabic{table}}   % Формат таблицы секция.номер
+\renewcommand{\thefigure}{\thesection.\arabic{figure}} % Figure format: section.number
+\renewcommand{\thetable}{\thesection.\arabic{table}}   % Table format: section.number
 \def\redeflsection{\def\l@section{\@dottedtocline{1}{0em}{10em}}}
 \makeatother
 
-\renewcommand{\baselinestretch}{1.4} % Полуторный межстрочный интервал
-\parindent 1.27cm % Абзацный отступ
+\renewcommand{\baselinestretch}{1.4} % 1.5 line spacing
+\parindent 1.27cm % Paragraph indent
 
-\sloppy             % Избавляемся от переполнений
-\hyphenpenalty=1000 % Частота переносов
-\clubpenalty=10000  % Запрещаем разрыв страницы после первой строки абзаца
-\widowpenalty=10000 % Запрещаем разрыв страницы после последней строки абзаца
+\sloppy             % Prevent overfull boxes
+\hyphenpenalty=1000 % Hyphenation frequency
+\clubpenalty=10000  % Prevent page break after first line of paragraph (orphan)
+\widowpenalty=10000 % Prevent page break after last line of paragraph (widow)
 
-% Отступы у страниц
+% Page margins
 \usepackage{geometry}
-\geometry{left=3cm}
-\geometry{right=1cm}
-\geometry{top=2cm}
-\geometry{bottom=2cm}
+\geometry{left=2.5cm}
+\geometry{right=2.5cm}
+\geometry{top=2.5cm}
+\geometry{bottom=2.5cm}
 
-% Списки
+% Lists
 \usepackage{enumitem}
-\setlist[enumerate,itemize]{leftmargin=12.7mm} % Отступы в списках
+\setlist[enumerate,itemize]{leftmargin=12.7mm} % List indentation
+\setlist{nolistsep}                            % No spacing between list items
+\renewcommand{\labelitemi}{\textbullet}         % List marker: bullet
+\renewcommand{\labelenumi}{\arabic{enumi})}     % Second-level list: Arabic numerals
+\renewcommand{\labelenumii}{\arabic{enumii})}  % Third-level list: Arabic numerals
 
-\makeatletter
-    \AddEnumerateCounter{\asbuk}{\@asbuk}{м)}
-\makeatother
-\setlist{nolistsep}                           % Нет отступов между пунктами списка
-\renewcommand{\labelitemi}{--}                % Маркер списка --
-\renewcommand{\labelenumi}{\asbuk{enumi})}    % Список второго уровня
-\renewcommand{\labelenumii}{\arabic{enumii})} % Список третьего уровня
-
-% Содержание
+% Table of contents
 \usepackage{tocloft}
-\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth}\MakeTextUppercase} % СОДЕРЖАНИЕ
-\renewcommand{\cftsecfont}{\hspace{0pt}}            % Имена секций в содержании не жирным шрифтом
-\renewcommand\cftsecleader{\cftdotfill{\cftdotsep}} % Точки для секций в содержании
-\renewcommand\cftsecpagefont{\mdseries}             % Номера страниц не жирные
-\setcounter{tocdepth}{3}                            % Глубина оглавления, до subsubsection
+\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth}\MakeTextUppercase} % CONTENTS title
+\renewcommand{\cftsecfont}{\hspace{0pt}}            % Section names not bold in TOC
+\renewcommand\cftsecleader{\cftdotfill{\cftdotsep}} % Dots for sections in TOC
+\renewcommand\cftsecpagefont{\mdseries}             % Page numbers not bold
+\setcounter{tocdepth}{3}                            % TOC depth: up to subsubsection
 
-% Список иллюстративного материала
+% List of figures
 \renewcommand{\cftloftitlefont}{\hspace{0.17\textwidth}\MakeTextUppercase}
-\renewcommand{\cftfigfont}{Рисунок }
-\addto\captionsrussian{\renewcommand\listfigurename{Список иллюстративного материала}}
+\renewcommand{\cftfigfont}{Figure }
 
-% Список табличного материала
+% List of tables
 \renewcommand{\cftlottitlefont}{\hspace{0.2\textwidth}\MakeTextUppercase}
-\renewcommand{\cfttabfont}{Таблица }
-\addto\captionsrussian{\renewcommand\listtablename{Список табличного материала}}
+\renewcommand{\cfttabfont}{Table }
 
-% Нумерация страниц посередине сверху
+% Page numbering: centered at bottom
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
@@ -126,39 +115,38 @@
     \cfoot{\textrm{\thepage}}
 }
 
-% Формат подрисуночных надписей
+% Figure and table caption formatting
 \RequirePackage{caption}
-\DeclareCaptionLabelSeparator{defffis}{ -- } % Разделитель
-\captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Подпись рисунка по центру
-\captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Подпись таблицы слева
-\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}} % Имя фигуры
+\DeclareCaptionLabelSeparator{defffis}{. } % Separator (period)
+\captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Figure caption centered
+\captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Table caption left-aligned
 
-% Пользовательские функции
-\newcommand{\addimg}[4]{ % Добавление одного рисунка
+% Custom commands for inserting figures
+\newcommand{\addimg}[4]{ % Add a single figure (floating)
     \begin{figure}
         \centering
         \includegraphics[width=#2\linewidth]{#1}
         \caption{#3} \label{#4}
     \end{figure}
 }
-\newcommand{\addimghere}[4]{ % Добавить рисунок непосредственно в это место
+\newcommand{\addimghere}[4]{ % Add a figure at exact position
     \begin{figure}[H]
         \centering
         \includegraphics[width=#2\linewidth]{#1}
         \caption{#3} \label{#4}
     \end{figure}
 }
-\newcommand{\addtwoimghere}[5]{ % Вставка двух рисунков
+\newcommand{\addtwoimghere}[6]{ % Insert two figures side by side
     \begin{figure}[H]
         \centering
         \includegraphics[width=#2\linewidth]{#1}
         \hfill
-        \includegraphics[width=#3\linewidth]{#2}
-        \caption{#4} \label{#5}
+        \includegraphics[width=#4\linewidth]{#3}
+        \caption{#5} \label{#6}
     \end{figure}
 }
 
-% Заголовки секций в оглавлении в верхнем регистре
+% Uppercase section titles in TOC
 \usepackage{textcase}
 \makeatletter
 \let\oldcontentsline\contentsline
@@ -173,62 +161,42 @@
 }
 \makeatother
 
-% Оформление заголовков
+% Heading formatting
 \usepackage[compact,explicit]{titlesec}
 \titleformat{\section}{}{}{12.5mm}{\centering{\thesection\quad\MakeTextUppercase{#1}}\vspace{1.5em}}
 \titleformat{\subsection}[block]{\vspace{1em}}{}{12.5mm}{\thesubsection\quad#1\vspace{1em}}
 \titleformat{\subsubsection}[block]{\vspace{1em}\normalsize}{}{12.5mm}{\thesubsubsection\quad#1\vspace{1em}}
 \titleformat{\paragraph}[block]{\normalsize}{}{12.5mm}{\MakeTextUppercase{#1}}
 
-% Секции без номеров (введение, заключение...), вместо section*{}
+% Unnumbered sections (introduction, conclusion, etc.)
 \newcommand{\anonsection}[1]{
-    \phantomsection % Корректный переход по ссылкам в содержании
+    \phantomsection % Correct hyperlink target in TOC
     \paragraph{\centerline{{#1}}\vspace{1em}}
     \addcontentsline{toc}{section}{#1}
 }
 
-% Секция для аннотации (она не включается в содержание)
+% Abstract section (not included in TOC)
 \newcommand{\annotation}[1]{
     \paragraph{\centerline{{#1}}\vspace{1em}}
 }
 
-% Секция для списка иллюстративного материала
+% List of figures section
 \newcommand{\lof}{
     \phantomsection
     \listoffigures
     \addcontentsline{toc}{section}{\listfigurename}
 }
 
-% Секция для списка табличного материала
+% List of tables section
 \newcommand{\lot}{
     \phantomsection
     \listoftables
     \addcontentsline{toc}{section}{\listtablename}
 }
 
-% Секции для приложений
+% Appendix sections
 \newcommand{\appsection}[1]{
     \phantomsection
     \paragraph{\centerline{{#1}}}
-    \addcontentsline{toc}{section}{{#1}}
+    \addcontentsline{toc}{section}{#1}
 }
-
-% Библиография: отступы и межстрочный интервал
-\makeatletter
-\renewenvironment{thebibliography}[1]
-    {\section*{\refname}
-        \list{\@biblabel{\@arabic\c@enumiv}}
-           {\settowidth\labelwidth{\@biblabel{#1}}
-            \leftmargin\labelsep
-            \itemindent 16.7mm
-            \@openbib@code
-            \usecounter{enumiv}
-            \let\p@enumiv\@empty
-            \renewcommand\theenumiv{\@arabic\c@enumiv}
-        }
-        \setlength{\itemsep}{0pt}
-    }
-\makeatother
-
-\usepackage{lastpage} % Подсчет количества страниц
-\setcounter{page}{3}  % Начало нумерации страниц

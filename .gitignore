@@ -1,4 +1,4 @@
-# LaTeX
+# LaTeX build artifacts
 *.aux
 *.fdb_latexmk
 *.fls
@@ -11,6 +11,18 @@
 *.nav
 *.snm
 *.xdv
+*.bbl
+*.blg
+*.run.xml
+*.bcf
 
-# macOS
+# PDF output
+*.pdf
+
 .DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/

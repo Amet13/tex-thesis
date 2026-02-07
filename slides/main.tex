@@ -1,0 +1,67 @@
+%!TEX TS-program = xelatex
+
+\documentclass[xetex,t]{beamer}
+\usefonttheme[onlymath]{serif}
+% For 16:9 aspect ratio:
+% \documentclass[aspectratio=169,xetex,t]{beamer}
+
+%%% Preamble
+\usetheme{ThesisSlides} % Theme
+
+%%% Font setup
+\usepackage{fontspec}
+
+\defaultfontfeatures{Ligatures=TeX}
+\setmainfont{Times New Roman}
+\setmonofont{FreeMono}
+
+%%% Beamer theorem environments
+\newtheorem{rtheorem}{Theorem}
+\newtheorem{rproof}{Proof}
+\newtheorem{rexample}{Example}
+
+%%% Math packages
+\usepackage{amsmath,amsfonts,amssymb,amsthm,mathtools} % AMS
+% \usepackage{icomma} % Uncomment for European decimal comma convention
+
+%%% Custom commands
+\DeclareMathOperator{\sgn}{\mathop{sgn}}
+
+%%% Sign transfer in formulas
+\newcommand*{\hm}[1]{#1\nobreak\discretionary{}
+{\hbox{$\mathsurround=0pt #1$}}{}}
+
+%%% Graphics
+\usepackage{graphicx}
+\graphicspath{{../images/}}
+\setlength\fboxsep{3pt}
+\setlength\fboxrule{1pt}
+\usepackage{wrapfig}
+
+%%% Tables
+\usepackage{array,tabularx,tabulary,booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+
+%%% Other packages
+% \usepackage{lastpage} % Not needed: Beamer provides \inserttotalframenumber
+\usepackage{csquotes}
+\usepackage{multicol}
+\usepackage{etoolbox}
+
+%%% Drawing
+\usepackage{tikz,calc,ifthen,color}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+\title{Your Thesis Title}
+\subtitle{Thesis defense}
+\author{Author: Your Name \\
+\vspace{0.7\baselineskip}
+Advisor: Prof.\ Your Advisor}
+\institute{Your University \\
+Your Department}
+\date{\the\year}
+
+\begin{document}
+\input{slides.tex}
+\end{document}

@@ -1,43 +1,49 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu:22.04
-LABEL maintainer="Amet13 <admin@amet13.name>"
-LABEL org.opencontainers.image.description "https://github.com/Amet13/master-thesis"
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV DEBCONF_NONINTERACTIVE_SEEN true
-ENV DIR /master-thesis
+# Multi-stage build: produces only thesis.pdf and slides/slides.pdf as output.
+# Usage: DOCKER_BUILDKIT=1 docker build --output type=local,dest=. .
 
-RUN mkdir $DIR && \
-    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+FROM ubuntu:24.04 AS builder
 
-RUN apt update && \
-    apt install --no-install-recommends -y \
-        wget \
-        git \
-        make \
-        apt-transport-https \
-        unzip && \
-    apt install --no-install-recommends -y \
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN=true
+
+RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+
+# Install LaTeX packages and fonts in a single layer
+# XITS Math is included in texlive-fonts-extra; we symlink it for fontconfig discovery
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+        fontconfig \
         texlive-base \
         texlive-latex-extra \
         texlive-xetex \
-        texlive-lang-cyrillic \
         texlive-fonts-extra \
         texlive-science \
         texlive-latex-recommended \
-        latexmk
+        latexmk \
+        ttf-mscorefonts-installer \
+        fonts-freefont-ttf && \
+    ln -s /usr/share/texlive/texmf-dist/fonts/opentype/public/xits /usr/share/fonts/xits && \
+    fc-cache -f -v && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Times New Roman and other fonts
-RUN apt install --no-install-recommends --reinstall -y \
-    ttf-mscorefonts-installer \
-    fonts-freefont-ttf \
-    fontconfig && \
-    wget -O /usr/share/fonts/xits-math.otf https://github.com/khaledhosny/xits-math/raw/master/XITSMath-Regular.otf && \
-    wget https://ponce.cc/slackware/sources/repo/ttf-paratype-pt-fonts/PTSansOFL.zip && \
-    wget https://ponce.cc/slackware/sources/repo/ttf-paratype-pt-fonts/PTMonoOFL.zip && \
-    unzip -o PTSansOFL.zip -d /usr/share/fonts/ && unzip -o PTMonoOFL.zip -d /usr/share/fonts/ && \
-    rm -f PTSansOFL.zip PTMonoOFL.zip && \
-    fc-cache -f -v
+WORKDIR /thesis
 
-VOLUME $DIR
-WORKDIR $DIR
+# Copy source files
+COPY main.tex preamble.tex ./
+COPY inc/ inc/
+COPY images/ images/
+COPY slides/ slides/
+
+# Build thesis
+RUN latexmk -xelatex -synctex=1 -interaction=nonstopmode -jobname=thesis main.tex
+
+# Build slides
+RUN cd slides && latexmk -xelatex -synctex=1 -interaction=nonstopmode -jobname=slides main.tex
+
+# Output stage: contains only the final PDFs
+FROM scratch
+COPY --from=builder /thesis/thesis.pdf /thesis.pdf
+COPY --from=builder /thesis/slides/slides.pdf /slides/slides.pdf

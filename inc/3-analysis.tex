@@ -1,0 +1,81 @@
+\section{System analysis}
+
+This chapter presents a systematic analysis of the problem domain, following established system analysis principles.
+
+\subsection{System representation}
+
+The system under study can be represented as a ``black box'' with clearly defined inputs and outputs.
+The inputs include raw data, configuration parameters, and user requirements.
+The outputs include processed results, performance metrics, and generated reports.
+
+\subsection{System functions}
+
+The system performs the following primary functions:
+\begin{itemize}
+  \item data ingestion and preprocessing;
+  \item analysis and transformation;
+  \item result generation and visualization;
+  \item logging and monitoring;
+  \item reporting and export.
+\end{itemize}
+
+\subsection{System decomposition}
+
+The system is decomposed into four subsystems:
+\begin{itemize}
+  \item data processing subsystem;
+  \item analysis engine subsystem;
+  \item user interface subsystem;
+  \item monitoring and logging subsystem.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        box/.style={rectangle, draw, minimum width=3cm, minimum height=0.8cm, align=center},
+        >=Stealth
+    ]
+        \node[box] (sys) {System};
+        \node[box, below left=1cm and 0.5cm of sys] (dp) {Data Processing};
+        \node[box, below=1cm of sys] (ae) {Analysis Engine};
+        \node[box, below right=1cm and 0.5cm of sys] (ui) {User Interface};
+        \node[box, below=1cm of ae] (ml) {Monitoring \& Logging};
+        \draw[->] (sys) -- (dp);
+        \draw[->] (sys) -- (ae);
+        \draw[->] (sys) -- (ui);
+        \draw[->] (ae) -- (ml);
+    \end{tikzpicture}
+    \caption{System decomposition diagram} \label{fig:decomposition}
+\end{figure}
+
+\subsection{Hierarchical structure}
+
+The hierarchical organization follows the principle of separation of concerns.
+At the top level, the orchestrator manages the overall workflow.
+The middle layer contains domain-specific processing modules.
+The bottom layer handles infrastructure concerns such as data storage and network communication.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.7cm, align=center},
+        >=Stealth
+    ]
+        \node[box] (orch) {Orchestrator};
+        \node[box, below left=0.8cm and 1cm of orch] (proc) {Processing};
+        \node[box, below right=0.8cm and 1cm of orch] (report) {Reporting};
+        \node[box, below left=0.8cm and 0cm of proc] (store) {Storage};
+        \node[box, below right=0.8cm and 0cm of proc] (net) {Network};
+        \draw[->] (orch) -- (proc);
+        \draw[->] (orch) -- (report);
+        \draw[->] (proc) -- (store);
+        \draw[->] (proc) -- (net);
+    \end{tikzpicture}
+    \caption{System hierarchy diagram} \label{fig:hierarchy}
+\end{figure}
+
+\subsection{Summary}
+
+The system analysis reveals that a modular architecture with clear boundaries between subsystems provides the best foundation for achieving the research objectives.
+
+\clearpage
