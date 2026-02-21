@@ -1,101 +1,119 @@
-# tex-thesis
+<div align="center">
+  <h1>🎓 tex-thesis</h1>
+  <p><b>A universal, modern LaTeX thesis template for bachelor's, master's, or PhD theses.</b></p>
 
-[![Build](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml/badge.svg)](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC_BY--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
+  [![Build Status](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml/badge.svg)](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml)
+  [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-A universal LaTeX thesis template for bachelor's, master's, or PhD theses — with working examples of everything you might need.
+  <br />
 
-Check the latest build: [thesis.pdf](https://github.com/Amet13/tex-thesis/releases/latest/download/thesis.pdf) | [slides.pdf](https://github.com/Amet13/tex-thesis/releases/latest/download/slides.pdf)
+  [**📄 View Thesis PDF**](https://github.com/Amet13/tex-thesis/releases/latest/download/thesis.pdf) •
+  [**📊 View Slides PDF**](https://github.com/Amet13/tex-thesis/releases/latest/download/slides.pdf) •
+  [**💡 Report Issue**](https://github.com/Amet13/tex-thesis/issues)
+</div>
 
-## Features
+---
 
-- **LuaLaTeX** engine — modern successor to XeLaTeX with full `microtype` support, Lua scripting, and active development
-- Times New Roman 14pt, 1.5 line spacing (`setspace`), XITS Math for formulas, FreeMono for code
-- Full microtypographic improvements via `microtype` (character protrusion + font expansion)
-- Comprehensive examples of every common LaTeX feature (see [Showcase](#showcase))
-- TikZ diagrams, source code listings, figure/table captions in `section.number` format
-- Configurable page margins, page numbers centered at the bottom, section titles in uppercase
-- Custom commands: `\addimg`, `\addimghere`, `\addtwoimghere`, `\appsection`, `\anonsection`
-- Modern bibliography with `biblatex` and `biber`, automatic list of figures/tables, glossary with hyperlinks
-- Smart cross-referencing with `cleveref`
-- `bookmark` package for faster PDF bookmark generation
-- Beamer defense slides with matching theme
-- Multi-stage Docker build — only final PDFs are extracted, no intermediate artifacts
-- Parallel compilation of thesis and slides in Docker
-- `chktex` linting in CI for LaTeX code quality
-- GitHub Actions CI/CD with Docker layer caching and automatic PDF release on tag push
+## 🌟 Why this template?
 
-## Quick Start
+Writing a thesis is hard enough without fighting LaTeX errors. This template provides a **production-ready, modern LaTeX environment** out of the box. It uses the latest packages (`LuaLaTeX`, `biblatex`, `pgfplots`, `cleveref`) and comes with a fully configured **Docker build system** and **VS Code Dev Container**.
 
-You can use this template locally with Docker, or instantly in your browser using GitHub Codespaces / VS Code Dev Containers.
+You don't need to install a 4GB TeX Live distribution on your machine. Just open the project, write your content, and let the automation handle the rest.
 
-### Using Dev Containers (Recommended)
+## ✨ Features
 
-1. Open this repository in VS Code.
-2. When prompted, click **Reopen in Container** (requires the Dev Containers extension and Docker).
-3. The environment will automatically install TeX Live, configure the LaTeX Workshop extension, and set up `pre-commit`.
-4. Open `main.tex` and save it to trigger an automatic build.
+- 🚀 **Modern Engine**: Uses `LuaLaTeX` for native UTF-8 support, system fonts, and advanced microtypography (`microtype`).
+- 📐 **Professional Typography**: Times New Roman (14pt, 1.5 spacing), XITS Math for formulas, and FreeMono for code.
+- 📊 **Data Visualization**: High-quality plots with `pgfplots` and programmatic diagrams with `TikZ`.
+- 📚 **Smart Referencing**: Modern bibliography with `biblatex`/`biber` and intelligent cross-referencing with `cleveref`.
+- 🛠️ **Developer Experience**: Zero-setup environment using **VS Code Dev Containers** and a fast multi-stage **Docker** build.
+- 🧹 **Code Quality**: Built-in `chktex` linting and `pre-commit` hooks to keep your LaTeX source clean.
+- 📽️ **Defense Ready**: Includes a matching Beamer presentation template for your final defense.
 
-### Using Docker Locally
+## 🚀 Quick Start
 
-Prerequisites: [Docker](https://docs.docker.com/get-docker/).
+You can use this template instantly in your browser/editor, or locally with Docker.
+
+### Option 1: VS Code Dev Containers (Recommended)
+
+The easiest way to get started without installing LaTeX locally:
+
+1. Install [VS Code](https://code.visualstudio.com/) and [Docker](https://docs.docker.com/get-docker/).
+2. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+3. Clone and open this repository in VS Code.
+4. Click **Reopen in Container** when prompted.
+5. Open `main.tex` and save it — the PDF will build automatically!
+
+### Option 2: Local Docker Build
+
+If you prefer using the terminal:
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/Amet13/tex-thesis.git
 cd tex-thesis/
+
+# 2. Build the PDFs (thesis.pdf and slides/slides.pdf)
 make build
+
+# 3. Watch for changes and rebuild automatically
+make watch
 ```
 
-Outputs:
+**Available Commands:**
+- `make build` — Build thesis and slides.
+- `make watch` — Rebuild automatically on file changes.
+- `make lint` — Run `chktex` linter.
+- `make clean` — Remove generated PDFs and auxiliary files.
 
-- `thesis.pdf`
-- `slides/slides.pdf`
+## 📂 Project Structure
 
-Other commands: `make watch` to rebuild automatically on file changes, `make lint` to lint, `make open` / `make open-slides` to view PDFs, `make clean` to remove them. Run `make help` for all options.
-
-## Adapting for Your Thesis
-
-1. Edit `preamble.tex` to adjust formatting (margins, fonts, spacing, PDF metadata)
-2. Replace content in `chapters/` directory with your chapters
-3. Update `references.bib` with your bibliography entries
-4. Place your images in `images/`
-5. Modify `slides/slides.tex` for your defense slides
-6. Update `slides/main.tex` with your name, title, and university
-
-## Showcase
-
-The template includes working examples of:
-
-| Category          | Examples                                                                                                                          |
-|-------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| **Math**          | Inline math, numbered equations, multi-line aligned equations, matrices, integrals, fractions, piecewise functions, Greek letters |
-| **TikZ diagrams** | Architecture diagrams, flowcharts with decision diamonds, state machines, hierarchy trees, Gantt timelines, black-box diagrams    |
-| **Plots**         | High-quality data visualization with `pgfplots` (bar charts, line plots)                                                          |
-| **Tables**        | Professional tables with `booktabs`, number alignment with `siunitx`, multirow/multicolumn cells, comparison matrices             |
-| **Images**        | Single figure, two figures side by side, custom `\addimg` / `\addimghere` / `\addtwoimghere` commands                             |
-| **Code listings** | Python, SQL, JSON, Dockerfile — with captions, labels, and line numbers                                                           |
-| **Lists**         | Itemize, enumerate, nested lists, description lists                                                                               |
-| **References**    | Citations, smart cross-references (`\cref`) to equations/figures/tables, hyperlinked glossary, footnotes                          |
-| **Bibliography**  | Modern `biblatex` with `biber` backend and 15 sample entries in `references.bib`                                                  |
-| **Slides**        | Beamer presentation with tables, TikZ diagrams, formulas, and custom theme                                                        |
-
-All examples are marked with `% === EXAMPLE: ... ===` comments in the source for easy discovery.
-
-## Linting
-
-The project uses [chktex](https://www.nongnu.org/chktex/) for LaTeX linting:
-
-```bash
-make lint
+```text
+tex-thesis/
+├── main.tex              # Main thesis document (includes chapters)
+├── preamble.tex          # LaTeX packages, fonts, and styling config
+├── references.bib        # Bibliography database (BibTeX)
+├── chapters/             # Thesis content (Introduction, Literature, etc.)
+├── images/               # Figures and diagrams
+├── slides/               # Beamer presentation for defense
+│   ├── main.tex          # Main slides document
+│   └── slides.tex        # Slides content
+├── Makefile              # Build automation commands
+└── .devcontainer/        # VS Code container configuration
 ```
 
-Linting configuration is in `.chktexrc`. CI runs linting automatically on every push and PR.
+## 🛠️ Adapting for Your Thesis
 
-## Contributing
+1. **Configure**: Edit `preamble.tex` to adjust formatting (margins, fonts, spacing) and PDF metadata.
+2. **Write**: Replace the `.tex` files in the `chapters/` directory with your own content.
+3. **Cite**: Update `references.bib` with your bibliography entries.
+4. **Present**: Modify `slides/main.tex` (author, title) and `slides/slides.tex` (content) for your defense.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+## 🎨 Showcase
+
+The template includes working examples of almost every LaTeX feature you might need. Look for the `% === EXAMPLE: ... ===` comments in the source code!
+
+- **🧮 Math**: Inline math, numbered equations, aligned multi-line equations, matrices, integrals, piecewise functions.
+- **📈 Plots & Diagrams**: Architecture diagrams, flowcharts, Gantt timelines, bar charts, and line plots (`pgfplots`).
+- **📊 Tables**: Professional academic tables (`booktabs`), decimal alignment (`siunitx`), and multi-row cells.
+- **💻 Code**: Syntax-highlighted listings for Python, SQL, JSON, and Dockerfiles (`listings`, `xcolor`).
+- **🖼️ Images**: Single figures, side-by-side subfigures (`subcaption`), and custom image insertion commands.
+
+## 🤝 Contributing
+
+Contributions are welcome! Whether it's a new TikZ example, a bug fix, or a documentation improvement.
+
+1. Fork the repository.
+2. Make your changes.
+3. Run `make pre-commit` and `make lint` to ensure code quality.
+4. Open a Pull Request.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## 📜 License
+
+- **Source Code**: [GNU GPLv3](LICENSE)
 
 ---
 
