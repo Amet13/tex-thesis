@@ -34,9 +34,14 @@ watch: ## Watch thesis files and rebuild on changes via Docker
 ##@ Quality
 
 .PHONY: lint
-lint: ## Lint LaTeX sources via Docker (chktex)
-	@echo "${GREEN}▸ Linting LaTeX sources via Docker...${RESET}"
-	@DOCKER_BUILDKIT=1 docker build --target lint . 2>&1
+lint: ## Lint LaTeX sources (requires chktex)
+	@echo "${GREEN}▸ Linting LaTeX sources...${RESET}"
+	@if command -v chktex >/dev/null 2>&1; then \
+		chktex -q main.tex chapters/*.tex && chktex -q slides/main.tex slides/slides.tex; \
+	else \
+		echo "${YELLOW}▸ chktex not found locally, falling back to Docker...${RESET}"; \
+		DOCKER_BUILDKIT=1 docker build --target lint . 2>&1; \
+	fi
 	@echo "${GREEN}▸ Lint passed${RESET}"
 
 .PHONY: pre-commit
