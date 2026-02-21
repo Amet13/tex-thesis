@@ -3,10 +3,29 @@
 \usepackage{fontspec} % Font selection (LuaLaTeX)
 \usepackage{lastpage} % Reference total page count (\pageref{LastPage})
 
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
 \usepackage{listings} % Source code listings
 \lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
     basicstyle=\small\ttfamily, % Font size and type
+    breakatwhitespace=false,
     breaklines=true,            % Line wrapping
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
     tabsize=2,                  % Tab size
     frame=single,               % Frame around listing
     literate={---}{{-{}-{}-}}3 {--}{{-{}-}}2 % Correct display of double and triple dashes
@@ -29,15 +48,22 @@
 % Paragraphs and lists
 \usepackage{float}       % Extended float control
 \usepackage{multirow}    % Complex tables
+\usepackage{booktabs}    % Professional table formatting
+\usepackage{siunitx}     % SI units and number formatting
 
 % Image paths
 \usepackage{graphicx} % Insert graphics
 \graphicspath{{images/}}
 \usepackage{tikz} % Programmatic diagrams
+\usepackage{pgfplots} % High-quality plots
+\pgfplotsset{compat=1.18} % Set pgfplots compatibility level
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, calc}
 
 % Microtypography: character protrusion and font expansion (full support in LuaLaTeX)
 \usepackage{microtype}
+
+% Drafting tools
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 
 % Reset figure and table counters per section (chngcntr no longer needed in LaTeX 2018+)
 \counterwithin{figure}{section}
@@ -52,10 +78,20 @@
     pdftitle={Your Thesis Title}
 }
 \usepackage{bookmark} % Faster PDF bookmarks (replaces hyperref's bookmark module)
+\usepackage[noabbrev,capitalize]{cleveref} % Smart cross-referencing (must be loaded after hyperref)
 
-% Bibliography and caption label formatting with dot separator
+% Bibliography
+\usepackage{csquotes}
+\usepackage[
+    backend=biber,
+    style=ieee,
+    sorting=none,
+    defernumbers=true
+]{biblatex}
+\addbibresource{references.bib}
+
+% Caption label formatting with dot separator
 \makeatletter
-\renewcommand*{\@biblabel}[1]{\hfill#1.}
 \renewcommand*\l@section{\@dottedtocline{1}{1em}{1em}}
 \renewcommand{\thefigure}{\thesection.\arabic{figure}} % Figure format: section.number
 \renewcommand{\thetable}{\thesection.\arabic{table}}   % Table format: section.number
@@ -116,6 +152,7 @@
 
 % Figure and table caption formatting
 \usepackage{caption}
+\usepackage{subcaption} % Modern subfigures
 \DeclareCaptionLabelSeparator{defffis}{. } % Separator (period)
 \captionsetup[figure]{justification=centering, labelsep=defffis, format=plain} % Figure caption centered
 \captionsetup[table]{justification=raggedright, labelsep=defffis, format=plain, singlelinecheck=false} % Table caption left-aligned

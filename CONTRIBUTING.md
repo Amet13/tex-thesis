@@ -6,9 +6,10 @@ Thank you for your interest in improving this LaTeX thesis template!
 
 1. **Fork** the repository and create a feature branch
 2. Make your changes
-3. **Lint** your LaTeX files: `./build.sh lint`
-4. **Build** to verify compilation: `./build.sh build`
-5. Open a **Pull Request** with a clear description of your changes
+3. **Lint** your LaTeX files: `make lint`
+4. **Pre-commit**: We use `pre-commit` to ensure code quality. Install it with `pip install pre-commit` and run `pre-commit install` in the repository root.
+5. **Build** to verify compilation: `make build`
+6. Open a **Pull Request** with a clear description of your changes
 
 ## What We're Looking For
 
@@ -25,11 +26,11 @@ Thank you for your interest in improving this LaTeX thesis template!
 - Use LuaLaTeX-compatible packages only
 - Test that both thesis and slides compile without errors
 - Follow the existing code style (4-space indentation for `.tex` files)
-- Run `./build.sh lint` and address any warnings before submitting
+- Run `make lint` and address any warnings before submitting
 
 ## Reporting Issues
 
-- Include the full error log from `./build.sh build`
+- Include the full error log from `make build`
 - Mention your Docker version (`docker --version`)
 
 ## License

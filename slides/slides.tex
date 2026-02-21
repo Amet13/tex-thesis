@@ -87,12 +87,14 @@ Criteria: performance, accuracy, scalability, maintainability
 
 \vspace{\baselineskip}
 
-\begin{tabular}{|l|c|c|c|}
-\hline \textbf{Alternative} & \textbf{Score} \\
-\hline Monolithic      & 7.15 \\
-\hline Microservices    & 7.95 \\
-\hline \textbf{Hybrid} & \textbf{8.30} \\
-\hline
+\begin{tabular}{l S[table-format=1.2]}
+\toprule
+\textbf{Alternative} & {\textbf{Score}} \\
+\midrule
+Monolithic      & 7.15 \\
+Microservices    & 7.95 \\
+\textbf{Hybrid} & \bfseries 8.30 \\
+\bottomrule
 \end{tabular}
 
 \vspace{\baselineskip}
@@ -136,12 +138,15 @@ Selected approach: \textbf{Hybrid architecture}
 \framesubtitle{Performance comparison}
 
 \begin{table}[H]
-  \begin{tabular}{|l|c|c|c|}
-  \hline \textbf{Method} & \textbf{Small} & \textbf{Medium} & \textbf{Large} \\
-  \hline Baseline A       & 0.8 s & 45.2 s & 512.0 s \\
-  \hline Baseline B       & 0.5 s & 38.7 s & 478.3 s \\
-  \hline \textbf{Proposed} & \textbf{0.3 s} & \textbf{22.1 s} & \textbf{287.5 s} \\
-  \hline
+  \centering
+  \begin{tabular}{l S[table-format=1.1] S[table-format=2.1] S[table-format=3.1]}
+  \toprule
+  \textbf{Method} & {\textbf{Small (s)}} & {\textbf{Medium (s)}} & {\textbf{Large (s)}} \\
+  \midrule
+  Baseline A       & 0.8 & 45.2 & 512.0 \\
+  Baseline B       & 0.5 & 38.7 & 478.3 \\
+  \textbf{Proposed} & \bfseries 0.3 & \bfseries 22.1 & \bfseries 287.5 \\
+  \bottomrule
   \end{tabular}
 \end{table}
 

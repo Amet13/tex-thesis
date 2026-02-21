@@ -22,7 +22,8 @@
 
 %%% Math packages
 \usepackage{mathtools} % Loads amsmath automatically
-\usepackage{amsfonts,amssymb,amsthm}
+\usepackage{unicode-math}
+\setmathfont{XITS Math}
 %%% Custom commands
 \DeclareMathOperator{\sgn}{\mathop{sgn}}
 
@@ -40,6 +41,7 @@
 \usepackage{array,tabularx,tabulary,booktabs}
 \usepackage{longtable}
 \usepackage{multirow}
+\usepackage{siunitx}
 
 %%% Other packages
 \usepackage{csquotes}
@@ -47,6 +49,8 @@
 
 %%% Drawing
 \usepackage{tikz,calc,ifthen,color}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 
 \title{Your Thesis Title}

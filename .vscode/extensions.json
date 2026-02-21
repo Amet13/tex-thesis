@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "james-yu.latex-workshop",
+    "valentjn.vscode-ltex",
+    "esbenp.prettier-vscode",
+    "davidanson.vscode-markdownlint",
+    "editorconfig.editorconfig"
+  ]
+}
