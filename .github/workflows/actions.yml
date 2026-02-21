@@ -9,50 +9,54 @@ on:
     branches: [main]
 
 jobs:
-  lint:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: pre-commit/action@v3.0.1
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+  lint:
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
 
-    - name: Lint LaTeX sources
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        target: lint
-        push: false
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Install chktex
+        run: sudo apt-get update && sudo apt-get install -y chktex
+
+      - name: Lint LaTeX sources
+        run: make lint
 
   build:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v6
+      - name: Checkout repo
+        uses: actions/checkout@v6
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build PDFs (with layer cache)
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        push: false
-        outputs: type=local,dest=out
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build PDFs (with layer cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          outputs: type=local,dest=out
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: thesis-pdfs
-        path: |
-          out/thesis.pdf
-          out/slides/slides.pdf
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: thesis-pdfs
+          path: |
+            out/thesis.pdf
+            out/slides/slides.pdf
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -61,15 +65,15 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: thesis-pdfs
-        path: out
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: thesis-pdfs
+          path: out
 
-    - name: Create GitHub release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          out/thesis.pdf
-          out/slides/slides.pdf
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/thesis.pdf
+            out/slides/slides.pdf

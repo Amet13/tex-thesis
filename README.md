@@ -1,6 +1,7 @@
 # tex-thesis
 
 [![Build](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml/badge.svg)](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC_BY--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 
@@ -17,7 +18,8 @@ Check the latest build: [thesis.pdf](https://github.com/Amet13/tex-thesis/releas
 - TikZ diagrams, source code listings, figure/table captions in `section.number` format
 - Configurable page margins, page numbers centered at the bottom, section titles in uppercase
 - Custom commands: `\addimg`, `\addimghere`, `\addtwoimghere`, `\appsection`, `\anonsection`
-- Manual bibliography, automatic list of figures/tables, glossary with hyperlinks
+- Modern bibliography with `biblatex` and `biber`, automatic list of figures/tables, glossary with hyperlinks
+- Smart cross-referencing with `cleveref`
 - `bookmark` package for faster PDF bookmark generation
 - Beamer defense slides with matching theme
 - Multi-stage Docker build — only final PDFs are extracted, no intermediate artifacts
@@ -27,12 +29,23 @@ Check the latest build: [thesis.pdf](https://github.com/Amet13/tex-thesis/releas
 
 ## Quick Start
 
+You can use this template locally with Docker, or instantly in your browser using GitHub Codespaces / VS Code Dev Containers.
+
+### Using Dev Containers (Recommended)
+
+1. Open this repository in VS Code.
+2. When prompted, click **Reopen in Container** (requires the Dev Containers extension and Docker).
+3. The environment will automatically install TeX Live, configure the LaTeX Workshop extension, and set up `pre-commit`.
+4. Open `main.tex` and save it to trigger an automatic build.
+
+### Using Docker Locally
+
 Prerequisites: [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 git clone https://github.com/Amet13/tex-thesis.git
 cd tex-thesis/
-./build.sh build
+make build
 ```
 
 Outputs:
@@ -40,13 +53,13 @@ Outputs:
 - `thesis.pdf`
 - `slides/slides.pdf`
 
-Other commands: `./build.sh lint` to lint, `./build.sh open` / `./build.sh open-slides` to view PDFs, `./build.sh clean` to remove them. Run `./build.sh help` for all options.
+Other commands: `make watch` to rebuild automatically on file changes, `make lint` to lint, `make open` / `make open-slides` to view PDFs, `make clean` to remove them. Run `make help` for all options.
 
 ## Adapting for Your Thesis
 
 1. Edit `preamble.tex` to adjust formatting (margins, fonts, spacing, PDF metadata)
 2. Replace content in `chapters/` directory with your chapters
-3. Update `chapters/bibliography.tex` with your references
+3. Update `references.bib` with your bibliography entries
 4. Place your images in `images/`
 5. Modify `slides/slides.tex` for your defense slides
 6. Update `slides/main.tex` with your name, title, and university
@@ -55,17 +68,18 @@ Other commands: `./build.sh lint` to lint, `./build.sh open` / `./build.sh open-
 
 The template includes working examples of:
 
-| Category          | Examples                                                                                                                                                           |
-|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Math**          | Inline math, numbered equations, multi-line aligned equations, matrices, integrals, fractions, piecewise functions, Greek letters                                  |
-| **TikZ diagrams** | Architecture diagrams, flowcharts with decision diamonds, state machines, hierarchy trees, pie charts, bar charts, line plots, Gantt timelines, black-box diagrams |
-| **Tables**        | Basic tables, multirow/multicolumn cells, comparison matrices, performance benchmarks                                                                              |
-| **Images**        | Single figure, two figures side by side, custom `\addimg` / `\addimghere` / `\addtwoimghere` commands                                                              |
-| **Code listings** | Python, SQL, JSON, Dockerfile — with captions, labels, and line numbers                                                                                            |
-| **Lists**         | Itemize, enumerate, nested lists, description lists                                                                                                                |
-| **References**    | Citations, cross-references to equations/figures/tables, hyperlinked glossary, footnotes                                                                           |
-| **Bibliography**  | Manual `thebibliography` with 15 sample entries                                                                                                                    |
-| **Slides**        | Beamer presentation with tables, TikZ diagrams, formulas, and custom theme                                                                                         |
+| Category          | Examples                                                                                                                          |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| **Math**          | Inline math, numbered equations, multi-line aligned equations, matrices, integrals, fractions, piecewise functions, Greek letters |
+| **TikZ diagrams** | Architecture diagrams, flowcharts with decision diamonds, state machines, hierarchy trees, Gantt timelines, black-box diagrams    |
+| **Plots**         | High-quality data visualization with `pgfplots` (bar charts, line plots)                                                          |
+| **Tables**        | Professional tables with `booktabs`, number alignment with `siunitx`, multirow/multicolumn cells, comparison matrices             |
+| **Images**        | Single figure, two figures side by side, custom `\addimg` / `\addimghere` / `\addtwoimghere` commands                             |
+| **Code listings** | Python, SQL, JSON, Dockerfile — with captions, labels, and line numbers                                                           |
+| **Lists**         | Itemize, enumerate, nested lists, description lists                                                                               |
+| **References**    | Citations, smart cross-references (`\cref`) to equations/figures/tables, hyperlinked glossary, footnotes                          |
+| **Bibliography**  | Modern `biblatex` with `biber` backend and 15 sample entries in `references.bib`                                                  |
+| **Slides**        | Beamer presentation with tables, TikZ diagrams, formulas, and custom theme                                                        |
 
 All examples are marked with `% === EXAMPLE: ... ===` comments in the source for easy discovery.
 
@@ -74,7 +88,7 @@ All examples are marked with `% === EXAMPLE: ... ===` comments in the source for
 The project uses [chktex](https://www.nongnu.org/chktex/) for LaTeX linting:
 
 ```bash
-./build.sh lint
+make lint
 ```
 
 Linting configuration is in `.chktexrc`. CI runs linting automatically on every push and PR.

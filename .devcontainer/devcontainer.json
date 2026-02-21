@@ -1,0 +1,18 @@
+{
+    "name": "tex-thesis",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "james-yu.latex-workshop",
+                "valentjn.vscode-ltex",
+                "esbenp.prettier-vscode",
+                "davidanson.vscode-markdownlint",
+                "editorconfig.editorconfig"
+            ]
+        }
+    },
+    "postCreateCommand": "pre-commit install"
+}

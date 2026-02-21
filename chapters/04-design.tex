@@ -26,19 +26,23 @@ Three alternative design approaches are considered:
 
 \subsection{Comparison matrix}
 
-Table~\ref{tab:alternatives} presents a comparison of the three alternatives.
+\cref{tab:alternatives} presents a comparison of the three alternatives.
 
-% === EXAMPLE: Complex table with multirow header ===
+% === EXAMPLE: Complex table with booktabs and siunitx ===
 \begin{table}[H]
+    \centering
     \caption{Comparison of design alternatives} \label{tab:alternatives}
-    \begin{tabular}{|l|c|c|c|c|}
-    \hline \textbf{Criterion} & \textbf{Weight} & \textbf{Monolithic} & \textbf{Microservices} & \textbf{Hybrid} \\
-    \hline Performance  & 0.30 & 8 & 7 & 9 \\
-    \hline Accuracy     & 0.25 & 9 & 8 & 9 \\
-    \hline Scalability  & 0.25 & 5 & 9 & 8 \\
-    \hline Maintainability & 0.20 & 6 & 8 & 7 \\
-    \hline \textbf{Weighted score} & --- & \textbf{7.15} & \textbf{7.95} & \textbf{8.30} \\
-    \hline
+    \begin{tabular}{l S[table-format=1.2] c c c}
+    \toprule
+    \textbf{Criterion} & {\textbf{Weight}} & \textbf{Monolithic} & \textbf{Microservices} & \textbf{Hybrid} \\
+    \midrule
+    Performance  & 0.30 & 8 & 7 & 9 \\
+    Accuracy     & 0.25 & 9 & 8 & 9 \\
+    Scalability  & 0.25 & 5 & 9 & 8 \\
+    Maintainability & 0.20 & 6 & 8 & 7 \\
+    \midrule
+    \textbf{Weighted score} & {---} & \textbf{7.15} & \textbf{7.95} & \textbf{8.30} \\
+    \bottomrule
     \end{tabular}
 \end{table}
 
@@ -57,7 +61,7 @@ The effectiveness $E$ of each alternative is calculated using Equation~\eqref{eq
 where $w_j$ is the weight of criterion $j$ and $s_j$ is the score assigned to that criterion.
 
 % === EXAMPLE: TikZ Gantt-style timeline ===
-The implementation timeline is shown in Figure~\ref{fig:timeline}.
+The implementation timeline is shown in \cref{fig:timeline}.
 
 \begin{figure}[H]
     \centering

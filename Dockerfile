@@ -6,29 +6,20 @@
 #   Lint only:   DOCKER_BUILDKIT=1 docker build --target lint .
 
 # --- Base stage: shared TeX Live installation ---
-FROM ubuntu:24.04 AS base
+FROM texlive/texlive:latest AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
-RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
-
-# Install LaTeX packages, fonts, and chktex linter in a single layer
-# XITS Math is included in texlive-fonts-extra; we symlink it for fontconfig discovery
-RUN apt-get update && \
+# Install fonts and chktex linter
+RUN sed -i 's/Components: main/Components: main contrib non-free/g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && \
+    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
     apt-get install --no-install-recommends -y \
         fontconfig \
-        texlive-base \
-        texlive-latex-extra \
-        texlive-luatex \
-        texlive-fonts-extra \
-        texlive-science \
-        texlive-latex-recommended \
-        latexmk \
-        chktex \
         ttf-mscorefonts-installer \
-        fonts-freefont-ttf && \
-    ln -s /usr/share/texlive/texmf-dist/fonts/opentype/public/xits /usr/share/fonts/xits && \
+        fonts-freefont-ttf \
+        chktex && \
     fc-cache -f -v && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -36,7 +27,7 @@ RUN apt-get update && \
 WORKDIR /thesis
 
 # Copy source files
-COPY main.tex preamble.tex .latexmkrc .chktexrc ./
+COPY main.tex preamble.tex references.bib .latexmkrc .chktexrc ./
 COPY chapters/ chapters/
 COPY images/ images/
 COPY slides/ slides/

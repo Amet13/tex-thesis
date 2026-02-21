@@ -8,18 +8,21 @@ The field under investigation has seen significant developments over the past de
 Early approaches focused on manual processes, which were time-consuming and error-prone \cite{sample-design}.
 As the field matured, automated solutions emerged that addressed many of these limitations.
 
-Table~\ref{tab:comparison} presents a comparison of existing approaches.
+\cref{tab:comparison} presents a comparison of existing approaches.
 
-% === EXAMPLE: Basic table with horizontal and vertical lines ===
+% === EXAMPLE: Basic table with booktabs and siunitx ===
 \begin{table}[H]
+    \centering
     \caption{Comparison of existing approaches} \label{tab:comparison}
-    \begin{tabular}{|l|c|c|c|}
-    \hline \textbf{Approach} & \textbf{Accuracy (\%)} & \textbf{Speed (ms)} & \textbf{Scalability} \\
-    \hline Method A & 85 & 120 & Low \\
-    \hline Method B & 90 & 95  & Medium \\
-    \hline Method C & 88 & 110 & High \\
-    \hline Method D & 92 & 80  & Medium \\
-    \hline
+    \begin{tabular}{l S[table-format=2.0] S[table-format=3.0] l}
+    \toprule
+    \textbf{Approach} & {\textbf{Accuracy (\%)}} & {\textbf{Speed (ms)}} & \textbf{Scalability} \\
+    \midrule
+    Method A & 85 & 120 & Low \\
+    Method B & 90 & 95  & Medium \\
+    Method C & 88 & 110 & High \\
+    Method D & 92 & 80  & Medium \\
+    \bottomrule
     \end{tabular}
 \end{table}
 
@@ -123,7 +126,7 @@ Industry standards play an important role in ensuring quality and interoperabili
 Organizations such as \hyperlink{ieee}{IEEE}, \hyperlink{iso}{ISO}, and \hyperlink{nist}{NIST} have published guidelines that inform the design of modern systems \cite{nist-guide}.
 
 % === EXAMPLE: TikZ diagram — service-oriented architecture ===
-Figure~\ref{fig:architecture} illustrates a typical system architecture based on these standards.
+\cref{fig:architecture} illustrates a typical system architecture based on these standards.
 
 \begin{figure}[H]
     \centering
@@ -146,7 +149,7 @@ Figure~\ref{fig:architecture} illustrates a typical system architecture based on
 \end{figure}
 
 % === EXAMPLE: TikZ flowchart with decision diamond ===
-Figure~\ref{fig:flowchart} shows the general decision-making process described in the literature.
+\cref{fig:flowchart} shows the general decision-making process described in the literature.
 
 \begin{figure}[H]
     \centering
