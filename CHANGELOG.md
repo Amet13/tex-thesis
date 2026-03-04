@@ -4,10 +4,6 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning for template releases.
 
-## [Unreleased]
-
-- No changes yet.
-
 ## [v2.3.0] - 2026-03-04
 
 ### Added
@@ -24,10 +20,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CI hardened with explicit permissions, concurrency cancellation, and job timeouts
 - Build and lint output made quieter while preserving failure visibility
 - Font/math setup and slide metadata hardened for portability and reduced warning noise
-- README and contributor docs refreshed, simplified, and de-emoji-fied
-
-### Removed
-- Removed `ROADMAP.md`, `SECURITY.md`, and `SUPPORT.md` project docs
+- README and contributor docs refreshed and simplified
 
 ## [v2.2.0] - 2026-02-21
 
