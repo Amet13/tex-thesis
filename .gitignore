@@ -17,6 +17,8 @@
 *.bcf
 *.vrb
 *.synctex(busy)
+*.bak
+*.bak*
 
 # PDF output
 *.pdf

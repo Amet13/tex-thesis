@@ -6,10 +6,10 @@ This chapter describes the design methodology used to evaluate alternative appro
 
 The following criteria are used to compare alternatives:
 \begin{itemize}
-  \item performance --- execution speed under typical workloads;
-  \item accuracy --- correctness of produced results;
-  \item scalability --- ability to handle increasing data volumes;
-  \item maintainability --- ease of extending and modifying the system.
+    \item performance --- execution speed under typical workloads;
+    \item accuracy --- correctness of produced results;
+    \item scalability --- ability to handle increasing data volumes;
+    \item maintainability --- ease of extending and modifying the system.
 \end{itemize}
 
 % === EXAMPLE: Footnote ===
@@ -19,9 +19,9 @@ The evaluation methodology follows the Analytic Hierarchy Process (AHP)\footnote
 
 Three alternative design approaches are considered:
 \begin{enumerate}
-  \item Monolithic architecture --- a single, integrated system;
-  \item Microservices architecture --- distributed, independently deployable services;
-  \item Hybrid architecture --- a combination of monolithic core with modular extensions.
+    \item Monolithic architecture --- a single, integrated system;
+    \item Microservices architecture --- distributed, independently deployable services;
+    \item Hybrid architecture --- a combination of monolithic core with modular extensions.
 \end{enumerate}
 
 \subsection{Comparison matrix}
@@ -33,16 +33,16 @@ Three alternative design approaches are considered:
     \centering
     \caption{Comparison of design alternatives} \label{tab:alternatives}
     \begin{tabular}{l S[table-format=1.2] c c c}
-    \toprule
-    \textbf{Criterion} & {\textbf{Weight}} & \textbf{Monolithic} & \textbf{Microservices} & \textbf{Hybrid} \\
-    \midrule
-    Performance  & 0.30 & 8 & 7 & 9 \\
-    Accuracy     & 0.25 & 9 & 8 & 9 \\
-    Scalability  & 0.25 & 5 & 9 & 8 \\
-    Maintainability & 0.20 & 6 & 8 & 7 \\
-    \midrule
-    \textbf{Weighted score} & {---} & \textbf{7.15} & \textbf{7.95} & \textbf{8.30} \\
-    \bottomrule
+        \toprule
+        \textbf{Criterion}      & {\textbf{Weight}} & \textbf{Monolithic} & \textbf{Microservices} & \textbf{Hybrid} \\
+        \midrule
+        Performance             & 0.30              & 8                   & 7                      & 9               \\
+        Accuracy                & 0.25              & 9                   & 8                      & 9               \\
+        Scalability             & 0.25              & 5                   & 9                      & 8               \\
+        Maintainability         & 0.20              & 6                   & 8                      & 7               \\
+        \midrule
+        \textbf{Weighted score} & {---}             & \textbf{7.15}       & \textbf{7.95}          & \textbf{8.30}   \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
@@ -69,8 +69,8 @@ The implementation timeline is shown in \cref{fig:timeline}.
         % Timeline axis
         \draw[->] (0,0) -- (13,0) node[right] {Weeks};
         \foreach \x in {1,...,12} {
-            \draw (\x,-0.1) -- (\x,0.1) node[below=3pt] {\small \x};
-        }
+                \draw (\x,-0.1) -- (\x,0.1) node[below=3pt] {\small \x};
+            }
 
         % Task bars
         \fill[blue!40] (1,0.5) rectangle (3,1) node[midway, font=\small] {Analysis};

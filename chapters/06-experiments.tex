@@ -6,10 +6,10 @@ This chapter describes the experiments conducted to evaluate the proposed system
 
 The experiments were performed on the following hardware:
 \begin{itemize}
-  \item CPU: 8-core processor, 3.2~GHz;
-  \item RAM: 32~GB DDR4;
-  \item Storage: 512~GB NVMe SSD;
-  \item OS: Ubuntu 24.04 LTS.
+    \item CPU: 8-core processor, 3.2~GHz;
+    \item RAM: 32~GB DDR4;
+    \item Storage: 512~GB NVMe SSD;
+    \item OS: Ubuntu 24.04 LTS.
 \end{itemize}
 
 \subsection{Test datasets}
@@ -21,13 +21,13 @@ Three datasets of varying sizes were used for evaluation:
     \centering
     \caption{Test datasets} \label{tab:datasets}
     \begin{tabular}{l S[table-format=7.0] S[table-format=4.0] l}
-    \toprule
-    \textbf{Dataset} & {\textbf{Records}} & {\textbf{Size (MB)}} & \textbf{Description} \\
-    \midrule
-    Small   & 1000    & 5    & Unit testing \\
-    Medium  & 100000  & 450  & Integration testing \\
-    Large   & 1000000 & 4200 & Stress testing \\
-    \bottomrule
+        \toprule
+        \textbf{Dataset} & {\textbf{Records}} & {\textbf{Size (MB)}} & \textbf{Description} \\
+        \midrule
+        Small            & 1000               & 5                    & Unit testing         \\
+        Medium           & 100000             & 450                  & Integration testing  \\
+        Large            & 1000000            & 4200                 & Stress testing       \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
@@ -41,15 +41,15 @@ The system was benchmarked against two baseline implementations.
     \centering
     \caption{Performance comparison (processing time in seconds)} \label{tab:performance}
     \begin{tabular}{l S[table-format=3.1] S[table-format=3.1] S[table-format=3.1] c}
-    \toprule
-    \multirow{2}{*}{\textbf{Method}} & \multicolumn{3}{c}{\textbf{Dataset size}} & \multirow{2}{*}{\textbf{Avg. improvement}} \\
-    \cmidrule(lr){2-4}
-      & {\textbf{Small}} & {\textbf{Medium}} & {\textbf{Large}} & \\
-    \midrule
-    Baseline A       & 0.8  & 45.2  & 512.0 & --- \\
-    Baseline B       & 0.5  & 38.7  & 478.3 & --- \\
-    Proposed approach & 0.3  & 22.1  & 287.5 & 40\% \\
-    \bottomrule
+        \toprule
+        \multirow{2}{*}{\textbf{Method}} & \multicolumn{3}{c}{\textbf{Dataset size}} & \multirow{2}{*}{\textbf{Avg. improvement}}                           \\
+        \cmidrule(lr){2-4}
+                                         & {\textbf{Small}}                          & {\textbf{Medium}}                          & {\textbf{Large}} &      \\
+        \midrule
+        Baseline A                       & 0.8                                       & 45.2                                       & 512.0            & ---  \\
+        Baseline B                       & 0.5                                       & 38.7                                       & 478.3            & ---  \\
+        Proposed approach                & 0.3                                       & 22.1                                       & 287.5            & 40\% \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
@@ -62,23 +62,23 @@ The proposed approach demonstrates a \textbf{40--44\%} improvement in processing
     \centering
     \begin{tikzpicture}
         \begin{axis}[
-            ybar,
-            bar width=15pt,
-            enlarge x limits=0.25,
-            legend style={at={(0.5,-0.2)}, anchor=north, legend columns=-1},
-            ylabel={Time (s)},
-            symbolic x coords={Small, Medium, Large},
-            xtick=data,
-            nodes near coords,
-            nodes near coords align={vertical},
-            ymin=0, ymax=600,
-            width=12cm,
-            height=8cm
-        ]
-        \addplot[fill=red!60] coordinates {(Small,0.8) (Medium,45.2) (Large,512.0)};
-        \addplot[fill=blue!60] coordinates {(Small,0.5) (Medium,38.7) (Large,478.3)};
-        \addplot[fill=green!60] coordinates {(Small,0.3) (Medium,22.1) (Large,287.5)};
-        \legend{Baseline A, Baseline B, Proposed}
+                ybar,
+                bar width=15pt,
+                enlarge x limits=0.25,
+                legend style={at={(0.5,-0.2)}, anchor=north, legend columns=-1},
+                ylabel={Time (s)},
+                symbolic x coords={Small, Medium, Large},
+                xtick=data,
+                nodes near coords,
+                nodes near coords align={vertical},
+                ymin=0, ymax=600,
+                width=12cm,
+                height=8cm
+            ]
+            \addplot[fill=red!60] coordinates {(Small,0.8) (Medium,45.2) (Large,512.0)};
+            \addplot[fill=blue!60] coordinates {(Small,0.5) (Medium,38.7) (Large,478.3)};
+            \addplot[fill=green!60] coordinates {(Small,0.3) (Medium,22.1) (Large,287.5)};
+            \legend{Baseline A, Baseline B, Proposed}
         \end{axis}
     \end{tikzpicture}
     \caption{Performance comparison across dataset sizes} \label{fig:bar-chart}
@@ -98,9 +98,9 @@ where $TP$, $TN$, $FP$, $FN$ denote true positives, true negatives, false positi
 The precision, recall, and F1-score are defined as:
 
 \begin{align}
-    \text{Precision} &= \frac{TP}{TP + FP} \label{eq:precision} \\[6pt]
-    \text{Recall} &= \frac{TP}{TP + FN} \label{eq:recall} \\[6pt]
-    F_1 &= 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \label{eq:f1}
+    \text{Precision} & = \frac{TP}{TP + FP} \label{eq:precision}                                                             \\[6pt]
+    \text{Recall}    & = \frac{TP}{TP + FN} \label{eq:recall}                                                                \\[6pt]
+    F_1              & = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \label{eq:f1}
 \end{align}
 
 The proposed approach achieved an accuracy of \textbf{94.2\%}, compared to 89.5\% for Baseline~A and 91.1\% for Baseline~B.
@@ -110,15 +110,15 @@ The proposed approach achieved an accuracy of \textbf{94.2\%}, compared to 89.5\
     \centering
     \caption{Detailed classification metrics} \label{tab:metrics}
     \begin{tabular}{l S[table-format=2.1] S[table-format=2.1] S[table-format=2.1] S[table-format=2.1]}
-    \toprule
-    \multirow{2}{*}{\textbf{Method}} & \multicolumn{4}{c}{\textbf{Metrics (\%)}} \\
-    \cmidrule(lr){2-5}
-      & {\textbf{Accuracy}} & {\textbf{Precision}} & {\textbf{Recall}} & {\textbf{$F_1$-score}} \\
-    \midrule
-    Baseline A       & 89.5 & 87.3 & 88.1 & 87.7 \\
-    Baseline B       & 91.1 & 90.2 & 89.8 & 90.0 \\
-    Proposed approach & \bfseries 94.2 & \bfseries 93.5 & \bfseries 93.8 & \bfseries 93.6 \\
-    \bottomrule
+        \toprule
+        \multirow{2}{*}{\textbf{Method}} & \multicolumn{4}{c}{\textbf{Metrics (\%)}}                                                                     \\
+        \cmidrule(lr){2-5}
+                                         & {\textbf{Accuracy}}                       & {\textbf{Precision}} & {\textbf{Recall}} & {\textbf{$F_1$-score}} \\
+        \midrule
+        Baseline A                       & 89.5                                      & 87.3                 & 88.1              & 87.7                   \\
+        Baseline B                       & 91.1                                      & 90.2                 & 89.8              & 90.0                   \\
+        Proposed approach                & \bfseries 94.2                            & \bfseries 93.5       & \bfseries 93.8    & \bfseries 93.6         \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
@@ -139,24 +139,24 @@ where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ 
     \centering
     \begin{tikzpicture}
         \begin{axis}[
-            xlabel={Records ($\times 10^5$)},
-            ylabel={Time (s)},
-            xmin=0, xmax=8.5,
-            ymin=0, ymax=300,
-            legend pos=north west,
-            grid=major,
-            width=12cm,
-            height=8cm
-        ]
-        \addplot[thick, green!60!black, mark=*] coordinates {
-            (0.1,0.3) (1,22.1) (2,44.2) (4,88.4) (6,132.6) (8,176.8)
-        };
-        \addlegendentry{Proposed}
+                xlabel={Records ($\times 10^5$)},
+                ylabel={Time (s)},
+                xmin=0, xmax=8.5,
+                ymin=0, ymax=300,
+                legend pos=north west,
+                grid=major,
+                width=12cm,
+                height=8cm
+            ]
+            \addplot[thick, green!60!black, mark=*] coordinates {
+                    (0.1,0.3) (1,22.1) (2,44.2) (4,88.4) (6,132.6) (8,176.8)
+                };
+            \addlegendentry{Proposed}
 
-        \addplot[thick, blue!60, dashed, mark=square*] coordinates {
-            (0.1,0.5) (1,38.7) (2,77.4) (4,154.8) (6,232.2) (8,260.0)
-        };
-        \addlegendentry{Baseline B}
+            \addplot[thick, blue!60, dashed, mark=square*] coordinates {
+                    (0.1,0.5) (1,38.7) (2,77.4) (4,154.8) (6,232.2) (8,260.0)
+                };
+            \addlegendentry{Baseline B}
         \end{axis}
     \end{tikzpicture}
     \caption{Scalability: processing time vs.\ dataset size} \label{fig:scalability-plot}

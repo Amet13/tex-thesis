@@ -12,20 +12,20 @@ The outputs include processed results, performance metrics, and generated report
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        box/.style={rectangle, draw, thick, minimum width=4cm, minimum height=2.5cm, align=center, fill=gray!10},
-        io/.style={->, >=Stealth, thick},
-        lbl/.style={font=\small}
-    ]
+            box/.style={rectangle, draw, thick, minimum width=4cm, minimum height=2.5cm, align=center, fill=gray!10},
+            io/.style={->, >=Stealth, thick},
+            lbl/.style={font=\small}
+        ]
         \node[box] (sys) {\textbf{System}};
 
         % Inputs
-        \node[lbl, left=2.5cm of sys, yshift=0.7cm] (in1) {Raw data};
-        \node[lbl, left=2.5cm of sys] (in2) {Configuration};
-        \node[lbl, left=2.5cm of sys, yshift=-0.7cm] (in3) {User requirements};
+        \node[lbl, left=2.2cm of sys, yshift=0.7cm] (in1) {Raw data};
+        \node[lbl, left=2.2cm of sys] (in2) {Configuration};
+        \node[lbl, left=2.2cm of sys, yshift=-0.7cm] (in3) {User requirements};
 
         % Outputs
-        \node[lbl, right=2.5cm of sys, yshift=0.5cm] (out1) {Processed results};
-        \node[lbl, right=2.5cm of sys, yshift=-0.5cm] (out2) {Performance metrics};
+        \node[lbl, right=2.2cm of sys, yshift=0.5cm] (out1) {Processed results};
+        \node[lbl, right=2.2cm of sys, yshift=-0.5cm] (out2) {Performance metrics};
 
         \draw[io] (in1) -- (sys.west |- in1);
         \draw[io] (in2) -- (sys.west |- in2);
@@ -40,29 +40,29 @@ The outputs include processed results, performance metrics, and generated report
 
 The system performs the following primary functions:
 \begin{itemize}
-  \item data ingestion and preprocessing;
-  \item analysis and transformation;
-  \item result generation and visualization;
-  \item logging and monitoring;
-  \item reporting and export.
+    \item data ingestion and preprocessing;
+    \item analysis and transformation;
+    \item result generation and visualization;
+    \item logging and monitoring;
+    \item reporting and export.
 \end{itemize}
 
 \subsection{System decomposition}
 
 The system is decomposed into four subsystems:
 \begin{itemize}
-  \item data processing subsystem;
-  \item analysis engine subsystem;
-  \item user interface subsystem;
-  \item monitoring and logging subsystem.
+    \item data processing subsystem;
+    \item analysis engine subsystem;
+    \item user interface subsystem;
+    \item monitoring and logging subsystem.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        box/.style={rectangle, draw, minimum width=3cm, minimum height=0.8cm, align=center},
-        >=Stealth
-    ]
+            box/.style={rectangle, draw, minimum width=3cm, minimum height=0.8cm, align=center},
+            >=Stealth
+        ]
         \node[box] (sys) {System};
         \node[box, below left=1cm and 0.5cm of sys] (dp) {Data Processing};
         \node[box, below=1cm of sys] (ae) {Analysis Engine};
@@ -86,9 +86,9 @@ The bottom layer handles infrastructure concerns such as data storage and networ
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.7cm, align=center},
-        >=Stealth
-    ]
+            box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.7cm, align=center},
+            >=Stealth
+        ]
         \node[box] (orch) {Orchestrator};
         \node[box, below left=0.8cm and 1cm of orch] (proc) {Processing};
         \node[box, below right=0.8cm and 1cm of orch] (report) {Reporting};
@@ -110,11 +110,11 @@ The bottom layer handles infrastructure concerns such as data storage and networ
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        state/.style={circle, draw, minimum size=1.5cm, align=center, font=\small},
-        accept/.style={state, double},
-        >=Stealth,
-        auto
-    ]
+            state/.style={circle, draw, minimum size=1.5cm, align=center, font=\small},
+            accept/.style={state, double},
+            >=Stealth,
+            auto
+        ]
         \node[state] (idle) {Idle};
         \node[state, right=2cm of idle] (load) {Loading};
         \node[state, right=2cm of load] (proc) {Processing};
