@@ -14,3 +14,9 @@ repos:
     hooks:
       - id: markdownlint
         args: ["--disable", "MD013", "MD033"]
+  - repo: https://github.com/cmhughes/latexindent.pl.git
+    rev: V3.24.7
+    hooks:
+      - id: latexindent
+        files: \.(tex)$
+        args: ["-l=.latexindent.yaml", "-w"]

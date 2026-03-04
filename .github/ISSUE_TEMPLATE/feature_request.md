@@ -1,19 +1,24 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-title: ''
+title: "[feature] "
 labels: enhancement
 assignees: ''
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Problem statement
+What user problem does this solve?
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## Proposed solution
+Describe the behavior you want.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Acceptance criteria
+- [ ] Clear user-visible outcome
+- [ ] Does not break existing templates
+- [ ] Works with Docker + Dev Container workflow
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Alternatives considered
+List other options you considered and why they are less suitable.
+
+## Additional context
+Add examples, screenshots, references, or related templates.

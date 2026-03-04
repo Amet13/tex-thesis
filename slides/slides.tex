@@ -7,20 +7,20 @@
 \section{Goals and objectives}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\textbf{Goal:} improve the effectiveness of the proposed approach in the target domain
+    \textbf{Goal:} improve the effectiveness of the proposed approach in the target domain
 
-\vspace{\baselineskip}
+    \vspace{\baselineskip}
 
-\textbf{Objectives:}
-\begin{itemize}
-    \item review existing approaches and identify limitations
-    \item analyze requirements and constraints
-    \item design and implement a prototype system
-    \item evaluate through experimental research
-    \item compare results with existing alternatives
-\end{itemize}
+    \textbf{Objectives:}
+    \begin{itemize}
+        \item review existing approaches and identify limitations
+        \item analyze requirements and constraints
+        \item design and implement a prototype system
+        \item evaluate through experimental research
+        \item compare results with existing alternatives
+    \end{itemize}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -28,23 +28,23 @@
 \section{Input and output data}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\textbf{Input data:}
-\begin{itemize}
-    \item dataset of sample measurements
-    \item configuration parameters
-    \item baseline metrics from existing solutions
-\end{itemize}
+    \textbf{Input data:}
+    \begin{itemize}
+        \item dataset of sample measurements
+        \item configuration parameters
+        \item baseline metrics from existing solutions
+    \end{itemize}
 
-\vspace{\baselineskip}
+    \vspace{\baselineskip}
 
-\textbf{Output data:}
-\begin{itemize}
-    \item prototype implementation
-    \item experimental results
-    \item comparative analysis report
-\end{itemize}
+    \textbf{Output data:}
+    \begin{itemize}
+        \item prototype implementation
+        \item experimental results
+        \item comparative analysis report
+    \end{itemize}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -52,26 +52,26 @@
 \section{System analysis results}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\textbf{Functions:}
-\begin{itemize}
-    \item data ingestion and preprocessing
-    \item analysis and transformation
-    \item result generation and visualization
-    \item logging and monitoring
-    \item reporting and export
-\end{itemize}
+    \textbf{Functions:}
+    \begin{itemize}
+        \item data ingestion and preprocessing
+        \item analysis and transformation
+        \item result generation and visualization
+        \item logging and monitoring
+        \item reporting and export
+    \end{itemize}
 
-\vspace{\baselineskip}
+    \vspace{\baselineskip}
 
-\textbf{Subsystems:}
-\begin{itemize}
-    \item data processing subsystem
-    \item analysis engine subsystem
-    \item user interface subsystem
-    \item monitoring and logging subsystem
-\end{itemize}
+    \textbf{Subsystems:}
+    \begin{itemize}
+        \item data processing subsystem
+        \item analysis engine subsystem
+        \item user interface subsystem
+        \item monitoring and logging subsystem
+    \end{itemize}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -79,27 +79,27 @@
 \section{Design evaluation}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\textbf{Goal:} select the optimal architecture
+    \textbf{Goal:} select the optimal architecture
 
-Criteria: performance, accuracy, scalability, maintainability
+    Criteria: performance, accuracy, scalability, maintainability
 
-\vspace{\baselineskip}
+    \vspace{\baselineskip}
 
-\begin{tabular}{l S[table-format=1.2]}
-\toprule
-\textbf{Alternative} & {\textbf{Score}} \\
-\midrule
-Monolithic      & 7.15 \\
-Microservices    & 7.95 \\
-\textbf{Hybrid} & \bfseries 8.30 \\
-\bottomrule
-\end{tabular}
+    \begin{tabular}{l S[table-format=1.2]}
+        \toprule
+        \textbf{Alternative} & {\textbf{Score}} \\
+        \midrule
+        Monolithic           & 7.15             \\
+        Microservices        & 7.95             \\
+        \textbf{Hybrid}      & \bfseries 8.30   \\
+        \bottomrule
+    \end{tabular}
 
-\vspace{\baselineskip}
+    \vspace{\baselineskip}
 
-Selected approach: \textbf{Hybrid architecture}
+    Selected approach: \textbf{Hybrid architecture}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -107,26 +107,26 @@ Selected approach: \textbf{Hybrid architecture}
 \section{System architecture}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\begin{figure}
-    \center
-    \begin{tikzpicture}[scale=0.85,
-        box/.style={rectangle, draw, minimum width=2cm, minimum height=0.6cm, align=center, font=\small},
-        >=Stealth
-    ]
-        \node[box] (client) {Client};
-        \node[box, right=1cm of client] (lb) {Load Balancer};
-        \node[box, above right=0.4cm and 1cm of lb] (app1) {App 1};
-        \node[box, below right=0.4cm and 1cm of lb] (app2) {App 2};
-        \node[box, right=2.8cm of lb] (db) {Database};
-        \draw[->] (client) -- (lb);
-        \draw[->] (lb) -- (app1);
-        \draw[->] (lb) -- (app2);
-        \draw[->] (app1) -- (db);
-        \draw[->] (app2) -- (db);
-    \end{tikzpicture}
-\end{figure}
+    \begin{figure}
+        \center
+        \begin{tikzpicture}[scale=0.85,
+                box/.style={rectangle, draw, minimum width=2cm, minimum height=0.6cm, align=center, font=\small},
+                >=Stealth
+            ]
+            \node[box] (client) {Client};
+            \node[box, right=1cm of client] (lb) {Load Balancer};
+            \node[box, above right=0.4cm and 1cm of lb] (app1) {App 1};
+            \node[box, below right=0.4cm and 1cm of lb] (app2) {App 2};
+            \node[box, right=2.8cm of lb] (db) {Database};
+            \draw[->] (client) -- (lb);
+            \draw[->] (lb) -- (app1);
+            \draw[->] (lb) -- (app2);
+            \draw[->] (app1) -- (db);
+            \draw[->] (app2) -- (db);
+        \end{tikzpicture}
+    \end{figure}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -134,25 +134,26 @@ Selected approach: \textbf{Hybrid architecture}
 \section{Experimental results}
 
 \begin{frame}
-\frametitle{\insertsection}
-\framesubtitle{Performance comparison}
+    \frametitle{\insertsection}
+    \framesubtitle{Performance comparison}
 
-\begin{table}[H]
-  \centering
-  \begin{tabular}{l S[table-format=1.1] S[table-format=2.1] S[table-format=3.1]}
-  \toprule
-  \textbf{Method} & {\textbf{Small (s)}} & {\textbf{Medium (s)}} & {\textbf{Large (s)}} \\
-  \midrule
-  Baseline A       & 0.8 & 45.2 & 512.0 \\
-  Baseline B       & 0.5 & 38.7 & 478.3 \\
-  \textbf{Proposed} & \bfseries 0.3 & \bfseries 22.1 & \bfseries 287.5 \\
-  \bottomrule
-  \end{tabular}
-\end{table}
+    \begin{table}[H]
+        \small
+        \centering
+        \begin{tabular}{l S[table-format=1.1] S[table-format=2.2] S[table-format=3.2]}
+            \toprule
+            \textbf{Method}   & {\textbf{Small (s)}} & {\textbf{Medium (s)}} & {\textbf{Large (s)}} \\
+            \midrule
+            Baseline A        & 0.8                  & 45.2                  & 512.0                \\
+            Baseline B        & 0.5                  & 38.7                  & 478.3                \\
+            \textbf{Proposed} & \bfseries 0.3        & \bfseries 22.1        & \bfseries 287.5      \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
 
-\vspace{\baselineskip}
+    \vspace{\baselineskip}
 
-\textbf{37--44\% improvement} over baselines
+    \textbf{37--44\% improvement} over baselines
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -160,21 +161,21 @@ Selected approach: \textbf{Hybrid architecture}
 \section{Key formulas}
 
 \begin{frame}
-\frametitle{\insertsection}
-\framesubtitle{Mathematical foundations}
+    \frametitle{\insertsection}
+    \framesubtitle{Mathematical foundations}
 
-\textbf{Weighted effectiveness:}
-\[E = \sum_{i=1}^{n} w_i \cdot f(x_i)\]
+    \textbf{Weighted effectiveness:}
+    \[E = \sum_{i=1}^{n} w_i \cdot f(x_i)\]
 
-\vspace{0.5\baselineskip}
+    \vspace{0.5\baselineskip}
 
-\textbf{Classification accuracy:}
-\[\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%\]
+    \textbf{Classification accuracy:}
+    \[\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%\]
 
-\vspace{0.5\baselineskip}
+    \vspace{0.5\baselineskip}
 
-\textbf{Scalability model:}
-\[T(n) = a \cdot n + b, \quad a = 2.87 \times 10^{-4}\]
+    \textbf{Scalability model:}
+    \[T(n) = a \cdot n + b, \quad a = 2.87 \times 10^{-4}\]
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -182,30 +183,30 @@ Selected approach: \textbf{Hybrid architecture}
 \section{Architecture diagram}
 
 \begin{frame}
-\frametitle{\insertsection}
-\framesubtitle{State machine of the processing pipeline}
+    \frametitle{\insertsection}
+    \framesubtitle{State machine of the processing pipeline}
 
-\begin{figure}
-    \centering
-    \begin{tikzpicture}[scale=0.75, transform shape,
-        state/.style={circle, draw, minimum size=1.2cm, align=center, font=\small},
-        accept/.style={state, double},
-        >=Stealth, auto
-    ]
-        \node[state] (idle) {Idle};
-        \node[state, right=1.5cm of idle] (load) {Loading};
-        \node[state, right=1.5cm of load] (proc) {Processing};
-        \node[accept, right=1.5cm of proc] (done) {Done};
-        \node[state, below=1cm of load] (err) {Error};
+    \begin{figure}
+        \centering
+        \begin{tikzpicture}[scale=0.75, transform shape,
+                state/.style={circle, draw, minimum size=1.2cm, align=center, font=\small},
+                accept/.style={state, double},
+                >=Stealth, auto
+            ]
+            \node[state] (idle) {Idle};
+            \node[state, right=1.5cm of idle] (load) {Loading};
+            \node[state, right=1.5cm of load] (proc) {Processing};
+            \node[accept, right=1.5cm of proc] (done) {Done};
+            \node[state, below=1cm of load] (err) {Error};
 
-        \draw[->] (idle) edge node {\tiny start} (load);
-        \draw[->] (load) edge node {\tiny ready} (proc);
-        \draw[->] (proc) edge node {\tiny ok} (done);
-        \draw[->] (load) edge node[left] {\tiny fail} (err);
-        \draw[->] (proc) edge[bend left] node[right] {\tiny fail} (err);
-        \draw[->] (err) edge[bend right=40] node[below] {\tiny retry} (idle);
-    \end{tikzpicture}
-\end{figure}
+            \draw[->] (idle) edge node {\tiny start} (load);
+            \draw[->] (load) edge node {\tiny ready} (proc);
+            \draw[->] (proc) edge node {\tiny ok} (done);
+            \draw[->] (load) edge node[left] {\tiny fail} (err);
+            \draw[->] (proc) edge[bend left] node[right] {\tiny fail} (err);
+            \draw[->] (err) edge[bend right=40] node[below] {\tiny retry} (idle);
+        \end{tikzpicture}
+    \end{figure}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -213,16 +214,16 @@ Selected approach: \textbf{Hybrid architecture}
 \section{Results}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\begin{itemize}
-    \item comprehensive literature review completed
-    \item system analysis with 5 functions and 4 subsystems
-    \item comparative design evaluation (hybrid approach selected)
-    \item prototype implemented in Python + PostgreSQL + Docker
-    \item 37--44\% performance improvement demonstrated
-    \item 94.2\% accuracy achieved
-\end{itemize}
+    \begin{itemize}
+        \item comprehensive literature review completed
+        \item system analysis with 5 functions and 4 subsystems
+        \item comparative design evaluation (hybrid approach selected)
+        \item prototype implemented in Python + PostgreSQL + Docker
+        \item 37--44\% performance improvement demonstrated
+        \item 94.2\% accuracy achieved
+    \end{itemize}
 \end{frame}
 
 %-------------------------------------------------------------------------------
@@ -230,15 +231,15 @@ Selected approach: \textbf{Hybrid architecture}
 \section{Conclusion}
 
 \begin{frame}
-\frametitle{\insertsection}
+    \frametitle{\insertsection}
 
-\begin{itemize}
-    \item analyzed existing approaches and identified key limitations
-    \item designed modular architecture with clear subsystem boundaries
-    \item implemented working prototype with comprehensive test coverage
-    \item demonstrated significant improvements in performance and accuracy
-    \item proposed directions for future work
-\end{itemize}
+    \begin{itemize}
+        \item analyzed existing approaches and identified key limitations
+        \item designed modular architecture with clear subsystem boundaries
+        \item implemented working prototype with comprehensive test coverage
+        \item demonstrated significant improvements in performance and accuracy
+        \item proposed directions for future work
+    \end{itemize}
 \end{frame}
 
 %-------------------------------------------------------------------------------

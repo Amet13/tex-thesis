@@ -12,8 +12,8 @@
 \usepackage{fontspec}
 
 \defaultfontfeatures{Ligatures=TeX}
-\setmainfont{Times New Roman}
-\setmonofont{FreeMono}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}}
+\IfFontExistsTF{FreeMono}{\setmonofont{FreeMono}}{\setmonofont{Latin Modern Mono}}
 
 %%% Beamer theorem environments
 \newtheorem{rtheorem}{Theorem}
@@ -22,8 +22,8 @@
 
 %%% Math packages
 \usepackage{mathtools} % Loads amsmath automatically
-\usepackage{unicode-math}
-\setmathfont{XITS Math}
+\usepackage[warnings-off={mathtools-overbracket,mathtools-colon}]{unicode-math}
+\setmathfont{Latin Modern Math}
 %%% Custom commands
 \DeclareMathOperator{\sgn}{\mathop{sgn}}
 
@@ -47,20 +47,25 @@
 \usepackage{csquotes}
 \usepackage{multicol}
 
+\hfuzz=0.2pt
+
 %%% Drawing
 \usepackage{tikz,calc,ifthen,color}
 \usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
+\pgfplotsset{compat=1.18,compat/show suggested version=false}
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 
-\title{Your Thesis Title}
-\subtitle{Thesis defense}
-\author{Author: Your Name \\
-\vspace{0.7\baselineskip}
-Advisor: Prof.\ Your Advisor}
-\institute{Your University \\
-Your Department}
+\title[Thesis Defense]{Your Thesis Title}
+\subtitle[Defense]{Thesis defense}
+\author[Your Name]{\texorpdfstring{Author: Your Name\\Advisor: Prof.\ Your Advisor}{Author: Your Name; Advisor: Prof. Your Advisor}}
+\institute[Your University]{\texorpdfstring{Your University\\Your Department}{Your University, Your Department}}
 \date{\the\year}
+
+\hypersetup{
+	pdftitle={Your Thesis Title},
+	pdfauthor={Your Name},
+	pdfsubject={Thesis Defense}
+}
 
 \begin{document}
 \input{slides.tex}

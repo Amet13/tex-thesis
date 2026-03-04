@@ -15,14 +15,14 @@ As the field matured, automated solutions emerged that addressed many of these l
     \centering
     \caption{Comparison of existing approaches} \label{tab:comparison}
     \begin{tabular}{l S[table-format=2.0] S[table-format=3.0] l}
-    \toprule
-    \textbf{Approach} & {\textbf{Accuracy (\%)}} & {\textbf{Speed (ms)}} & \textbf{Scalability} \\
-    \midrule
-    Method A & 85 & 120 & Low \\
-    Method B & 90 & 95  & Medium \\
-    Method C & 88 & 110 & High \\
-    Method D & 92 & 80  & Medium \\
-    \bottomrule
+        \toprule
+        \textbf{Approach} & {\textbf{Accuracy (\%)}} & {\textbf{Speed (ms)}} & \textbf{Scalability} \\
+        \midrule
+        Method A          & 85                       & 120                   & Low                  \\
+        Method B          & 90                       & 95                    & Medium               \\
+        Method C          & 88                       & 110                   & High                 \\
+        Method D          & 92                       & 80                    & Medium               \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
@@ -47,9 +47,9 @@ The space complexity is bounded by $\Theta(n)$.
 The system of equations describing the optimization problem:
 
 \begin{align}
-    \min_{x} \quad & f(x) = \sum_{i=1}^{n} c_i x_i \label{eq:objective} \\
+    \min_{x} \quad    & f(x) = \sum_{i=1}^{n} c_i x_i \label{eq:objective}                                \\
     \text{s.t.} \quad & \sum_{i=1}^{n} a_{ij} x_i \leq b_j, \quad j = 1, \ldots, m \label{eq:constraint1} \\
-    & x_i \geq 0, \quad i = 1, \ldots, n \label{eq:constraint2}
+                      & x_i \geq 0, \quad i = 1, \ldots, n \label{eq:constraint2}
 \end{align}
 
 % === EXAMPLE: Equation with fractions, integrals, and limits ===
@@ -101,23 +101,23 @@ Lee and Park \cite{sample-testing} conducted a comprehensive evaluation of multi
 The key contributions of prior work can be categorized as follows:
 \begin{enumerate}
     \item \textbf{Architectural contributions:}
-    \begin{enumerate}
-        \item modular design patterns for distributed systems;
-        \item event-driven architectures for real-time processing;
-        \item containerized deployment strategies.
-    \end{enumerate}
+          \begin{enumerate}
+              \item modular design patterns for distributed systems;
+              \item event-driven architectures for real-time processing;
+              \item containerized deployment strategies.
+          \end{enumerate}
     \item \textbf{Algorithmic contributions:}
-    \begin{enumerate}
-        \item optimization heuristics for resource allocation;
-        \item machine learning pipelines for automated classification;
-        \item compression algorithms for efficient data transfer.
-    \end{enumerate}
+          \begin{enumerate}
+              \item optimization heuristics for resource allocation;
+              \item machine learning pipelines for automated classification;
+              \item compression algorithms for efficient data transfer.
+          \end{enumerate}
     \item \textbf{Evaluation methodologies:}
-    \begin{enumerate}
-        \item standardized benchmarking frameworks;
-        \item statistical significance testing protocols;
-        \item reproducibility guidelines.
-    \end{enumerate}
+          \begin{enumerate}
+              \item standardized benchmarking frameworks;
+              \item statistical significance testing protocols;
+              \item reproducibility guidelines.
+          \end{enumerate}
 \end{enumerate}
 
 \subsection{Standards and best practices}
@@ -131,9 +131,9 @@ Organizations such as \hyperlink{ieee}{IEEE}, \hyperlink{iso}{ISO}, and \hyperli
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
-        >=Stealth
-    ]
+            box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
+            >=Stealth
+        ]
         \node[box] (ui) {User Interface};
         \node[box, below=0.6cm of ui] (api) {API Gateway};
         \node[box, below left=0.6cm and 0.3cm of api] (svc1) {Service A};
@@ -154,11 +154,11 @@ Organizations such as \hyperlink{ieee}{IEEE}, \hyperlink{iso}{ISO}, and \hyperli
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        startstop/.style={rectangle, rounded corners, draw, minimum width=2.5cm, minimum height=0.7cm, align=center, fill=blue!10},
-        process/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.7cm, align=center},
-        decision/.style={diamond, draw, minimum width=2cm, minimum height=1cm, align=center, aspect=2},
-        arrow/.style={->, >=Stealth, thick}
-    ]
+            startstop/.style={rectangle, rounded corners, draw, minimum width=2.5cm, minimum height=0.7cm, align=center, fill=blue!10},
+            process/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.7cm, align=center},
+            decision/.style={diamond, draw, minimum width=2cm, minimum height=1cm, align=center, aspect=2},
+            arrow/.style={->, >=Stealth, thick}
+        ]
         \node[startstop] (start) {Start};
         \node[process, below=0.5cm of start] (input) {Load input data};
         \node[decision, below=0.7cm of input] (check) {Data valid?};
@@ -182,9 +182,9 @@ Organizations such as \hyperlink{ieee}{IEEE}, \hyperlink{iso}{ISO}, and \hyperli
 
 Despite significant progress, several gaps remain in the current body of knowledge:
 \begin{itemize}
-  \item existing methods do not adequately address scalability;
-  \item performance optimization under resource constraints is underexplored;
-  \item integration with modern deployment pipelines requires further investigation.
+    \item existing methods do not adequately address scalability;
+    \item performance optimization under resource constraints is underexplored;
+    \item integration with modern deployment pipelines requires further investigation.
 \end{itemize}
 
 This thesis addresses these gaps by proposing a novel approach that combines the strengths of existing methods while mitigating their weaknesses.

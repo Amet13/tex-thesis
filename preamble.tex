@@ -11,34 +11,35 @@
 
 \usepackage{listings} % Source code listings
 \lstset{
-    backgroundcolor=\color{backcolour},
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\small\ttfamily, % Font size and type
-    breakatwhitespace=false,
-    breaklines=true,            % Line wrapping
-    captionpos=b,
-    keepspaces=true,
-    numbers=left,
-    numbersep=5pt,
-    showspaces=false,
-    showstringspaces=false,
-    showtabs=false,
-    tabsize=2,                  % Tab size
-    frame=single,               % Frame around listing
-    literate={---}{{-{}-{}-}}3 {--}{{-{}-}}2 % Correct display of double and triple dashes
+backgroundcolor=\color{backcolour},
+commentstyle=\color{codegreen},
+keywordstyle=\color{magenta},
+numberstyle=\tiny\color{codegray},
+stringstyle=\color{codepurple},
+basicstyle=\small\ttfamily, % Font size and type
+breakatwhitespace=false,
+breaklines=true,            % Line wrapping
+captionpos=b,
+keepspaces=true,
+numbers=left,
+numbersep=5pt,
+showspaces=false,
+showstringspaces=false,
+showtabs=false,
+tabsize=2,                  % Tab size
+frame=single,               % Frame around listing
+literate={---}{{-{}-{}-}}3 {--}{{-{}-}}2 % Correct display of double and triple dashes
 }
 
 % Fonts
 \defaultfontfeatures{Ligatures=TeX}
-\setmainfont{Times New Roman} % Main font
-\setmonofont{FreeMono}        % Monospace font for code listings
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}} % Main font
+\IfFontExistsTF{FreeMono}{\setmonofont{FreeMono}}{\setmonofont{Latin Modern Mono}}             % Monospace font for code listings
 
 % Math formulas
-\usepackage{mathtools,unicode-math} % mathtools supersedes amsmath
-\setmathfont{XITS Math}             % Math font: https://github.com/aliftype/xits
+\usepackage{mathtools} % mathtools supersedes amsmath
+\usepackage[warnings-off={mathtools-overbracket,mathtools-colon}]{unicode-math}
+\setmathfont{Latin Modern Math} % Portable default to avoid missing-font lookup noise in CI
 \numberwithin{equation}{section}    % Equation numbering: section.number
 
 % English language support
@@ -56,13 +57,15 @@
 \graphicspath{{images/}}
 \usepackage{tikz} % Programmatic diagrams
 \usepackage{pgfplots} % High-quality plots
-\pgfplotsset{compat=1.18} % Set pgfplots compatibility level
+\pgfplotsset{compat=1.18,compat/show suggested version=false} % Set compatibility and suppress non-actionable notifications
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, fit, calc}
 
 % Microtypography: character protrusion and font expansion (full support in LuaLaTeX)
 \usepackage{microtype}
+\microtypesetup{nopatch=footnote}
 
 % Drafting tools
+\setlength{\marginparwidth}{2cm}
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 
 % Reset figure and table counters per section (chngcntr no longer needed in LaTeX 2018+)
@@ -102,7 +105,7 @@
 \onehalfspacing % 1.5 line spacing (replaces manual \baselinestretch)
 \parindent 1.27cm % Paragraph indent
 
-\emergencystretch=1em  % Allow slight stretch to avoid overfull boxes
+\emergencystretch=3em  % Allow slight stretch to avoid overfull boxes
 \hyphenpenalty=1000 % Hyphenation frequency
 \clubpenalty=10000  % Prevent page break after first line of paragraph (orphan)
 \widowpenalty=10000 % Prevent page break after last line of paragraph (widow)
@@ -187,13 +190,13 @@
 \makeatletter
 \let\oldcontentsline\contentsline
 \def\contentsline#1#2{
-    \expandafter\ifx\csname l@#1\endcsname\l@section
-        \expandafter\@firstoftwo
-    \else
-        \expandafter\@secondoftwo
-    \fi
-    {\oldcontentsline{#1}{\MakeTextUppercase{#2}}}
-    {\oldcontentsline{#1}{#2}}
+\expandafter\ifx\csname l@#1\endcsname\l@section
+    \expandafter\@firstoftwo
+\else
+    \expandafter\@secondoftwo
+\fi
+{\oldcontentsline{#1}{\MakeTextUppercase{#2}}}
+{\oldcontentsline{#1}{#2}}
 }
 \makeatother
 

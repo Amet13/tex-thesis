@@ -6,10 +6,10 @@ This chapter describes the implementation of the proposed system design.
 
 The system is implemented using the following technologies:
 \begin{itemize}
-  \item Python 3.13 for the core processing logic;
-  \item PostgreSQL 17 for data storage;
-  \item Docker for containerized deployment;
-  \item GitHub Actions for continuous integration.
+    \item Python 3.13 for the core processing logic;
+    \item PostgreSQL 17 for data storage;
+    \item Docker for containerized deployment;
+    \item GitHub Actions for continuous integration.
 \end{itemize}
 
 \subsection{Architecture overview}
@@ -21,10 +21,10 @@ The core module handles data processing and analysis, while extension modules pr
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
-        cloud/.style={ellipse, draw, minimum width=2cm, minimum height=0.7cm, align=center},
-        >=Stealth
-    ]
+            box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
+            cloud/.style={ellipse, draw, minimum width=2cm, minimum height=0.7cm, align=center},
+            >=Stealth
+        ]
         \node[cloud] (client) {Client};
         \node[box, right=1.5cm of client] (lb) {Load Balancer};
         \node[box, above right=0.5cm and 1.5cm of lb] (app1) {App Server 1};
@@ -47,7 +47,7 @@ The core module handles data processing and analysis, while extension modules pr
 \addimghere{sample-photo}{0.4}{Sample image included from file}{fig:sample-photo}
 
 % === EXAMPLE: Two images side by side with \addtwoimghere ===
-\cref{fig:two-images} shows two images placed side by side using the \verb|\addtwoimghere| command.
+\cref{fig:two-images} shows two images placed side by side using the \texttt{\textbackslash addtwoimghere} command.
 This is useful for comparing visual results or showing before/after states.
 
 \addtwoimghere{sample-photo}{0.4}{sample-photo}{0.4}{Two images side by side}{fig:two-images}
@@ -178,9 +178,9 @@ The system implements several security measures, as shown in \cref{fig:security}
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
-        >=Stealth
-    ]
+            box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
+            >=Stealth
+        ]
         \node[box, fill=blue!10] (fw) {Firewall};
         \node[box, right=1cm of fw, fill=green!10] (auth) {Authentication};
         \node[box, right=1cm of auth, fill=orange!10] (enc) {Encryption};

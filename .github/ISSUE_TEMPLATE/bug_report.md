@@ -1,27 +1,41 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: "[bug] "
 labels: bug
 assignees: ''
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Summary
+A clear and concise description of the bug.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Run command '...'
-3. See error
+## Reproduction steps
+1. Run command(s):
+2. Open file(s):
+3. Observe error:
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Expected behavior
+What should happen instead?
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS, Ubuntu, Windows]
- - TeX Distribution: [e.g. TeX Live 2024, MiKTeX]
- - Version [e.g. 22]
+## Minimal reproducible example
+Please include the smallest `.tex` snippet that reproduces the issue.
 
-**Additional context**
-Add any other context about the problem here.
+```tex
+% paste minimal example here
+```
+
+## Environment
+- OS: [e.g. macOS 15, Ubuntu 24.04, Windows 11]
+- TeX Distribution: [e.g. TeX Live 2025, MiKTeX]
+- Docker version: [e.g. 27.5.0]
+- Build command: [e.g. `make build`, `make lint`]
+
+## Logs
+Paste the relevant part of the error log.
+
+```text
+# paste output from make/build logs here
+```
+
+## Additional context
+Anything else that helps diagnose the issue.

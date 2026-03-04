@@ -1,0 +1,12 @@
+defaultIndent: "    "
+
+modifyLineBreaks:
+  preserveBlankLines: 1
+
+noAdditionalIndent:
+  document: 1
+
+indentRules:
+  section: "    "
+  subsection: "    "
+  subsubsection: "    "

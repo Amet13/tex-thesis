@@ -6,7 +6,7 @@
 #   Lint only:   DOCKER_BUILDKIT=1 docker build --target lint .
 
 # --- Base stage: shared TeX Live installation ---
-FROM texlive/texlive:latest AS base
+FROM texlive/texlive:latest@sha256:62927d994f09aea455c8ea9da034af14764f9e2276a616b413545e7cec69c06b AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
@@ -19,15 +19,23 @@ RUN sed -i 's/Components: main/Components: main contrib non-free/g' /etc/apt/sou
         fontconfig \
         ttf-mscorefonts-installer \
         fonts-freefont-ttf \
+        texlive-latex-recommended \
+        texlive-latex-extra \
+        texlive-pictures \
+        texlive-science \
+        texlive-bibtex-extra \
+        biber \
+        texlive-extra-utils \
         chktex && \
     fc-cache -f -v && \
+    luaotfload-tool -q -u -f && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /thesis
 
 # Copy source files
-COPY main.tex preamble.tex references.bib .latexmkrc .chktexrc ./
+COPY main.tex preamble.tex references.bib .latexmkrc .chktexrc .latexindent.yaml ./
 COPY chapters/ chapters/
 COPY images/ images/
 COPY slides/ slides/
@@ -35,12 +43,13 @@ COPY slides/ slides/
 # --- Lint stage: validate LaTeX sources with chktex ---
 FROM base AS lint
 RUN chktex -q main.tex chapters/*.tex && \
-    chktex -q slides/main.tex slides/slides.tex
+    chktex -q slides/main.tex slides/slides.tex && \
+    latexindent -l=.latexindent.yaml -k main.tex preamble.tex chapters/*.tex slides/main.tex slides/slides.tex
 
 # --- Build stage: compile PDFs ---
 FROM base AS builder
-RUN latexmk -jobname=thesis main.tex & \
-    (cd slides && latexmk -jobname=slides main.tex) & \
+RUN latexmk -quiet -silent -jobname=thesis main.tex & \
+    (cd slides && latexmk -quiet -silent -jobname=slides main.tex) & \
     wait
 
 # Output stage: contains only the final PDFs
