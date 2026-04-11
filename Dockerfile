@@ -6,7 +6,7 @@
 #   Lint only:   DOCKER_BUILDKIT=1 docker build --target lint .
 
 # --- Base stage: shared TeX Live installation ---
-FROM texlive/texlive:latest@sha256:6c95df7ae6c9cb5b4b3b5ed16c843d7fe090c1388beb6499a398536b9b9f7c6f AS base
+FROM texlive/texlive:latest@sha256:f0bc49733665c09378b8ec0aca40e3263211bd208c9ecb7dfcce4967f234cf49 AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
