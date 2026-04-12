@@ -134,9 +134,7 @@ release: ## Create a release: make release VERSION=2.4.0
 	@echo "${GREEN}▸ Preparing release v$(VERSION)...${RESET}"
 	@sed -i.bak 's/^version: .*/version: "$(VERSION)"/' CITATION.cff && rm -f CITATION.cff.bak
 	@sed -i.bak 's/^date-released: .*/date-released: "$(shell date +%Y-%m-%d)"/' CITATION.cff && rm -f CITATION.cff.bak
-	@sed -i.bak '/^## \[Unreleased\]/a\
-\
-## [v$(VERSION)] - $(shell date +%Y-%m-%d)' CHANGELOG.md && rm -f CHANGELOG.md.bak
+	@awk '/^## \[Unreleased\]/{print; print ""; print "## [v$(VERSION)] - $(shell date +%Y-%m-%d)"; next}1' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
 	@git add CITATION.cff CHANGELOG.md
 	@git commit -m "Release v$(VERSION)"
 	@git tag "v$(VERSION)"
