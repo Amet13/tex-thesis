@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [v2.4.1] - 2026-04-12
 
+### Changed
+
+- Update all GitHub Actions to Node.js 24-compatible versions (`actions/cache` v4.3.0, `actions/attest-build-provenance` v2.4.0, `softprops/action-gh-release` v2.6.2, `github/codeql-action` v3.35.1, `docker/build-push-action` v7.1.0, `actions/upload-artifact` v7.0.1, `ossf/scorecard-action` v2.4.3)
+- Pin pre-commit pip dependencies by SHA256 hash via `.devcontainer/requirements.txt` to satisfy OpenSSF Scorecard Pinned-Dependencies check
+- Cross-platform `make open` / `make open-slides` support for Windows (Git Bash / MSYS2 / Cygwin)
+- Graceful color output degradation in Makefile for environments without `tput`
+- Use portable `awk` instead of `sed` append in `make release` target for macOS compatibility
+- Fix trailing newline in `LICENSE-CC-BY-SA` for `end-of-file-fixer` pre-commit hook
+
+### Security
+
+- Enable branch protection ruleset on `main` with required PRs and status checks
+- Enable GitHub secret scanning and push protection
+- Enable Dependabot vulnerability alerts and automated security fixes
+- Enable private vulnerability reporting
+
 ## [v2.4.0] - 2026-04-12
 
 ### Added
