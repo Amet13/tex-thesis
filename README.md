@@ -4,12 +4,25 @@
 
   [![Build Status](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml/badge.svg)](https://github.com/Amet13/tex-thesis/actions/workflows/actions.yml)
   [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE-GPL)
+  [![License: CC BY-SA 4.0](https://img.shields.io/badge/Content-CC%20BY--SA%204.0-lightgrey.svg)](LICENSE-CC-BY-SA)
+
+  [![GitHub stars](https://img.shields.io/github/stars/Amet13/tex-thesis?style=social)](https://github.com/Amet13/tex-thesis/stargazers)
+  [![GitHub forks](https://img.shields.io/github/forks/Amet13/tex-thesis?style=social)](https://github.com/Amet13/tex-thesis/network/members)
+  [![GitHub release](https://img.shields.io/github/v/release/Amet13/tex-thesis)](https://github.com/Amet13/tex-thesis/releases/latest)
 
   <br />
 
   [**View Thesis PDF**](https://github.com/Amet13/tex-thesis/releases/latest/download/thesis.pdf) •
   [**View Slides PDF**](https://github.com/Amet13/tex-thesis/releases/latest/download/slides.pdf)
+
+  <br />
+
+  <p align="center">
+    <img src="docs/screenshots/thesis-toc.png" width="30%" alt="Thesis table of contents" />
+    <img src="docs/screenshots/thesis-diagrams.png" width="30%" alt="TikZ diagrams and pgfplots charts" />
+    <img src="docs/screenshots/thesis-charts.png" width="30%" alt="Data tables and bar charts" />
+  </p>
 </div>
 
 ---
@@ -20,6 +33,13 @@ Writing a thesis is hard enough without fighting LaTeX errors. This template pro
 
 You don't need to install a 4GB TeX Live distribution on your machine. Just open the project, write your content, and let the automation handle the rest.
 
+## Who is this for?
+
+- **Students** writing bachelor's, master's, or PhD theses in any technical field
+- **LaTeX beginners** who want a working, well-documented template instead of starting from scratch
+- **Researchers** who need reproducible, version-controlled document builds
+- **Advisors** who want consistent formatting from their students
+
 ## Features
 
 - **Modern Engine**: Uses `LuaLaTeX` for native UTF-8 support, system fonts, and advanced microtypography (`microtype`).
@@ -27,9 +47,22 @@ You don't need to install a 4GB TeX Live distribution on your machine. Just open
 - **Data Visualization**: High-quality plots with `pgfplots` and programmatic diagrams with `TikZ`.
 - **Smart Referencing**: Modern bibliography with `biblatex`/`biber` and intelligent cross-referencing with `cleveref`.
 - **Developer Experience**: Zero-setup environment using **VS Code Dev Containers** and a fast multi-stage **Docker** build.
-- **Code Quality**: Built-in `chktex` linting and `pre-commit` hooks to keep your LaTeX source clean.
+- **Code Quality**: Built-in `chktex` linting, `latexindent` formatting, and `pre-commit` hooks to keep your LaTeX source clean.
 - **Reproducible Automation**: Pinned Docker and CI dependencies with automated updates through Dependabot.
 - **Defense Ready**: Includes a matching Beamer presentation template for your final defense.
+
+## How does it compare?
+
+| Feature                     | tex-thesis | Overleaf  | Local TeX Live | Word / Docs |
+|-----------------------------|:----------:|:---------:|:--------------:|:-----------:|
+| Zero-install setup          | Docker     | Browser   | 4GB download   | Browser     |
+| CI/CD pipeline              | GitHub Actions | --    | --             | --          |
+| Linting & formatting        | chktex + latexindent | -- | Manual     | Spell check |
+| Reproducible Docker build   | Multi-stage | --       | --             | --          |
+| Version control friendly    | Plain text | Limited   | Plain text     | Binary      |
+| Defense slides included     | Beamer     | Separate  | Separate       | Separate    |
+| Free and open source        | GPLv3      | Freemium  | Free           | Freemium    |
+| Offline capable             | Yes        | No        | Yes            | No          |
 
 ## Quick Start
 
@@ -70,6 +103,7 @@ make watch
 - `make lint` — Run `chktex` linter.
 - `make fmt` — Format `.tex` files with `latexindent`.
 - `make fmt-check` — Check formatting without changing files.
+- `make check` — Run all quality checks (lint + format check).
 - `make clean` — Remove generated PDFs and auxiliary files.
 
 ## Compatibility Matrix
@@ -93,6 +127,7 @@ make watch
 ## Project Docs
 
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Security: [SECURITY.md](SECURITY.md)
 
 ## Project Structure
 
@@ -148,7 +183,16 @@ This template follows semantic versioning for tagged releases.
 
 ## License
 
-- **Source Code**: [GNU GPLv3](LICENSE)
+This project uses dual licensing:
+
+- **Source Code**: [GNU GPLv3](LICENSE-GPL) — Makefile, Dockerfile, CI/CD, scripts
+- **Template Content**: [CC BY-SA 4.0](LICENSE-CC-BY-SA) — `.tex`, `.bib`, `.sty` files, images, slides
+
+See [LICENSE](LICENSE) for details. Your own thesis content is yours.
+
+---
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Amet13/tex-thesis&type=Date)](https://star-history.com/#Amet13/tex-thesis&Date)
 
 ---
 

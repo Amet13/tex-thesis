@@ -1,7 +1,12 @@
 {
     "name": "tex-thesis",
     "build": {
-        "dockerfile": "Dockerfile"
+        "context": "..",
+        "dockerfile": "../Dockerfile",
+        "target": "devcontainer"
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "customizations": {
         "vscode": {

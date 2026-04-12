@@ -9,9 +9,15 @@
 # Documentation
 README.md
 LICENSE
-
-# Build script (not needed inside container)
-build.sh
+LICENSE-GPL
+LICENSE-CC-BY-SA
+SECURITY.md
+CITATION.cff
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+CHANGELOG.md
+docs/
+scripts/
 
 # Editor files
 .editorconfig

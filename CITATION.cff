@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "tex-thesis: A Modern LaTeX Thesis Template"
+message: "If you use this template, please cite it as below."
+type: software
+authors:
+  - family-names: Umierov
+    given-names: Amet
+    alias: Amet13
+repository-code: "https://github.com/Amet13/tex-thesis"
+url: "https://github.com/Amet13/tex-thesis"
+license:
+  - GPL-3.0-only
+  - CC-BY-SA-4.0
+version: "2.3.0"
+date-released: "2026-03-04"
+keywords:
+  - latex
+  - thesis
+  - template
+  - lualatex
+  - academic-writing
+  - docker
+  - devcontainer
