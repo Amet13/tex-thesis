@@ -8,6 +8,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [v2.4.0] - 2026-04-12
 
+### Added
+- README redesign with PDF screenshots, badge rows, comparison table, "Who is this for?" section, and star history graph
+- `SECURITY.md` with vulnerability reporting policy and supply-chain hardening documentation
+- Dual licensing: `LICENSE` pointer file, `LICENSE-GPL` (GPLv3), `LICENSE-CC-BY-SA` (CC BY-SA 4.0)
+- `CITATION.cff` for GitHub "Cite this repository" button
+- `.github/release.yml` for auto-categorized release notes
+- `.github/workflows/scorecard.yml` for weekly OpenSSF Scorecard security analysis
+- `scripts/validate-pdf.sh` for PDF structural validation in CI
+- PDF validation test job in CI pipeline with build summary
+- OIDC build attestation for release artifacts via Sigstore
+- `make check` meta-target combining lint and format check
+- `make release VERSION=x.y.z` for automated version bumping across `CITATION.cff` and `CHANGELOG.md`
+- `SOURCE_DATE_EPOCH` support for reproducible PDF builds
+
+### Changed
+- Consolidated two Dockerfiles into single multi-stage Dockerfile (base, devcontainer, lint, builder, scratch)
+- Updated `.devcontainer/devcontainer.json` to reference root Dockerfile with `target: devcontainer`
+- Pinned pre-commit and all pip dependencies by SHA256 hash in `.devcontainer/requirements.txt`
+- Parallelized pre-commit and lint CI jobs for faster pipeline
+- Added apt package caching in CI with `actions/cache`
+- Updated all GitHub Actions to latest Node.js 24-compatible versions
+- Cross-platform `make open` / `make open-slides` support (macOS, Linux, Windows Git Bash)
+- Graceful color output degradation in Makefile for environments without `tput`
+- Updated `CONTRIBUTING.md` with dual license references
+
+### Removed
+- Separate `.devcontainer/Dockerfile` (consolidated into root Dockerfile)
+
 ## [v2.3.0] - 2026-03-04
 
 ### Added

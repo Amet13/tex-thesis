@@ -43,12 +43,14 @@ COPY slides/ slides/
 
 # --- Dev container stage: base + git, pre-commit ---
 FROM base AS devcontainer
+COPY .devcontainer/requirements.txt /tmp/requirements.txt
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         git \
         python3-pip \
         python3-venv && \
-    pip3 install --break-system-packages pre-commit && \
+    pip3 install --break-system-packages --require-hashes -r /tmp/requirements.txt && \
+    rm -f /tmp/requirements.txt && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
