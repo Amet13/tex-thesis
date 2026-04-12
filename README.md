@@ -78,8 +78,6 @@ The easiest way to get started without installing LaTeX locally:
 4. Click **Reopen in Container** when prompted.
 5. Open `main.tex` and save it — the PDF will build automatically!
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Amet13/tex-thesis)
-
 ### Option 2: Local Docker Build
 
 If you prefer using the terminal:

@@ -15,11 +15,6 @@
                 "davidanson.vscode-markdownlint",
                 "editorconfig.editorconfig"
             ]
-        },
-        "codespaces": {
-            "openFiles": [
-                "main.tex"
-            ]
         }
     },
     "postCreateCommand": "pre-commit install"
