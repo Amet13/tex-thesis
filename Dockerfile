@@ -48,6 +48,8 @@ RUN chktex -q main.tex chapters/*.tex && \
 
 # --- Build stage: compile PDFs ---
 FROM base AS builder
+ARG SOURCE_DATE_EPOCH=0
+ENV SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
 RUN latexmk -quiet -silent -jobname=thesis main.tex & \
     (cd slides && latexmk -quiet -silent -jobname=slides main.tex) & \
     wait

@@ -1,0 +1,13 @@
+image:
+  file: .devcontainer/Dockerfile
+
+tasks:
+  - name: Build thesis
+    init: latexmk -quiet -silent -jobname=thesis main.tex
+    command: echo "Ready! Open main.tex to start editing."
+
+vscode:
+  extensions:
+    - james-yu.latex-workshop
+    - valentjn.vscode-ltex
+    - editorconfig.editorconfig

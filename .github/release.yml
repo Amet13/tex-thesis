@@ -1,0 +1,21 @@
+changelog:
+  categories:
+    - title: "New Features & Examples"
+      labels:
+        - "enhancement"
+        - "feature"
+    - title: "Bug Fixes"
+      labels:
+        - "bug"
+        - "fix"
+    - title: "Documentation"
+      labels:
+        - "documentation"
+        - "docs"
+    - title: "CI/CD & Dependencies"
+      labels:
+        - "ci"
+        - "dependencies"
+  exclude:
+    labels:
+      - "skip-changelog"

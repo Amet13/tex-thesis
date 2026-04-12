@@ -25,17 +25,27 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.x"
+      - name: Cache apt packages
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-${{ runner.os }}-texlive-extra-utils
       - name: Install latexindent dependencies
         run: sudo apt-get update && sudo apt-get install -y texlive-extra-utils
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
 
   lint:
-    needs: pre-commit
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Cache apt packages
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-${{ runner.os }}-chktex-texlive-extra-utils
 
       - name: Install lint tools
         run: sudo apt-get update && sudo apt-get install -y chktex texlive-extra-utils
@@ -44,7 +54,7 @@ jobs:
         run: make lint
 
   build:
-    needs: lint
+    needs: [pre-commit, lint]
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
@@ -54,6 +64,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
+      - name: Get source date epoch
+        id: epoch
+        run: echo "value=$(git log -1 --format=%ct)" >> "$GITHUB_OUTPUT"
+
       - name: Build PDFs (with layer cache)
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
@@ -62,6 +76,8 @@ jobs:
           outputs: type=local,dest=out
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ steps.epoch.outputs.value }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
@@ -71,13 +87,49 @@ jobs:
             out/thesis.pdf
             out/slides/slides.pdf
 
+  test:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Download artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: thesis-pdfs
+          path: out
+
+      - name: Install PDF tools
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils qpdf
+
+      - name: Validate PDFs
+        run: |
+          bash scripts/validate-pdf.sh out/thesis.pdf
+          bash scripts/validate-pdf.sh out/slides/slides.pdf
+
+      - name: Build summary
+        run: |
+          echo "## Build Artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| File | Pages | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-------|------|" >> "$GITHUB_STEP_SUMMARY"
+          for f in out/thesis.pdf out/slides/slides.pdf; do
+            pages=$(pdfinfo "$f" | awk '/^Pages:/{print $2}')
+            size=$(du -h "$f" | cut -f1)
+            echo "| $(basename "$f") | ${pages} | ${size} |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: test
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -85,9 +137,18 @@ jobs:
           name: thesis-pdfs
           path: out
 
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2
+        with:
+          subject-path: |
+            out/thesis.pdf
+            out/slides/slides.pdf
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
+          generate_release_notes: true
+          discussion_category_name: Announcements
           files: |
             out/thesis.pdf
             out/slides/slides.pdf

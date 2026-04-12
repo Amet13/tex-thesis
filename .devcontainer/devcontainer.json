@@ -3,6 +3,9 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
     "customizations": {
         "vscode": {
             "extensions": [
@@ -11,6 +14,11 @@
                 "esbenp.prettier-vscode",
                 "davidanson.vscode-markdownlint",
                 "editorconfig.editorconfig"
+            ]
+        },
+        "codespaces": {
+            "openFiles": [
+                "main.tex"
             ]
         }
     },

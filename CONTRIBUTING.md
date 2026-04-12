@@ -43,4 +43,5 @@ Thank you for your interest in improving this LaTeX thesis template!
 ## License
 
 By contributing, you agree that your contributions will be licensed under
-[GNU GPLv3](LICENSE) (source code) and [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (content and template).
+[GNU GPLv3](LICENSE-GPL) (source code) and [CC BY-SA 4.0](LICENSE-CC-BY-SA) (content and template).
+See [LICENSE](LICENSE) for details on what falls under each license.

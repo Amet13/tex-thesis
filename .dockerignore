@@ -9,9 +9,21 @@
 # Documentation
 README.md
 LICENSE
+LICENSE-GPL
+LICENSE-CC-BY-SA
+SECURITY.md
+CITATION.cff
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+CHANGELOG.md
+docs/
+scripts/
 
 # Build script (not needed inside container)
 build.sh
+
+# Gitpod config
+.gitpod.yml
 
 # Editor files
 .editorconfig
