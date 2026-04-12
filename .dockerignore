@@ -19,12 +19,6 @@ CHANGELOG.md
 docs/
 scripts/
 
-# Build script (not needed inside container)
-build.sh
-
-# Gitpod config
-.gitpod.yml
-
 # Editor files
 .editorconfig
 .vscode/

@@ -7,11 +7,11 @@ SHELL := /usr/bin/env bash
 BASE_IMAGE := tex-thesis-base
 export SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct 2>/dev/null || echo 0)
 
-# Colors for output
-GREEN  := $(shell tput -Txterm setaf 2)
-YELLOW := $(shell tput -Txterm setaf 3)
-WHITE  := $(shell tput -Txterm setaf 7)
-RESET  := $(shell tput -Txterm sgr0)
+# Colors for output (gracefully degrade on Windows/environments without tput)
+GREEN  := $(shell tput -Txterm setaf 2 2>/dev/null)
+YELLOW := $(shell tput -Txterm setaf 3 2>/dev/null)
+WHITE  := $(shell tput -Txterm setaf 7 2>/dev/null)
+RESET  := $(shell tput -Txterm sgr0 2>/dev/null)
 
 # --- Targets ---
 
@@ -108,8 +108,9 @@ open: ## Open thesis.pdf
 		exit 1; \
 	fi
 	@case "$$(uname -s)" in \
-		Darwin) open thesis.pdf & ;; \
-		*)      xdg-open thesis.pdf & ;; \
+		Darwin)               open thesis.pdf & ;; \
+		MSYS*|MINGW*|CYGWIN*) cmd //c start "" "thesis.pdf" ;; \
+		*)                    xdg-open thesis.pdf & ;; \
 	esac
 
 .PHONY: open-slides
@@ -119,8 +120,9 @@ open-slides: ## Open slides/slides.pdf
 		exit 1; \
 	fi
 	@case "$$(uname -s)" in \
-		Darwin) open slides/slides.pdf & ;; \
-		*)      xdg-open slides/slides.pdf & ;; \
+		Darwin)               open slides/slides.pdf & ;; \
+		MSYS*|MINGW*|CYGWIN*) cmd //c start "" "slides/slides.pdf" ;; \
+		*)                    xdg-open slides/slides.pdf & ;; \
 	esac
 
 .PHONY: release
@@ -132,7 +134,9 @@ release: ## Create a release: make release VERSION=2.4.0
 	@echo "${GREEN}▸ Preparing release v$(VERSION)...${RESET}"
 	@sed -i.bak 's/^version: .*/version: "$(VERSION)"/' CITATION.cff && rm -f CITATION.cff.bak
 	@sed -i.bak 's/^date-released: .*/date-released: "$(shell date +%Y-%m-%d)"/' CITATION.cff && rm -f CITATION.cff.bak
-	@sed -i.bak 's/^## \[Unreleased\]/## [Unreleased]\n\n## [v$(VERSION)] - $(shell date +%Y-%m-%d)/' CHANGELOG.md && rm -f CHANGELOG.md.bak
+	@sed -i.bak '/^## \[Unreleased\]/a\
+\
+## [v$(VERSION)] - $(shell date +%Y-%m-%d)' CHANGELOG.md && rm -f CHANGELOG.md.bak
 	@git add CITATION.cff CHANGELOG.md
 	@git commit -m "Release v$(VERSION)"
 	@git tag "v$(VERSION)"

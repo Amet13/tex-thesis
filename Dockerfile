@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
 
-# Multi-stage build with lint and build stages.
+# Multi-stage build: base → lint, build, devcontainer
 # Usage:
-#   Build PDFs:  DOCKER_BUILDKIT=1 docker build --output type=local,dest=. .
-#   Lint only:   DOCKER_BUILDKIT=1 docker build --target lint .
+#   Build PDFs:      DOCKER_BUILDKIT=1 docker build --output type=local,dest=. .
+#   Lint only:       DOCKER_BUILDKIT=1 docker build --target lint .
+#   Dev container:   DOCKER_BUILDKIT=1 docker build --target devcontainer .
 
 # --- Base stage: shared TeX Live installation ---
 FROM texlive/texlive:latest@sha256:f0bc49733665c09378b8ec0aca40e3263211bd208c9ecb7dfcce4967f234cf49 AS base
@@ -39,6 +40,17 @@ COPY main.tex preamble.tex references.bib .latexmkrc .chktexrc .latexindent.yaml
 COPY chapters/ chapters/
 COPY images/ images/
 COPY slides/ slides/
+
+# --- Dev container stage: base + git, pre-commit ---
+FROM base AS devcontainer
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+        git \
+        python3-pip \
+        python3-venv && \
+    pip3 install --break-system-packages pre-commit && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # --- Lint stage: validate LaTeX sources with chktex ---
 FROM base AS lint
