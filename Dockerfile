@@ -7,7 +7,7 @@
 #   Dev container:   DOCKER_BUILDKIT=1 docker build --target devcontainer .
 
 # --- Base stage: shared TeX Live installation ---
-FROM texlive/texlive:latest@sha256:f0bc49733665c09378b8ec0aca40e3263211bd208c9ecb7dfcce4967f234cf49 AS base
+FROM texlive/texlive:latest@sha256:7bdcb33d24ff0f8326eb3f15cb1405dca0ea2ee5ffe9ddd84691308608f43363 AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true

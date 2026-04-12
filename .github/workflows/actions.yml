@@ -26,13 +26,19 @@ jobs:
         with:
           python-version: "3.x"
       - name: Cache apt packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          path: /var/cache/apt/archives
+          path: /var/cache/apt/archives/*.deb
           key: apt-${{ runner.os }}-texlive-extra-utils
       - name: Install latexindent dependencies
         run: sudo apt-get update && sudo apt-get install -y texlive-extra-utils
-      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+      - run: pip install pre-commit
+      - name: Cache pre-commit hooks
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ env.pythonLocation }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: pre-commit run --show-diff-on-failure --color=always --all-files
 
   lint:
     runs-on: ubuntu-24.04
@@ -42,9 +48,9 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Cache apt packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
-          path: /var/cache/apt/archives
+          path: /var/cache/apt/archives/*.deb
           key: apt-${{ runner.os }}-chktex-texlive-extra-utils
 
       - name: Install lint tools
@@ -138,14 +144,14 @@ jobs:
           path: out
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: |
             out/thesis.pdf
             out/slides/slides.pdf
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           generate_release_notes: true
           files: |
