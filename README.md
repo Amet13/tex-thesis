@@ -193,7 +193,3 @@ See [LICENSE](LICENSE) for details. Your own thesis content is yours.
 ---
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Amet13/tex-thesis&type=Date)](https://star-history.com/#Amet13/tex-thesis&Date)
-
----
-
-> **Ищете оригинальную версию шаблона для магистерского диплома?** Смотрите [старую версию проекта (1.1.1)](https://github.com/Amet13/tex-thesis/tree/1.1.1).
