@@ -32,7 +32,7 @@ jobs:
           key: apt-${{ runner.os }}-texlive-extra-utils
       - name: Install latexindent dependencies
         run: sudo apt-get update && sudo apt-get install -y texlive-extra-utils
-      - run: pip install pre-commit
+      - run: pip install pre-commit==4.6.0
       - name: Cache pre-commit hooks
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
