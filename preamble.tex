@@ -124,18 +124,21 @@ literate={---}{{-{}-{}-}}3 {--}{{-{}-}}2 % Correct display of double and triple 
 
 % Table of contents
 \usepackage{tocloft}
-\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth}\MakeTextUppercase} % CONTENTS title
+\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth}} % CONTENTS title
+\renewcommand{\cfttoctitlename}{\MakeUppercase{\contentsname}}
 \renewcommand{\cftsecfont}{\hspace{0pt}}            % Section names not bold in TOC
 \renewcommand\cftsecleader{\cftdotfill{\cftdotsep}} % Dots for sections in TOC
 \renewcommand\cftsecpagefont{\mdseries}             % Page numbers not bold
 \setcounter{tocdepth}{3}                            % TOC depth: up to subsubsection
 
 % List of figures
-\renewcommand{\cftloftitlefont}{\hspace{0.17\textwidth}\MakeTextUppercase}
+\renewcommand{\cftloftitlefont}{\hspace{0.17\textwidth}}
+\renewcommand{\cftloftitlename}{\MakeUppercase{\listfigurename}}
 \renewcommand{\cftfigfont}{Figure }
 
 % List of tables
-\renewcommand{\cftlottitlefont}{\hspace{0.2\textwidth}\MakeTextUppercase}
+\renewcommand{\cftlottitlefont}{\hspace{0.2\textwidth}}
+\renewcommand{\cftlottitlename}{\MakeUppercase{\listtablename}}
 \renewcommand{\cfttabfont}{Table }
 
 % Page numbering: centered at bottom
