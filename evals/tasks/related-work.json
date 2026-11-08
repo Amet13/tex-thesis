@@ -1,0 +1,12 @@
+{
+  "id": "related-work",
+  "template": "paper",
+  "title": "Write a related-work section with real citations",
+  "prompt": "In this LaTeX paper, replace the related-work section with three paragraphs on consensus protocols for distributed systems: Paxos, Raft, and Byzantine fault tolerance (PBFT). Cite the original paper for each (Lamport's 'Paxos Made Simple', Ongaro and Ousterhout's Raft paper from USENIX ATC 2014, Castro and Liskov's PBFT paper from OSDI 1999). The paper must build without errors. Do not change any other section.",
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "citedAtLeast": 3,
+    "noRules": ["reference-not-found", "citation-key-missing", "pdf-unresolved-citation"]
+  }
+}

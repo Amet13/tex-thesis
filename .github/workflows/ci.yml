@@ -1,0 +1,94 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Lint, types, unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Templates are in sync with skills/ and shared/
+        run: pnpm templates:check
+      - name: Bundled Action is up to date
+        run: |
+          pnpm --filter overfull-action build
+          git diff --exit-code -- action/dist
+
+  tex:
+    name: Image, corpus, templates, Action
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the Overfull image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: overfull
+          load: true
+          tags: overfull:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Corpus reproduces every rule on TeX Live 2026
+        run: docker run --rm -v "$PWD:/repo" -w /repo -e OVERFULL_TEX_LOCAL=1 overfull:ci node scripts/corpus.mjs --verify
+      - name: Templates build and pass their own preflight
+        run: bash scripts/e2e-templates.sh overfull:ci out
+      - name: Action runs on a built template
+        id: action
+        uses: ./
+        with:
+          working-directory: out/thesis
+          checks: build,output,references,accessibility,venue
+          fail-on: error
+      - name: Action reported a status
+        run: test -n "${{ steps.action.outputs.status }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: template-pdfs
+          path: |
+            out/*/*.pdf
+            out/*/overfull-report.json
+          if-no-files-found: ignore
+
+  site:
+    name: Website
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @overfull/core build
+      - run: pnpm --filter site build
+      - run: pnpm --filter site exec playwright install --with-deps chromium
+      - run: pnpm --filter site test:e2e

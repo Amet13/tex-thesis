@@ -1,29 +1,26 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories: ["/", "/templates/thesis", "/templates/paper", "/templates/slides"]
     schedule:
       interval: "weekly"
       day: "monday"
     groups:
       github-actions:
-        patterns:
-          - "*"
+        patterns: ["*"]
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/docker"
     schedule:
       interval: "weekly"
       day: "monday"
     groups:
       docker:
-        patterns:
-          - "*"
-  - package-ecosystem: "pre-commit"
+        patterns: ["*"]
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
     groups:
-      pre-commit:
-        patterns:
-          - "*"
+      npm:
+        patterns: ["*"]

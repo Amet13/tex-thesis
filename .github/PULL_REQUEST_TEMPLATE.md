@@ -1,23 +1,17 @@
 ## Summary
 
-Describe what changed and why.
-
-Fixes # (issue)
+What changed and why.
 
 ## Type of change
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature/example (non-breaking change)
-- [ ] Breaking change (requires migration notes)
-- [ ] Documentation update
+- [ ] Bug fix
+- [ ] New rule or corpus case
+- [ ] Template or skill change
+- [ ] New feature
+- [ ] Documentation
 
-## Validation checklist
+## Checks
 
-- [ ] I ran `make lint`
-- [ ] I ran `make build` (or `make build-thesis` / `make build-slides`)
-- [ ] Thesis and/or slides compile without new warnings/errors
-- [ ] I updated documentation where relevant
-- [ ] I verified output PDF(s) render correctly
-
-## Screenshots or PDF snippets (optional)
-If UI/theme/layout changed, include before/after snippets.
+- [ ] `pnpm lint`, `pnpm typecheck` and `pnpm test` pass
+- [ ] New rules have a corpus case
+- [ ] Template or skill changes were made in `skills/` or `shared/` and synced with `pnpm templates:sync`

@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [v0.1.0] - Overfull
+
+tex-thesis becomes **Overfull**, a preflight kit for LaTeX papers and theses
+that works with AI coding agents and by hand. Version numbering restarts at
+0.1.0 for the new project; the last tex-thesis release was v2.4.1.
+
+### Added
+
+- `overfull` CLI: `init`, `build`, `check`, `cite`, `pages`, `diff`, `explain`, `doctor`.
+- `@overfull/core`: browser-safe checks for build logs, output problems,
+  reference verification (CrossRef, doi.org, DBLP, arXiv, optional OpenAlex),
+  PDF accessibility (tagging, alt text, language, title, fonts, veraPDF) and
+  venue rules (page limits, anonymity, AI-use disclosure, arXiv).
+- GitHub Action (`uses: amet13/overfull@v1`) with annotations and job summaries.
+- Templates: `thesis` (the former tex-thesis, rebuilt as a tagged, accessible
+  PDF), `paper` and `slides`, each with `AGENTS.md`, Agent Skills and a CI workflow.
+- Agent Skills: add-citation, fix-build, add-figure, make-accessible,
+  fit-page-limit, prepare-arxiv, write-disclosure, review-changes, start-paper,
+  respond-to-reviewers.
+- Corpus of failing LaTeX documents that CI recompiles on TeX Live 2026.
+- Website with docs, a rule reference and a browser-only check.
+- Docker image `ghcr.io/amet13/overfull` with TeX Live 2026, poppler, veraPDF,
+  latexdiff and the CLI.
+- Evals harness that scores agents with and without the kit.
+
+### Changed
+
+- Licenses: code is MIT; templates, skills and agent instructions are MIT-0
+  (previously GPL-3.0 and CC BY-SA 4.0).
+- The thesis template moved to `templates/thesis` and dropped packages that
+  break PDF tagging.
+
+### Removed
+
+- The deleted `.devcontainer` references and the old single-template build.
+
 ## [v2.4.1] - 2026-04-12
 
 ### Changed

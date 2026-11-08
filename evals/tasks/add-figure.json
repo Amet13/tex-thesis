@@ -1,0 +1,11 @@
+{
+  "id": "add-figure",
+  "template": "paper",
+  "title": "Add a data-driven figure with alt text",
+  "prompt": "Add a figure to the results section that plots median latency (ms) against cluster size for these measurements: 3 nodes 4.1 ms, 5 nodes 5.3 ms, 7 nodes 7.9 ms, 9 nodes 11.2 ms. Reference the figure from the text. The paper must build without errors.",
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": ["figure-missing-alt", "pdf-unresolved-reference", "undefined-reference"]
+  }
+}

@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Support question
-    url: https://github.com/Amet13/tex-thesis/discussions
-    about: Ask usage and customization questions in Discussions.
+  - name: Questions and ideas
+    url: https://github.com/amet13/overfull/discussions
+    about: Ask usage questions and share ideas in Discussions.

@@ -1,47 +1,50 @@
-# Contributing to tex-thesis
+# Contributing
 
-Thank you for your interest in improving this LaTeX thesis template!
+Thanks for helping. Overfull is maintained by one person, so small, focused
+pull requests with tests get merged fastest.
 
-## How to Contribute
+## Setup
 
-1. **Fork** the repository and create a feature branch
-2. Make your changes
-3. **Format** your LaTeX files: `make fmt`
-4. **Lint** your LaTeX files: `make lint`
-5. **Pre-commit**: We use `pre-commit` to ensure code quality. Install it with `pip install pre-commit` and run `pre-commit install` in the repository root.
-6. **Build** to verify compilation: `make build`
-7. Open a **Pull Request** with a clear description of your changes
+```bash
+pnpm install
+pnpm build
+pnpm test
+```
 
-## What We're Looking For
+You need Node 22.12 or newer and pnpm 12. Docker is needed for anything that
+compiles LaTeX (corpus, templates, end-to-end tests).
 
-- New LaTeX feature examples (TikZ diagrams, table styles, math environments)
-- Package modernization and compatibility improvements
-- Documentation improvements
-- Bug fixes in compilation or formatting
-- Docker build optimizations
-- CI/CD pipeline improvements
+## Where things live
 
-## Guidelines
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: checks live in
+`packages/core`, the command line in `packages/cli`, templates in `templates/`,
+agent skills in `skills/`, the website in `site/`.
 
-- Keep examples self-contained and well-commented with `% === EXAMPLE: ... ===` markers
-- Use LuaLaTeX-compatible packages only
-- Test that both thesis and slides compile without errors
-- Follow the existing code style (4-space indentation for `.tex` files)
-- Run `make fmt-check` and `make lint` before submitting
+## The most useful contribution: a corpus case
 
-## Versioning and Release Notes
+If Overfull did not recognize a LaTeX error, or explained it badly:
 
-- Add user-visible changes to [CHANGELOG.md](CHANGELOG.md) under `Unreleased`
-- Follow semantic versioning expectations documented in [README.md](README.md)
-- Include migration notes in PR descriptions for breaking changes
+1. Add `corpus/<short-id>/main.tex` that reproduces it with as little code as possible.
+2. Add `corpus/<short-id>/case.json` with the engine and the rule you expect.
+3. Run `pnpm corpus:capture <short-id>` (needs Docker) to record the real log.
+4. Add or improve the rule in `packages/core/src/log/`, then `pnpm test`.
 
-## Reporting Issues
+CI recompiles every case on the pinned TeX Live, so rules stay correct when
+TeX Live changes.
 
-- Include the full error log from `make build`
-- Mention your Docker version (`docker --version`)
+## Changing a template or a skill
 
-## License
+Edit `skills/` or `shared/agents/`, never the copies inside `templates/*/.agents`.
+Then run `pnpm templates:sync`. CI fails if templates drift.
 
-By contributing, you agree that your contributions will be licensed under
-[GNU GPLv3](LICENSE-GPL) (source code) and [CC BY-SA 4.0](LICENSE-CC-BY-SA) (content and template).
-See [LICENSE](LICENSE) for details on what falls under each license.
+## Checks before you push
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+```
+
+## Code of conduct
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
