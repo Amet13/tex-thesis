@@ -32,7 +32,7 @@ exists, what the PDF looks like, or what your thesis office requires. Overfull
 checks exactly those things:
 
 | Check | Catches |
-|-------|---------|
+| ------- | --------- |
 | **build** | TeX errors, grouped by root cause, explained in plain language |
 | **output** | `??` references, `[?]` citations, stale bibliography, text in the margin |
 | **references** | citations that don't exist (CrossRef, doi.org, DBLP, arXiv) or have wrong metadata |
@@ -90,7 +90,7 @@ PDF to every pull request.
 ## Templates
 
 | Template | For | Accessible by default |
-|----------|-----|-----------------------|
+| ---------- | ----- | ----------------------- |
 | [`thesis`](templates/thesis) | bachelor's, master's, PhD theses (A4, 14pt, 1.5 spacing) | yes, tagged PDF/UA-2 |
 | [`paper`](templates/paper) | research papers and preprints | yes, tagged PDF/UA-2 |
 | [`slides`](templates/slides) | defense and conference talks (Beamer) | see template README |

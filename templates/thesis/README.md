@@ -34,7 +34,7 @@ entry) and `overfull explain <rule>` directly.
 ## Layout
 
 | Path | What it is |
-|------|------------|
+| ------ | ------------ |
 | `metadata.tex` | Title, author, keywords: used on the title page and in PDF metadata |
 | `main.tex` | Document structure; first line declares PDF/UA-2 and tagging |
 | `preamble/` | Style, split by topic (fonts, layout, headings, floats, references) |

@@ -143,7 +143,7 @@ githubAnnotations(report): string[]      // ::error file=…,line=…,title=…:
 
 ## CLI (`overfull`)
 
-```
+```text
 overfull init [thesis|paper|slides] [dir]   copy a template
 overfull build [main.tex] [--engine auto|local|docker]
 overfull check [--json|--markdown] [--checks a,b] [--profile p] [--offline] [--fail-on error|warning]
