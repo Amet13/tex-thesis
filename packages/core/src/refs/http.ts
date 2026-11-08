@@ -156,7 +156,11 @@ export class HttpClient {
  * GET + JSON.parse. A non-JSON body (bot walls answer 200/202 with HTML)
  * takes the host out for the rest of the run and throws SourceUnavailableError.
  */
-export async function getJson<T>(client: HttpClient, url: string, accept = 'application/json'): Promise<{ status: number; data: T | null }> {
+export async function getJson<T>(
+  client: HttpClient,
+  url: string,
+  accept = 'application/json',
+): Promise<{ status: number; data: T | null }> {
   const res = await client.get(url, accept);
   if (res.status === 404 || res.status === 410) return { status: res.status, data: null };
   const host = new URL(url).host;

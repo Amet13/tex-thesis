@@ -55,7 +55,9 @@ function typeRank(r: WorkRecord): number {
 }
 
 function sharesAuthor(a: WorkRecord, b: WorkRecord): boolean {
-  return a.authors.some((x) => b.authors.some((y) => namesMatch(foldName(x.family), foldName(y.family))));
+  return a.authors.some((x) =>
+    b.authors.some((y) => namesMatch(foldName(x.family), foldName(y.family))),
+  );
 }
 
 const firstYear = (r: WorkRecord) => (r.years.length ? Math.min(...r.years) : 9999);
@@ -80,7 +82,8 @@ export function pickTitleMatch(query: string, records: WorkRecord[]): Pick | nul
   )[0] as (typeof strong)[number];
   const anchorYear = firstYear(anchor.record);
   const family = strong.filter((c) => c === anchor || sharesAuthor(c.record, anchor.record));
-  const effectiveRank = (r: WorkRecord) => (firstYear(r) - anchorYear > 2 ? Math.min(typeRank(r), 1) : typeRank(r));
+  const effectiveRank = (r: WorkRecord) =>
+    firstYear(r) - anchorYear > 2 ? Math.min(typeRank(r), 1) : typeRank(r);
   const best = [...family].sort(
     (a, b) =>
       effectiveRank(b.record) - effectiveRank(a.record) ||
@@ -121,7 +124,10 @@ async function lookupTitle(ctx: Ctx, title: string): Promise<LookupResult | null
   const { record } = pick;
   if (record.doi && !record.doi.startsWith('10.48550/')) {
     const viaDoi = await lookupDoi(ctx, record.doi).catch(() => null);
-    if (viaDoi && titleSimilarity(title, viaDoi.entry.fields.title ?? '') >= LOOKUP_TITLE_THRESHOLD) {
+    if (
+      viaDoi &&
+      titleSimilarity(title, viaDoi.entry.fields.title ?? '') >= LOOKUP_TITLE_THRESHOLD
+    ) {
       return { ...viaDoi, source: record.source, confidence: pick.confidence };
     }
   }

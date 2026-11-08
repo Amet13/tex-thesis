@@ -7,8 +7,8 @@
  * and year is "similar but different".
  */
 
-import type { BibEntry } from '../bib/parse.js';
 import { parseNames } from '../bib/names.js';
+import type { BibEntry } from '../bib/parse.js';
 import { foldName, namesMatch, stripMarkup, titleSimilarity } from './normalize.js';
 import type { RefDifference, WorkRecord } from './types.js';
 
@@ -64,7 +64,9 @@ export function bibFacts(entry: BibEntry): BibFacts {
 
 function recordNameMatches(surname: string, a: WorkRecord['authors'][number]): boolean {
   // Given/family swaps are common for East Asian names; accept either.
-  return namesMatch(surname, foldName(a.family)) || (!!a.given && namesMatch(surname, foldName(a.given)));
+  return (
+    namesMatch(surname, foldName(a.family)) || (!!a.given && namesMatch(surname, foldName(a.given)))
+  );
 }
 
 function authorOverlap(facts: BibFacts, record: WorkRecord): number | null {
@@ -86,7 +88,9 @@ function yearDiff(facts: BibFacts, record: WorkRecord): number | null {
 }
 
 function recordAuthorText(record: WorkRecord, max = 3): string {
-  const names = record.authors.slice(0, max).map((a) => (a.given ? `${a.given} ${a.family}` : a.family));
+  const names = record.authors
+    .slice(0, max)
+    .map((a) => (a.given ? `${a.given} ${a.family}` : a.family));
   return names.join(', ') + (record.authors.length > max ? ', …' : '');
 }
 
@@ -113,7 +117,11 @@ function differencesFor(facts: BibFacts, record: WorkRecord, s: Signals): RefDif
     diffs.push({ field: 'author', bib: facts.authorText ?? '', record: recordAuthorText(record) });
   }
   if (s.years !== null && s.years > 1) {
-    diffs.push({ field: 'year', bib: String(facts.year), record: String(closestYear(facts, record)) });
+    diffs.push({
+      field: 'year',
+      bib: String(facts.year),
+      record: String(closestYear(facts, record)),
+    });
   }
   return diffs;
 }
@@ -122,7 +130,13 @@ function verdictFor(s: Signals, identified: boolean): { verdict: Verdict; differ
   const authorsConflict = s.overlap === 0 || s.firstOk === false;
   const yearConflict = s.years !== null && s.years > 1;
   if (s.titleScore >= STRONG_TITLE) {
-    return { verdict: authorsConflict || yearConflict ? 'mismatch' : 'verified', differentWork: false };
+    // Same title, other authors *and* another year: a different work that shares the title.
+    if (!identified && authorsConflict && yearConflict)
+      return { verdict: 'none', differentWork: false };
+    return {
+      verdict: authorsConflict || yearConflict ? 'mismatch' : 'verified',
+      differentWork: false,
+    };
   }
   const sameAuthors = s.overlap !== null && s.overlap > 0 && s.firstOk !== false;
   if (s.titleScore >= SIMILAR_TITLE && sameAuthors && !yearConflict) {

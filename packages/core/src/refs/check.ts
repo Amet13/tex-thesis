@@ -53,7 +53,8 @@ export const refsRules: RuleInfo[] = [
     check: 'references',
     severity: 'error',
     title: 'Cited key not in any .bib file',
-    summary: 'The document cites a key that no .bib file defines; the PDF shows `[?]` or the key in bold.',
+    summary:
+      'The document cites a key that no .bib file defines; the PDF shows `[?]` or the key in bold.',
     fix: 'Add the entry with `overfull cite <doi | arXiv:id | "title">`, or fix the key in `\\cite{}`.',
   },
 ];
@@ -65,17 +66,23 @@ function fieldList(r: RefResult): string {
 function citeHint(r: RefResult, entry?: BibEntry): string {
   if (r.matched?.doi) return `overfull cite ${r.matched.doi}`;
   const title = entry?.fields.title ?? r.matched?.title;
-  return title ? `overfull cite "${title.replace(/[{}]/g, '').replace(/"/g, "'")}"` : 'overfull cite <doi>';
+  return title
+    ? `overfull cite "${title.replace(/[{}]/g, '').replace(/"/g, "'")}"`
+    : 'overfull cite <doi>';
 }
 
 function searchedText(r: RefResult): string {
   const names = (r.searched ?? []).map(sourceName);
   if (!names.length) return 'the indexes';
-  return names.length === 1 ? (names[0] as string) : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`;
+  return names.length === 1
+    ? (names[0] as string)
+    : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`;
 }
 
 function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
-  const location = r.location ?? (entry?.line ? { line: entry.line, ...(entry.file ? { file: entry.file } : {}) } : undefined);
+  const location =
+    r.location ??
+    (entry?.line ? { line: entry.line, ...(entry.file ? { file: entry.file } : {}) } : undefined);
   const data: Record<string, unknown> = { key: r.key, status: r.status };
   if (r.source) data.source = r.source;
   if (r.query) data.query = r.query;
@@ -97,7 +104,9 @@ function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
         fix: `Check the DOI and title against the publisher page, or re-add it from real metadata with \`${citeHint(r, entry)}\`. If it is real but unindexed, add \`note = {overfull: skip}\`.`,
       };
     case 'mismatch': {
-      const diffs = (r.differences ?? []).map((d) => `${d.field}: bib “${d.bib}”, record “${d.record}”`);
+      const diffs = (r.differences ?? []).map(
+        (d) => `${d.field}: bib “${d.bib}”, record “${d.record}”`,
+      );
       return {
         ...common,
         ...evidence,
@@ -122,7 +131,8 @@ function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
         rule: 'reference-lookup-failed',
         severity: 'warning',
         message: `\`${r.key}\` could not be checked: ${r.reason ?? 'lookup failed'}`,
-        detail: 'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
+        detail:
+          'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
         fix: 'Re-run the check when online.',
       };
   }
@@ -203,5 +213,11 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
       stats,
     };
   }
-  return { check: 'references', status: statusOf(problems), problems, summary: summaryOf(results, stats), stats };
+  return {
+    check: 'references',
+    status: statusOf(problems),
+    problems,
+    summary: summaryOf(results, stats),
+    stats,
+  };
 }

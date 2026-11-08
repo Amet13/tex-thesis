@@ -67,7 +67,8 @@ const raftDblp = {
 const emptyCrossref = { message: { items: [] } };
 const emptyDblp = { result: { hits: { '@total': '0' } } };
 const emptyAtom = '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>';
-const atom = (body: string) => new Response(body, { headers: { 'content-type': 'application/atom+xml' } });
+const atom = (body: string) =>
+  new Response(body, { headers: { 'content-type': 'application/atom+xml' } });
 
 /** Routes by host; each route returns a Response. */
 function router(routes: Partial<Record<string, (u: URL) => Response>>) {
@@ -104,7 +105,7 @@ describe('identifiers and query parsing', () => {
   });
 
   it('classifies lookup queries', () => {
-    expect(queryKind('https://doi.org/10.1/x')).toEqual({ kind: 'doi', value: '10.1/x' });
+    expect(queryKind('https://doi.org/10.1000/X')).toEqual({ kind: 'doi', value: '10.1000/x' });
     expect(queryKind('arXiv:1706.03762')).toEqual({ kind: 'arxiv', value: '1706.03762' });
     expect(queryKind(' Paxos Made Simple ')).toEqual({ kind: 'title', value: 'Paxos Made Simple' });
   });
@@ -127,47 +128,69 @@ describe('identifiers and query parsing', () => {
   it('builds stable cache keys', () => {
     expect(doiCacheKey('10.1145/ABC')).toBe('doi:10.1145/abc');
     expect(arxivCacheKey('1706.03762v7')).toBe('arxiv:1706.03762');
-    expect(titleCacheKey('{BERT}: Pre-training of {D}eep', 2019)).toBe('title:bert pre training of deep|2019');
+    expect(titleCacheKey('{BERT}: Pre-training of {D}eep', 2019)).toBe(
+      'title:bert pre training of deep|2019',
+    );
   });
 });
 
 describe('generateKey', () => {
-  const key = (bib: string) => generateKey(parseBib(bib)[0] as NonNullable<ReturnType<typeof parseBib>[0]>);
+  const key = (bib: string) =>
+    generateKey(parseBib(bib)[0] as NonNullable<ReturnType<typeof parseBib>[0]>);
   it('is <surname><year><first significant word>, lowercase ASCII', () => {
     expect(key(RAFT)).toBe('ongaro2014search');
-    expect(key('@misc{x, author={Vaswani, Ashish}, title={Attention Is All You Need}, year=2017}')).toBe(
-      'vaswani2017attention',
-    );
     expect(
-      key('@article{x, author={G{\\"o}del, Kurt}, title={{\\"U}ber formal unentscheidbare S{\\"a}tze}, year=1931}'),
+      key('@misc{x, author={Vaswani, Ashish}, title={Attention Is All You Need}, year=2017}'),
+    ).toBe('vaswani2017attention');
+    expect(
+      key(
+        '@article{x, author={G{\\"o}del, Kurt}, title={{\\"U}ber formal unentscheidbare S{\\"a}tze}, year=1931}',
+      ),
     ).toBe('godel1931formal');
-    expect(key('@article{x, author={Erd{\\H{o}}s, Paul}, title={On the evolution of random graphs}, year=1960}')).toBe(
-      'erdos1960evolution',
-    );
-    expect(key('@article{x, author={{ATLAS Collaboration}}, title={Observation of a new particle}, year=2012}')).toBe(
-      'atlas2012observation',
-    );
-    expect(key('@article{x, author={van der Walt, St{\\\'e}fan}, title={The NumPy array}, year=2011}')).toBe(
-      'walt2011numpy',
-    );
+    expect(
+      key(
+        '@article{x, author={Erd{\\H{o}}s, Paul}, title={On the evolution of random graphs}, year=1960}',
+      ),
+    ).toBe('erdos1960evolution');
+    expect(
+      key(
+        '@article{x, author={{ATLAS Collaboration}}, title={Observation of a new particle}, year=2012}',
+      ),
+    ).toBe('atlas2012observation');
+    expect(
+      key("@article{x, author={van der Walt, St{\\'e}fan}, title={The NumPy array}, year=2011}"),
+    ).toBe('walt2011numpy');
   });
 });
 
 describe('titleSimilarity', () => {
   it('ignores case, TeX markup, accents and punctuation', () => {
     expect(titleSimilarity('{BERT}: Pre-training of {D}eep', 'BERT: Pre-Training of Deep')).toBe(1);
-    expect(titleSimilarity('Zur Elektrodynamik bewegter K{\\"o}rper', 'Zur Elektrodynamik bewegter Körper')).toBe(1);
+    expect(
+      titleSimilarity(
+        'Zur Elektrodynamik bewegter K{\\"o}rper',
+        'Zur Elektrodynamik bewegter Körper',
+      ),
+    ).toBe(1);
     expect(titleSimilarity('A {$\\beta$}-sheet', 'A <i>β</i>-sheet')).toBe(1);
   });
 
   it('accepts a missing or extra subtitle', () => {
-    expect(titleSimilarity('Prospect Theory', 'Prospect Theory: An Analysis of Decision under Risk')).toBeGreaterThanOrEqual(0.9);
-    expect(titleSimilarity('MapReduce: Simplified Data Processing on Large Clusters', 'MapReduce')).toBeLessThan(0.9);
+    expect(
+      titleSimilarity('Prospect Theory', 'Prospect Theory: An Analysis of Decision under Risk'),
+    ).toBeGreaterThanOrEqual(0.9);
+    expect(
+      titleSimilarity('MapReduce: Simplified Data Processing on Large Clusters', 'MapReduce'),
+    ).toBeLessThan(0.9);
   });
 
   it('does not treat a longer, different title as the same work', () => {
-    expect(titleSimilarity('Attention Is All You Need for Graphs', 'Attention is all you need')).toBeLessThan(0.9);
-    expect(titleSimilarity('Generative Adversarial Nets', 'Generative Adversarial Networks')).toBeLessThan(0.75);
+    expect(
+      titleSimilarity('Attention Is All You Need for Graphs', 'Attention is all you need'),
+    ).toBeLessThan(0.9);
+    expect(
+      titleSimilarity('Generative Adversarial Nets', 'Generative Adversarial Networks'),
+    ).toBeLessThan(0.75);
   });
 });
 
@@ -197,7 +220,11 @@ describe('verifyEntries', () => {
   it('verifies through the DOI and does not search further', async () => {
     const f = router({ 'doi.org': () => json(clocksCsl) });
     const [r] = await verifyEntries(parseBib(CLOCKS), { fetch: f.fetch, ...fast });
-    expect(r).toMatchObject({ status: 'verified', source: 'doi.org', query: 'doi:10.1145/359545.359563' });
+    expect(r).toMatchObject({
+      status: 'verified',
+      source: 'doi.org',
+      query: 'doi:10.1145/359545.359563',
+    });
     expect(r?.matched?.authors).toEqual(['Leslie Lamport']);
     expect(f.calls).toHaveLength(1);
   });
@@ -220,7 +247,10 @@ describe('verifyEntries', () => {
     const f = handlerFetch(() => {
       throw new TypeError('fetch failed');
     });
-    const results = await verifyEntries(parseBib(`${RAFT}\n${CLOCKS}`), { fetch: f.fetch, ...fast });
+    const results = await verifyEntries(parseBib(`${RAFT}\n${CLOCKS}`), {
+      fetch: f.fetch,
+      ...fast,
+    });
     expect(results.map((r) => r.status)).toEqual(['error', 'error']);
     expect(results[0]?.reason).toMatch(/network error/);
   });
@@ -230,11 +260,14 @@ describe('verifyEntries', () => {
       ...allEmpty,
       'dblp.org': () => new Response('<html>Making sure you’re not a bot!</html>', { status: 202 }),
     });
-    const results = await verifyEntries(parseBib(`${RAFT}\n${RAFT.replace('ongaro2014search', 'second')}`), {
-      fetch: f.fetch,
-      concurrency: 1,
-      ...fast,
-    });
+    const results = await verifyEntries(
+      parseBib(`${RAFT}\n${RAFT.replace('ongaro2014search', 'second')}`),
+      {
+        fetch: f.fetch,
+        concurrency: 1,
+        ...fast,
+      },
+    );
     expect(results.map((r) => r.status)).toEqual(['error', 'error']);
     expect(results[0]?.reason).toMatch(/non-JSON page/);
     // After the first bot wall, dblp is not asked again in this run.
@@ -258,10 +291,10 @@ describe('verifyEntries', () => {
   });
 
   it('flags a DOI that points to a different work', async () => {
-    const bib = CLOCKS.replace('Time, Clocks, and the Ordering of Events in a Distributed System', 'Neural Byzantine Consensus').replace(
-      'Lamport, Leslie',
-      'Chen, Wei',
-    );
+    const bib = CLOCKS.replace(
+      'Time, Clocks, and the Ordering of Events in a Distributed System',
+      'Neural Byzantine Consensus',
+    ).replace('Lamport, Leslie', 'Chen, Wei');
     const f = router({ 'doi.org': () => json(clocksCsl) });
     const [r] = await verifyEntries(parseBib(bib), { fetch: f.fetch, ...fast });
     expect(r?.status).toBe('mismatch');
@@ -271,7 +304,9 @@ describe('verifyEntries', () => {
   it('year off by one is verified with a note; off by more is a mismatch', async () => {
     const f = router({ 'doi.org': () => json(clocksCsl) });
     const [one, three] = await verifyEntries(
-      parseBib(`${CLOCKS.replace('1978', '1979')}\n${CLOCKS.replace('lamport1978time', 'b').replace('1978', '1981')}`),
+      parseBib(
+        `${CLOCKS.replace('year = {1978}', 'year = {1979}')}\n${CLOCKS.replace('lamport1978time', 'b').replace('year = {1978}', 'year = {1981}')}`,
+      ),
       { fetch: f.fetch, ...fast },
     );
     expect(one?.status).toBe('verified');
@@ -289,7 +324,12 @@ describe('verifyEntries', () => {
 @misc{d, url={https://example.org}}`),
       { fetch: f.fetch, ...fast },
     );
-    expect(results.map((r) => r.status)).toEqual(['unverifiable', 'unverifiable', 'unverifiable', 'unverifiable']);
+    expect(results.map((r) => r.status)).toEqual([
+      'unverifiable',
+      'unverifiable',
+      'unverifiable',
+      'unverifiable',
+    ]);
     expect(f.calls).toHaveLength(0);
   });
 
@@ -319,7 +359,10 @@ describe('verifyEntries', () => {
 
   it('offline: everything unverifiable, no requests, check skipped', async () => {
     const f = handlerFetch(() => json({}));
-    const results = await verifyEntries(parseBib(`${RAFT}\n${CLOCKS}`), { fetch: f.fetch, offline: true });
+    const results = await verifyEntries(parseBib(`${RAFT}\n${CLOCKS}`), {
+      fetch: f.fetch,
+      offline: true,
+    });
     expect(results.map((r) => [r.status, r.reason])).toEqual([
       ['unverifiable', 'offline'],
       ['unverifiable', 'offline'],
@@ -349,7 +392,9 @@ describe('verifyEntries', () => {
     );
     const slow: typeof fetch = (input, init) =>
       new Promise((resolve, reject) => {
-        init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        init?.signal?.addEventListener('abort', () =>
+          reject(new DOMException('aborted', 'AbortError')),
+        );
         void f.fetch(input, init).then(resolve);
       });
     const [r] = await verifyEntries(parseBib(CLOCKS), { fetch: slow, timeoutMs: 30, ...fast });
@@ -359,7 +404,9 @@ describe('verifyEntries', () => {
 
   it('limits concurrency', async () => {
     const f = router({ 'doi.org': () => json(clocksCsl) });
-    const bib = Array.from({ length: 10 }, (_, i) => CLOCKS.replace('lamport1978time', `k${i}`)).join('\n');
+    const bib = Array.from({ length: 10 }, (_, i) =>
+      CLOCKS.replace('lamport1978time', `k${i}`),
+    ).join('\n');
     const results = await verifyEntries(parseBib(bib), { fetch: f.fetch, concurrency: 3, ...fast });
     expect(results.every((r) => r.status === 'verified')).toBe(true);
     expect(f.maxInFlight()).toBeLessThanOrEqual(3);
@@ -369,7 +416,11 @@ describe('verifyEntries', () => {
   it('cache hits avoid fetch', async () => {
     const map = new Map<string, unknown>();
     const cache: RefCache = { get: (k) => map.get(k), set: (k, v) => void map.set(k, v) };
-    const f = router({ ...allEmpty, 'dblp.org': () => json(raftDblp), 'doi.org': () => json(clocksCsl) });
+    const f = router({
+      ...allEmpty,
+      'dblp.org': () => json(raftDblp),
+      'doi.org': () => json(clocksCsl),
+    });
     const bib = parseBib(`${RAFT}\n${CLOCKS}`);
     const first = await verifyEntries(bib, { fetch: f.fetch, cache, ...fast });
     const callsAfterFirst = f.calls.length;
@@ -404,7 +455,11 @@ describe('verifyEntries', () => {
     expect(a?.status).toBe('not-found');
     expect(without.calls.some((c) => c.includes('openalex'))).toBe(false);
     const withKey = router(routes);
-    const [b] = await verifyEntries(parseBib(RAFT), { fetch: withKey.fetch, openalexKey: 'k', ...fast });
+    const [b] = await verifyEntries(parseBib(RAFT), {
+      fetch: withKey.fetch,
+      openalexKey: 'k',
+      ...fast,
+    });
     expect(b).toMatchObject({ status: 'verified', source: 'openalex' });
   });
 
@@ -418,14 +473,33 @@ describe('verifyEntries', () => {
 describe('refsCheck', () => {
   const results: RefResult[] = [
     { key: 'a', status: 'verified', source: 'doi.org' },
-    { key: 'chen2024scalable', status: 'not-found', searched: ['crossref', 'dblp'], reason: 'no record with a similar title in CrossRef or dblp', location: { file: 'refs.bib', line: 3 } },
-    { key: 'c', status: 'mismatch', source: 'crossref', differences: [{ field: 'year', bib: '1981', record: '1978' }], matched: { title: 'T', authors: [], doi: '10.1/x' } },
+    {
+      key: 'chen2024scalable',
+      status: 'not-found',
+      searched: ['crossref', 'dblp'],
+      reason: 'no record with a similar title in CrossRef or dblp',
+      location: { file: 'refs.bib', line: 3 },
+    },
+    {
+      key: 'c',
+      status: 'mismatch',
+      source: 'crossref',
+      differences: [{ field: 'year', bib: '1981', record: '1978' }],
+      matched: { title: 'T', authors: [], doi: '10.1/x' },
+    },
     { key: 'd', status: 'unverifiable', reason: 'web pages are not in scholarly indexes' },
-    { key: 'e', status: 'error', reason: 'lookup incomplete: api.crossref.org: timed out after 10000 ms' },
+    {
+      key: 'e',
+      status: 'error',
+      reason: 'lookup incomplete: api.crossref.org: timed out after 10000 ms',
+    },
   ];
 
   it('maps statuses to rules and severities', () => {
-    const check = refsCheck(results, { issues: [{ line: 9, message: 'unexpected `}`', key: 'z' }], bibFile: 'refs.bib' });
+    const check = refsCheck(results, {
+      issues: [{ line: 9, message: 'unexpected `}`', key: 'z' }],
+      bibFile: 'refs.bib',
+    });
     expect(check.status).toBe('fail');
     expect(check.problems.map((p) => [p.rule, p.severity])).toEqual([
       ['bib-parse-error', 'error'],
@@ -442,12 +516,23 @@ describe('refsCheck', () => {
     expect(check.summary).toBe(
       '1 of 5 references verified (1 not found, 1 with differing metadata, 1 could not be checked, 1 not checkable automatically)',
     );
-    expect(check.stats).toEqual({ total: 5, verified: 1, mismatch: 1, notFound: 1, unverifiable: 1, error: 1 });
+    expect(check.stats).toEqual({
+      total: 5,
+      verified: 1,
+      mismatch: 1,
+      notFound: 1,
+      unverifiable: 1,
+      error: 1,
+    });
   });
 
   it('passes when everything is verified', () => {
     const check = refsCheck([{ key: 'a', status: 'verified' }]);
-    expect(check).toMatchObject({ status: 'pass', summary: '1 of 1 references verified', problems: [] });
+    expect(check).toMatchObject({
+      status: 'pass',
+      summary: '1 of 1 references verified',
+      problems: [],
+    });
   });
 
   it('every rule used is documented', () => {
@@ -468,7 +553,10 @@ describe('refsCheck', () => {
 
 describe('missingKeys', () => {
   it('reports cited keys without entries', () => {
-    const problems = missingKeys(['ongaro2014search', 'ghost2024', 'Ongaro2014search'], parseBib(RAFT));
+    const problems = missingKeys(
+      ['ongaro2014search', 'ghost2024', 'Ongaro2014search'],
+      parseBib(RAFT),
+    );
     expect(problems.map((p) => [p.rule, p.severity, p.data?.key])).toEqual([
       ['citation-key-missing', 'error', 'ghost2024'],
       ['citation-key-missing', 'error', 'Ongaro2014search'],

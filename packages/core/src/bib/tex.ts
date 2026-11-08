@@ -136,13 +136,31 @@ const GREEK_MAP: Record<string, string> = Object.fromEntries(
 );
 
 /** Math operators that read as words: `\log n` → `log n`. */
-const MATH_OPERATORS = new Set(['log', 'ln', 'exp', 'sin', 'cos', 'tan', 'lim', 'max', 'min', 'sup', 'inf', 'det', 'dim', 'ker', 'deg', 'gcd', 'Pr']);
+const MATH_OPERATORS = new Set([
+  'log',
+  'ln',
+  'exp',
+  'sin',
+  'cos',
+  'tan',
+  'lim',
+  'max',
+  'min',
+  'sup',
+  'inf',
+  'det',
+  'dim',
+  'ker',
+  'deg',
+  'gcd',
+  'Pr',
+]);
 
 /** Private-use placeholders so escaped characters survive brace stripping. */
 const ESCAPES: Record<string, string> = {
   '{': '',
   '}': '',
-  '$': '',
+  $: '',
   '&': '&',
   '%': '%',
   '#': '#',
@@ -157,7 +175,8 @@ function accent(base: string, mark: string): string {
 
 function replaceAccents(s: string): string {
   const symbol = /\\([`'^"~=.])\s*(?:\{\s*(\\[ij]|[A-Za-z])\s*\}|(\\[ij])(?![A-Za-z])|([A-Za-z]))/g;
-  const letter = /\\([uvHckrdbt])(?:\s*\{\s*(\\[ij]|[A-Za-z])\s*\}|\s+(\\[ij](?![A-Za-z])|[A-Za-z]))/g;
+  const letter =
+    /\\([uvHckrdbt])(?:\s*\{\s*(\\[ij]|[A-Za-z])\s*\}|\s+(\\[ij](?![A-Za-z])|[A-Za-z]))/g;
   return s
     .replace(symbol, (_m, cmd: string, a?: string, b?: string, c?: string) =>
       accent((a ?? b ?? c) as string, SYMBOL_ACCENTS[cmd] as string),

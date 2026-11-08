@@ -10,7 +10,7 @@
 // these with a fake fetch, so they run offline and deterministically.
 //
 // Bodies are trimmed to keep the file small: doi.org CSL records keep only the
-// fields Overfull reads, and non-JSON pages (bot challenges) keep 300 chars.
+// fields Overfull reads (first 100 authors), arXiv feeds drop abstracts, and non-JSON pages (bot challenges) keep 300 chars.
 // When a host answers with a bot challenge, that response is also stored as
 // the host's fallback, because the code stops asking a host once it has seen one.
 
@@ -68,12 +68,19 @@ function trimBody(url, contentType, body) {
   try {
     json = JSON.parse(body);
   } catch {
-    return /xml|bibtex|x-bibtex|text\/plain/.test(contentType) || body.startsWith('@') || body.startsWith('<?xml')
+    // arXiv abstracts are not used; dropping them keeps the fixture small.
+    if (body.includes('<feed')) return body.replace(/<summary>[\s\S]*?<\/summary>/g, '<summary/>');
+    return /xml|bibtex|x-bibtex|text\/plain/.test(contentType) ||
+      body.startsWith('@') ||
+      body.startsWith('<?xml')
       ? body
       : body.slice(0, 300);
   }
   if (new URL(url).host === 'doi.org' && json && typeof json === 'object' && !Array.isArray(json)) {
-    return JSON.stringify(Object.fromEntries(CSL_KEYS.filter((k) => k in json).map((k) => [k, json[k]])));
+    const kept = Object.fromEntries(CSL_KEYS.filter((k) => k in json).map((k) => [k, json[k]]));
+    // Collaboration papers list thousands of authors; the first 100 are plenty for matching.
+    if (Array.isArray(kept.author)) kept.author = kept.author.slice(0, 100);
+    return JSON.stringify(kept);
   }
   return JSON.stringify(json);
 }
@@ -91,7 +98,13 @@ async function recordingFetch(url, init = {}) {
   if (retryAfter) entry.retryAfter = retryAfter;
   store.requests[fixtureKey(url, accept)] = entry;
   const host = new URL(url).host;
-  if (/json/.test(accept) && /text\/html/.test(contentType) && !store.hostFallbacks[host]) {
+  const botWall = res.status === 202 || /not a bot|captcha|challenge/i.test(body.slice(0, 2000));
+  if (
+    /json/.test(accept) &&
+    /text\/html/.test(contentType) &&
+    botWall &&
+    !store.hostFallbacks[host]
+  ) {
     store.hostFallbacks[host] = entry;
   }
   process.stderr.write(`${res.status} ${url.slice(0, 140)}\n`);

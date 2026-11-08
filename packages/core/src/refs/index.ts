@@ -1,5 +1,11 @@
 export { arxivCacheKey, doiCacheKey, titleCacheKey } from './cache.js';
-export { bibIssueProblems, missingKeys, type RefsCheckOptions, refsCheck, refsRules } from './check.js';
+export {
+  bibIssueProblems,
+  missingKeys,
+  type RefsCheckOptions,
+  refsCheck,
+  refsRules,
+} from './check.js';
 export { entryFromRecord, generateKey } from './entry.js';
 export { type EntryKind, entryKind, identifiersOf } from './kind.js';
 export { LOOKUP_MIN_CONFIDENCE, LOOKUP_TITLE_THRESHOLD, lookup, queryKind } from './lookup.js';

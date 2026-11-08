@@ -1,9 +1,22 @@
 import type { BibEntry } from '../bib/parse.js';
 import { arxivCacheKey, doiCacheKey, titleCacheKey } from './cache.js';
 import { HttpClient } from './http.js';
-import { entryKind, type EntryKind, identifiersOf, type Identifiers, notIndexedReason } from './kind.js';
+import {
+  type EntryKind,
+  entryKind,
+  type Identifiers,
+  identifiersOf,
+  notIndexedReason,
+} from './kind.js';
 import { type Assessment, assess, type BibFacts, bestAssessment, bibFacts } from './match.js';
-import { arxivByIdCached, type Ctx, failureReason, resolveDoiCached, type SourceFailure, titleSearch } from './search.js';
+import {
+  arxivByIdCached,
+  type Ctx,
+  failureReason,
+  resolveDoiCached,
+  type SourceFailure,
+  titleSearch,
+} from './search.js';
 import type { MatchedRecord, RefResult, RefSource, RefsOptions, WorkRecord } from './types.js';
 
 const SOURCE_NAMES: Record<RefSource, string> = {
@@ -65,7 +78,12 @@ function fromAssessment(base: RefResult, a: Assessment, ev: Evidence): RefResult
   return result;
 }
 
-async function checkDoi(ctx: Ctx, doi: string, facts: BibFacts, ev: Evidence): Promise<Assessment | null> {
+async function checkDoi(
+  ctx: Ctx,
+  doi: string,
+  facts: BibFacts,
+  ev: Evidence,
+): Promise<Assessment | null> {
   ev.queries.push(doiCacheKey(doi));
   try {
     const res = await resolveDoiCached(ctx, doi);
@@ -88,7 +106,12 @@ async function checkDoi(ctx: Ctx, doi: string, facts: BibFacts, ev: Evidence): P
   }
 }
 
-async function checkArxiv(ctx: Ctx, id: string, facts: BibFacts, ev: Evidence): Promise<Assessment | null> {
+async function checkArxiv(
+  ctx: Ctx,
+  id: string,
+  facts: BibFacts,
+  ev: Evidence,
+): Promise<Assessment | null> {
   ev.queries.push(arxivCacheKey(id));
   try {
     const record = await arxivByIdCached(ctx, id);
@@ -113,7 +136,12 @@ async function checkArxiv(ctx: Ctx, id: string, facts: BibFacts, ev: Evidence): 
   }
 }
 
-async function searchByTitle(ctx: Ctx, facts: BibFacts, ev: Evidence): Promise<void> {
+async function searchByTitle(
+  ctx: Ctx,
+  facts: BibFacts,
+  kind: EntryKind,
+  ev: Evidence,
+): Promise<void> {
   if (!facts.title) return;
   ev.queries.push(titleCacheKey(facts.title, facts.year));
   const firstAuthor = facts.firstIsPersonal ? facts.surnames[0] : undefined;
@@ -126,7 +154,11 @@ async function searchByTitle(ctx: Ctx, facts: BibFacts, ev: Evidence): Promise<v
       ...(facts.year ? { year: facts.year } : {}),
     },
     (records) => {
-      const found = records.map((r) => assess(facts, r, false));
+      // For books, theses and misc entries a same-title record from another year is usually
+      // another edition, a review or a re-deposit: only a full match counts.
+      const found = records
+        .map((r) => assess(facts, r, false))
+        .filter((a) => kind === 'scholarly' || a.verdict !== 'mismatch');
       ev.assessments.push(...found);
       return found.some((a) => a.verdict === 'verified');
     },
@@ -146,22 +178,38 @@ function failuresText(failures: SourceFailure[]): string {
 }
 
 /** No candidate matched: decide between not-found, unverifiable and error. */
-function noMatch(base: RefResult, entry: BibEntry, kind: EntryKind, ids: Identifiers, ev: Evidence): RefResult {
+function noMatch(
+  base: RefResult,
+  entry: BibEntry,
+  kind: EntryKind,
+  ids: Identifiers,
+  ev: Evidence,
+): RefResult {
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
   const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
   const titleNote = entry.fields.title ? ' and no record has a similar title' : '';
   if (ev.arxivMissing) {
-    return { ...withSearched, status: 'not-found', reason: `arXiv has no paper ${ids.arxivId}${titleNote}` };
+    return {
+      ...withSearched,
+      status: 'not-found',
+      reason: `arXiv has no paper ${ids.arxivId}${titleNote}`,
+    };
   }
   if (ev.doiMissing) {
     if (kind === 'scholarly') {
-      return { ...withSearched, status: 'not-found', reason: `the DOI ${ids.doi} does not exist${titleNote}` };
+      return {
+        ...withSearched,
+        status: 'not-found',
+        reason: `the DOI ${ids.doi} does not exist${titleNote}`,
+      };
     }
     return {
       ...withSearched,
       status: 'mismatch',
-      differences: [{ field: 'doi', bib: ids.doi as string, record: 'does not resolve at doi.org' }],
+      differences: [
+        { field: 'doi', bib: ids.doi as string, record: 'does not resolve at doi.org' },
+      ],
       reason: `the DOI ${ids.doi} does not exist`,
     };
   }
@@ -173,7 +221,11 @@ function noMatch(base: RefResult, entry: BibEntry, kind: EntryKind, ids: Identif
           ? 'theses are often not indexed'
           : 'this kind of entry is often not indexed';
     const failed = ev.failures.length ? ` (lookup incomplete: ${failuresText(ev.failures)})` : '';
-    return { ...withSearched, status: 'unverifiable', reason: `no match found, but ${why}${failed}` };
+    return {
+      ...withSearched,
+      status: 'unverifiable',
+      reason: `no match found, but ${why}${failed}`,
+    };
   }
   if (failedRequired.length || !searched.length) {
     return {
@@ -190,7 +242,11 @@ function noMatch(base: RefResult, entry: BibEntry, kind: EntryKind, ids: Identif
 }
 
 /** Verifies one entry. Never throws for network problems (they become `error`). */
-export async function verifyEntry(entry: BibEntry, ctx: Ctx, ignore: Set<string>): Promise<RefResult> {
+export async function verifyEntry(
+  entry: BibEntry,
+  ctx: Ctx,
+  ignore: Set<string>,
+): Promise<RefResult> {
   const base: RefResult = { key: entry.key, status: 'unverifiable' };
   if (entry.line) base.location = { line: entry.line, ...(entry.file ? { file: entry.file } : {}) };
   if (isSkipped(entry, ignore)) return { ...base, reason: 'skipped by author' };
@@ -198,7 +254,8 @@ export async function verifyEntry(entry: BibEntry, ctx: Ctx, ignore: Set<string>
   const kind = entryKind(entry, ids);
   if (kind === 'not-indexed') return { ...base, reason: notIndexedReason(entry) };
   const facts = bibFacts(entry);
-  if (!facts.title && !ids.doi && !ids.arxivId) return { ...base, reason: 'no title, DOI or arXiv id to look up' };
+  if (!facts.title && !ids.doi && !ids.arxivId)
+    return { ...base, reason: 'no title, DOI or arXiv id to look up' };
 
   const ev: Evidence = {
     assessments: [],
@@ -209,18 +266,23 @@ export async function verifyEntry(entry: BibEntry, ctx: Ctx, ignore: Set<string>
     queries: [],
   };
   // The entry's own identifiers are authoritative: their verdict is final.
-  const viaId = (ids.doi ? await checkDoi(ctx, ids.doi, facts, ev) : null) ??
+  const viaId =
+    (ids.doi ? await checkDoi(ctx, ids.doi, facts, ev) : null) ??
     (ids.arxivId ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
   const withQuery = (r: RefResult): RefResult => ({ ...r, query: ev.queries[0] ?? '' });
   if (viaId) return withQuery(fromAssessment(base, viaId, ev));
 
-  await searchByTitle(ctx, facts, ev);
+  await searchByTitle(ctx, facts, kind, ev);
   const best = bestAssessment(ev.assessments);
   if (best) return withQuery(fromAssessment(base, best, ev));
   return withQuery(noMatch(base, entry, kind, ids, ev));
 }
 
-async function runPool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+async function runPool<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
   const lanes = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
@@ -238,7 +300,10 @@ async function runPool<T, R>(items: T[], limit: number, worker: (item: T) => Pro
  * with a key). Results are in input order. Network failures yield `error`,
  * never `not-found`.
  */
-export async function verifyEntries(entries: BibEntry[], opts: RefsOptions = {}): Promise<RefResult[]> {
+export async function verifyEntries(
+  entries: BibEntry[],
+  opts: RefsOptions = {},
+): Promise<RefResult[]> {
   if (opts.offline) {
     return entries.map((e) => ({
       key: e.key,

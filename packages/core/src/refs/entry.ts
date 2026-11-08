@@ -60,7 +60,11 @@ function asciiWord(s: string): string {
 export function generateKey(entry: Pick<BibEntry, 'fields'>): string {
   const [first] = parseNames(entry.fields.author ?? entry.fields.editor);
   const surname = first
-    ? asciiWord(first.corporate ? (first.family.split(/\s+/)[0] ?? '') : (first.family.split(/\s+/).pop() ?? ''))
+    ? asciiWord(
+        first.corporate
+          ? (first.family.split(/\s+/)[0] ?? '')
+          : (first.family.split(/\s+/).pop() ?? ''),
+      )
     : '';
   const year = /\d{4}/.exec(entry.fields.year ?? entry.fields.date ?? '')?.[0] ?? '';
   const words = foldText(texToPlain(entry.fields.title ?? ''))
@@ -102,7 +106,9 @@ function bibType(record: WorkRecord): string {
 
 function authorField(record: WorkRecord): string {
   return record.authors
-    .map((a) => (a.given ? `${escapeTex(a.family)}, ${escapeTex(a.given)}` : `{${escapeTex(a.family)}}`))
+    .map((a) =>
+      a.given ? `${escapeTex(a.family)}, ${escapeTex(a.given)}` : `{${escapeTex(a.family)}}`,
+    )
     .join(' and ');
 }
 
@@ -113,7 +119,8 @@ export function entryFromRecord(record: WorkRecord): BibEntry {
   if (record.authors.length) fields.author = authorField(record);
   fields.title = escapeTex(stripMarkup(record.title));
   if (record.venue && record.source !== 'arxiv') {
-    fields[type === 'inproceedings' || type === 'incollection' ? 'booktitle' : 'journal'] = escapeTex(record.venue);
+    fields[type === 'inproceedings' || type === 'incollection' ? 'booktitle' : 'journal'] =
+      escapeTex(record.venue);
   }
   const year = record.years.length ? Math.min(...record.years) : undefined;
   if (year) fields.year = String(year);
@@ -130,7 +137,15 @@ export function entryFromRecord(record: WorkRecord): BibEntry {
   return entry;
 }
 
-const DROP_FIELDS = new Set(['issn', 'abstract', 'abstractnote', 'keywords', 'copyright', 'language', 'month']);
+const DROP_FIELDS = new Set([
+  'issn',
+  'abstract',
+  'abstractnote',
+  'keywords',
+  'copyright',
+  'language',
+  'month',
+]);
 
 /**
  * Normalizes BibTeX served by doi.org: one entry, cleaned fields (`–` → `--`

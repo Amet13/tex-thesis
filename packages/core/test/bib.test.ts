@@ -10,7 +10,9 @@ import {
 
 describe('parseBib', () => {
   it('parses a basic entry with lowercased type and field names', () => {
-    const [e] = parseBib('@Article{Knuth84,\n  AUTHOR = {Donald Knuth},\n  Title = "Literate Programming",\n  YEAR = 1984\n}');
+    const [e] = parseBib(
+      '@Article{Knuth84,\n  AUTHOR = {Donald Knuth},\n  Title = "Literate Programming",\n  YEAR = 1984\n}',
+    );
     expect(e).toMatchObject({
       key: 'Knuth84',
       type: 'article',
@@ -22,7 +24,9 @@ describe('parseBib', () => {
   });
 
   it('keeps nested braces and inner TeX, strips only the outer delimiters', () => {
-    const [e] = parseBib('@article{a, title = {The {LaTeX} Companion: {\\"U}ber {$\\alpha$}}, note = "a {"} b"}');
+    const [e] = parseBib(
+      '@article{a, title = {The {LaTeX} Companion: {\\"U}ber {$\\alpha$}}, note = "a {"} b"}',
+    );
     expect(e?.fields.title).toBe('The {LaTeX} Companion: {\\"U}ber {$\\alpha$}');
     expect(e?.fields.note).toBe('a {"} b');
   });
@@ -76,7 +80,9 @@ describe('parseBib', () => {
     );
     expect(entries).toHaveLength(1);
     expect(entries[0]?.fields.title).toBe('A');
-    expect(issues.map((i) => i.message).join('\n')).toMatch(/no citation key[\s\S]*duplicate field[\s\S]*duplicate key/);
+    expect(issues.map((i) => i.message).join('\n')).toMatch(
+      /no citation key[\s\S]*duplicate field[\s\S]*duplicate key/,
+    );
   });
 
   it('reports undefined macros but keeps the text', () => {
@@ -112,7 +118,9 @@ describe('formatBibEntry', () => {
   });
 
   it('round-trips through parseBib', () => {
-    const [e] = parseBib('@article{k, title = {The {LaTeX} way}, author = {Erd{\\H{o}}s, P.}, year = 1947}');
+    const [e] = parseBib(
+      '@article{k, title = {The {LaTeX} way}, author = {Erd{\\H{o}}s, P.}, year = 1947}',
+    );
     const [again] = parseBib(formatBibEntry(e as NonNullable<typeof e>));
     expect(again?.fields).toEqual(e?.fields);
   });
@@ -120,7 +128,8 @@ describe('formatBibEntry', () => {
 
 describe('citedKeys', () => {
   it('reads BibTeX \\citation lines, deduped and in order, without *', () => {
-    const aux = '\\relax\n\\citation{b,a}\n\\citation{c}\n\\citation{a}\n\\citation{*}\n\\bibcite{a}{1}';
+    const aux =
+      '\\relax\n\\citation{b,a}\n\\citation{c}\n\\citation{a}\n\\citation{*}\n\\bibcite{a}{1}';
     expect(citedKeys(aux)).toEqual(['b', 'a', 'c']);
   });
 
@@ -151,7 +160,7 @@ describe('texToPlain', () => {
     ['G{\\"o}del', 'Gödel'],
     ['Erd{\\H{o}}s', 'Erdős'],
     ['Erd\\H{o}s', 'Erdős'],
-    ['{\\v{S}}ar{\\v{c}}evi{\\\'c}', 'Šarčević'],
+    ["{\\v{S}}ar{\\v{c}}evi{\\'c}", 'Šarčević'],
     ["Garc{\\'\\i}a", 'García'],
     ['{\\L}ukasz', 'Łukasz'],
     ['Stra{\\ss}e', 'Straße'],
@@ -176,7 +185,13 @@ describe('parseNames', () => {
     const names = parseNames(
       'Lamport, Leslie and Diego Ongaro and van der Aalst, Wil and Ludwig van Beethoven and {ATLAS Collaboration} and others',
     );
-    expect(names.map((n) => n.family)).toEqual(['Lamport', 'Ongaro', 'van der Aalst', 'van Beethoven', 'ATLAS Collaboration']);
+    expect(names.map((n) => n.family)).toEqual([
+      'Lamport',
+      'Ongaro',
+      'van der Aalst',
+      'van Beethoven',
+      'ATLAS Collaboration',
+    ]);
     expect(names[4]?.corporate).toBe(true);
     expect(names[1]?.given).toBe('Diego');
   });

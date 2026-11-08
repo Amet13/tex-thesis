@@ -59,7 +59,10 @@ export function identifiersOf(entry: BibEntry): Identifiers {
     archive === 'arxiv' || (!archive && f.eprint) ? f.eprint : undefined,
     doi?.startsWith('10.48550/') ? doi : undefined,
     ...[f.journal, f.journaltitle, f.url, f.note, f.howpublished].map(
-      (v) => /arxiv[.:/\s]*(?:abs\/|org\/abs\/)?\s*([a-z-]+(?:\.[A-Z]{2})?\/\d{7}|\d{4}\.\d{4,5})(v\d+)?/i.exec(v ?? '')?.[1],
+      (v) =>
+        /arxiv[.:/\s]*(?:abs\/|org\/abs\/)?\s*([a-z-]+(?:\.[A-Z]{2})?\/\d{7}|\d{4}\.\d{4,5})(v\d+)?/i.exec(
+          v ?? '',
+        )?.[1],
     ),
   ];
   for (const c of candidates) {
@@ -87,7 +90,8 @@ export function isStandard(entry: BibEntry): boolean {
 /** Only a URL (and maybe a title/date): a web page, whatever the entry type says. */
 function isWebOnly(entry: BibEntry): boolean {
   const f = entry.fields;
-  const hasVenue = f.journal || f.journaltitle || f.booktitle || f.publisher || f.school || f.institution;
+  const hasVenue =
+    f.journal || f.journaltitle || f.booktitle || f.publisher || f.school || f.institution;
   return !!(f.url || f.howpublished?.includes('\\url')) && !f.author && !hasVenue;
 }
 

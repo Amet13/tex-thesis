@@ -53,7 +53,5 @@ export async function openalexSearch(
     client,
     openalexSearchUrl(title, apiKey, mailto),
   );
-  return (data?.results ?? [])
-    .map(fromOpenAlex)
-    .filter((r): r is WorkRecord => r !== null);
+  return (data?.results ?? []).map(fromOpenAlex).filter((r): r is WorkRecord => r !== null);
 }

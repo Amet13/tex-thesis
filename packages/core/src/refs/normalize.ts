@@ -138,7 +138,25 @@ export function foldName(name: string): string {
     .trim();
 }
 
-const PARTICLES = new Set(['van', 'von', 'der', 'den', 'de', 'del', 'della', 'di', 'da', 'du', 'dos', 'la', 'le', 'ten', 'ter', 'jr', 'sr']);
+const PARTICLES = new Set([
+  'van',
+  'von',
+  'der',
+  'den',
+  'de',
+  'del',
+  'della',
+  'di',
+  'da',
+  'du',
+  'dos',
+  'la',
+  'le',
+  'ten',
+  'ter',
+  'jr',
+  'sr',
+]);
 
 function significant(name: string): string[] {
   return name.split(' ').filter((w) => w.length > 1 && !PARTICLES.has(w));

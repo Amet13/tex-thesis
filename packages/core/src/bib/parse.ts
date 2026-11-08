@@ -120,7 +120,9 @@ class Parser {
   }
 
   private keyHint(start: number): { key?: string } {
-    const m = /^@\s*[A-Za-z]+\s*[{(]\s*([^\s,{}()=]+)\s*,/.exec(this.text.slice(start, start + 300));
+    const m = /^@\s*[A-Za-z]+\s*[{(]\s*([^\s,{}()=]+)\s*,/.exec(
+      this.text.slice(start, start + 300),
+    );
     return m?.[1] ? { key: m[1] } : {};
   }
 
@@ -208,10 +210,16 @@ class Parser {
     const at = this.pos;
     const name = this.readWhile(/[^\s=,{}()"#%@]/).toLowerCase();
     if (!name && this.text[this.pos] === '@') {
-      throw new ParseError(`\`${key}\` is not closed (missing \`${close}\` before the next entry)`, this.entryStart);
+      throw new ParseError(
+        `\`${key}\` is not closed (missing \`${close}\` before the next entry)`,
+        this.entryStart,
+      );
     }
     if (!name) {
-      throw new ParseError(`unexpected \`${this.text[this.pos] ?? 'end of file'}\` in \`${key}\``, at);
+      throw new ParseError(
+        `unexpected \`${this.text[this.pos] ?? 'end of file'}\` in \`${key}\``,
+        at,
+      );
     }
     this.skipWsAndComments();
     if (this.text[this.pos] !== '=') {
