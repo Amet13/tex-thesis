@@ -362,6 +362,8 @@ export function initCheck(): void {
             say(`Looking up references: ${i} of ${toCheck.length} done…`);
             setBar(i / toCheck.length);
             const part = await verifyEntries(toCheck.slice(i, i + chunk), {
+              // Bound wrapper: window.fetch throws "Illegal invocation" when called as a method of another object.
+              fetch: (input, init) => window.fetch(input, init),
               cache,
               signal,
               concurrency: chunk,
@@ -382,9 +384,11 @@ export function initCheck(): void {
         } else {
           const offline = await verifyEntries(toCheck, { offline: true });
           const check = refsCheck(offline, { entries, issues, bibFile: bibs[0]?.name, extra });
-          if (check.status === 'skipped') {
-            check.skippedReason = `Online verification is off: ${toCheck.length} of ${entries.length} entries parsed, none looked up`;
-            if (check.problems.length) check.status = statusOf(check.problems);
+          const note = `Online verification is off: ${toCheck.length} of ${entries.length} entries parsed, none looked up`;
+          if (check.status === 'skipped' || offline.every((r) => r.reason === 'offline')) {
+            check.skippedReason = note;
+            check.summary = note;
+            check.status = check.problems.length ? statusOf(check.problems) : 'skipped';
           }
           results.set('references', check);
         }

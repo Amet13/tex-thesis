@@ -12,7 +12,9 @@ BASE   ?= origin/main
 PAGES  ?= 1-3
 
 OVERFULL := $(shell command -v overfull 2>/dev/null)
-DOCKER   := docker run --rm -t -v "$(CURDIR):/work" -w /work $(IMAGE)
+# Run as your own user so build files are not owned by root.
+DOCKER   := docker run --rm -t -u "$(shell id -u):$(shell id -g)" -e HOME=/tmp \
+            -v "$(CURDIR):/work" -w /work $(IMAGE)
 
 ifdef OVERFULL
   RUN_OVERFULL = overfull

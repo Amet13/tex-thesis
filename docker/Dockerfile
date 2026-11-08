@@ -130,13 +130,9 @@ RUN ln -s /opt/overfull/dist/bin.js /usr/local/bin/overfull \
  && chmod +x /opt/overfull/dist/bin.js \
  && overfull --version
 
-# Git is needed by `overfull diff` (latexdiff against a base revision);
-# mark any mounted repo as safe because the container runs as root.
-RUN --mount=type=secret,id=build_ca,required=false \
-    apt-get update \
- && apt-get install --no-install-recommends -y git \
- && apt-get clean && rm -rf /var/lib/apt/lists/* \
- && git config --system --add safe.directory '*'
+# git (already in the base image) is needed by `overfull diff`; mark any
+# mounted repository as safe because the container runs as root by default.
+RUN git --version && git config --system --add safe.directory '*'
 
 WORKDIR /work
 CMD ["overfull", "--help"]

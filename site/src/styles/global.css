@@ -889,3 +889,12 @@ select {
     display: none;
   }
 }
+
+:root[data-theme="dark"] img.page-preview {
+  filter: brightness(0.82) contrast(1.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) img.page-preview {
+    filter: brightness(0.82) contrast(1.05);
+  }
+}

@@ -1,6 +1,13 @@
 ---
 import Docs from '../../layouts/Docs.astro';
-import { docHeadings, docPath, docSlug, groupDocs, rewriteDocLinks, sortedDocs } from '../../lib/docs';
+import {
+  docHeadings,
+  docPath,
+  docSlug,
+  groupDocs,
+  rewriteDocLinks,
+  sortedDocs,
+} from '../../lib/docs';
 import { url } from '../../lib/paths';
 
 const docs = await sortedDocs();

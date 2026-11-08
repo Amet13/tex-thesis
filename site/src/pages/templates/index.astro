@@ -81,7 +81,7 @@ const md = (s: string) =>
       <section class="tpl" id={t.id} aria-labelledby={`t-${t.id}`}>
         <div class="tpl-preview">
           {previews[t.id] ? (
-            <img src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF`} width="425" height={t.id === 'slides' ? 239 : 601} loading="lazy" />
+            <img class="page-preview" src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF`} width="425" height={t.id === 'slides' ? 239 : 601} loading="lazy" />
           ) : (
             <div class={`mock mock-${t.id}`} role="img" aria-label={`Sketch of the first page of the ${t.name.toLowerCase()} template`}>
               {t.id === 'slides' ? (
