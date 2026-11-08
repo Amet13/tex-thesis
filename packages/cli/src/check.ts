@@ -96,7 +96,7 @@ function missingPdfReason(inp: Inputs): string {
 }
 
 /** Drops PDF "??"/"[?]" findings the log already explains, to avoid double counting. */
-function mergeOutput(output: CheckResult, pdfProblems: Problem[]): CheckResult {
+export function mergeOutput(output: CheckResult, pdfProblems: Problem[]): CheckResult {
   const has = (re: RegExp) => output.problems.some((p) => re.test(p.rule));
   const extra = pdfProblems.filter((p) =>
     p.rule === 'pdf-unresolved-reference' ? !has(/undefined-reference|reference-undefined/) : !has(/undefined-citation|citation-undefined/),

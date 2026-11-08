@@ -37,3 +37,37 @@ export function docPath(d: Doc): string {
   const s = docSlug(d);
   return s ? `docs/${s}/` : 'docs/';
 }
+
+const REPO_BLOB = 'https://github.com/amet13/overfull/blob/main';
+
+/**
+ * Rewrites links between guide pages in rendered HTML: `./checks.md#refs`
+ * becomes `<base>docs/checks/#refs`; links that leave docs/guide go to GitHub.
+ */
+export function rewriteDocLinks(html: string, d: Doc, base: string): string {
+  const prefix = base.endsWith('/') ? base : `${base}/`;
+  const dir = d.id.includes('/') ? d.id.slice(0, d.id.lastIndexOf('/') + 1) : '';
+  return html.replace(/href="([^"]+)"/g, (all, href: string) => {
+    if (/^[a-z]+:|^\/\/|^#|^\//i.test(href)) return all;
+    const [pathPart = '', hash = ''] = href.split('#');
+    if (!pathPart.endsWith('.md')) return all;
+    const out: string[] = [];
+    for (const p of (dir + pathPart).split('/')) {
+      if (p === '..') {
+        if (out.length && out[out.length - 1] !== '..') out.pop();
+        else out.push('..');
+      } else if (p && p !== '.') out.push(p);
+    }
+    const h = hash ? `#${hash}` : '';
+    if (out[0] === '..') {
+      let up = 0;
+      while (out[0] === '..') {
+        out.shift();
+        up++;
+      }
+      return `href="${REPO_BLOB}/${up === 1 ? 'docs/' : ''}${out.join('/')}${h}"`;
+    }
+    const slug = out.join('/').replace(/\.md$/, '').toLowerCase().replace(/(^|\/)index$/, '');
+    return `href="${prefix}docs/${slug ? `${slug}/` : ''}${h}"`;
+  });
+}

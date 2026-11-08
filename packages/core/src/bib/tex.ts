@@ -135,6 +135,9 @@ const GREEK_MAP: Record<string, string> = Object.fromEntries(
   GREEK.map((name, i) => [name, [...GREEK_CHARS][i] as string]),
 );
 
+/** Math operators that read as words: `\log n` → `log n`. */
+const MATH_OPERATORS = new Set(['log', 'ln', 'exp', 'sin', 'cos', 'tan', 'lim', 'max', 'min', 'sup', 'inf', 'det', 'dim', 'ker', 'deg', 'gcd', 'Pr']);
+
 /** Private-use placeholders so escaped characters survive brace stripping. */
 const ESCAPES: Record<string, string> = {
   '{': '',
@@ -169,6 +172,7 @@ function replaceCommands(s: string): string {
     if (name in SPECIAL_LETTERS) return SPECIAL_LETTERS[name] as string;
     if (name in GREEK_MAP) return GREEK_MAP[name] as string;
     if (name in NAMED_SYMBOLS) return NAMED_SYMBOLS[name] as string;
+    if (MATH_OPERATORS.has(name)) return name;
     // Font and structure commands (\emph, \textbf, \mathrm, \url…): keep the argument.
     return '';
   });

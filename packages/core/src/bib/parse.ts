@@ -58,6 +58,7 @@ class ParseError extends Error {
 
 class Parser {
   private pos = 0;
+  private entryStart = 0;
   private readonly lineStarts: number[] = [0];
   readonly macros: Record<string, string> = { ...MONTHS };
   readonly entries: BibEntry[] = [];
@@ -124,6 +125,7 @@ class Parser {
   }
 
   private parseItem(start: number): void {
+    this.entryStart = start;
     this.pos++; // '@'
     this.skipWs();
     const type = this.readWhile(/[A-Za-z_-]/).toLowerCase();
@@ -204,7 +206,10 @@ class Parser {
 
   private parseField(key: string, fields: Record<string, string>, close: string): void {
     const at = this.pos;
-    const name = this.readWhile(/[^\s=,{}()"#%]/).toLowerCase();
+    const name = this.readWhile(/[^\s=,{}()"#%@]/).toLowerCase();
+    if (!name && this.text[this.pos] === '@') {
+      throw new ParseError(`\`${key}\` is not closed (missing \`${close}\` before the next entry)`, this.entryStart);
+    }
     if (!name) {
       throw new ParseError(`unexpected \`${this.text[this.pos] ?? 'end of file'}\` in \`${key}\``, at);
     }
@@ -213,7 +218,7 @@ class Parser {
       throw new ParseError(`field \`${name}\` in \`${key}\` has no \`=\` (missing comma?)`, at);
     }
     this.pos++;
-    const value = this.parseValue(close);
+    const value = this.parseValue(close).trim();
     if (name in fields) {
       this.issues.push({
         line: this.lineOf(at),
@@ -250,7 +255,8 @@ class Parser {
       if (this.text[this.pos] !== '#') break;
       this.pos++;
     }
-    return out.replace(/\s+/g, ' ').trim();
+    // Whitespace collapses; only field values are trimmed, so `@string` pieces keep their spaces.
+    return out.replace(/\s+/g, ' ');
   }
 
   private parsePart(close: string): string {
@@ -317,7 +323,7 @@ class Parser {
       return;
     }
     const what = key ? `\`${key}\`` : 'entry';
-    if (this.pos >= this.text.length) {
+    if (this.pos >= this.text.length || this.text[this.pos] === '@') {
       throw new ParseError(`${what} is not closed (missing \`${close}\`)`, start);
     }
     throw new ParseError(

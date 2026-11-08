@@ -29,14 +29,9 @@
 }
 
 % Table of contents with dotted leaders also for sections (tocloft is
-% tagging-compatible). Titles of lists are set like section headings.
-\usepackage{tocloft}
-\renewcommand{\cfttoctitlefont}{\hfill\normalfont\normalsize\bfseries\MakeUppercase}
-\renewcommand{\cftaftertoctitle}{\hfill}
-\renewcommand{\cftloftitlefont}{\hfill\normalfont\normalsize\bfseries\MakeUppercase}
-\renewcommand{\cftafterloftitle}{\hfill}
-\renewcommand{\cftlottitlefont}{\hfill\normalfont\normalsize\bfseries\MakeUppercase}
-\renewcommand{\cftafterlottitle}{\hfill}
+% tagging-compatible). [titles] keeps the standard \section* heading for the
+% "Contents" title, so it gets the same centred uppercase look as above.
+\usepackage[titles]{tocloft}
 \renewcommand{\cftsecfont}{\normalfont}
 \renewcommand{\cftsecpagefont}{\normalfont}
 \renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}

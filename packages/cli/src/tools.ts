@@ -87,11 +87,21 @@ export async function dockerImagePresent(image: string): Promise<boolean> {
   return r.code === 0;
 }
 
-/** Arguments for `docker run` that mount `dir` at /work as the current user. */
-export function dockerRunArgs(image: string, dir: string, command: string[]): string[] {
+/**
+ * Arguments for `docker run` that mount `dir` at /work and run as the current
+ * user (so outputs are not root-owned). `subdir` sets the working directory below /work.
+ */
+export function dockerRunArgs(
+  image: string,
+  dir: string,
+  command: string[],
+  opts: { subdir?: string; env?: Record<string, string> } = {},
+): string[] {
   const user =
     typeof process.getuid === 'function' && typeof process.getgid === 'function'
       ? ['--user', `${process.getuid()}:${process.getgid()}`]
       : [];
-  return ['run', '--rm', ...user, '-e', 'HOME=/tmp', '-v', `${dir}:/work`, '-w', '/work', image, ...command];
+  const env = Object.entries({ HOME: '/tmp', ...opts.env }).flatMap(([k, v]) => ['-e', `${k}=${v}`]);
+  const workdir = opts.subdir && opts.subdir !== '.' ? `/work/${opts.subdir.split('\\').join('/')}` : '/work';
+  return ['run', '--rm', ...user, ...env, '-v', `${dir}:/work`, '-w', workdir, image, ...command];
 }
