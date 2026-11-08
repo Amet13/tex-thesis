@@ -1,0 +1,210 @@
+---
+import Base from '../../layouts/Base.astro';
+import { CHECK_LABELS, url } from '../../lib/paths';
+import { rulesByCheck } from '../../lib/rules';
+
+const groups = rulesByCheck();
+const total = groups.reduce((n, g) => n + g.rules.length, 0);
+const reproduced = groups.reduce((n, g) => n + g.rules.filter((r) => r.hasCase).length, 0);
+---
+<Base title="Rules" description={`All ${total} rules Overfull checks, grouped by check, with fixes and reproduced TeX Live examples.`} section="rules">
+  <div class="rules-page">
+    <p class="runhead"><span>Rule index</span></p>
+    <div class="galley">
+      <aside class="marginal">
+        <p>Rule ids are stable. Agents can match on them, and <code>overfull explain &lt;rule&gt;</code> prints the same text as these pages.</p>
+        <p><span class="mark">‸</span> {reproduced} rules have a failing document in the corpus, compiled on TeX Live 2026 by CI.</p>
+      </aside>
+      <h1>Rules</h1>
+      <p class="lede">Every problem Overfull reports belongs to one of {total} rules. Each page says what the rule means, how to fix it, and, where we have one, shows a real document and log that trigger it.</p>
+      <div class="filter">
+        <label for="rule-filter">Filter rules</label>
+        <input id="rule-filter" class="field" type="search" placeholder="e.g. citation, alt, page" autocomplete="off" aria-describedby="rule-count" />
+        <p id="rule-count" class="filter-count" aria-live="polite">{total} rules</p>
+      </div>
+    </div>
+    <nav class="jump" aria-label="Checks">
+      {groups.map((g) => <a href={`#${g.check}`}>{CHECK_LABELS[g.check]!.name} <span class="n">{g.rules.length}</span></a>)}
+    </nav>
+    {groups.map((g, i) => (
+      <section class="rule-group" id={g.check} aria-labelledby={`h-${g.check}`} data-group>
+        <div class="group-head">
+          <span class="group-num" aria-hidden="true">{i + 1}</span>
+          <h2 id={`h-${g.check}`}>{CHECK_LABELS[g.check]!.name}</h2>
+          <p>{CHECK_LABELS[g.check]!.blurb}</p>
+        </div>
+        <ul class="rule-list">
+          {g.rules.map((r) => (
+            <li data-rule data-text={`${r.id} ${r.title} ${r.summary} ${r.check} ${r.severity}`.toLowerCase()}>
+              <span class={`sev-tag sev-${r.severity}`}>{r.severity === 'info' ? 'note' : r.severity}</span>
+              <a href={url(`rules/${r.id}/`)} class="rule-title">{r.title}</a>
+              <code class="rule-id">{r.id}</code>
+              {r.hasCase && <span class="rule-case" title="Reproduced on TeX Live 2026 by CI">corpus</span>}
+            </li>
+          ))}
+        </ul>
+        {g.rules.length === 0 && <p class="empty">No rules registered for this check yet.</p>}
+      </section>
+    ))}
+    <p class="no-match" hidden>No rule matches that filter.</p>
+  </div>
+</Base>
+<script>
+  const input = document.querySelector<HTMLInputElement>('#rule-filter');
+  const count = document.querySelector<HTMLElement>('#rule-count');
+  const items = [...document.querySelectorAll<HTMLElement>('[data-rule]')];
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-group]')];
+  const none = document.querySelector<HTMLElement>('.no-match');
+  let t: number | undefined;
+  const apply = () => {
+    const words = (input?.value ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of items) {
+      const hit = words.every((w) => li.dataset.text?.includes(w));
+      li.hidden = !hit;
+      if (hit) shown++;
+    }
+    for (const g of groups) g.hidden = !g.querySelector('[data-rule]:not([hidden])');
+    if (none) none.hidden = shown > 0;
+    if (count) count.textContent = words.length ? `${shown} of ${items.length} rules match` : `${items.length} rules`;
+  };
+  input?.addEventListener('input', () => {
+    window.clearTimeout(t);
+    t = window.setTimeout(apply, 120);
+  });
+  const q = new URLSearchParams(location.search).get('q');
+  if (q && input) {
+    input.value = q;
+    apply();
+  }
+</script>
+<style>
+  .rules-page {
+    padding-top: 1.5rem;
+  }
+  h1 {
+    margin-bottom: 0.75rem;
+  }
+  .filter {
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 0.3rem;
+  }
+  .filter label {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-2);
+  }
+  .filter-count {
+    font-size: var(--s-1);
+    color: var(--ink-3);
+    margin: 0;
+  }
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    margin: 2rem 0 0;
+    padding: 0.6rem 0;
+    border-block: 1px solid var(--hair);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    clear: both;
+  }
+  .jump a {
+    text-decoration: none;
+    padding-block: 0.2rem;
+  }
+  .jump a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .jump .n {
+    color: var(--ink-3);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .rule-group {
+    margin-top: 3rem;
+    scroll-margin-top: 1rem;
+  }
+  .group-head {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    align-items: baseline;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.5rem;
+  }
+  .group-num {
+    font-size: var(--s3);
+    line-height: 1;
+    color: var(--pencil);
+    grid-row: span 2;
+  }
+  .group-head h2 {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+  }
+  .group-head p {
+    margin: 0.2rem 0 0;
+    color: var(--ink-2);
+    font-size: var(--s-1);
+    max-width: var(--measure);
+  }
+  .rule-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .rule-list li {
+    display: grid;
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+    gap: 0 0.75rem;
+    align-items: baseline;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .rule-list .sev-tag {
+    grid-row: span 2;
+  }
+  .rule-title {
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .rule-title:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .rule-id {
+    font-size: 0.72rem;
+    color: var(--ink-3);
+    background: none;
+    border: 0;
+    padding: 0;
+    overflow-wrap: anywhere;
+  }
+  .rule-case {
+    grid-column: 2;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    font-size: var(--s-1);
+    color: var(--ok);
+  }
+  @media (min-width: 820px) {
+    .rule-list li {
+      grid-template-columns: 5.2rem minmax(0, 1fr) minmax(0, 16rem) 4.5rem;
+    }
+    .rule-list .sev-tag {
+      grid-row: auto;
+    }
+    .rule-case {
+      grid-column: auto;
+      text-align: right;
+    }
+  }
+  .no-match,
+  .empty {
+    color: var(--ink-3);
+    margin-top: 2rem;
+  }
+</style>

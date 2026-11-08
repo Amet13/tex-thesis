@@ -1,12 +1,18 @@
 ---
+import { render } from 'astro:content';
 import Docs from '../../layouts/Docs.astro';
-import { docSlug, groupDocs, sortedDocs } from '../../lib/docs';
+import { docPath, docSlug, groupDocs, sortedDocs } from '../../lib/docs';
 import { url } from '../../lib/paths';
 
 const docs = await sortedDocs();
 const groups = groupDocs(docs);
+const intro = docs.find((d) => docSlug(d) === '');
+const rendered = intro ? await render(intro) : undefined;
+const Intro = rendered?.Content;
 ---
-<Docs title="Guide" description="How to start a paper or thesis with Overfull, work with a coding agent or by hand, and read every check." docs={docs}>
+<Docs title={intro ? 'Guide' : 'Guide'} description={intro?.data.description ?? 'How to start a paper or thesis with Overfull, work with a coding agent or by hand, and read every check.'} docs={docs} current={intro} headings={rendered?.headings ?? []}>
+  {Intro && <Intro />}
+  {Intro && <h2 id="contents">All pages</h2>}
   {groups.length === 0 && <p>The guide is being written. Meanwhile, the <a href="https://github.com/amet13/overfull#readme">README</a> covers installation and commands.</p>}
   <div class="contents">
     {groups.map((g) => (
@@ -15,7 +21,7 @@ const groups = groupDocs(docs);
         <ol>
           {g.docs.map((d) => (
             <li>
-              <a href={url(`docs/${docSlug(d)}/`)}>{d.data.title}</a>
+              <a href={url(docPath(d))}>{d.data.title}</a>
               {d.data.description && <span class="desc">{d.data.description}</span>}
             </li>
           ))}

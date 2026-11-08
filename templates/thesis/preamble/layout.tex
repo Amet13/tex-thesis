@@ -1,0 +1,33 @@
+% preamble/layout.tex — page, spacing, page numbers, lists.
+
+% A4 paper, 2.5 cm margins on all sides.
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+
+% 1.5 line spacing (setspace is tagging-compatible).
+\usepackage{setspace}
+\onehalfspacing
+
+% First-line paragraph indent 1.27 cm (common thesis rule).
+\setlength{\parindent}{1.27cm}
+
+% Avoid lonely first/last lines of a paragraph at page breaks,
+% and allow a little extra stretch instead of overfull lines.
+\clubpenalty=10000
+\widowpenalty=10000
+\emergencystretch=3em
+
+% Page number centred at the bottom: the standard "plain" style does exactly
+% this, so no extra package (fancyhdr) is needed. Page numbers are marked as
+% artifacts by the tagging code automatically.
+\pagestyle{plain}
+
+% Lists. With tagging=on the LaTeX kernel understands enumitem-style keys
+% directly, e.g. \begin{enumerate}[label=\alph*)]. The enumitem package
+% itself must NOT be loaded (it is not compatible with tagging yet).
+% Here we only change the default labels: 1) 2) 3) for enumerate.
+\renewcommand{\labelenumi}{\arabic{enumi})}
+\renewcommand{\labelenumii}{\alph{enumii})}
+
+% Total page count, e.g. "\pageref{LastPage} pages" in the abstract.
+\usepackage{lastpage}

@@ -1,5 +1,5 @@
 ---
-import { docSlug, groupDocs, type Doc } from '../lib/docs';
+import { docPath, docSlug, groupDocs, type Doc } from '../lib/docs';
 import { url } from '../lib/paths';
 
 interface Props {
@@ -18,7 +18,7 @@ const groups = groupDocs(docs);
         <ul>
           {g.docs.map((d) => (
             <li>
-              <a href={url(`docs/${docSlug(d)}/`)} aria-current={docSlug(d) === current ? 'page' : undefined}>{d.data.title}</a>
+              <a href={url(docPath(d))} aria-current={docSlug(d) === current ? 'page' : undefined}>{d.data.title}</a>
             </li>
           ))}
         </ul>

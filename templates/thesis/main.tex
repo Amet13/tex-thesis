@@ -1,0 +1,76 @@
+% !TEX TS-program = lualatex
+%
+% Thesis template — Overfull (https://github.com/amet13/overfull)
+% Build:  make build        (or: latexmk)       -> thesis.pdf
+% Check:  make check        (or: overfull check)
+%
+% The first line turns on PDF tagging and declares PDF/UA-2 (accessible PDF)
+% conformance. Keep it as the very first command of the document.
+%   lang          document language (screen readers, hyphenation metadata)
+%   pdfstandard   ua-2 = PDF/UA-2 (ISO 14289-2), checked by veraPDF
+%   pdfversion    PDF/UA-2 requires PDF 2.0
+%   tagging       structure tags for headings, lists, tables, figures, links
+%   math/setup    mathml-SE: formulas become MathML structure (LuaLaTeX)
+\DocumentMetadata{
+  lang        = en,
+  pdfstandard = ua-2,
+  pdfversion  = 2.0,
+  tagging     = on,
+  tagging-setup = {math/setup=mathml-SE},
+}
+% 14 pt body text: article + the fontsize package (extarticle is not yet
+% compatible with tagging).
+\documentclass[a4paper]{article}
+\usepackage[fontsize=14pt]{fontsize}
+
+\input{metadata}               % title, author, keywords ...
+\input{preamble/fonts}         % Times New Roman, math fonts
+\input{preamble/layout}        % margins, spacing, page numbers, lists
+\input{preamble/headings}      % section headings, table of contents
+\input{preamble/floats}        % figures, tables, plots, code listings
+\input{preamble/references}    % links, \cref, bibliography
+\input{preamble/metadata-pdf}  % PDF title/author from metadata.tex
+\input{preamble/titlepage}     % \thesistitlepage
+
+\begin{document}
+
+\thesistitlepage
+
+\input{chapters/abstract}
+
+\tableofcontents
+
+\input{chapters/introduction}
+\input{chapters/01-problem}
+\input{chapters/02-literature}
+\input{chapters/03-analysis}
+\input{chapters/04-design}
+\input{chapters/05-implementation}
+\input{chapters/06-experiments}
+\input{chapters/07-results}
+\input{chapters/conclusion}
+
+% End of the main matter. `overfull check` counts pages up to this label
+% when a page limit is configured in overfull.yml. Keep it here.
+\label{overfull:main-end}
+
+\input{chapters/abbreviations}
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Bibliography}
+\printbibliography[title=Bibliography]
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{\listfigurename}
+\listoffigures
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{\listtablename}
+\listoftables
+
+\input{chapters/appendix-code}
+
+\end{document}

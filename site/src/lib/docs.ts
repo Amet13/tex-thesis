@@ -32,3 +32,8 @@ export function groupDocs(docs: Doc[]): { section: string; docs: Doc[] }[] {
 export function docSlug(d: Doc): string {
   return d.id.replace(/(^|\/)index$/, '').toLowerCase();
 }
+
+export function docPath(d: Doc): string {
+  const s = docSlug(d);
+  return s ? `docs/${s}/` : 'docs/';
+}

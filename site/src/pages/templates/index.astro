@@ -1,0 +1,286 @@
+---
+import Base from '../../layouts/Base.astro';
+import { REPO_URL, url } from '../../lib/paths';
+import { exists, readText } from '../../lib/repo';
+
+interface Tpl {
+  id: 'thesis' | 'paper' | 'slides';
+  name: string;
+  for: string;
+  inside: string[];
+  checks: string;
+}
+const templates: Tpl[] = [
+  {
+    id: 'thesis',
+    name: 'Thesis',
+    for: 'Bachelor’s, master’s and PhD theses.',
+    inside: [
+      'A4 layout with front matter: title page, abstract, declaration, contents, lists of figures and tables',
+      'One file per chapter in `chapters/`, appendices, biblatex with `references.bib`',
+      'Tagged PDF/UA-2 output: `\\DocumentMetadata{… tagging=on}`, language and title set from `metadata.tex`',
+      '`overfull.yml` with the `thesis` profile, `Makefile`, CI workflow with veraPDF',
+      '`AGENTS.md` and skills for coding agents',
+    ],
+    checks: 'CI requires it to pass every check, including veraPDF PDF/UA.',
+  },
+  {
+    id: 'paper',
+    name: 'Paper',
+    for: 'Research papers, workshop submissions and preprints.',
+    inside: [
+      'A single-column article you can switch to a venue class',
+      'A `\\label{overfull:main-end}` marker so the page limit counts only the main text',
+      'Anonymous mode for double-blind review and an AI-use disclosure section',
+      'arXiv packaging: `make arxiv` builds a source archive with the `.bbl` included',
+      '`AGENTS.md`, skills, `Makefile`, CI workflow that attaches a highlighted-changes PDF to pull requests',
+    ],
+    checks: 'CI requires it to pass every check, including veraPDF PDF/UA.',
+  },
+  {
+    id: 'slides',
+    name: 'Slides',
+    for: 'Thesis defences and conference talks.',
+    inside: [
+      'Beamer with a plain, high-contrast theme and 16:9 frames',
+      'Speaker notes, backup slides, figures shared with the paper or thesis',
+      'Same `Makefile`, agent instructions and reference workflow as the other templates',
+    ],
+    checks: 'Build, output and references checks run in CI. Tagged Beamer output is still experimental in TeX Live 2026.',
+  },
+];
+const previews = Object.fromEntries(templates.map((t) => [t.id, exists(`site/public/previews/${t.id}.png`)]));
+const present = Object.fromEntries(templates.map((t) => [t.id, exists(`templates/${t.id}`)]));
+const titles: Record<string, string> = {
+  thesis: readText('templates/thesis/metadata.tex')?.match(/\\title\{([^}]+)\}/)?.[1] ?? 'A Study of Overfull Boxes',
+  paper: 'On Verifying References Written by Language Models',
+  slides: 'Defence',
+};
+const md = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/`([^`]+)`/g, '<code>$1</code>');
+---
+<Base title="Templates" description="Thesis, paper and slides templates for LaTeX: accessible by default, ready for coding agents, checked by Overfull in CI." section="templates">
+  <div class="tpl-page">
+    <p class="runhead"><span>Templates</span></p>
+    <div class="galley">
+      <aside class="marginal"><p>Licensed MIT-0. Copy a template, change anything, owe nothing, no attribution needed.</p></aside>
+      <h1>Templates</h1>
+      <p class="lede">Three starting points that already pass the preflight. All use LuaLaTeX, biblatex and TeX Live 2026, keep figures reproducible from data in <code>figures/data/</code>, and build in Docker if you have no TeX installed.</p>
+    </div>
+
+    {templates.map((t) => (
+      <section class="tpl" id={t.id} aria-labelledby={`t-${t.id}`}>
+        <div class="tpl-preview">
+          {previews[t.id] ? (
+            <img src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF`} width="425" height={t.id === 'slides' ? 239 : 601} loading="lazy" />
+          ) : (
+            <div class={`mock mock-${t.id}`} role="img" aria-label={`Sketch of the first page of the ${t.name.toLowerCase()} template`}>
+              {t.id === 'slides' ? (
+                <>
+                  <span class="m-title">{titles[t.id]}</span>
+                  <span class="m-line w70" />
+                  <span class="m-line w50" />
+                  <span class="m-foot" />
+                </>
+              ) : (
+                <>
+                  <span class="m-title">{titles[t.id]}</span>
+                  <span class="m-author">A. Author</span>
+                  {t.id === 'thesis' ? (
+                    <>
+                      <span class="m-gap" />
+                      <span class="m-small">A thesis submitted for the degree of Doctor of Philosophy</span>
+                      <span class="m-gap" />
+                      <span class="m-small">2026</span>
+                    </>
+                  ) : (
+                    <>
+                      <span class="m-abstract">Abstract</span>
+                      {[92, 100, 97, 100, 64].map((w) => <span class="m-line" style={`width:${w}%`} />)}
+                      <span class="m-head">1 Introduction</span>
+                      {[100, 98, 100, 100, 95, 100, 71].map((w) => <span class="m-line" style={`width:${w}%`} />)}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        <div class="tpl-body">
+          <h2 id={`t-${t.id}`}>{t.name}</h2>
+          <p class="tpl-for">{t.for}</p>
+          <h3>Inside</h3>
+          <ul>
+            {t.inside.map((i) => <li set:html={md(i)} />)}
+          </ul>
+          <p class="tpl-checks">{t.checks}</p>
+          <h3>Start</h3>
+          <div class="cmd"><span class="p">$ </span>npx overfull init {t.id} my-{t.id}</div>
+          <p class="tpl-links">
+            <a class="caret-link" href={`${REPO_URL}/tree/main/templates/${t.id}`}>Browse the files on GitHub</a>
+            {!present[t.id] && <span class="soon">(publishing soon)</span>}
+          </p>
+          <p class="tpl-alt">Or download the repository and copy <code>templates/{t.id}</code>; on GitHub you can use the files as a template repository.</p>
+        </div>
+      </section>
+    ))}
+  </div>
+</Base>
+<style>
+  .tpl-page {
+    padding-top: 1.5rem;
+  }
+  h1 {
+    margin-bottom: 0.75rem;
+  }
+  .tpl {
+    clear: both;
+    display: grid;
+    gap: 1.5rem 3rem;
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--hair);
+  }
+  @media (min-width: 820px) {
+    .tpl {
+      grid-template-columns: minmax(0, 17rem) minmax(0, var(--measure));
+    }
+  }
+  .tpl h2 {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+  }
+  .tpl h3 {
+    font-size: var(--s-1);
+    font-weight: 400;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    margin: 1.25rem 0 0.4rem;
+  }
+  .tpl-for {
+    color: var(--ink-2);
+    margin: 0.2rem 0 0;
+  }
+  .tpl ul {
+    padding-left: 1.1em;
+    margin: 0;
+  }
+  .tpl li {
+    margin-bottom: 0.3rem;
+  }
+  .tpl-checks {
+    font-size: var(--s-1);
+    color: var(--ink-2);
+    margin-top: 0.75rem;
+  }
+  .tpl-alt {
+    font-size: var(--s-1);
+    color: var(--ink-3);
+  }
+  .soon {
+    color: var(--ink-3);
+    font-size: var(--s-1);
+    margin-left: 0.5rem;
+  }
+  .tpl-preview img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--hair-strong);
+    background: white;
+  }
+  /* A typeset-looking first page, drawn in CSS */
+  .mock {
+    position: relative;
+    aspect-ratio: 210 / 297;
+    background: var(--paper);
+    border: 1px solid var(--hair-strong);
+    box-shadow: 6px 6px 0 -1px var(--paper-2), 6px 6px 0 0 var(--hair);
+    padding: 16% 14%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    max-width: 17rem;
+  }
+  .mock::before,
+  .mock::after {
+    content: '';
+    position: absolute;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-color: var(--hair-strong);
+    border-style: solid;
+  }
+  .mock::before {
+    top: -0.9rem;
+    left: -0.9rem;
+    border-width: 0 1px 1px 0;
+  }
+  .mock::after {
+    bottom: -0.9rem;
+    right: -0.9rem;
+    border-width: 1px 0 0 1px;
+  }
+  .mock-slides {
+    aspect-ratio: 16 / 9;
+    padding: 10% 9%;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .m-title {
+    font-weight: 600;
+    text-align: center;
+    font-size: var(--s0);
+    line-height: 1.2;
+  }
+  .mock-paper .m-title {
+    font-size: var(--s-1);
+  }
+  .mock-slides .m-title {
+    text-align: left;
+  }
+  .m-author {
+    font-size: var(--s-2);
+    font-variant-caps: small-caps;
+    color: var(--ink-2);
+  }
+  .m-small {
+    font-size: var(--s-2);
+    color: var(--ink-2);
+    text-align: center;
+  }
+  .m-gap {
+    flex: 1;
+  }
+  .m-abstract,
+  .m-head {
+    align-self: flex-start;
+    font-size: 0.55rem;
+    font-weight: 600;
+    margin-top: 0.4rem;
+  }
+  .m-abstract {
+    align-self: center;
+  }
+  .m-line {
+    display: block;
+    height: 0.22rem;
+    background: var(--hair);
+    align-self: flex-start;
+    width: 100%;
+  }
+  .m-line.w70 {
+    width: 70%;
+  }
+  .m-line.w50 {
+    width: 50%;
+  }
+  .m-foot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 8%;
+    background: var(--ink);
+  }
+</style>

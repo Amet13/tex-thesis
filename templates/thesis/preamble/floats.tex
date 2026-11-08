@@ -1,0 +1,37 @@
+% preamble/floats.tex — figures, tables, code listings, plots.
+%
+% ACCESSIBILITY RULE: every picture needs a text alternative.
+%   \includegraphics[width=..., alt={What the image shows}]{file}
+%   \begin{tikzpicture}[alt={What the diagram shows}] ... \end{tikzpicture}
+% Purely decorative graphics use [artifact] instead of alt.
+
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+% Number figures, tables and equations per section: Figure 3.2, (2.1).
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\counterwithin{equation}{section}
+
+% [H] = "exactly here" placement for floats (float is tagging-compatible).
+\usepackage{float}
+
+% Tables: booktabs rules and siunitx number alignment (both compatible).
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{group-minimum-digits=4}
+
+% Diagrams and data plots. Plots read their numbers from figures/data/*.csv,
+% so the figure is regenerated whenever the data changes.
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18, compat/show suggested version=false}
+
+% Code listings. The listings package is not yet compatible with tagging in
+% TeX Live 2026 (it breaks the structure tree), so code is typeset with the
+% kernel's verbatim environment inside a numbered "Listing" float.
+% Keep code lines under ~70 characters.
+\newfloat{codelisting}{htbp}{lol}[section]
+\floatname{codelisting}{Listing}
+\AddToHook{env/verbatim/begin}{\footnotesize\setstretch{1}}

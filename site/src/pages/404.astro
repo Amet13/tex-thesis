@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/paths';
+---
+<Base title="Page not found" description="This page does not exist.">
+  <div class="nf galley">
+    <p class="runhead"><span>Error 404</span></p>
+    <h1>! Undefined page.</h1>
+    <pre class="nf-log"><code>l.404 \input{"{"}<span class="nf-u">this-page</span>{"}"}
+?</code></pre>
+    <p>No page lives at this address. It may have moved when tex-thesis became Overfull.</p>
+    <ul>
+      <li><a href={url()}>Home</a></li>
+      <li><a href={url('docs/')}>Guide</a></li>
+      <li><a href={url('rules/')}>Rule index</a></li>
+      <li><a href={url('check/')}>Browser check</a></li>
+    </ul>
+  </div>
+</Base>
+<style>
+  .nf {
+    padding-block: 3rem;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: var(--s2);
+    color: var(--error);
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .nf-log {
+    border-left-color: var(--pencil);
+  }
+  .nf-u {
+    text-decoration: underline wavy var(--pencil);
+  }
+</style>

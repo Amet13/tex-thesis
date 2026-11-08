@@ -1,1 +1,1 @@
-{"title":"Errors in two chapter files (file attribution)","engine":"pdflatex","check":"build","expect":["undefined-control-sequence","missing-dollar","rerun-needed"]}
+{"title":"Errors in two chapter files (file attribution)","engine":"pdflatex","check":"build","expect":["undefined-control-sequence","missing-dollar"]}

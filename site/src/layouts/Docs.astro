@@ -2,7 +2,7 @@
 import Base from './Base.astro';
 import DocsNav from '../components/DocsNav.astro';
 import type { Doc } from '../lib/docs';
-import { docSlug } from '../lib/docs';
+import { docPath, docSlug } from '../lib/docs';
 import { REPO_URL, url } from '../lib/paths';
 
 interface Props {
@@ -46,13 +46,13 @@ const editUrl = current ? `${REPO_URL}/edit/main/docs/guide/${current.filePath?.
       {current && (
         <nav class="pager" aria-label="Previous and next page">
           {prev ? (
-            <a class="pager-prev" href={url(`docs/${docSlug(prev)}/`)} rel="prev">
+            <a class="pager-prev" href={url(docPath(prev))} rel="prev">
               <span class="pager-dir">Previous</span>
               <span>{prev.data.title}</span>
             </a>
           ) : <span />}
           {next && (
-            <a class="pager-next" href={url(`docs/${docSlug(next)}/`)} rel="next">
+            <a class="pager-next" href={url(docPath(next))} rel="next">
               <span class="pager-dir">Next</span>
               <span>{next.data.title}</span>
             </a>

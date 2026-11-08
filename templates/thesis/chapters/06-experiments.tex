@@ -1,0 +1,154 @@
+\section{Experimental research}\label{sec:experiments}
+
+This chapter describes the experiments conducted to evaluate the proposed system.
+The reporting follows the benchmarking rules of Hoefler and Belli~\cite{hoefler2015scientific}.
+
+\subsection{Experimental setup}
+
+The experiments were performed on the following hardware:
+\begin{itemize}
+  \item CPU: 8-core processor, \qty{3.2}{\giga\hertz};
+  \item RAM: 32~GB DDR4;
+  \item storage: 512~GB NVMe SSD;
+  \item OS: Ubuntu 24.04 LTS.
+\end{itemize}
+
+\subsection{Test datasets}
+
+Three datasets of varying sizes were used for evaluation (\cref{tab:datasets}).
+
+% EXAMPLE: table with booktabs and siunitx; thousands are grouped automatically.
+\begin{table}[htbp]
+  \centering
+  \caption{Test datasets}\label{tab:datasets}
+  \begin{tabular}{l S[table-format=7.0] S[table-format=4.0] l}
+    \toprule
+    Dataset & {Records} & {Size (MB)} & Purpose             \\
+    \midrule
+    Small   & 1000      & 5           & Unit testing        \\
+    Medium  & 100000    & 450         & Integration testing \\
+    Large   & 1000000   & 4200        & Stress testing      \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Performance results}
+
+The system was benchmarked against two baseline implementations.
+\Cref{tab:performance} shows the results; the raw numbers are stored in \texttt{figures/data/benchmark.csv}.
+
+% EXAMPLE: grouped column headers with \multicolumn and \cmidrule.
+% (multirow is avoided: it is not yet compatible with PDF tagging.)
+\begin{table}[htbp]
+  \centering
+  \caption{Performance comparison (processing time in seconds)}\label{tab:performance}
+  \begin{tabular}{l S[table-format=1.1] S[table-format=2.1] S[table-format=3.1]}
+    \toprule
+                      & \multicolumn{3}{c}{Dataset size}           \\
+    \cmidrule(lr){2-4}
+    Method            & {Small} & {Medium} & {Large} \\
+    \midrule
+    Baseline A        & 0.8     & 45.2     & 512.0   \\
+    Baseline B        & 0.5     & 38.7     & 478.3   \\
+    Proposed approach & 0.3     & 22.1     & 287.5   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The proposed approach reduces processing time by 44--63\% compared to Baseline~A and by 40--43\% compared to Baseline~B.
+
+% EXAMPLE: pgfplots bar chart that reads its data from a CSV file.
+\Cref{fig:bar-chart} visualizes the performance comparison across dataset sizes.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[alt={Grouped bar chart of processing time in seconds.
+      Small dataset: Baseline A 0.8, Baseline B 0.5, Proposed 0.3. Medium:
+      45.2, 38.7, 22.1. Large: 512.0, 478.3, 287.5. The proposed approach is
+      fastest for every dataset size.}]
+    \begin{axis}[
+        ybar,
+        bar width=14pt,
+        enlarge x limits=0.25,
+        legend style={at={(0.5,-0.18)}, anchor=north, legend columns=-1},
+        ylabel={Time (s)},
+        symbolic x coords={Small, Medium, Large},
+        xtick=data,
+        ymin=0, ymax=600,
+        width=12cm, height=8cm,
+      ]
+      \addplot[fill=red!60]   table[col sep=comma, x=dataset, y=baselineA] {figures/data/benchmark.csv};
+      \addplot[fill=blue!60]  table[col sep=comma, x=dataset, y=baselineB] {figures/data/benchmark.csv};
+      \addplot[fill=green!60] table[col sep=comma, x=dataset, y=proposed]  {figures/data/benchmark.csv};
+      \legend{Baseline A, Baseline B, Proposed}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Performance comparison across dataset sizes}\label{fig:bar-chart}
+\end{figure}
+
+\subsection{Accuracy results}
+
+Accuracy was measured using standard classification metrics~\cite{sokolova2009systematic}:
+\begin{equation}\label{eq:accuracy}
+  \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%
+\end{equation}
+where $TP$, $TN$, $FP$, $FN$ denote true positives, true negatives, false positives, and false negatives respectively.
+
+% EXAMPLE: aligned equations with extra vertical space.
+The precision, recall, and $F_1$-score are defined as:
+\begin{align}
+  \text{Precision} & = \frac{TP}{TP + FP} \label{eq:precision} \\[6pt]
+  \text{Recall}    & = \frac{TP}{TP + FN} \label{eq:recall}    \\[6pt]
+  F_1              & = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \label{eq:f1}
+\end{align}
+
+The proposed approach achieved an accuracy of 94.2\%, compared to 89.5\% for Baseline~A and 91.1\% for Baseline~B (\cref{tab:metrics}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Detailed classification metrics (\%)}\label{tab:metrics}
+  \begin{tabular}{l *{4}{S[table-format=2.1]}}
+    \toprule
+    Method            & {Accuracy} & {Precision} & {Recall} & {$F_1$-score} \\
+    \midrule
+    Baseline A        & 89.5       & 87.3        & 88.1     & 87.7          \\
+    Baseline B        & 91.1       & 90.2        & 89.8     & 90.0          \\
+    Proposed approach & 94.2       & 93.5        & 93.8     & 93.6          \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Scalability analysis}
+
+The system scales linearly with dataset size, as evidenced by the following relationship:
+\begin{equation}\label{eq:scalability}
+  T(n) = a \cdot n + b
+\end{equation}
+where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ are constants determined through regression analysis ($a = \num{2.21e-4}$, $b = \num{0.12}$).
+
+% EXAMPLE: pgfplots line plot from a CSV file.
+\Cref{fig:scalability-plot} shows the scalability curve.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[alt={Line chart of processing time in seconds against
+      records in hundreds of thousands. The proposed approach grows linearly
+      from 0.3 seconds to 176.8 seconds at 800 thousand records; Baseline B
+      grows faster, reaching 260 seconds.}]
+    \begin{axis}[
+        xlabel={Records ($\times 10^5$)},
+        ylabel={Time (s)},
+        xmin=0, xmax=8.5,
+        ymin=0, ymax=300,
+        legend pos=north west,
+        grid=major,
+        width=12cm, height=8cm,
+      ]
+      \addplot[thick, green!50!black, mark=*] table[col sep=comma, x=records, y=proposed] {figures/data/scalability.csv};
+      \addlegendentry{Proposed}
+      \addplot[thick, blue!70, dashed, mark=square*] table[col sep=comma, x=records, y=baselineB] {figures/data/scalability.csv};
+      \addlegendentry{Baseline B}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Scalability: processing time versus dataset size}\label{fig:scalability-plot}
+\end{figure}

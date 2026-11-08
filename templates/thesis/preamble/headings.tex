@@ -1,0 +1,43 @@
+% preamble/headings.tex — section headings and table of contents.
+%
+% Thesis look: numbered, centred, UPPERCASE section headings in body-size
+% type; left-aligned numbered subsections. titlesec is only partly supported
+% by the tagging code, so we use its basic \titleformat interface only
+% (the LaTeX tagging code emulates it) and avoid the "explicit" option.
+
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\normalsize\bfseries\filcenter}{\thesection}{1em}{\MakeUppercase}
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\itshape}{\thesubsubsection}{1em}{}
+\titlespacing*{\section}{0pt}{0pt}{1.5em}
+\titlespacing*{\subsection}{\parindent}{1em}{0.5em}
+\titlespacing*{\subsubsection}{\parindent}{1em}{0.5em}
+
+% Every top-level section starts on a new page.
+\AddToHook{cmd/section/before}{\clearpage}
+
+% Unnumbered section that still appears in the table of contents and in
+% the PDF bookmarks: Introduction, Conclusion, Abbreviations, Appendix ...
+\NewDocumentCommand\unnumberedsection{m}{%
+  \clearpage
+  \phantomsection % link target for the TOC entry and bookmark
+  \section*{#1}%
+  \addcontentsline{toc}{section}{#1}%
+}
+
+% Table of contents with dotted leaders also for sections (tocloft is
+% tagging-compatible). Titles of lists are set like section headings.
+\usepackage{tocloft}
+\renewcommand{\cfttoctitlefont}{\hfill\normalfont\normalsize\bfseries\MakeUppercase}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\renewcommand{\cftloftitlefont}{\hfill\normalfont\normalsize\bfseries\MakeUppercase}
+\renewcommand{\cftafterloftitle}{\hfill}
+\renewcommand{\cftlottitlefont}{\hfill\normalfont\normalsize\bfseries\MakeUppercase}
+\renewcommand{\cftafterlottitle}{\hfill}
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\setcounter{tocdepth}{2}

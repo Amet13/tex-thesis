@@ -1,0 +1,21 @@
+% preamble/titlepage.tex — \thesistitlepage, built from metadata.tex.
+% Adapt the layout to your university's rules; keep the text in metadata.tex.
+
+\NewDocumentCommand\thesistitlepage{}{%
+  \begin{titlepage}
+    \centering
+    {\MakeUppercase{\ThesisInstitution}\par}
+    {\ThesisDepartment\par}
+    \vspace*{\fill}
+    {\Large\bfseries \ThesisTitle\par}
+    \vspace{1.5em}
+    {\ThesisSubtitle\par}
+    \vspace*{\fill}
+    \begin{flushright}
+      Author: \ThesisAuthor\par
+      Advisor: \ThesisAdvisor\par
+    \end{flushright}
+    \vspace{2em}
+    {\ThesisCity, \ThesisYear\par}
+  \end{titlepage}
+}

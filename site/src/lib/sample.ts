@@ -32,7 +32,7 @@ export function sampleReport(): Report {
           data: { key: 'chen2024scaling' },
         },
         {
-          rule: 'reference-mismatch',
+          rule: 'reference-metadata-mismatch',
           check: 'references',
           severity: 'warning',
           message: 'vaswani2017attention: year is 2018 in the .bib, 2017 in arXiv',
