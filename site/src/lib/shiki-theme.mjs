@@ -13,22 +13,63 @@ export const galleyTheme = {
     'editor.background': v('paper'),
   },
   tokenColors: [
-    { scope: ['comment', 'punctuation.definition.comment'], settings: { foreground: v('comment'), fontStyle: 'italic' } },
     {
-      scope: ['keyword', 'storage', 'support.function.be.latex', 'keyword.control', 'support.function.general.tex', 'support.function'],
+      scope: ['comment', 'punctuation.definition.comment'],
+      settings: { foreground: v('comment'), fontStyle: 'italic' },
+    },
+    {
+      scope: [
+        'keyword',
+        'storage',
+        'support.function.be.latex',
+        'keyword.control',
+        'support.function.general.tex',
+        'support.function',
+      ],
       settings: { foreground: v('keyword') },
     },
     {
-      scope: ['entity.name.function', 'support.function.section.latex', 'entity.name.section', 'markup.heading'],
+      scope: [
+        'entity.name.function',
+        'support.function.section.latex',
+        'entity.name.section',
+        'markup.heading',
+      ],
       settings: { foreground: v('keyword'), fontStyle: 'bold' },
     },
-    { scope: ['string', 'markup.inline.raw', 'constant.other.reference.citation.latex', 'constant.other.citation.latex'], settings: { foreground: v('string') } },
     {
-      scope: ['constant', 'constant.numeric', 'variable.parameter', 'entity.name.tag', 'support.class.latex', 'variable.parameter.function.latex'],
+      scope: [
+        'string',
+        'markup.inline.raw',
+        'constant.other.reference.citation.latex',
+        'constant.other.citation.latex',
+      ],
+      settings: { foreground: v('string') },
+    },
+    {
+      scope: [
+        'constant',
+        'constant.numeric',
+        'variable.parameter',
+        'entity.name.tag',
+        'support.class.latex',
+        'variable.parameter.function.latex',
+      ],
       settings: { foreground: v('constant') },
     },
-    { scope: ['variable', 'meta.object-literal.key', 'support.type.property-name', 'entity.other.attribute-name'], settings: { foreground: v('ink') } },
-    { scope: ['punctuation', 'meta.brace', 'punctuation.definition'], settings: { foreground: v('punct') } },
+    {
+      scope: [
+        'variable',
+        'meta.object-literal.key',
+        'support.type.property-name',
+        'entity.other.attribute-name',
+      ],
+      settings: { foreground: v('ink') },
+    },
+    {
+      scope: ['punctuation', 'meta.brace', 'punctuation.definition'],
+      settings: { foreground: v('punct') },
+    },
     { scope: ['invalid', 'markup.deleted'], settings: { foreground: v('error') } },
     { scope: ['markup.inserted'], settings: { foreground: v('string') } },
     { scope: ['markup.bold'], settings: { fontStyle: 'bold' } },

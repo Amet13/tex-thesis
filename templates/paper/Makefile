@@ -28,13 +28,16 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help build watch check pages diff clean
+.PHONY: help build arxiv watch check pages diff clean
 
 help: ## Show this help
 	@awk 'BEGIN{FS=":.*## "} /^[a-z-]+:.*## /{printf "  make %-8s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 build: ## Build the PDF with latexmk (no overfull CLI needed)
 	$(RUN_LATEXMK)
+
+arxiv: ## Build with pdfLaTeX, as arXiv does (paper-arxiv.pdf)
+	$(RUN_LATEXMK) -pdf -jobname=$(JOB)-arxiv
 
 watch: ## Rebuild the PDF on every save
 	$(RUN_LATEXMK) -pvc -view=none

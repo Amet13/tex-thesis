@@ -30,7 +30,8 @@ function rulesOf(meta: Record<string, unknown>, id: string): string[] {
   if (Array.isArray(expect)) {
     for (const e of expect) {
       if (typeof e === 'string') out.add(e);
-      else if (e && typeof e === 'object' && typeof (e as { rule?: unknown }).rule === 'string') out.add((e as { rule: string }).rule);
+      else if (e && typeof e === 'object' && typeof (e as { rule?: unknown }).rule === 'string')
+        out.add((e as { rule: string }).rule);
     }
   } else if (expect && typeof expect === 'object') {
     for (const r of asStrings((expect as Record<string, unknown>).rules)) out.add(r);
@@ -46,7 +47,9 @@ export function logExcerpt(log: string, rules: string[]): string {
   const lines = log.split(/\r?\n/);
   try {
     const { build, output } = analyzeLog(log);
-    const hit = [...build.problems, ...output.problems].find((p) => rules.includes(p.rule) && p.evidence);
+    const hit = [...build.problems, ...output.problems].find(
+      (p) => rules.includes(p.rule) && p.evidence,
+    );
     if (hit?.evidence) {
       const ev = hit.evidence.trim().split(/\r?\n/);
       if (ev.length <= 14) return ev.join('\n');
@@ -58,7 +61,10 @@ export function logExcerpt(log: string, rules: string[]): string {
   let i = lines.findIndex((l) => l.startsWith('!') || /:\d+: /.test(l));
   if (i < 0) i = lines.findIndex((l) => /Warning|Overfull|Underfull|not found|undefined/i.test(l));
   if (i < 0) return lines.slice(-12).join('\n');
-  return lines.slice(Math.max(0, i - 1), i + 9).join('\n').trimEnd();
+  return lines
+    .slice(Math.max(0, i - 1), i + 9)
+    .join('\n')
+    .trimEnd();
 }
 
 let cache: CorpusCase[] | null = null;
@@ -78,7 +84,9 @@ export function corpusCases(): CorpusCase[] {
       continue;
     }
     const rules = rulesOf(meta, id);
-    const fixedInline = [meta.fixed, meta.fixedTex, meta.fix_tex].find((x): x is string => typeof x === 'string' && x.includes('\\'));
+    const fixedInline = [meta.fixed, meta.fixedTex, meta.fix_tex].find(
+      (x): x is string => typeof x === 'string' && x.includes('\\'),
+    );
     const fixed = readText(`corpus/${id}/fixed.tex`) ?? fixedInline ?? undefined;
     cases.push({
       id,
@@ -98,5 +106,9 @@ export function corpusCases(): CorpusCase[] {
 
 export function caseForRule(ruleId: string, corpusId?: string): CorpusCase | undefined {
   const all = corpusCases();
-  return (corpusId ? all.find((c) => c.id === corpusId) : undefined) ?? all.find((c) => c.rules.includes(ruleId)) ?? all.find((c) => c.id === ruleId);
+  return (
+    (corpusId ? all.find((c) => c.id === corpusId) : undefined) ??
+    all.find((c) => c.rules.includes(ruleId)) ??
+    all.find((c) => c.id === ruleId)
+  );
 }

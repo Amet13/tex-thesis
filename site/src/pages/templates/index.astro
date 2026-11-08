@@ -47,17 +47,26 @@ const templates: Tpl[] = [
       'Speaker notes, backup slides, figures shared with the paper or thesis',
       'Same `Makefile`, agent instructions and reference workflow as the other templates',
     ],
-    checks: 'Build, output and references checks run in CI. Tagged Beamer output is still experimental in TeX Live 2026.',
+    checks:
+      'Build, output and references checks run in CI. Tagged Beamer output is still experimental in TeX Live 2026.',
   },
 ];
-const previews = Object.fromEntries(templates.map((t) => [t.id, exists(`site/public/previews/${t.id}.png`)]));
+const previews = Object.fromEntries(
+  templates.map((t) => [t.id, exists(`site/public/previews/${t.id}.png`)]),
+);
 const present = Object.fromEntries(templates.map((t) => [t.id, exists(`templates/${t.id}`)]));
 const titles: Record<string, string> = {
-  thesis: readText('templates/thesis/metadata.tex')?.match(/\\ThesisTitle\{([^}]+)\}/)?.[1] ?? 'A Study of Overfull Boxes',
+  thesis:
+    readText('templates/thesis/metadata.tex')?.match(/\\ThesisTitle\{([^}]+)\}/)?.[1] ??
+    'A Study of Overfull Boxes',
   paper: 'On Verifying References Written by Language Models',
   slides: 'Defence',
 };
-const md = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/`([^`]+)`/g, '<code>$1</code>');
+const md = (s: string) =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
 ---
 <Base title="Templates" description="Thesis, paper and slides templates for LaTeX: accessible by default, ready for coding agents, checked by Overfull in CI." section="templates">
   <div class="tpl-page">

@@ -1,0 +1,60 @@
+% !TEX TS-program = lualatex
+%
+% Defense slides template (Beamer) — Overfull (https://github.com/amet13/overfull)
+% Build: make build (or latexmk) -> slides.pdf
+%
+% ACCESSIBILITY NOTE: Beamer cannot produce a tagged PDF. The LaTeX Tagging
+% Project lists the beamer class as "no support" (it re-boxes material in a
+% way no tagging can follow) and beamer refuses \DocumentMetadata. So this
+% deck is NOT PDF/UA. We still set the document language, the title and
+% alt text on images. For a tagged deck, try the new ltx-talk class (in
+% TeX Live 2026) and share the thesis PDF, which is PDF/UA-2.
+% aspectratio=169 for 16:9 screens; remove it for 4:3. [t] = top-aligned.
+% usepdftitle=false: the PDF title comes from metadata.tex, set below.
+\documentclass[aspectratio=169,t,usepdftitle=false]{beamer}
+
+\input{metadata}
+
+\usetheme{ThesisSlides}           % local theme: beamerthemeThesisSlides.sty
+\usefonttheme[onlymath]{serif}
+
+% ---- Fonts (LuaLaTeX) ------------------------------------------------------
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\setmainfont{TeX Gyre Termes}}
+\IfFontExistsTF{FreeMono}
+  {\setmonofont{FreeMono}}
+  {\setmonofont{Latin Modern Mono}}
+\usepackage{mathtools}
+\usepackage[warnings-off={mathtools-overbracket,mathtools-colon}]{unicode-math}
+\setmathfont{Latin Modern Math}
+
+% ---- Tables, plots ---------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18, compat/show suggested version=false}
+\graphicspath{{figures/}}
+
+% ---- Title slide and PDF metadata --------------------------------------------
+\title{\TalkTitle}
+\subtitle{\TalkSubtitle}
+\author{\texorpdfstring{Author: \TalkAuthor\\Advisor: \TalkAdvisor}{\TalkAuthor}}
+\institute{\texorpdfstring{\TalkInstitution\\\TalkDepartment}{\TalkInstitution}}
+\date{\the\year}
+
+\hypersetup{
+  pdflang={en},
+  pdftitle={\TalkTitle},
+  pdfauthor={\TalkAuthor},
+  pdfsubject={\TalkSubtitle},
+  pdfkeywords={\TalkKeywords},
+  pdfdisplaydoctitle=true,
+}
+
+\begin{document}
+\input{sections/slides}
+\end{document}

@@ -1,9 +1,9 @@
 ---
-import Base from './Base.astro';
 import DocsNav from '../components/DocsNav.astro';
 import type { Doc } from '../lib/docs';
 import { docPath, docSlug } from '../lib/docs';
 import { REPO_URL, url } from '../lib/paths';
+import Base from './Base.astro';
 
 interface Props {
   title: string;
@@ -17,7 +17,9 @@ const idx = current ? docs.findIndex((d) => d.id === current.id) : -1;
 const prev = idx > 0 ? docs[idx - 1] : undefined;
 const next = idx >= 0 && idx < docs.length - 1 ? docs[idx + 1] : undefined;
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
-const editUrl = current ? `${REPO_URL}/edit/main/docs/guide/${current.filePath?.split('docs/guide/')[1] ?? `${current.id}.md`}` : undefined;
+const editUrl = current
+  ? `${REPO_URL}/edit/main/docs/guide/${current.filePath?.split('docs/guide/')[1] ?? `${current.id}.md`}`
+  : undefined;
 ---
 <Base title={title} description={description} section="docs">
   <div class="docs">

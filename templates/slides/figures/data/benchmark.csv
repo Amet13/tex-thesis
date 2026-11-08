@@ -1,0 +1,4 @@
+dataset,baselineA,baselineB,proposed
+Small,0.8,0.5,0.3
+Medium,45.2,38.7,22.1
+Large,512.0,478.3,287.5

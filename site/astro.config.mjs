@@ -20,8 +20,6 @@ export default defineConfig({
     },
   },
   vite: {
-    // DEV ONLY (remove): point at a patched core build while core is in progress.
-    ...(process.env.OVERFULL_CORE_SHIM ? { resolve: { alias: { '@overfull/core': process.env.OVERFULL_CORE_SHIM } } } : {}),
     build: { chunkSizeWarningLimit: 1600 },
     server: { fs: { allow: ['..'] } },
   },

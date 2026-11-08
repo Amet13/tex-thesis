@@ -1,21 +1,23 @@
 ---
 import Docs from '../../layouts/Docs.astro';
-import { docPath, docSlug, groupDocs, rewriteDocLinks, sortedDocs } from '../../lib/docs';
+import { docHeadings, docPath, docSlug, groupDocs, rewriteDocLinks, sortedDocs } from '../../lib/docs';
 import { url } from '../../lib/paths';
 
 const docs = await sortedDocs();
 const groups = groupDocs(docs);
 const intro = docs.find((d) => docSlug(d) === '');
-const introHtml = intro ? rewriteDocLinks(intro.rendered?.html ?? '', intro, import.meta.env.BASE_URL) : '';
+const introHtml = intro
+  ? rewriteDocLinks(intro.rendered?.html ?? '', intro, import.meta.env.BASE_URL)
+  : '';
 ---
-<Docs title={intro ? 'Guide' : 'Guide'} description={intro?.data.description ?? 'How to start a paper or thesis with Overfull, work with a coding agent or by hand, and read every check.'} docs={docs} current={intro} headings={intro?.rendered?.metadata?.headings ?? []}>
+<Docs title="Guide" description={intro?.data.description ?? 'How to start a paper or thesis with Overfull, work with a coding agent or by hand, and read every check.'} docs={docs} current={intro} headings={docHeadings(intro)}>
   {introHtml && <div set:html={introHtml} />}
   {introHtml && <h2 id="contents">All pages</h2>}
   {groups.length === 0 && <p>The guide is being written. Meanwhile, the <a href="https://github.com/amet13/overfull#readme">README</a> covers installation and commands.</p>}
   <div class="contents">
     {groups.map((g) => (
       <section aria-labelledby={`sec-${g.section.replace(/\W+/g, '-').toLowerCase()}`}>
-        <h2 id={`sec-${g.section.replace(/\W+/g, '-').toLowerCase()}`}>{g.section}</h2>
+        <h3 id={`sec-${g.section.replace(/\W+/g, '-').toLowerCase()}`}>{g.section}</h3>
         <ol>
           {g.docs.map((d) => (
             <li>
@@ -29,7 +31,7 @@ const introHtml = intro ? rewriteDocLinks(intro.rendered?.html ?? '', intro, imp
   </div>
 </Docs>
 <style>
-  .contents h2 {
+  .contents h3 {
     font-size: var(--s0);
     font-variant-caps: all-small-caps;
     letter-spacing: 0.09em;

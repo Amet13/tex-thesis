@@ -30,6 +30,10 @@ jobs:
       - name: Build
         run: latexmk
 
+      # arXiv only runs pdfLaTeX: make sure that build works too.
+      - name: Build with pdfLaTeX (arXiv)
+        run: latexmk -pdf -jobname=paper-arxiv
+
       # The first two runs only report (summary + inline annotations);
       # the last one sets the job status. Reference lookups are cached.
       - name: Preflight

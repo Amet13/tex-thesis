@@ -29,6 +29,20 @@
 \usepackage{graphicx}
 \graphicspath{{figures/}}
 \usepackage{booktabs}
+% Workaround (TeX Live 2026, pdfLaTeX only): mark \toprule, \midrule and
+% \bottomrule as artifacts, as the tagging code already does for \cmidrule
+% and as LuaLaTeX does by itself. Without it veraPDF reports PDF/UA rule
+% 8.2.2 ("content neither artifact nor tagged"). Remove once booktabs or the
+% LaTeX kernel handles it.
+\ifpdftex
+  \ExplSyntaxOn
+  \makeatletter
+  \def\@BTnormal{%
+    {\tag_mc_begin:n{artifact}\CT@arc@\hrule\@height\@thisrulewidth\tag_mc_end:}%
+    \futurenonspacelet\@tempa\@BTendrule}
+  \makeatother
+  \ExplSyntaxOff
+\fi
 \usepackage{siunitx}
 \usepackage{tikz}
 \usepackage{pgfplots}

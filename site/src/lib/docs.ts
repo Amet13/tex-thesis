@@ -1,4 +1,4 @@
-import { getCollection, type CollectionEntry } from 'astro:content';
+import { type CollectionEntry, getCollection } from 'astro:content';
 import { DOC_SECTIONS } from './paths';
 
 export type Doc = CollectionEntry<'docs'>;
@@ -67,7 +67,22 @@ export function rewriteDocLinks(html: string, d: Doc, base: string): string {
       }
       return `href="${REPO_BLOB}/${up === 1 ? 'docs/' : ''}${out.join('/')}${h}"`;
     }
-    const slug = out.join('/').replace(/\.md$/, '').toLowerCase().replace(/(^|\/)index$/, '');
+    const slug = out
+      .join('/')
+      .replace(/\.md$/, '')
+      .toLowerCase()
+      .replace(/(^|\/)index$/, '');
     return `href="${prefix}docs/${slug ? `${slug}/` : ''}${h}"`;
   });
+}
+
+export interface DocHeading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+export function docHeadings(d: Doc | undefined): DocHeading[] {
+  const h = d?.rendered?.metadata?.headings;
+  return Array.isArray(h) ? (h as DocHeading[]) : [];
 }

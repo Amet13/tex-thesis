@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="t">
+  <title id="t">Overfull</title>
   <style>
     .p{fill:#f5f6f3}.t{fill:#8d949c}.r{fill:#0b0f19}.m{stroke:#4f9dc4}
     @media (prefers-color-scheme: dark){.p{fill:#111617}.t{fill:#5d6a70}.r{fill:#e9efe8}.m{stroke:#46b4e0}}

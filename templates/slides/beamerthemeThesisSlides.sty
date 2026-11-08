@@ -1,0 +1,108 @@
+%%% Required packages for presentation
+\usepackage{wrapfig}
+\usepackage{xcolor}
+\usepackage{etoolbox}
+
+\ProvidesPackage{beamerthemeThesisSlides}[2026/11/08] % Theme name and date
+\usefonttheme{default} % Default font theme
+
+%%% Color scheme definitions
+\definecolor{Blue}{cmyk}{1,0.66,0,0.02}        % Primary color
+\definecolor{Green}{cmyk}{0.69,0,1,0}          % Pantone 361
+\definecolor{Red}{cmyk}{0,0.95,1,0.29}         % Pantone 484
+\definecolor{Orange}{cmyk}{0,0.42,0.77,0}      % Pantone 131
+\setbeamercolor{WhiteOnBlue}{bg=Blue,fg=white} % White text on primary color
+\setbeamercolor{BlueOnWhite}{fg=Blue,bg=white} % Primary color on white
+
+%%% Hyperlinks (Beamer loads hyperref automatically, just configure it)
+\hypersetup{
+    unicode=true,    % Unicode characters in PDF sections
+    colorlinks=true, % false: boxed links; true: colored links
+    linkcolor=Blue,  % Internal links
+    citecolor=Blue,  % Bibliography references
+    filecolor=Blue,  % File links
+    urlcolor=Blue    % URLs
+}
+
+%%% Style settings
+\setbeamertemplate{navigation symbols}{}  % Hide navigation panel (comment out to show)
+\setbeamertemplate{itemize items}[circle] % List marker style: triangle, circle, square, ball
+\setbeamertemplate{theorems}[numbered]    % Numbered theorems
+
+%%% Color assignments for various elements (see Beamer User Guide)
+\usecolortheme[named=Blue]{structure}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{frametitle}{bg=white}  % White background
+\setbeamercolor{frametitle}{fg=Blue}   % Blue text
+
+\setbeamercolor{headline}{bg=Blue}
+\setbeamercolor{alerted text}{fg=Red}
+\setbeamercolor{itemize item}{fg=Blue}
+\setbeamercolor{itemize subitem}{fg=Blue}
+\setbeamercolor{itemize subsubitem}{fg=Blue}
+\setbeamercolor{block title example}{fg=Green}
+\AtBeginEnvironment{exampleblock}{
+    \setbeamercolor{itemize item}{fg=Green}
+    \setbeamercolor{itemize subitem}{fg=Green}
+    \setbeamercolor{itemize subsubitem}{fg=Green}
+}
+\setbeamercolor{palette primary}{bg=Blue}
+\setbeamercolor{palette primary}{fg=white}
+\setbeamercolor{palette secondary}{bg=Blue}
+\setbeamercolor{palette secondary}{fg=white}
+\setbeamercolor{palette tertiary}{bg=Blue}
+\setbeamercolor{palette tertiary}{fg=white}
+
+%%% Title and logos
+\setbeamertemplate{headline}[default]{} % Empty headline
+\setbeamertemplate{frametitle}{
+    \nointerlineskip
+    \begin{beamercolorbox}[sep=0.3cm,wd=\paperwidth]{frametitle}
+        \vbox{}\vskip-0.7ex
+        \strut\insertframetitle \\
+        \small\strut\insertframesubtitle
+        \vskip-1ex
+    \end{beamercolorbox}
+}
+
+%%% Bottom bar
+\makeatletter
+\setbeamertemplate{footline}{
+    \leavevmode%
+    \hbox{%
+        \begin{beamercolorbox}[wd=.2\paperwidth,ht=2ex,dp=1ex,left]{BlueOnWhite}
+            \usebeamerfont{author in head/foot}
+        \end{beamercolorbox}%
+        \begin{beamercolorbox}[wd=.6\paperwidth,ht=2ex,dp=1ex,center]{BlueOnWhite}
+            \usebeamerfont{title in head/foot}
+            % \insertshorttitle % Do not insert presentation title in the bottom bar
+        \end{beamercolorbox}%
+        \begin{beamercolorbox}[wd=.2\paperwidth,ht=2ex,dp=1ex,right]{BlueOnWhite}
+            \usebeamerfont{date in head/foot}
+            \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+        \end{beamercolorbox}%
+    }
+    \vskip0pt%
+}
+
+\setbeamertemplate{title page}{%
+    \begin{minipage}{\linewidth}
+        \centering
+        \vspace{\baselineskip}
+        \small\insertinstitute
+
+        \vspace{2\baselineskip}
+        \textcolor{Blue}{\normalsize\insertsubtitle} \\
+
+        \vspace{\baselineskip}
+        \textcolor{Blue}{\Large\inserttitle} \\
+
+        \vspace{2\baselineskip}
+        \begin{flushright}
+            \small\insertauthor \\
+        \end{flushright}
+
+        \vspace{2\baselineskip}
+        \small\insertdate
+    \end{minipage}
+}

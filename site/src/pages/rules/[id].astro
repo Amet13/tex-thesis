@@ -1,18 +1,23 @@
 ---
+import { Code } from 'astro:components';
 import type { RuleInfo } from '@overfull/core';
 import Base from '../../layouts/Base.astro';
-import { caseForRule, type CorpusCase } from '../../lib/corpus';
+import { type CorpusCase, caseForRule } from '../../lib/corpus';
 import { CHECK_LABELS, REPO_URL, url } from '../../lib/paths';
 import { rules } from '../../lib/rules';
 import { inline } from '../../lib/sheet';
-import { Code } from 'astro:components';
 import { galleyTheme } from '../../lib/shiki-theme.mjs';
 
 export function getStaticPaths() {
   const all = rules();
   return all.map((rule, i) => ({
     params: { id: rule.id },
-    props: { rule, kase: caseForRule(rule.id, rule.corpus), related: all.filter((r) => r.check === rule.check && r.id !== rule.id).slice(0, 8), index: i },
+    props: {
+      rule,
+      kase: caseForRule(rule.id, rule.corpus),
+      related: all.filter((r) => r.check === rule.check && r.id !== rule.id).slice(0, 8),
+      index: i,
+    },
   }));
 }
 

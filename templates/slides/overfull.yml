@@ -1,0 +1,14 @@
+# overfull.yml — configuration for the `overfull` CLI.
+# Docs: https://github.com/amet13/overfull
+main: main.tex
+jobname: slides            # output: slides.pdf / slides.log
+bib: []
+profile: generic
+# No "accessibility" check: Beamer cannot produce tagged PDF (the LaTeX
+# Tagging Project lists it as "no support", and beamer rejects
+# \DocumentMetadata), so a PDF/UA check would always fail. Share the
+# accessible thesis PDF alongside the slides, or move to the ltx-talk class.
+checks: [build, output]
+build:
+  engine: auto             # local latexmk if installed, otherwise Docker
+  image: ghcr.io/amet13/overfull:0.1

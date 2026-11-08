@@ -5,32 +5,32 @@
  * "Verify references online" on.
  */
 import {
-  CHECK_IDS,
-  VERSION,
   accessibilityCheck,
   analyzeLog,
-  extractPdfFacts,
+  type BibEntry,
+  CHECK_IDS,
+  type CheckId,
+  type CheckResult,
   citedKeys,
+  extractPdfFacts,
   formatJson,
   formatMarkdown,
   missingKeys,
+  type PdfFacts,
+  type PdfjsLike,
+  type Problem,
   parseBibWithIssues,
   pdfOutputProblems,
+  type RefCache,
+  type RefResult,
+  type Report,
   refsCheck,
   reportStatus,
   resolveProfile,
   statusOf,
+  VERSION,
   venueCheck,
   verifyEntries,
-  type BibEntry,
-  type CheckId,
-  type CheckResult,
-  type PdfFacts,
-  type PdfjsLike,
-  type Problem,
-  type RefCache,
-  type RefResult,
-  type Report,
 } from '@overfull/core';
 import { esc, renderSheet } from '../lib/sheet';
 
@@ -44,6 +44,11 @@ interface Loaded {
 }
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
+function must<T extends HTMLElement = HTMLElement>(sel: string): T {
+  const el = document.querySelector<T>(sel);
+  if (!el) throw new Error(`check page: missing ${sel}`);
+  return el;
+}
 
 function kindOf(name: string, head: string): Kind | null {
   const n = name.toLowerCase();
@@ -51,7 +56,8 @@ function kindOf(name: string, head: string): Kind | null {
   if (n.endsWith('.bib')) return 'bib';
   if (n.endsWith('.aux') || n.endsWith('.bcf')) return 'aux';
   if (n.endsWith('.tex')) return 'tex';
-  if (n.endsWith('.log') || n.endsWith('.txt') || /This is (Lua|pdf|Xe|e-)?(HB)?TeX/i.test(head)) return 'log';
+  if (n.endsWith('.log') || n.endsWith('.txt') || /This is (Lua|pdf|Xe|e-)?(HB)?TeX/i.test(head))
+    return 'log';
   if (/^\s*@\w+\s*[{(]/m.test(head)) return 'bib';
   return null;
 }
@@ -81,7 +87,10 @@ function sessionCache(): RefCache {
 let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
 async function loadPdfjs() {
   pdfjsPromise ??= (async () => {
-    const [pdfjs, worker] = await Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]);
+    const [pdfjs, worker] = await Promise.all([
+      import('pdfjs-dist'),
+      import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+    ]);
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     return pdfjs;
   })();
@@ -92,27 +101,31 @@ export function initCheck(): void {
   const files: Loaded[] = [];
   const cache = sessionCache();
   const config = JSON.parse($('#check-config')?.textContent ?? '{}') as { rulesBase?: string };
-  const samples = JSON.parse($('#samples-data')?.textContent ?? '[]') as { id: string; label: string; files: { name: string; text: string }[] }[];
+  const samples = JSON.parse($('#samples-data')?.textContent ?? '[]') as {
+    id: string;
+    label: string;
+    files: { name: string; text: string }[];
+  }[];
 
-  const form = $<HTMLFormElement>('#intake')!;
-  const drop = $('#drop')!;
-  const input = $<HTMLInputElement>('#file-input')!;
-  const choose = $<HTMLButtonElement>('#choose')!;
-  const list = $<HTMLUListElement>('#files')!;
-  const filesWrap = $('#files-wrap')!;
-  const runBtn = $<HTMLButtonElement>('#run')!;
-  const stopBtn = $<HTMLButtonElement>('#stop')!;
-  const online = $<HTMLInputElement>('#online')!;
-  const profileSel = $<HTMLSelectElement>('#profile')!;
-  const progress = $('#progress')!;
-  const bar = $('#progress-bar')!;
-  const barFill = bar.querySelector<HTMLElement>('span')!;
-  const tools = $('#result-tools')!;
-  const sheetView = $('#sheet-view')!;
-  const agentView = $('#agent-view')!;
-  const agentToggle = $<HTMLButtonElement>('#agent-toggle')!;
-  const jsonOut = $('#json-out')!;
-  const copyStatus = $('#copy-status')!;
+  const form = must<HTMLFormElement>('#intake');
+  const drop = must('#drop');
+  const input = must<HTMLInputElement>('#file-input');
+  const choose = must<HTMLButtonElement>('#choose');
+  const list = must<HTMLUListElement>('#files');
+  const filesWrap = must('#files-wrap');
+  const runBtn = must<HTMLButtonElement>('#run');
+  const stopBtn = must<HTMLButtonElement>('#stop');
+  const online = must<HTMLInputElement>('#online');
+  const profileSel = must<HTMLSelectElement>('#profile');
+  const progress = must('#progress');
+  const bar = must('#progress-bar');
+  const barFill = must<HTMLElement>('#progress-bar span');
+  const tools = must('#result-tools');
+  const sheetView = must('#sheet-view');
+  const agentView = must('#agent-view');
+  const agentToggle = must<HTMLButtonElement>('#agent-toggle');
+  const jsonOut = must('#json-out');
+  const copyStatus = must('#copy-status');
 
   let report: Report | null = null;
   let controller: AbortController | null = null;
@@ -160,9 +173,13 @@ export function initCheck(): void {
       if (kind === 'pdf') out.push({ name: file.name, kind, data: buf });
       else out.push({ name: file.name, kind, text: new TextDecoder('utf-8').decode(buf) });
     }
-    for (const b of samples.length ? document.querySelectorAll<HTMLButtonElement>('[data-sample]') : []) b.setAttribute('aria-pressed', 'false');
+    for (const b of samples.length
+      ? document.querySelectorAll<HTMLButtonElement>('[data-sample]')
+      : [])
+      b.setAttribute('aria-pressed', 'false');
     add(out);
-    if (skipped.length) say(`Skipped ${skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`);
+    if (skipped.length)
+      say(`Skipped ${skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`);
     if (out.length) void run();
   }
 
@@ -223,8 +240,11 @@ export function initCheck(): void {
       const s = samples.find((x) => x.id === btn.dataset.sample);
       if (!s) return;
       files.length = 0;
-      for (const b of document.querySelectorAll<HTMLButtonElement>('[data-sample]')) b.setAttribute('aria-pressed', String(b === btn));
-      add(s.files.map((f) => ({ name: f.name, kind: kindOf(f.name, f.text) ?? 'log', text: f.text })));
+      for (const b of document.querySelectorAll<HTMLButtonElement>('[data-sample]'))
+        b.setAttribute('aria-pressed', String(b === btn));
+      add(
+        s.files.map((f) => ({ name: f.name, kind: kindOf(f.name, f.text) ?? 'log', text: f.text })),
+      );
       void run();
     });
   }
@@ -257,8 +277,14 @@ export function initCheck(): void {
     }
     window.setTimeout(() => (copyStatus.textContent = ''), 4000);
   }
-  $<HTMLButtonElement>('#copy-json')?.addEventListener('click', () => report && void copy(formatJson(report), 'JSON'));
-  $<HTMLButtonElement>('#copy-md')?.addEventListener('click', () => report && void copy(formatMarkdown(report), 'Markdown'));
+  $<HTMLButtonElement>('#copy-json')?.addEventListener(
+    'click',
+    () => report && void copy(formatJson(report), 'JSON'),
+  );
+  $<HTMLButtonElement>('#copy-md')?.addEventListener(
+    'click',
+    () => report && void copy(formatMarkdown(report), 'Markdown'),
+  );
 
   // ----- The run -----
   async function run() {
@@ -288,10 +314,10 @@ export function initCheck(): void {
 
       // PDF facts: output (?? in text) and accessibility
       if (pdfs.length) {
-        const pdf = pdfs[0]!;
+        const pdf = pdfs[0] as Loaded;
         say(`Opening ${pdf.name} with pdf.js…`);
         const pdfjs = await loadPdfjs();
-        facts = await extractPdfFacts(pdf.data!, pdfjs as unknown as PdfjsLike);
+        facts = await extractPdfFacts(pdf.data ?? new Uint8Array(), pdfjs as unknown as PdfjsLike);
         if (id !== runId) return;
         const out = pdfOutputProblems(facts).map((p) => withFile(p, pdf.name));
         const prev = results.get('output');
@@ -302,7 +328,10 @@ export function initCheck(): void {
           problems: outputProblems,
           summary: prev?.summary ?? `${facts.pageCount} pages read`,
         });
-        results.set('accessibility', accessibilityCheck(facts, { verapdf: null, level: profile.accessibility }));
+        results.set(
+          'accessibility',
+          accessibilityCheck(facts, { verapdf: null, level: profile.accessibility }),
+        );
       }
 
       // References
@@ -346,7 +375,8 @@ export function initCheck(): void {
           stopBtn.hidden = true;
           const check = refsCheck(refResults, { entries, issues, bibFile: bibs[0]?.name, extra });
           if (signal.aborted && refResults.length < toCheck.length) {
-            check.summary = `Stopped after ${refResults.length} of ${toCheck.length} references. ${check.summary ?? ''}`.trim();
+            check.summary =
+              `Stopped after ${refResults.length} of ${toCheck.length} references. ${check.summary ?? ''}`.trim();
           }
           results.set('references', check);
         } else {
@@ -365,7 +395,9 @@ export function initCheck(): void {
         const v = venueCheck(profile, {
           ...(facts ? { facts } : {}),
           ...(auxes.length ? { aux: auxes.map((a) => a.text ?? '').join('\n') } : {}),
-          ...(texes.length ? { texFiles: texes.map((t) => ({ path: t.name, content: t.text ?? '' })) } : {}),
+          ...(texes.length
+            ? { texFiles: texes.map((t) => ({ path: t.name, content: t.text ?? '' })) }
+            : {}),
           ...(logs[0]?.text ? { log: logs[0].text } : {}),
         });
         results.set('venue', v);
@@ -389,7 +421,8 @@ export function initCheck(): void {
       venue: 'No PDF, .tex or .aux file supplied',
     };
     const checks: CheckResult[] = CHECK_IDS.map(
-      (c) => results.get(c) ?? { check: c, status: 'skipped', problems: [], skippedReason: reasons[c] },
+      (c) =>
+        results.get(c) ?? { check: c, status: 'skipped', problems: [], skippedReason: reasons[c] },
     );
     report = {
       tool: 'overfull',
@@ -399,7 +432,10 @@ export function initCheck(): void {
       checks,
     };
     const rulesBase = config.rulesBase ?? '/rules/';
-    sheetView.innerHTML = renderSheet(report, { ruleHref: (r) => `${rulesBase}${r.replace(/^verapdf-.*/, 'verapdf')}/`, headingLevel: 3 });
+    sheetView.innerHTML = renderSheet(report, {
+      ruleHref: (r) => `${rulesBase}${r.replace(/^verapdf-.*/, 'verapdf')}/`,
+      headingLevel: 3,
+    });
     jsonOut.textContent = formatJson(report);
     tools.hidden = false;
     runBtn.disabled = false;
@@ -417,8 +453,11 @@ function withFile(p: Problem, file: string): Problem {
 }
 
 /** Combines the build/output results of several logs into one pair. */
-function mergeChecks(parts: { build: CheckResult; output: CheckResult }[]): { build: CheckResult; output: CheckResult } {
-  if (parts.length === 1) return parts[0]!;
+function mergeChecks(parts: { build: CheckResult; output: CheckResult }[]): {
+  build: CheckResult;
+  output: CheckResult;
+} {
+  if (parts.length === 1 && parts[0]) return parts[0];
   const merge = (key: 'build' | 'output'): CheckResult => {
     const problems = parts.flatMap((p) => p[key].problems);
     return { check: key, status: statusOf(problems), problems, summary: `${parts.length} logs` };

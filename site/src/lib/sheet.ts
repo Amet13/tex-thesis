@@ -33,7 +33,12 @@ const STAMP: Record<Report['status'], string> = {
   fail: 'Revised proof required',
 };
 
-const STATUS_WORD: Record<string, string> = { pass: 'pass', warn: 'warn', fail: 'fail', skipped: 'skipped' };
+const STATUS_WORD: Record<string, string> = {
+  pass: 'pass',
+  warn: 'warn',
+  fail: 'fail',
+  skipped: 'skipped',
+};
 const SEV_WORD: Record<Severity, string> = { error: 'error', warning: 'warning', info: 'note' };
 
 export function locationText(p: Problem): string {
@@ -48,7 +53,9 @@ export function locationText(p: Problem): string {
 
 function problemHtml(p: Problem, opts: SheetOptions): string {
   const loc = locationText(p);
-  const ruleLink = opts.ruleHref ? `<a href="${esc(opts.ruleHref(p.rule))}">${esc(p.rule)}</a>` : esc(p.rule);
+  const ruleLink = opts.ruleHref
+    ? `<a href="${esc(opts.ruleHref(p.rule))}">${esc(p.rule)}</a>`
+    : esc(p.rule);
   return `<li class="sheet-problem sev-${esc(p.severity)}">
   <div class="sheet-problem-head">
     <span class="sev-tag">${SEV_WORD[p.severity] ?? esc(p.severity)}</span>
@@ -87,7 +94,10 @@ export function renderSheet(report: Report, opts: SheetOptions = {}): string {
     .map((c, i) => {
       const order = ['build', 'output', 'references', 'accessibility', 'venue'].indexOf(c.check);
       const num = order >= 0 ? order + 1 : i + 1;
-      const summary = c.status === 'skipped' ? c.skippedReason ?? 'Skipped' : c.summary ?? (counts(c) || 'No problems found');
+      const summary =
+        c.status === 'skipped'
+          ? (c.skippedReason ?? 'Skipped')
+          : (c.summary ?? (counts(c) || 'No problems found'));
       const sorted = [...c.problems].sort((a, b) => sevRank(a.severity) - sevRank(b.severity));
       const shown = opts.limit ? sorted.slice(0, opts.limit) : sorted;
       const rest = sorted.length - shown.length;

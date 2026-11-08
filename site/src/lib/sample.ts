@@ -4,17 +4,33 @@
  * reports for a draft with one invented reference, one figure without alt text
  * and a page too many.
  */
-import { analyzeLog, reportStatus, statusOf, type CheckResult, type Problem, type Report, VERSION } from '@overfull/core';
+import {
+  analyzeLog,
+  type CheckResult,
+  type Problem,
+  type Report,
+  reportStatus,
+  statusOf,
+  VERSION,
+} from '@overfull/core';
 import { readText } from './repo';
 
-function check(c: CheckResult['check'], problems: Problem[], summary: string, stats?: Record<string, number>): CheckResult {
+function check(
+  c: CheckResult['check'],
+  problems: Problem[],
+  summary: string,
+  stats?: Record<string, number>,
+): CheckResult {
   return { check: c, status: statusOf(problems), problems, summary, ...(stats ? { stats } : {}) };
 }
 
 export function sampleReport(): Report {
   const log = readText('corpus/undefined-reference/main.log') ?? '';
   const { build, output } = analyzeLog(log, { root: '.' });
-  const outputProblems = output.problems.map((p) => ({ ...p, location: { ...p.location, file: p.location?.file ?? 'main.tex' } }));
+  const outputProblems = output.problems.map((p) => ({
+    ...p,
+    location: { ...p.location, file: p.location?.file ?? 'main.tex' },
+  }));
   const checks: CheckResult[] = [
     { ...build, summary: build.summary ?? 'No TeX errors' },
     { ...output, problems: outputProblems },
@@ -25,7 +41,8 @@ export function sampleReport(): Report {
           rule: 'reference-not-found',
           check: 'references',
           severity: 'error',
-          message: 'No index has a record of "Scaling Laws for Retrieval-Augmented Proof Search" (2024)',
+          message:
+            'No index has a record of "Scaling Laws for Retrieval-Augmented Proof Search" (2024)',
           location: { file: 'references.bib', line: 88 },
           detail: 'Searched CrossRef, DBLP and arXiv by title; no candidate is similar.',
           fix: 'Ask the author for a DOI or arXiv id. If none exists, remove the entry and its `\\cite`.',
@@ -73,5 +90,11 @@ export function sampleReport(): Report {
       'Profile: paper',
     ),
   ];
-  return { tool: 'overfull', version: VERSION, target: 'paper.pdf', status: reportStatus(checks), checks };
+  return {
+    tool: 'overfull',
+    version: VERSION,
+    target: 'paper.pdf',
+    status: reportStatus(checks),
+    checks,
+  };
 }

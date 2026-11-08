@@ -5,7 +5,11 @@ export const CHECK_ORDER = ['build', 'output', 'references', 'accessibility', 'v
 
 export function rules(): RuleInfo[] {
   const seen = new Set<string>();
-  return allRules().filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
+  return allRules().filter((r) => {
+    if (seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
 }
 
 export function rulesByCheck(): { check: string; rules: (RuleInfo & { hasCase: boolean })[] }[] {

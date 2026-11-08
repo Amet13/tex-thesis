@@ -2,8 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import { url } from '../../lib/paths';
 import { readText } from '../../lib/repo';
-import sampleBib from '../../samples/sample.bib?raw';
 import sampleAux from '../../samples/sample.aux?raw';
+import sampleBib from '../../samples/sample.bib?raw';
 
 function corpusLog(id: string, fallback: string): string {
   return readText(`corpus/${id}/main.log`) ?? fallback;
@@ -17,7 +17,9 @@ const samples = [
   {
     id: 'log-cascade',
     label: 'A build log where one mistake causes many errors',
-    files: [{ name: 'main.log', text: corpusLog('cascade-underscores', corpusLog('unclosed-brace', '')) }],
+    files: [
+      { name: 'main.log', text: corpusLog('cascade-underscores', corpusLog('unclosed-brace', '')) },
+    ],
   },
   {
     id: 'bib',

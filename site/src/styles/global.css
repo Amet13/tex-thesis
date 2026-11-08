@@ -8,25 +8,25 @@
 :root {
   color-scheme: light;
   /* Paper and ink */
-  --table: #e4e7e5;        /* the light table the sheet lies on */
-  --paper: #f5f6f3;        /* proof paper, neutral with a cool tint */
-  --paper-2: #eceeea;      /* shaded boxes on the sheet */
-  --ink: #141a2b;          /* blue-black */
+  --table: #e4e7e5; /* the light table the sheet lies on */
+  --paper: #f5f6f3; /* proof paper, neutral with a cool tint */
+  --paper-2: #eceeea; /* shaded boxes on the sheet */
+  --ink: #141a2b; /* blue-black */
   --ink-2: #3c4458;
   --ink-3: #555d70;
   --hair: #c3c8cc;
   --hair-strong: #8d949c;
   /* Marks */
-  --pencil: #b0122b;       /* editor's red pencil */
+  --pencil: #b0122b; /* editor's red pencil */
   --pencil-soft: #b0122b1f;
-  --guide: #4f9dc4;        /* non-photo blue: decorative only */
+  --guide: #4f9dc4; /* non-photo blue: decorative only */
   --guide-soft: #4f9dc455;
   --error: #b0122b;
   --warn: #8a5000;
   --warn-soft: #e9b54a40;
   --ok: #24653a;
   --info: #2b5591;
-  --slug: #0b0f19;         /* the overfull rule */
+  --slug: #0b0f19; /* the overfull rule */
   --focus: #0b57d0;
   /* Code */
   --code-paper: #ebede8;
@@ -39,9 +39,9 @@
   --code-error: #b0122b;
 
   /* Type */
-  --serif: 'Libertinus Serif', 'Linux Libertine O', 'STIX Two Text', Georgia, serif;
-  --sans: 'Libertinus Sans', 'Linux Biolinum O', 'Gill Sans', sans-serif;
-  --mono: 'Commit Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --serif: "Libertinus Serif", "Linux Libertine O", "STIX Two Text", Georgia, serif;
+  --sans: "Libertinus Sans", "Linux Biolinum O", "Gill Sans", sans-serif;
+  --mono: "Commit Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
   /* Modular scale, ratio 1.25 on a 19px base */
   --s-2: 0.768rem;
@@ -53,13 +53,13 @@
   --s4: 2.899rem;
   --s5: 3.624rem;
   --lh: 1.5;
-  --measure: 40rem;        /* ≈ 66 characters of Libertinus at --s0 */
+  --measure: 40rem; /* ≈ 66 characters of Libertinus at --s0 */
   --margin-w: 14rem;
   --gap: 2.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --table: #090c0d;
     --paper: #111617;
@@ -91,7 +91,7 @@
   }
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   color-scheme: dark;
   --table: #090c0d;
   --paper: #111617;
@@ -146,14 +146,9 @@ body {
   line-height: var(--lh);
   font-variant-numeric: oldstyle-nums proportional-nums;
   font-kerning: normal;
-  font-feature-settings: 'kern', 'liga', 'onum';
+  font-feature-settings: "kern", "liga", "onum";
   text-rendering: optimizeLegibility;
   overflow-wrap: break-word;
-}
-
-/* In lightbox mode the sheet glows faintly, like film on a light table */
-:root[data-theme='dark'] .sheet-paper {
-  box-shadow: 0 0 0 1px var(--hair), 0 0 60px -30px var(--guide-soft);
 }
 
 a {
@@ -183,7 +178,7 @@ h3,
 h4 {
   font-weight: 600;
   line-height: 1.15;
-  font-feature-settings: 'kern', 'liga', 'lnum';
+  font-feature-settings: "kern", "liga", "lnum";
   font-variant-numeric: lining-nums;
   text-wrap: balance;
   margin: 0;
@@ -239,9 +234,6 @@ pre code {
   padding: 0;
   border: 0;
 }
-pre.astro-code {
-  background-color: var(--code-paper) !important;
-}
 
 hr {
   border: 0;
@@ -254,7 +246,7 @@ hr {
 }
 
 .sr-only {
-  position: absolute !important;
+  position: absolute;
   width: 1px;
   height: 1px;
   padding: 0;
@@ -294,6 +286,12 @@ hr {
   min-height: 100vh;
   position: relative;
   box-shadow: 0 0 0 1px var(--hair);
+}
+/* In lightbox mode the sheet glows faintly, like film on a light table */
+:root[data-theme="dark"] .sheet-paper {
+  box-shadow:
+    0 0 0 1px var(--hair),
+    0 0 60px -30px var(--guide-soft);
 }
 
 .frame {
@@ -365,7 +363,7 @@ hr {
 .nav a:hover {
   border-bottom-color: var(--pencil);
 }
-.nav a[aria-current='page'] {
+.nav a[aria-current="page"] {
   border-bottom: 2px solid var(--pencil);
 }
 .theme-toggle {
@@ -397,7 +395,7 @@ hr {
   font-variant-numeric: lining-nums;
 }
 .runhead::after {
-  content: '';
+  content: "";
   flex: 1;
   border-top: 1px solid var(--hair);
   transform: translateY(-0.3em);
@@ -445,7 +443,7 @@ hr {
     border-left: 0;
   }
   .marginal::before {
-    content: '';
+    content: "";
     display: block;
     width: 1.5rem;
     border-top: 1px solid var(--guide);
@@ -461,7 +459,7 @@ section.block {
   clear: both;
 }
 section.block::after {
-  content: '';
+  content: "";
   display: table;
   clear: both;
 }
@@ -483,7 +481,7 @@ section.block::after {
   border-bottom: 1px solid var(--pencil);
 }
 .caret-link::before {
-  content: '‸';
+  content: "‸";
   color: var(--pencil);
   font-variant-caps: normal;
   margin-right: 0.3em;
@@ -823,6 +821,7 @@ section.block::after {
 }
 
 /* ---------- Motion ---------- */
+/* biome-ignore-start lint/complexity/noImportantStyles: reduced motion must win over component animations */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -833,6 +832,7 @@ section.block::after {
     scroll-behavior: auto !important;
   }
 }
+/* biome-ignore-end lint/complexity/noImportantStyles: reduced motion */
 
 /* ---------- Forms ---------- */
 input,
