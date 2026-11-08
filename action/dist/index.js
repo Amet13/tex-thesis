@@ -108284,6 +108284,586 @@ import { appendFileSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join as join5, relative as relative2, resolve as resolve2 } from "node:path";
 
+// ../packages/core/src/bib/cited.ts
+function unescapeXml(s) {
+  return s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+}
+function* auxKeys(text2) {
+  const re = /\\citation\{([^}]*)\}|\\abx@aux@cite\{([^}]*)\}(?:\{([^}]*)\})?/g;
+  for (const m of text2.matchAll(re)) {
+    if (m[1] !== void 0) yield* m[1].split(",");
+    else yield m[3] ?? m[2];
+  }
+}
+function* bcfKeys(text2) {
+  for (const m of text2.matchAll(/<bcf:citekey\b[^>]*>([^<]*)<\/bcf:citekey>/g)) {
+    yield unescapeXml(m[1]);
+  }
+}
+function citedKeys(auxOrBcf) {
+  const isBcf = /<bcf:citekey\b/.test(auxOrBcf);
+  const seen = /* @__PURE__ */ new Set();
+  for (const raw of isBcf ? bcfKeys(auxOrBcf) : auxKeys(auxOrBcf)) {
+    const key = raw.trim();
+    if (key && key !== "*") seen.add(key);
+  }
+  return [...seen];
+}
+
+// ../packages/core/src/bib/tex.ts
+var SYMBOL_ACCENTS = {
+  "`": "\u0300",
+  "'": "\u0301",
+  "^": "\u0302",
+  "~": "\u0303",
+  "=": "\u0304",
+  ".": "\u0307",
+  '"': "\u0308"
+};
+var LETTER_ACCENTS = {
+  u: "\u0306",
+  v: "\u030C",
+  H: "\u030B",
+  c: "\u0327",
+  k: "\u0328",
+  r: "\u030A",
+  d: "\u0323",
+  b: "\u0331",
+  t: "\u0361"
+};
+var SPECIAL_LETTERS = {
+  ss: "\xDF",
+  o: "\xF8",
+  O: "\xD8",
+  ae: "\xE6",
+  AE: "\xC6",
+  oe: "\u0153",
+  OE: "\u0152",
+  aa: "\xE5",
+  AA: "\xC5",
+  l: "\u0142",
+  L: "\u0141",
+  i: "i",
+  j: "j",
+  dh: "\xF0",
+  DH: "\xD0",
+  th: "\xFE",
+  TH: "\xDE",
+  ng: "\u014B",
+  NG: "\u014A"
+};
+var NAMED_SYMBOLS = {
+  textendash: "\u2013",
+  textemdash: "\u2014",
+  textquoteright: "\u2019",
+  textquoteleft: "\u2018",
+  textquotedblleft: "\u201C",
+  textquotedblright: "\u201D",
+  ldots: "\u2026",
+  dots: "\u2026",
+  textellipsis: "\u2026",
+  textregistered: "\xAE",
+  texttrademark: "\u2122",
+  copyright: "\xA9",
+  textcopyright: "\xA9",
+  S: "\xA7",
+  P: "\xB6",
+  textasciitilde: "~",
+  textbackslash: "\\",
+  textunderscore: "_",
+  times: "\xD7",
+  pm: "\xB1",
+  infty: "\u221E",
+  to: "\u2192",
+  rightarrow: "\u2192",
+  leq: "\u2264",
+  le: "\u2264",
+  geq: "\u2265",
+  ge: "\u2265",
+  neq: "\u2260",
+  approx: "\u2248",
+  cdot: "\xB7",
+  ell: "\u2113",
+  // Spacing commands become a space.
+  quad: " ",
+  qquad: " ",
+  ",": " ",
+  ";": " ",
+  " ": " "
+};
+var GREEK = [
+  "alpha",
+  "beta",
+  "gamma",
+  "delta",
+  "epsilon",
+  "varepsilon",
+  "zeta",
+  "eta",
+  "theta",
+  "vartheta",
+  "iota",
+  "kappa",
+  "lambda",
+  "mu",
+  "nu",
+  "xi",
+  "pi",
+  "varpi",
+  "rho",
+  "varrho",
+  "sigma",
+  "varsigma",
+  "tau",
+  "upsilon",
+  "phi",
+  "varphi",
+  "chi",
+  "psi",
+  "omega",
+  "Gamma",
+  "Delta",
+  "Theta",
+  "Lambda",
+  "Xi",
+  "Pi",
+  "Sigma",
+  "Upsilon",
+  "Phi",
+  "Psi",
+  "Omega"
+];
+var GREEK_CHARS = "\u03B1\u03B2\u03B3\u03B4\u03B5\u03B5\u03B6\u03B7\u03B8\u03D1\u03B9\u03BA\u03BB\u03BC\u03BD\u03BE\u03C0\u03D6\u03C1\u03F1\u03C3\u03C2\u03C4\u03C5\u03C6\u03D5\u03C7\u03C8\u03C9\u0393\u0394\u0398\u039B\u039E\u03A0\u03A3\u03A5\u03A6\u03A8\u03A9";
+var GREEK_MAP = Object.fromEntries(
+  GREEK.map((name, i) => [name, [...GREEK_CHARS][i]])
+);
+var MATH_OPERATORS = /* @__PURE__ */ new Set([
+  "log",
+  "ln",
+  "exp",
+  "sin",
+  "cos",
+  "tan",
+  "lim",
+  "max",
+  "min",
+  "sup",
+  "inf",
+  "det",
+  "dim",
+  "ker",
+  "deg",
+  "gcd",
+  "Pr"
+]);
+var ESCAPES = {
+  "{": "\uE000",
+  "}": "\uE001",
+  $: "\uE002",
+  "&": "&",
+  "%": "%",
+  "#": "#",
+  _: "_"
+};
+var RESTORE = { "\uE000": "{", "\uE001": "}", "\uE002": "$" };
+function accent(base, mark) {
+  const letter = base === "\\i" ? "i" : base === "\\j" ? "j" : base;
+  return (letter + mark).normalize("NFC");
+}
+function replaceAccents(s) {
+  const symbol = /\\([`'^"~=.])\s*(?:\{\s*(\\[ij]|[A-Za-z])\s*\}|(\\[ij])(?![A-Za-z])|([A-Za-z]))/g;
+  const letter = /\\([uvHckrdbt])(?:\s*\{\s*(\\[ij]|[A-Za-z])\s*\}|\s+(\\[ij](?![A-Za-z])|[A-Za-z]))/g;
+  return s.replace(
+    symbol,
+    (_m, cmd, a, b, c) => accent(a ?? b ?? c, SYMBOL_ACCENTS[cmd])
+  ).replace(
+    letter,
+    (_m, cmd, a, b) => accent(a ?? b, LETTER_ACCENTS[cmd])
+  );
+}
+function replaceCommands(s) {
+  return s.replace(/\\([A-Za-z]+|[,; ])\*?(?:\{\})?/g, (_m, name) => {
+    if (name in SPECIAL_LETTERS) return SPECIAL_LETTERS[name];
+    if (name in GREEK_MAP) return GREEK_MAP[name];
+    if (name in NAMED_SYMBOLS) return NAMED_SYMBOLS[name];
+    if (MATH_OPERATORS.has(name)) return name;
+    return "";
+  });
+}
+function texToPlain(s) {
+  let out = s.replace(/\\([{}$&%#_])/g, (_m, c) => ESCAPES[c]);
+  out = out.replace(/\\\\/g, " ");
+  out = replaceAccents(out);
+  out = replaceCommands(out);
+  out = out.replace(/---/g, "\u2014").replace(/--/g, "\u2013").replace(/``|''/g, '"').replace(/~/g, " ").replace(/[{}$]/g, "").replace(/[-]/g, (c) => RESTORE[c]);
+  return out.replace(/\s+/g, " ").trim().normalize("NFC");
+}
+
+// ../packages/core/src/bib/names.ts
+function splitTopLevel(s, sep2) {
+  const parts = [];
+  let depth = 0;
+  let last = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "{") depth++;
+    else if (c === "}") depth--;
+    else if (depth === 0) {
+      sep2.lastIndex = 0;
+      const m = sep2.exec(s.slice(i));
+      if (m && m.index === 0) {
+        parts.push(s.slice(last, i));
+        i += m[0].length - 1;
+        last = i + 1;
+      }
+    }
+  }
+  parts.push(s.slice(last));
+  return parts.map((p) => p.trim()).filter(Boolean);
+}
+function parseOne(raw) {
+  const trimmed = raw.trim();
+  if (/^\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}$/.test(trimmed)) {
+    return { family: texToPlain(trimmed), given: "", corporate: true };
+  }
+  const commaParts = splitTopLevel(trimmed, /^,/);
+  if (commaParts.length >= 2) {
+    return {
+      family: texToPlain(commaParts[0]),
+      given: texToPlain(commaParts[commaParts.length - 1]),
+      corporate: false
+    };
+  }
+  const words2 = splitTopLevel(trimmed, /^\s+/);
+  if (words2.length <= 1) return { family: texToPlain(trimmed), given: "", corporate: false };
+  let split = words2.length - 1;
+  for (let i = 1; i < words2.length - 1; i++) {
+    if (/^[a-z]/.test(words2[i])) {
+      split = i;
+      break;
+    }
+  }
+  return {
+    family: texToPlain(words2.slice(split).join(" ")),
+    given: texToPlain(words2.slice(0, split).join(" ")),
+    corporate: false
+  };
+}
+function parseNames(field) {
+  if (!field) return [];
+  return splitTopLevel(field, /^\s+and\s+/i).filter((n) => n.toLowerCase() !== "others").map(parseOne);
+}
+
+// ../packages/core/src/bib/parse.ts
+var MONTHS = {
+  jan: "January",
+  feb: "February",
+  mar: "March",
+  apr: "April",
+  may: "May",
+  jun: "June",
+  jul: "July",
+  aug: "August",
+  sep: "September",
+  oct: "October",
+  nov: "November",
+  dec: "December"
+};
+var ParseError = class extends Error {
+  pos;
+  constructor(message, pos) {
+    super(message);
+    this.pos = pos;
+  }
+};
+var Parser = class {
+  pos = 0;
+  entryStart = 0;
+  lineStarts = [0];
+  macros = { ...MONTHS };
+  entries = [];
+  issues = [];
+  seenKeys = /* @__PURE__ */ new Map();
+  text;
+  constructor(text2) {
+    this.text = text2;
+    for (let i = 0; i < text2.length; i++) if (text2[i] === "\n") this.lineStarts.push(i + 1);
+  }
+  lineOf(pos) {
+    let lo = 0;
+    let hi = this.lineStarts.length - 1;
+    while (lo < hi) {
+      const mid = lo + hi + 1 >> 1;
+      if (this.lineStarts[mid] <= pos) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo + 1;
+  }
+  run() {
+    while (this.skipToAt()) {
+      const start = this.pos;
+      try {
+        this.parseItem(start);
+      } catch (err) {
+        const message = err instanceof ParseError ? err.message : String(err);
+        const at = err instanceof ParseError ? err.pos : start;
+        this.issues.push({ line: this.lineOf(at), message, ...this.keyHint(start) });
+        this.pos = this.resyncFrom(start + 1);
+      }
+    }
+  }
+  /** Outside entries everything is a comment; `%` lines are skipped so `% @article{…` stays inert. */
+  skipToAt() {
+    const t = this.text;
+    while (this.pos < t.length) {
+      const c = t[this.pos];
+      if (c === "@") return true;
+      if (c === "%") {
+        const nl = t.indexOf("\n", this.pos);
+        this.pos = nl < 0 ? t.length : nl + 1;
+      } else this.pos++;
+    }
+    return false;
+  }
+  /** Next `@` at the start of a line (after optional indentation). */
+  resyncFrom(from) {
+    const re = /(^|\n)[ \t]*@/g;
+    re.lastIndex = from;
+    let m = re.exec(this.text);
+    while (m && m.index + m[0].length - 1 < from) m = re.exec(this.text);
+    return m ? m.index + m[0].length - 1 : this.text.length;
+  }
+  keyHint(start) {
+    const m = /^@\s*[A-Za-z]+\s*[{(]\s*([^\s,{}()=]+)\s*,/.exec(
+      this.text.slice(start, start + 300)
+    );
+    return m?.[1] ? { key: m[1] } : {};
+  }
+  parseItem(start) {
+    this.entryStart = start;
+    this.pos++;
+    this.skipWs();
+    const type = this.readWhile(/[A-Za-z_-]/).toLowerCase();
+    if (!type) throw new ParseError("expected an entry type after `@`", this.pos);
+    this.skipWs();
+    if (type === "comment") {
+      this.skipComment();
+      return;
+    }
+    const open = this.text[this.pos];
+    if (open !== "{" && open !== "(") {
+      throw new ParseError(`expected \`{\` after \`@${type}\``, this.pos);
+    }
+    const close = open === "{" ? "}" : ")";
+    this.pos++;
+    if (type === "preamble") {
+      this.parseValue(close);
+      this.expectClose(close, start);
+    } else if (type === "string") {
+      this.parseString(close, start);
+    } else {
+      this.parseEntry(type, close, start);
+    }
+  }
+  skipComment() {
+    const open = this.text[this.pos];
+    if (open === "{" || open === "(") {
+      const close = open === "{" ? "}" : ")";
+      let depth = 0;
+      for (; this.pos < this.text.length; this.pos++) {
+        const c = this.text[this.pos];
+        if (c === open) depth++;
+        else if (c === close && --depth === 0) {
+          this.pos++;
+          return;
+        }
+      }
+      return;
+    }
+    const nl = this.text.indexOf("\n", this.pos);
+    this.pos = nl < 0 ? this.text.length : nl + 1;
+  }
+  parseString(close, start) {
+    this.skipWsAndComments();
+    const name = this.readWhile(/[^\s=#{}(),"]/).toLowerCase();
+    if (!name) throw new ParseError("expected a macro name in `@string`", this.pos);
+    this.skipWsAndComments();
+    if (this.text[this.pos] !== "=") throw new ParseError("expected `=` in `@string`", this.pos);
+    this.pos++;
+    this.macros[name] = this.parseValue(close);
+    this.expectClose(close, start);
+  }
+  parseEntry(type, close, start) {
+    this.skipWs();
+    const key = this.readWhile(close === "}" ? /[^\s,{}]/ : /[^\s,()]/);
+    if (!key) throw new ParseError(`\`@${type}\` entry has no citation key`, this.pos);
+    const fields = {};
+    this.skipWsAndComments();
+    while (this.text[this.pos] === ",") {
+      this.pos++;
+      this.skipWsAndComments();
+      if (this.text[this.pos] === close) break;
+      this.parseField(key, fields, close);
+      this.skipWsAndComments();
+    }
+    this.expectClose(close, start, key);
+    this.addEntry({
+      key,
+      type,
+      fields,
+      line: this.lineOf(start),
+      raw: this.text.slice(start, this.pos)
+    });
+  }
+  parseField(key, fields, close) {
+    const at = this.pos;
+    const name = this.readWhile(/[^\s=,{}()"#%@]/).toLowerCase();
+    if (!name && this.text[this.pos] === "@") {
+      throw new ParseError(
+        `\`${key}\` is not closed (missing \`${close}\` before the next entry)`,
+        this.entryStart
+      );
+    }
+    if (!name) {
+      throw new ParseError(
+        `unexpected \`${this.text[this.pos] ?? "end of file"}\` in \`${key}\``,
+        at
+      );
+    }
+    this.skipWsAndComments();
+    if (this.text[this.pos] !== "=") {
+      throw new ParseError(`field \`${name}\` in \`${key}\` has no \`=\` (missing comma?)`, at);
+    }
+    this.pos++;
+    const value = this.parseValue(close).trim();
+    if (name in fields) {
+      this.issues.push({
+        line: this.lineOf(at),
+        key,
+        message: `duplicate field \`${name}\` in \`${key}\`; the first one is used`
+      });
+      return;
+    }
+    fields[name] = value;
+  }
+  addEntry(entry) {
+    const folded = entry.key.toLowerCase();
+    const previous = this.seenKeys.get(folded);
+    if (previous !== void 0) {
+      this.issues.push({
+        line: entry.line,
+        key: entry.key,
+        message: `duplicate key \`${entry.key}\` (first defined on line ${previous}); this entry is ignored`
+      });
+      return;
+    }
+    this.seenKeys.set(folded, entry.line);
+    this.entries.push(entry);
+  }
+  /** value := part ('#' part)*, part := {…} | "…" | digits | macro */
+  parseValue(close) {
+    let out = "";
+    for (; ; ) {
+      this.skipWsAndComments();
+      out += this.parsePart(close);
+      this.skipWsAndComments();
+      if (this.text[this.pos] !== "#") break;
+      this.pos++;
+    }
+    return out.replace(/\s+/g, " ");
+  }
+  parsePart(close) {
+    const c = this.text[this.pos];
+    if (c === "{") return this.readBraced();
+    if (c === '"') return this.readQuoted();
+    const word = this.readWhile(close === "}" ? /[^\s,#{}"%=]/ : /[^\s,#{}()"%=]/);
+    if (!word) {
+      throw new ParseError(`expected a value, found \`${c ?? "end of file"}\``, this.pos);
+    }
+    if (/^\d+$/.test(word)) return word;
+    const macro = this.macros[word.toLowerCase()];
+    if (macro === void 0) {
+      this.issues.push({
+        line: this.lineOf(this.pos),
+        message: `undefined macro \`${word}\` (kept as text)`
+      });
+      return word;
+    }
+    return macro;
+  }
+  readBraced() {
+    const start = this.pos + 1;
+    let depth = 0;
+    for (; this.pos < this.text.length; this.pos++) {
+      const c = this.text[this.pos];
+      if (c === "\\") {
+        this.pos++;
+        continue;
+      }
+      if (c === "{") depth++;
+      else if (c === "}" && --depth === 0) {
+        this.pos++;
+        return this.text.slice(start, this.pos - 1);
+      }
+    }
+    throw new ParseError("unbalanced braces in field value", start - 1);
+  }
+  readQuoted() {
+    const start = this.pos + 1;
+    let depth = 0;
+    for (this.pos = start; this.pos < this.text.length; this.pos++) {
+      const c = this.text[this.pos];
+      if (c === "\\") {
+        this.pos++;
+        continue;
+      }
+      if (c === "{") depth++;
+      else if (c === "}") depth--;
+      else if (c === '"' && depth === 0) {
+        this.pos++;
+        return this.text.slice(start, this.pos - 1);
+      }
+    }
+    throw new ParseError("unterminated quoted field value", start - 1);
+  }
+  expectClose(close, start, key) {
+    this.skipWsAndComments();
+    if (this.text[this.pos] === close) {
+      this.pos++;
+      return;
+    }
+    const what = key ? `\`${key}\`` : "entry";
+    if (this.pos >= this.text.length || this.text[this.pos] === "@") {
+      throw new ParseError(`${what} is not closed (missing \`${close}\`)`, start);
+    }
+    throw new ParseError(
+      `unexpected \`${this.text[this.pos]}\` in ${what} (missing comma or \`${close}\`?)`,
+      this.pos
+    );
+  }
+  readWhile(re) {
+    const start = this.pos;
+    while (this.pos < this.text.length && re.test(this.text[this.pos])) this.pos++;
+    return this.text.slice(start, this.pos);
+  }
+  skipWs() {
+    while (this.pos < this.text.length && /\s/.test(this.text[this.pos])) this.pos++;
+  }
+  skipWsAndComments() {
+    for (; ; ) {
+      this.skipWs();
+      if (this.text[this.pos] !== "%") return;
+      const nl = this.text.indexOf("\n", this.pos);
+      this.pos = nl < 0 ? this.text.length : nl + 1;
+    }
+  }
+};
+function parseBibWithIssues(text2) {
+  const parser = new Parser(text2);
+  parser.run();
+  return { entries: parser.entries, issues: parser.issues };
+}
+
 // ../packages/core/src/types.ts
 var CHECK_IDS = ["build", "output", "references", "accessibility", "venue"];
 function statusOf(problems) {
@@ -109591,7 +110171,7 @@ var FileStack = class {
     if (m) this.page = Number(m[1]);
   }
 };
-var Parser = class {
+var Parser2 = class {
   reader;
   stack;
   runaway;
@@ -109852,7 +110432,7 @@ function classifyWarning(source, message) {
   return { kind: "other", data: {} };
 }
 function parseLog(text2, options = {}) {
-  return new Parser(text2, options.root).run();
+  return new Parser2(text2, options.root).run();
 }
 
 // ../packages/core/src/log/analyze.ts
@@ -110356,584 +110936,611 @@ function analyzeLog(text2, opts = {}) {
   return { build: build2, output, parsed };
 }
 
-// ../packages/core/src/bib/cited.ts
-function unescapeXml(s) {
-  return s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+// ../packages/core/src/pdf/accessibility.ts
+function veraPdfRuleId(clause) {
+  const slug = clause.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return slug ? `verapdf-${slug}` : "verapdf";
 }
-function* auxKeys(text2) {
-  const re = /\\citation\{([^}]*)\}|\\abx@aux@cite\{([^}]*)\}(?:\{([^}]*)\})?/g;
-  for (const m of text2.matchAll(re)) {
-    if (m[1] !== void 0) yield* m[1].split(",");
-    else yield m[3] ?? m[2];
+function plural2(n, one, many = `${one}s`) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+function isMissingAlt(alt) {
+  if (!alt?.trim()) return true;
+  return /^[\w./\\-]+\.(pdf|png|jpe?g|eps|svg|gif|tiff?|webp|bmp)$/i.test(alt.trim());
+}
+function figureProblems(facts, sev) {
+  const byPage = /* @__PURE__ */ new Map();
+  for (const f of facts.figures) {
+    if (!isMissingAlt(f.alt)) continue;
+    const e = byPage.get(f.page) ?? { count: 0, placeholder: 0 };
+    e.count++;
+    if (f.alt) e.placeholder++;
+    byPage.set(f.page, e);
   }
+  return [...byPage.entries()].map(([page, { count, placeholder }]) => ({
+    rule: "figure-missing-alt",
+    check: "accessibility",
+    severity: sev,
+    message: `${plural2(count, "figure")} without alt text${placeholder ? " (LaTeX used the file name)" : ""}`,
+    location: { page },
+    fix: "Add `alt={...}` to the `\\includegraphics` on this page",
+    data: { count }
+  }));
 }
-function* bcfKeys(text2) {
-  for (const m of text2.matchAll(/<bcf:citekey\b[^>]*>([^<]*)<\/bcf:citekey>/g)) {
-    yield unescapeXml(m[1]);
-  }
-}
-function citedKeys(auxOrBcf) {
-  const isBcf = /<bcf:citekey\b/.test(auxOrBcf);
-  const seen = /* @__PURE__ */ new Set();
-  for (const raw of isBcf ? bcfKeys(auxOrBcf) : auxKeys(auxOrBcf)) {
-    const key = raw.trim();
-    if (key && key !== "*") seen.add(key);
-  }
-  return [...seen];
-}
-
-// ../packages/core/src/bib/tex.ts
-var SYMBOL_ACCENTS = {
-  "`": "\u0300",
-  "'": "\u0301",
-  "^": "\u0302",
-  "~": "\u0303",
-  "=": "\u0304",
-  ".": "\u0307",
-  '"': "\u0308"
-};
-var LETTER_ACCENTS = {
-  u: "\u0306",
-  v: "\u030C",
-  H: "\u030B",
-  c: "\u0327",
-  k: "\u0328",
-  r: "\u030A",
-  d: "\u0323",
-  b: "\u0331",
-  t: "\u0361"
-};
-var SPECIAL_LETTERS = {
-  ss: "\xDF",
-  o: "\xF8",
-  O: "\xD8",
-  ae: "\xE6",
-  AE: "\xC6",
-  oe: "\u0153",
-  OE: "\u0152",
-  aa: "\xE5",
-  AA: "\xC5",
-  l: "\u0142",
-  L: "\u0141",
-  i: "i",
-  j: "j",
-  dh: "\xF0",
-  DH: "\xD0",
-  th: "\xFE",
-  TH: "\xDE",
-  ng: "\u014B",
-  NG: "\u014A"
-};
-var NAMED_SYMBOLS = {
-  textendash: "\u2013",
-  textemdash: "\u2014",
-  textquoteright: "\u2019",
-  textquoteleft: "\u2018",
-  textquotedblleft: "\u201C",
-  textquotedblright: "\u201D",
-  ldots: "\u2026",
-  dots: "\u2026",
-  textellipsis: "\u2026",
-  textregistered: "\xAE",
-  texttrademark: "\u2122",
-  copyright: "\xA9",
-  textcopyright: "\xA9",
-  S: "\xA7",
-  P: "\xB6",
-  textasciitilde: "~",
-  textbackslash: "\\",
-  textunderscore: "_",
-  times: "\xD7",
-  pm: "\xB1",
-  infty: "\u221E",
-  to: "\u2192",
-  rightarrow: "\u2192",
-  leq: "\u2264",
-  le: "\u2264",
-  geq: "\u2265",
-  ge: "\u2265",
-  neq: "\u2260",
-  approx: "\u2248",
-  cdot: "\xB7",
-  ell: "\u2113",
-  // Spacing commands become a space.
-  quad: " ",
-  qquad: " ",
-  ",": " ",
-  ";": " ",
-  " ": " "
-};
-var GREEK = [
-  "alpha",
-  "beta",
-  "gamma",
-  "delta",
-  "epsilon",
-  "varepsilon",
-  "zeta",
-  "eta",
-  "theta",
-  "vartheta",
-  "iota",
-  "kappa",
-  "lambda",
-  "mu",
-  "nu",
-  "xi",
-  "pi",
-  "varpi",
-  "rho",
-  "varrho",
-  "sigma",
-  "varsigma",
-  "tau",
-  "upsilon",
-  "phi",
-  "varphi",
-  "chi",
-  "psi",
-  "omega",
-  "Gamma",
-  "Delta",
-  "Theta",
-  "Lambda",
-  "Xi",
-  "Pi",
-  "Sigma",
-  "Upsilon",
-  "Phi",
-  "Psi",
-  "Omega"
-];
-var GREEK_CHARS = "\u03B1\u03B2\u03B3\u03B4\u03B5\u03B5\u03B6\u03B7\u03B8\u03D1\u03B9\u03BA\u03BB\u03BC\u03BD\u03BE\u03C0\u03D6\u03C1\u03F1\u03C3\u03C2\u03C4\u03C5\u03C6\u03D5\u03C7\u03C8\u03C9\u0393\u0394\u0398\u039B\u039E\u03A0\u03A3\u03A5\u03A6\u03A8\u03A9";
-var GREEK_MAP = Object.fromEntries(
-  GREEK.map((name, i) => [name, [...GREEK_CHARS][i]])
-);
-var MATH_OPERATORS = /* @__PURE__ */ new Set([
-  "log",
-  "ln",
-  "exp",
-  "sin",
-  "cos",
-  "tan",
-  "lim",
-  "max",
-  "min",
-  "sup",
-  "inf",
-  "det",
-  "dim",
-  "ker",
-  "deg",
-  "gcd",
-  "Pr"
-]);
-var ESCAPES = {
-  "{": "\uE000",
-  "}": "\uE001",
-  $: "\uE002",
-  "&": "&",
-  "%": "%",
-  "#": "#",
-  _: "_"
-};
-var RESTORE = { "\uE000": "{", "\uE001": "}", "\uE002": "$" };
-function accent(base, mark) {
-  const letter = base === "\\i" ? "i" : base === "\\j" ? "j" : base;
-  return (letter + mark).normalize("NFC");
-}
-function replaceAccents(s) {
-  const symbol = /\\([`'^"~=.])\s*(?:\{\s*(\\[ij]|[A-Za-z])\s*\}|(\\[ij])(?![A-Za-z])|([A-Za-z]))/g;
-  const letter = /\\([uvHckrdbt])(?:\s*\{\s*(\\[ij]|[A-Za-z])\s*\}|\s+(\\[ij](?![A-Za-z])|[A-Za-z]))/g;
-  return s.replace(
-    symbol,
-    (_m, cmd, a, b, c) => accent(a ?? b ?? c, SYMBOL_ACCENTS[cmd])
-  ).replace(
-    letter,
-    (_m, cmd, a, b) => accent(a ?? b, LETTER_ACCENTS[cmd])
-  );
-}
-function replaceCommands(s) {
-  return s.replace(/\\([A-Za-z]+|[,; ])\*?(?:\{\})?/g, (_m, name) => {
-    if (name in SPECIAL_LETTERS) return SPECIAL_LETTERS[name];
-    if (name in GREEK_MAP) return GREEK_MAP[name];
-    if (name in NAMED_SYMBOLS) return NAMED_SYMBOLS[name];
-    if (MATH_OPERATORS.has(name)) return name;
-    return "";
-  });
-}
-function texToPlain(s) {
-  let out = s.replace(/\\([{}$&%#_])/g, (_m, c) => ESCAPES[c]);
-  out = out.replace(/\\\\/g, " ");
-  out = replaceAccents(out);
-  out = replaceCommands(out);
-  out = out.replace(/---/g, "\u2014").replace(/--/g, "\u2013").replace(/``|''/g, '"').replace(/~/g, " ").replace(/[{}$]/g, "").replace(/[-]/g, (c) => RESTORE[c]);
-  return out.replace(/\s+/g, " ").trim().normalize("NFC");
-}
-
-// ../packages/core/src/bib/names.ts
-function splitTopLevel(s, sep2) {
-  const parts = [];
-  let depth = 0;
-  let last = 0;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (c === "{") depth++;
-    else if (c === "}") depth--;
-    else if (depth === 0) {
-      sep2.lastIndex = 0;
-      const m = sep2.exec(s.slice(i));
-      if (m && m.index === 0) {
-        parts.push(s.slice(last, i));
-        i += m[0].length - 1;
-        last = i + 1;
-      }
+function fontProblems(facts, sev) {
+  const missing = (facts.fonts ?? []).filter((f) => !f.embedded);
+  if (missing.length === 0) return [];
+  const names = [...new Set(missing.map((f) => f.name || "(unnamed)"))];
+  return [
+    {
+      rule: "font-not-embedded",
+      check: "accessibility",
+      severity: sev,
+      message: `${plural2(names.length, "font")} not embedded: ${names.slice(0, 5).join(", ")}${names.length > 5 ? ", \u2026" : ""}`,
+      fix: "Embed all fonts: compile with LuaLaTeX and re-export figures (PDF/EPS) with fonts embedded",
+      data: { fonts: names }
     }
-  }
-  parts.push(s.slice(last));
-  return parts.map((p) => p.trim()).filter(Boolean);
+  ];
 }
-function parseOne(raw) {
-  const trimmed = raw.trim();
-  if (/^\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}$/.test(trimmed)) {
-    return { family: texToPlain(trimmed), given: "", corporate: true };
+function veraPdfProblems(v, sev) {
+  if (v.error) {
+    return [
+      {
+        rule: "verapdf-error",
+        check: "accessibility",
+        severity: "warning",
+        message: `veraPDF could not validate the PDF: ${v.error}`,
+        fix: "Run `verapdf --flavour ua2 <file.pdf>` by hand to see the full error"
+      }
+    ];
   }
-  const commaParts = splitTopLevel(trimmed, /^,/);
-  if (commaParts.length >= 2) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const f of v.failures) {
+    const rule = veraPdfRuleId(f.clause);
+    const prev = groups.get(rule);
+    if (prev) {
+      const data = prev.data;
+      data.count += f.failedChecks;
+      if (f.testNumber !== void 0) data.tests.push(f.testNumber);
+      prev.message = `${f.specification} \xA7${f.clause}: ${prev.detail ?? ""} (${plural2(data.count, "failed check")})`;
+      continue;
+    }
+    const desc = f.description.replace(/\s+/g, " ").trim();
+    const problem2 = {
+      rule,
+      check: "accessibility",
+      severity: sev,
+      message: `${f.specification} \xA7${f.clause}: ${desc} (${plural2(f.failedChecks, "failed check")})`,
+      detail: desc,
+      fix: "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed",
+      data: {
+        specification: f.specification,
+        clause: f.clause,
+        count: f.failedChecks,
+        tests: f.testNumber === void 0 ? [] : [f.testNumber]
+      }
+    };
+    if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
+    groups.set(rule, problem2);
+  }
+  return [...groups.values()];
+}
+function accessibilityCheck(facts, opts = {}) {
+  const level = opts.level ?? "required";
+  if (level === "off") {
     return {
-      family: texToPlain(commaParts[0]),
-      given: texToPlain(commaParts[commaParts.length - 1]),
-      corporate: false
+      check: "accessibility",
+      status: "skipped",
+      problems: [],
+      skippedReason: "Accessibility is off for this venue profile"
     };
   }
-  const words2 = splitTopLevel(trimmed, /^\s+/);
-  if (words2.length <= 1) return { family: texToPlain(trimmed), given: "", corporate: false };
-  let split = words2.length - 1;
-  for (let i = 1; i < words2.length - 1; i++) {
-    if (/^[a-z]/.test(words2[i])) {
-      split = i;
-      break;
-    }
-  }
-  return {
-    family: texToPlain(words2.slice(split).join(" ")),
-    given: texToPlain(words2.slice(0, split).join(" ")),
-    corporate: false
-  };
-}
-function parseNames(field) {
-  if (!field) return [];
-  return splitTopLevel(field, /^\s+and\s+/i).filter((n) => n.toLowerCase() !== "others").map(parseOne);
-}
-
-// ../packages/core/src/bib/parse.ts
-var MONTHS = {
-  jan: "January",
-  feb: "February",
-  mar: "March",
-  apr: "April",
-  may: "May",
-  jun: "June",
-  jul: "July",
-  aug: "August",
-  sep: "September",
-  oct: "October",
-  nov: "November",
-  dec: "December"
-};
-var ParseError = class extends Error {
-  pos;
-  constructor(message, pos) {
-    super(message);
-    this.pos = pos;
-  }
-};
-var Parser2 = class {
-  pos = 0;
-  entryStart = 0;
-  lineStarts = [0];
-  macros = { ...MONTHS };
-  entries = [];
-  issues = [];
-  seenKeys = /* @__PURE__ */ new Map();
-  text;
-  constructor(text2) {
-    this.text = text2;
-    for (let i = 0; i < text2.length; i++) if (text2[i] === "\n") this.lineStarts.push(i + 1);
-  }
-  lineOf(pos) {
-    let lo = 0;
-    let hi = this.lineStarts.length - 1;
-    while (lo < hi) {
-      const mid = lo + hi + 1 >> 1;
-      if (this.lineStarts[mid] <= pos) lo = mid;
-      else hi = mid - 1;
-    }
-    return lo + 1;
-  }
-  run() {
-    while (this.skipToAt()) {
-      const start = this.pos;
-      try {
-        this.parseItem(start);
-      } catch (err) {
-        const message = err instanceof ParseError ? err.message : String(err);
-        const at = err instanceof ParseError ? err.pos : start;
-        this.issues.push({ line: this.lineOf(at), message, ...this.keyHint(start) });
-        this.pos = this.resyncFrom(start + 1);
-      }
-    }
-  }
-  /** Outside entries everything is a comment; `%` lines are skipped so `% @article{…` stays inert. */
-  skipToAt() {
-    const t = this.text;
-    while (this.pos < t.length) {
-      const c = t[this.pos];
-      if (c === "@") return true;
-      if (c === "%") {
-        const nl = t.indexOf("\n", this.pos);
-        this.pos = nl < 0 ? t.length : nl + 1;
-      } else this.pos++;
-    }
-    return false;
-  }
-  /** Next `@` at the start of a line (after optional indentation). */
-  resyncFrom(from) {
-    const re = /(^|\n)[ \t]*@/g;
-    re.lastIndex = from;
-    let m = re.exec(this.text);
-    while (m && m.index + m[0].length - 1 < from) m = re.exec(this.text);
-    return m ? m.index + m[0].length - 1 : this.text.length;
-  }
-  keyHint(start) {
-    const m = /^@\s*[A-Za-z]+\s*[{(]\s*([^\s,{}()=]+)\s*,/.exec(
-      this.text.slice(start, start + 300)
-    );
-    return m?.[1] ? { key: m[1] } : {};
-  }
-  parseItem(start) {
-    this.entryStart = start;
-    this.pos++;
-    this.skipWs();
-    const type = this.readWhile(/[A-Za-z_-]/).toLowerCase();
-    if (!type) throw new ParseError("expected an entry type after `@`", this.pos);
-    this.skipWs();
-    if (type === "comment") {
-      this.skipComment();
-      return;
-    }
-    const open = this.text[this.pos];
-    if (open !== "{" && open !== "(") {
-      throw new ParseError(`expected \`{\` after \`@${type}\``, this.pos);
-    }
-    const close = open === "{" ? "}" : ")";
-    this.pos++;
-    if (type === "preamble") {
-      this.parseValue(close);
-      this.expectClose(close, start);
-    } else if (type === "string") {
-      this.parseString(close, start);
-    } else {
-      this.parseEntry(type, close, start);
-    }
-  }
-  skipComment() {
-    const open = this.text[this.pos];
-    if (open === "{" || open === "(") {
-      const close = open === "{" ? "}" : ")";
-      let depth = 0;
-      for (; this.pos < this.text.length; this.pos++) {
-        const c = this.text[this.pos];
-        if (c === open) depth++;
-        else if (c === close && --depth === 0) {
-          this.pos++;
-          return;
-        }
-      }
-      return;
-    }
-    const nl = this.text.indexOf("\n", this.pos);
-    this.pos = nl < 0 ? this.text.length : nl + 1;
-  }
-  parseString(close, start) {
-    this.skipWsAndComments();
-    const name = this.readWhile(/[^\s=#{}(),"]/).toLowerCase();
-    if (!name) throw new ParseError("expected a macro name in `@string`", this.pos);
-    this.skipWsAndComments();
-    if (this.text[this.pos] !== "=") throw new ParseError("expected `=` in `@string`", this.pos);
-    this.pos++;
-    this.macros[name] = this.parseValue(close);
-    this.expectClose(close, start);
-  }
-  parseEntry(type, close, start) {
-    this.skipWs();
-    const key = this.readWhile(close === "}" ? /[^\s,{}]/ : /[^\s,()]/);
-    if (!key) throw new ParseError(`\`@${type}\` entry has no citation key`, this.pos);
-    const fields = {};
-    this.skipWsAndComments();
-    while (this.text[this.pos] === ",") {
-      this.pos++;
-      this.skipWsAndComments();
-      if (this.text[this.pos] === close) break;
-      this.parseField(key, fields, close);
-      this.skipWsAndComments();
-    }
-    this.expectClose(close, start, key);
-    this.addEntry({
-      key,
-      type,
-      fields,
-      line: this.lineOf(start),
-      raw: this.text.slice(start, this.pos)
+  const sev = level === "required" ? "error" : "warning";
+  const problems = [];
+  if (!facts.tagged) {
+    problems.push({
+      rule: "pdf-not-tagged",
+      check: "accessibility",
+      severity: sev,
+      message: "PDF is not tagged (no structure for screen readers)",
+      fix: "Add `\\DocumentMetadata{lang=en-US, pdfstandard=ua-2, tagging=on}` before `\\documentclass` and build with LuaLaTeX"
     });
   }
-  parseField(key, fields, close) {
-    const at = this.pos;
-    const name = this.readWhile(/[^\s=,{}()"#%@]/).toLowerCase();
-    if (!name && this.text[this.pos] === "@") {
-      throw new ParseError(
-        `\`${key}\` is not closed (missing \`${close}\` before the next entry)`,
-        this.entryStart
-      );
-    }
-    if (!name) {
-      throw new ParseError(
-        `unexpected \`${this.text[this.pos] ?? "end of file"}\` in \`${key}\``,
-        at
-      );
-    }
-    this.skipWsAndComments();
-    if (this.text[this.pos] !== "=") {
-      throw new ParseError(`field \`${name}\` in \`${key}\` has no \`=\` (missing comma?)`, at);
-    }
-    this.pos++;
-    const value = this.parseValue(close).trim();
-    if (name in fields) {
-      this.issues.push({
-        line: this.lineOf(at),
-        key,
-        message: `duplicate field \`${name}\` in \`${key}\`; the first one is used`
+  if (!facts.language) {
+    problems.push({
+      rule: "pdf-missing-language",
+      check: "accessibility",
+      severity: sev,
+      message: "Document language is not set",
+      fix: "Set `lang=en-US` (or your language) in `\\DocumentMetadata{...}`"
+    });
+  }
+  if (!facts.title) {
+    problems.push({
+      rule: "pdf-missing-title",
+      check: "accessibility",
+      severity: sev,
+      message: "PDF has no title in its metadata",
+      fix: "Set `\\hypersetup{pdftitle={...}, pdfdisplaydoctitle=true}`"
+    });
+  } else if (facts.displayDocTitle === false) {
+    problems.push({
+      rule: "pdf-missing-title",
+      check: "accessibility",
+      severity: sev,
+      message: "Viewers will show the file name instead of the title (DisplayDocTitle is off)",
+      fix: "Set `\\hypersetup{pdfdisplaydoctitle=true}`",
+      data: { title: facts.title }
+    });
+  }
+  problems.push(...figureProblems(facts, sev));
+  problems.push(...fontProblems(facts, sev));
+  if (facts.pdfua === void 0) {
+    problems.push({
+      rule: "pdfua-not-claimed",
+      check: "accessibility",
+      severity: "info",
+      message: "PDF does not claim PDF/UA conformance",
+      fix: "Add `pdfstandard=ua-2` to `\\DocumentMetadata{...}`"
+    });
+  }
+  if (opts.verapdf === null) {
+    problems.push({
+      rule: "verapdf-not-run",
+      check: "accessibility",
+      severity: "info",
+      message: "veraPDF not found, full PDF/UA validation skipped",
+      fix: "Install veraPDF or run the check in the Overfull Docker image"
+    });
+  } else if (opts.verapdf) {
+    problems.push(...veraPdfProblems(opts.verapdf, sev));
+  }
+  const counted = problems.filter((p) => p.severity !== "info");
+  const stats = {
+    figures: facts.figures.length,
+    figuresWithAlt: facts.figures.filter((f) => !isMissingAlt(f.alt)).length
+  };
+  if (opts.verapdf && !opts.verapdf.error) stats.verapdfFailedRules = opts.verapdf.failures.length;
+  let summary;
+  if (counted.length === 0) {
+    summary = opts.verapdf && !opts.verapdf.error ? "Tagged, PDF/UA valid (veraPDF)" : "Tagged, language and title set";
+  } else {
+    summary = `${plural2(counted.length, "accessibility problem")}`;
+  }
+  return { check: "accessibility", status: statusOf(problems), problems, summary, stats };
+}
+
+// ../packages/core/src/pdf/extract.ts
+var PT_TO_MM = 25.4 / 72;
+function pick(source, key) {
+  if (source instanceof Map) return source.get(key);
+  if (source && typeof source === "object") return source[key];
+  return void 0;
+}
+function str(v) {
+  if (typeof v !== "string") return void 0;
+  const t = v.trim();
+  return t ? t : void 0;
+}
+function dedupeRepeat(s) {
+  if (!s) return s;
+  for (let parts = 2; parts <= 4; parts++) {
+    if (s.length % parts !== 0) continue;
+    const unit = s.slice(0, s.length / parts);
+    if (unit.repeat(parts) === s) return unit;
+  }
+  return s;
+}
+function readInfo(info3) {
+  const out = {};
+  const map = [
+    ["title", "Title"],
+    ["author", "Author"],
+    ["subject", "Subject"],
+    ["keywords", "Keywords"],
+    ["creator", "Creator"],
+    ["producer", "Producer"],
+    ["pdfVersion", "PDFFormatVersion"]
+  ];
+  for (const [k, src] of map) {
+    const v = str(pick(info3, src));
+    if (v) out[k] = v;
+  }
+  return out;
+}
+function readXmp(md) {
+  if (!md) return {};
+  const out = {};
+  const title = dedupeRepeat(str(md.get("dc:title")));
+  if (title) out.title = title;
+  const lang = md.get("dc:language");
+  const langStr = Array.isArray(lang) ? str(lang[0]) : str(lang);
+  if (langStr) out.language = langStr;
+  const creators = md.get("dc:creator");
+  if (Array.isArray(creators)) {
+    const list3 = creators.filter((c) => typeof c === "string" && c.trim() !== "");
+    if (list3.length) out.creators = list3;
+  }
+  const part = Number.parseInt(String(md.get("pdfuaid:part") ?? ""), 10);
+  if (Number.isFinite(part)) out.pdfuaPart = part;
+  return out;
+}
+function pageText(items) {
+  let text2 = "";
+  for (const item of items) {
+    const s = pick(item, "str");
+    if (typeof s !== "string") continue;
+    text2 += s;
+    if (pick(item, "hasEOL") === true) text2 += "\n";
+  }
+  return text2;
+}
+function collectFigures(node, page, out) {
+  if (!node || typeof node !== "object") return;
+  const n = node;
+  if (n.role === "Figure") {
+    const alt = str(n.alt);
+    out.push(alt ? { page, alt } : { page });
+  }
+  if (Array.isArray(n.children)) for (const c of n.children) collectFigures(c, page, out);
+}
+async function extractPdfFacts(data, pdfjs) {
+  const task = pdfjs.getDocument({
+    data: data.slice(),
+    isEvalSupported: false,
+    useSystemFonts: false,
+    disableFontFace: true,
+    verbosity: 0
+  });
+  const doc = await task.promise;
+  try {
+    const { info: info3, metadata } = await doc.getMetadata();
+    const pdfInfo = readInfo(info3);
+    const xmp = readXmp(metadata);
+    const markInfo = await doc.getMarkInfo().catch(() => null);
+    const prefs = doc.getViewerPreferences ? await doc.getViewerPreferences().catch(() => null) : void 0;
+    const pages = [];
+    const figures = [];
+    let hasStructTree = false;
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = page.view;
+      let w = Math.abs(x1 - x0) * PT_TO_MM;
+      let h = Math.abs(y1 - y0) * PT_TO_MM;
+      if ((page.rotate ?? 0) % 180 !== 0) [w, h] = [h, w];
+      const content = await page.getTextContent();
+      pages.push({
+        number: i,
+        text: pageText(content.items),
+        widthMm: Math.round(w * 10) / 10,
+        heightMm: Math.round(h * 10) / 10
       });
-      return;
+      const tree = await page.getStructTree().catch(() => null);
+      if (tree) {
+        hasStructTree = true;
+        collectFigures(tree, i, figures);
+      }
+      page.cleanup?.();
     }
-    fields[name] = value;
+    const language = str(pick(info3, "Language")) ?? xmp.language;
+    const title = pdfInfo.title ?? xmp.title;
+    const display = pick(prefs, "DisplayDocTitle");
+    const facts = {
+      pageCount: doc.numPages,
+      pages,
+      info: pdfInfo,
+      xmp,
+      tagged: pick(markInfo, "Marked") === true,
+      hasStructTree,
+      figures
+    };
+    if (language) facts.language = language;
+    if (title) facts.title = title;
+    if (typeof display === "boolean") facts.displayDocTitle = display;
+    else if (prefs === null) facts.displayDocTitle = false;
+    if (xmp.pdfuaPart !== void 0) facts.pdfua = xmp.pdfuaPart;
+    return facts;
+  } finally {
+    await (task.destroy ? task.destroy() : doc.destroy?.());
   }
-  addEntry(entry) {
-    const folded = entry.key.toLowerCase();
-    const previous = this.seenKeys.get(folded);
-    if (previous !== void 0) {
-      this.issues.push({
-        line: entry.line,
-        key: entry.key,
-        message: `duplicate key \`${entry.key}\` (first defined on line ${previous}); this entry is ignored`
+}
+
+// ../packages/core/src/pdf/fonts.ts
+function parsePdffonts(text2) {
+  const lines = text2.split(/\r?\n/);
+  const sepIndex = lines.findIndex((l) => /^-{4,}( -+)+\s*$/.test(l));
+  if (sepIndex < 0) return [];
+  const sep2 = lines[sepIndex] ?? "";
+  const starts = [];
+  const re = /-+/g;
+  for (let m = re.exec(sep2); m; m = re.exec(sep2)) starts.push(m.index);
+  const typeStart = starts[1] ?? 37;
+  const encStart = starts[2] ?? 55;
+  const fonts = [];
+  for (const line of lines.slice(sepIndex + 1)) {
+    if (!line.trim()) continue;
+    const tokens = line.trim().split(/\s+/);
+    const n = tokens.length;
+    if (n < 6) continue;
+    const flag = (i) => tokens[n - i] === "yes";
+    const overflow = line.length > typeStart && line[typeStart - 1] !== " ";
+    const name = overflow ? tokens[0] ?? "" : line.slice(0, typeStart).trim();
+    const type = overflow ? "" : line.slice(typeStart, encStart).trim();
+    fonts.push({ name, type, embedded: flag(5), subset: flag(4), unicode: flag(3) });
+  }
+  return fonts;
+}
+
+// ../packages/core/src/pdf/output.ts
+var REF_WORDS = [
+  "Figure",
+  "Figures",
+  "Fig\\.",
+  "Figs\\.",
+  "Table",
+  "Tables",
+  "Tab\\.",
+  "Section",
+  "Sections",
+  "Sec\\.",
+  "Secs\\.",
+  "Chapter",
+  "Chapters",
+  "Ch\\.",
+  "Appendix",
+  "Appendices",
+  "App\\.",
+  "Equation",
+  "Equations",
+  "Eq\\.",
+  "Eqs\\.",
+  "Algorithm",
+  "Alg\\.",
+  "Listing",
+  "Theorem",
+  "Thm\\.",
+  "Lemma",
+  "Definition",
+  "Def\\.",
+  "Corollary",
+  "Proposition",
+  "Prop\\.",
+  "Example",
+  "Remark",
+  "Line",
+  "Lines",
+  "Page",
+  "Pages",
+  "p\\.",
+  "pp\\.",
+  "Part",
+  "Step",
+  "Footnote",
+  "\xA7"
+];
+var CONTEXT_REF = new RegExp(
+  `(?<!\\p{L})(?:${REF_WORDS.join("|")})[\\s\\u00a0~]*\\(?\\?\\?\\)?`,
+  "giu"
+);
+var STANDALONE_REF = /(?:\(\?\?\))|(?:(?<=^|[\s ([])\?\?(?=[.,;:)\]]|\s*$))/gm;
+var UNRESOLVED_CITE = /\[\?(?:\s*[,;]\s*\?)*\]/g;
+function snippet(text2, index, length) {
+  const start = Math.max(0, index - 30);
+  const end = Math.min(text2.length, index + length + 30);
+  return text2.slice(start, end).replace(/\s+/g, " ").trim();
+}
+function findAll(text2, re) {
+  const hits = [];
+  re.lastIndex = 0;
+  for (let m = re.exec(text2); m; m = re.exec(text2)) {
+    hits.push({ index: m.index, length: m[0].length });
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  return hits;
+}
+function refHits(text2) {
+  const ctx = findAll(text2, CONTEXT_REF);
+  const covered = (i) => ctx.some((h) => i >= h.index && i < h.index + h.length);
+  const alone = findAll(text2, STANDALONE_REF).filter((h) => !covered(h.index + h.length - 1));
+  return [...ctx, ...alone].sort((a, b) => a.index - b.index);
+}
+function pdfOutputProblems(facts) {
+  const problems = [];
+  for (const page of facts.pages) {
+    const refs = refHits(page.text);
+    if (refs.length > 0) {
+      const first2 = refs[0];
+      problems.push({
+        rule: "pdf-unresolved-reference",
+        check: "output",
+        severity: "error",
+        message: refs.length === 1 ? `"??" printed instead of a reference number` : `"??" printed instead of a reference number (${refs.length} times)`,
+        location: { page: page.number },
+        fix: "Check the label exists and is spelled the same in `\\label` and `\\ref`, then rebuild (latexmk runs LaTeX until references settle)",
+        evidence: snippet(page.text, first2.index, first2.length),
+        data: { count: refs.length }
       });
-      return;
     }
-    this.seenKeys.set(folded, entry.line);
-    this.entries.push(entry);
-  }
-  /** value := part ('#' part)*, part := {…} | "…" | digits | macro */
-  parseValue(close) {
-    let out = "";
-    for (; ; ) {
-      this.skipWsAndComments();
-      out += this.parsePart(close);
-      this.skipWsAndComments();
-      if (this.text[this.pos] !== "#") break;
-      this.pos++;
-    }
-    return out.replace(/\s+/g, " ");
-  }
-  parsePart(close) {
-    const c = this.text[this.pos];
-    if (c === "{") return this.readBraced();
-    if (c === '"') return this.readQuoted();
-    const word = this.readWhile(close === "}" ? /[^\s,#{}"%=]/ : /[^\s,#{}()"%=]/);
-    if (!word) {
-      throw new ParseError(`expected a value, found \`${c ?? "end of file"}\``, this.pos);
-    }
-    if (/^\d+$/.test(word)) return word;
-    const macro = this.macros[word.toLowerCase()];
-    if (macro === void 0) {
-      this.issues.push({
-        line: this.lineOf(this.pos),
-        message: `undefined macro \`${word}\` (kept as text)`
+    const cites = findAll(page.text, UNRESOLVED_CITE);
+    if (cites.length > 0) {
+      const first2 = cites[0];
+      problems.push({
+        rule: "pdf-unresolved-citation",
+        check: "output",
+        severity: "error",
+        message: cites.length === 1 ? `"[?]" printed instead of a citation` : `"[?]" printed instead of a citation (${cites.length} times)`,
+        location: { page: page.number },
+        fix: "Add the missing key to the .bib file (or fix its spelling) and rerun biber/bibtex via latexmk",
+        evidence: snippet(page.text, first2.index, first2.length),
+        data: { count: cites.length }
       });
-      return word;
-    }
-    return macro;
-  }
-  readBraced() {
-    const start = this.pos + 1;
-    let depth = 0;
-    for (; this.pos < this.text.length; this.pos++) {
-      const c = this.text[this.pos];
-      if (c === "\\") {
-        this.pos++;
-        continue;
-      }
-      if (c === "{") depth++;
-      else if (c === "}" && --depth === 0) {
-        this.pos++;
-        return this.text.slice(start, this.pos - 1);
-      }
-    }
-    throw new ParseError("unbalanced braces in field value", start - 1);
-  }
-  readQuoted() {
-    const start = this.pos + 1;
-    let depth = 0;
-    for (this.pos = start; this.pos < this.text.length; this.pos++) {
-      const c = this.text[this.pos];
-      if (c === "\\") {
-        this.pos++;
-        continue;
-      }
-      if (c === "{") depth++;
-      else if (c === "}") depth--;
-      else if (c === '"' && depth === 0) {
-        this.pos++;
-        return this.text.slice(start, this.pos - 1);
-      }
-    }
-    throw new ParseError("unterminated quoted field value", start - 1);
-  }
-  expectClose(close, start, key) {
-    this.skipWsAndComments();
-    if (this.text[this.pos] === close) {
-      this.pos++;
-      return;
-    }
-    const what = key ? `\`${key}\`` : "entry";
-    if (this.pos >= this.text.length || this.text[this.pos] === "@") {
-      throw new ParseError(`${what} is not closed (missing \`${close}\`)`, start);
-    }
-    throw new ParseError(
-      `unexpected \`${this.text[this.pos]}\` in ${what} (missing comma or \`${close}\`?)`,
-      this.pos
-    );
-  }
-  readWhile(re) {
-    const start = this.pos;
-    while (this.pos < this.text.length && re.test(this.text[this.pos])) this.pos++;
-    return this.text.slice(start, this.pos);
-  }
-  skipWs() {
-    while (this.pos < this.text.length && /\s/.test(this.text[this.pos])) this.pos++;
-  }
-  skipWsAndComments() {
-    for (; ; ) {
-      this.skipWs();
-      if (this.text[this.pos] !== "%") return;
-      const nl = this.text.indexOf("\n", this.pos);
-      this.pos = nl < 0 ? this.text.length : nl + 1;
     }
   }
-};
-function parseBibWithIssues(text2) {
-  const parser = new Parser2(text2);
-  parser.run();
-  return { entries: parser.entries, issues: parser.issues };
+  return problems;
+}
+
+// ../packages/core/src/pdf/verapdf.ts
+var MAX_CONTEXTS = 3;
+function isObj(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function num(v) {
+  const n = typeof v === "number" ? v : Number.parseInt(String(v ?? ""), 10);
+  return Number.isFinite(n) ? n : void 0;
+}
+function text(v) {
+  return typeof v === "string" ? v.trim() : "";
+}
+function asArray(v) {
+  if (Array.isArray(v)) return v;
+  return v === void 0 || v === null ? [] : [v];
+}
+function decodeXml(s) {
+  return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d))).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(Number.parseInt(h, 16))).replace(/&amp;/g, "&").trim();
+}
+function attrs(tag2) {
+  const out = {};
+  const re = /([\w:-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+  for (let m = re.exec(tag2); m; m = re.exec(tag2)) {
+    out[m[1]] = decodeXml(m[3] ?? m[4] ?? "");
+  }
+  return out;
+}
+function childText(xml, name) {
+  const m = new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`).exec(xml);
+  return m ? decodeXml(m[1] ?? "") : "";
+}
+function mergeByClause(failures) {
+  const byKey = /* @__PURE__ */ new Map();
+  for (const f of failures) {
+    const key = `${f.specification}|${f.clause}|${f.testNumber ?? ""}`;
+    const prev = byKey.get(key);
+    if (prev) {
+      prev.failedChecks += f.failedChecks;
+      prev.contexts = [...prev.contexts, ...f.contexts].slice(0, MAX_CONTEXTS);
+    } else byKey.set(key, { ...f });
+  }
+  return [...byKey.values()];
+}
+function parseXml(xml) {
+  const vr = /<validationReport\b([^>]*)>([\s\S]*?)<\/validationReport>/.exec(xml);
+  if (!vr) {
+    const exception = childText(xml, "exceptionMessage") || childText(xml, "message");
+    return {
+      compliant: false,
+      failures: [],
+      error: exception || "No <validationReport> element found in veraPDF output"
+    };
+  }
+  const head = attrs(vr[1] ?? "");
+  const body = vr[2] ?? "";
+  const details = /<details\b([^>]*)>/.exec(body);
+  const d = attrs(details?.[1] ?? "");
+  const failures = [];
+  const ruleRe = /<rule\b([^>]*?)(?:\/>|>([\s\S]*?)<\/rule>)/g;
+  for (let m = ruleRe.exec(body); m; m = ruleRe.exec(body)) {
+    const a = attrs(m[1] ?? "");
+    if (a.status && a.status !== "failed") continue;
+    const inner = m[2] ?? "";
+    const contexts = [];
+    const checkRe = /<check\b[^>]*status="failed"[^>]*>([\s\S]*?)<\/check>/g;
+    for (let c = checkRe.exec(inner); c && contexts.length < MAX_CONTEXTS; c = checkRe.exec(inner)) {
+      const ctx = childText(c[1] ?? "", "context");
+      if (ctx) contexts.push(ctx);
+    }
+    const failure = {
+      specification: a.specification ?? "",
+      clause: a.clause ?? "",
+      description: childText(inner, "description"),
+      failedChecks: num(a.failedChecks) ?? Math.max(1, contexts.length),
+      contexts
+    };
+    const tn = num(a.testNumber);
+    if (tn !== void 0) failure.testNumber = tn;
+    failures.push(failure);
+  }
+  const compliantAttr = head.isCompliant ?? head.compliant;
+  const result = {
+    compliant: compliantAttr === "true" || compliantAttr === void 0 && failures.length === 0,
+    failures: mergeByClause(failures)
+  };
+  if (head.profileName) result.profile = head.profileName;
+  if (head.statement) result.statement = head.statement;
+  const pr = num(d.passedRules);
+  const fr = num(d.failedRules);
+  const fc = num(d.failedChecks);
+  if (pr !== void 0) result.passedRules = pr;
+  if (fr !== void 0) result.failedRules = fr;
+  if (fc !== void 0) result.failedChecks = fc;
+  return result;
+}
+function findValidation(root) {
+  if (!isObj(root)) return void 0;
+  const report = isObj(root.report) ? root.report : root;
+  for (const job of asArray(report.jobs)) {
+    if (!isObj(job)) continue;
+    const vr = asArray(job.validationResult ?? job.validationReport)[0];
+    if (isObj(vr)) return vr;
+    if (isObj(job.taskException) || job.taskException) return { taskException: job.taskException };
+  }
+  if (isObj(report.validationResult)) return report.validationResult;
+  if (isObj(report.details)) return report;
+  return void 0;
+}
+function parseJson(data) {
+  const vr = findValidation(data);
+  if (!vr) return { compliant: false, failures: [], error: "No validation result in veraPDF JSON" };
+  if (vr.taskException) {
+    const ex = vr.taskException;
+    const msg = isObj(ex) ? text(ex.exceptionMessage) || text(ex.message) : String(ex);
+    return { compliant: false, failures: [], error: msg || "veraPDF could not validate the file" };
+  }
+  const details = isObj(vr.details) ? vr.details : {};
+  const failures = [];
+  for (const r of asArray(details.ruleSummaries ?? details.rules)) {
+    if (!isObj(r)) continue;
+    const status = text(r.ruleStatus || r.status).toLowerCase();
+    if (status && status !== "failed") continue;
+    const contexts = asArray(r.checks).filter(isObj).filter((c) => text(c.status).toLowerCase() !== "passed").map((c) => text(c.context)).filter(Boolean).slice(0, MAX_CONTEXTS);
+    const failure = {
+      specification: text(r.specification),
+      clause: text(r.clause),
+      description: text(r.description),
+      failedChecks: num(r.failedChecks) ?? Math.max(1, contexts.length),
+      contexts
+    };
+    const tn = num(r.testNumber);
+    if (tn !== void 0) failure.testNumber = tn;
+    failures.push(failure);
+  }
+  const compliant = typeof vr.compliant === "boolean" ? vr.compliant : typeof vr.isCompliant === "boolean" ? vr.isCompliant : failures.length === 0;
+  const result = { compliant, failures: mergeByClause(failures) };
+  const profile = text(vr.profileName);
+  const statement = text(vr.statement);
+  if (profile) result.profile = profile;
+  if (statement) result.statement = statement;
+  const pr = num(details.passedRules);
+  const fr = num(details.failedRules);
+  const fc = num(details.failedChecks);
+  if (pr !== void 0) result.passedRules = pr;
+  if (fr !== void 0) result.failedRules = fr;
+  if (fc !== void 0) result.failedChecks = fc;
+  return result;
+}
+function parseVeraPdfReport(xmlOrJson) {
+  const trimmed = xmlOrJson.replace(/^﻿/, "").trim();
+  if (!trimmed) return { compliant: false, failures: [], error: "veraPDF produced no output" };
+  const jsonStart = trimmed.search(/^[{[]/m);
+  if (!trimmed.startsWith("<") && jsonStart >= 0) {
+    try {
+      return parseJson(JSON.parse(trimmed.slice(jsonStart)));
+    } catch {
+      return { compliant: false, failures: [], error: "veraPDF output is not valid JSON" };
+    }
+  }
+  const xmlStart = trimmed.indexOf("<");
+  if (xmlStart >= 0) return parseXml(trimmed.slice(xmlStart));
+  return { compliant: false, failures: [], error: trimmed.split("\n")[0] ?? "Unreadable output" };
 }
 
 // ../packages/core/src/refs/normalize.ts
@@ -111706,7 +112313,7 @@ async function searchOne(ctx, cacheKey, source, run2) {
 }
 async function titleSearch(ctx, q, visit) {
   const outcome = { searched: [], failures: [] };
-  const cacheKey = titleCacheKey(q.title, q.year, q.isTex);
+  const cacheKey = titleCacheKey(q.title, q.year, q.isTex) + (q.hinted && q.firstAuthor ? `|author:${q.firstAuthor.toLowerCase()}` : "");
   for (const [source, run2] of titleSources(ctx, q)) {
     let records;
     try {
@@ -112077,611 +112684,237 @@ function refsCheck(results, opts = {}) {
   };
 }
 
-// ../packages/core/src/pdf/accessibility.ts
-function veraPdfRuleId(clause) {
-  const slug = clause.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return slug ? `verapdf-${slug}` : "verapdf";
+// ../packages/core/src/report/shared.ts
+var SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
+function formatLocation(loc) {
+  if (!loc) return "";
+  if (loc.file) return loc.line ? `${loc.file}:${loc.line}` : loc.file;
+  if (loc.page) return `p.${loc.page}`;
+  return "";
 }
-function plural2(n, one, many = `${one}s`) {
-  return `${n} ${n === 1 ? one : many}`;
+function sortedProblems(report) {
+  const checkIndex = (c) => CHECK_IDS.indexOf(c);
+  return report.checks.flatMap((c) => c.problems).map((p, i) => ({ p, i })).sort(
+    (a, b) => SEVERITY_ORDER[a.p.severity] - SEVERITY_ORDER[b.p.severity] || checkIndex(a.p.check) - checkIndex(b.p.check) || (a.p.location?.file ?? "").localeCompare(b.p.location?.file ?? "") || (a.p.location?.line ?? 0) - (b.p.location?.line ?? 0) || (a.p.location?.page ?? 0) - (b.p.location?.page ?? 0) || a.i - b.i
+  ).map(({ p }) => p);
 }
-function isMissingAlt(alt) {
-  if (!alt?.trim()) return true;
-  return /^[\w./\\-]+\.(pdf|png|jpe?g|eps|svg|gif|tiff?|webp|bmp)$/i.test(alt.trim());
-}
-function figureProblems(facts, sev) {
-  const byPage = /* @__PURE__ */ new Map();
-  for (const f of facts.figures) {
-    if (!isMissingAlt(f.alt)) continue;
-    const e = byPage.get(f.page) ?? { count: 0, placeholder: 0 };
-    e.count++;
-    if (f.alt) e.placeholder++;
-    byPage.set(f.page, e);
-  }
-  return [...byPage.entries()].map(([page, { count, placeholder }]) => ({
-    rule: "figure-missing-alt",
-    check: "accessibility",
-    severity: sev,
-    message: `${plural2(count, "figure")} without alt text${placeholder ? " (LaTeX used the file name)" : ""}`,
-    location: { page },
-    fix: "Add `alt={...}` to the `\\includegraphics` on this page",
-    data: { count }
-  }));
-}
-function fontProblems(facts, sev) {
-  const missing = (facts.fonts ?? []).filter((f) => !f.embedded);
-  if (missing.length === 0) return [];
-  const names = [...new Set(missing.map((f) => f.name || "(unnamed)"))];
-  return [
-    {
-      rule: "font-not-embedded",
-      check: "accessibility",
-      severity: sev,
-      message: `${plural2(names.length, "font")} not embedded: ${names.slice(0, 5).join(", ")}${names.length > 5 ? ", \u2026" : ""}`,
-      fix: "Embed all fonts: compile with LuaLaTeX and re-export figures (PDF/EPS) with fonts embedded",
-      data: { fonts: names }
-    }
-  ];
-}
-function veraPdfProblems(v, sev) {
-  if (v.error) {
-    return [
-      {
-        rule: "verapdf-error",
-        check: "accessibility",
-        severity: "warning",
-        message: `veraPDF could not validate the PDF: ${v.error}`,
-        fix: "Run `verapdf --flavour ua2 <file.pdf>` by hand to see the full error"
-      }
-    ];
-  }
-  const groups = /* @__PURE__ */ new Map();
-  for (const f of v.failures) {
-    const rule = veraPdfRuleId(f.clause);
-    const prev = groups.get(rule);
-    if (prev) {
-      const data = prev.data;
-      data.count += f.failedChecks;
-      if (f.testNumber !== void 0) data.tests.push(f.testNumber);
-      prev.message = `${f.specification} \xA7${f.clause}: ${prev.detail ?? ""} (${plural2(data.count, "failed check")})`;
-      continue;
-    }
-    const desc = f.description.replace(/\s+/g, " ").trim();
-    const problem2 = {
-      rule,
-      check: "accessibility",
-      severity: sev,
-      message: `${f.specification} \xA7${f.clause}: ${desc} (${plural2(f.failedChecks, "failed check")})`,
-      detail: desc,
-      fix: "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed",
-      data: {
-        specification: f.specification,
-        clause: f.clause,
-        count: f.failedChecks,
-        tests: f.testNumber === void 0 ? [] : [f.testNumber]
-      }
-    };
-    if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
-    groups.set(rule, problem2);
-  }
-  return [...groups.values()];
-}
-function accessibilityCheck(facts, opts = {}) {
-  const level = opts.level ?? "required";
-  if (level === "off") {
-    return {
-      check: "accessibility",
-      status: "skipped",
-      problems: [],
-      skippedReason: "Accessibility is off for this venue profile"
-    };
-  }
-  const sev = level === "required" ? "error" : "warning";
-  const problems = [];
-  if (!facts.tagged) {
-    problems.push({
-      rule: "pdf-not-tagged",
-      check: "accessibility",
-      severity: sev,
-      message: "PDF is not tagged (no structure for screen readers)",
-      fix: "Add `\\DocumentMetadata{lang=en-US, pdfstandard=ua-2, tagging=on}` before `\\documentclass` and build with LuaLaTeX"
-    });
-  }
-  if (!facts.language) {
-    problems.push({
-      rule: "pdf-missing-language",
-      check: "accessibility",
-      severity: sev,
-      message: "Document language is not set",
-      fix: "Set `lang=en-US` (or your language) in `\\DocumentMetadata{...}`"
-    });
-  }
-  if (!facts.title) {
-    problems.push({
-      rule: "pdf-missing-title",
-      check: "accessibility",
-      severity: sev,
-      message: "PDF has no title in its metadata",
-      fix: "Set `\\hypersetup{pdftitle={...}, pdfdisplaydoctitle=true}`"
-    });
-  } else if (facts.displayDocTitle === false) {
-    problems.push({
-      rule: "pdf-missing-title",
-      check: "accessibility",
-      severity: sev,
-      message: "Viewers will show the file name instead of the title (DisplayDocTitle is off)",
-      fix: "Set `\\hypersetup{pdfdisplaydoctitle=true}`",
-      data: { title: facts.title }
-    });
-  }
-  problems.push(...figureProblems(facts, sev));
-  problems.push(...fontProblems(facts, sev));
-  if (facts.pdfua === void 0) {
-    problems.push({
-      rule: "pdfua-not-claimed",
-      check: "accessibility",
-      severity: "info",
-      message: "PDF does not claim PDF/UA conformance",
-      fix: "Add `pdfstandard=ua-2` to `\\DocumentMetadata{...}`"
-    });
-  }
-  if (opts.verapdf === null) {
-    problems.push({
-      rule: "verapdf-not-run",
-      check: "accessibility",
-      severity: "info",
-      message: "veraPDF not found, full PDF/UA validation skipped",
-      fix: "Install veraPDF or run the check in the Overfull Docker image"
-    });
-  } else if (opts.verapdf) {
-    problems.push(...veraPdfProblems(opts.verapdf, sev));
-  }
-  const counted = problems.filter((p) => p.severity !== "info");
-  const stats = {
-    figures: facts.figures.length,
-    figuresWithAlt: facts.figures.filter((f) => !isMissingAlt(f.alt)).length
+function tally(report) {
+  const all = report.checks.flatMap((c) => c.problems);
+  return {
+    errors: all.filter((p) => p.severity === "error").length,
+    warnings: all.filter((p) => p.severity === "warning").length,
+    infos: all.filter((p) => p.severity === "info").length,
+    passed: report.checks.filter((c) => c.status === "pass").length,
+    skipped: report.checks.filter((c) => c.status === "skipped").length
   };
-  if (opts.verapdf && !opts.verapdf.error) stats.verapdfFailedRules = opts.verapdf.failures.length;
-  let summary;
-  if (counted.length === 0) {
-    summary = opts.verapdf && !opts.verapdf.error ? "Tagged, PDF/UA valid (veraPDF)" : "Tagged, language and title set";
-  } else {
-    summary = `${plural2(counted.length, "accessibility problem")}`;
-  }
-  return { check: "accessibility", status: statusOf(problems), problems, summary, stats };
+}
+function checkLine(c) {
+  if (c.status === "skipped") return `skipped: ${c.skippedReason ?? "not run"}`;
+  if (c.summary) return c.summary;
+  const n = c.problems.filter((p) => p.severity !== "info").length;
+  if (n === 0) return "no problems";
+  return `${n} problem${n === 1 ? "" : "s"}`;
+}
+function tallyLine(t) {
+  const parts = [`${t.errors} to fix`, `${t.warnings} to review`];
+  if (t.infos) parts.push(`${t.infos} note${t.infos === 1 ? "" : "s"}`);
+  parts.push(`${t.passed} passed`);
+  if (t.skipped) parts.push(`${t.skipped} skipped`);
+  return parts.join(" \xB7 ");
 }
 
-// ../packages/core/src/pdf/extract.ts
-var PT_TO_MM = 25.4 / 72;
-function pick(source, key) {
-  if (source instanceof Map) return source.get(key);
-  if (source && typeof source === "object") return source[key];
-  return void 0;
+// ../packages/core/src/report/annotations.ts
+function escapeData(s) {
+  return s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
 }
-function str(v) {
-  if (typeof v !== "string") return void 0;
-  const t = v.trim();
-  return t ? t : void 0;
+function escapeProperty(s) {
+  return escapeData(s).replace(/:/g, "%3A").replace(/,/g, "%2C");
 }
-function dedupeRepeat(s) {
-  if (!s) return s;
-  for (let parts = 2; parts <= 4; parts++) {
-    if (s.length % parts !== 0) continue;
-    const unit = s.slice(0, s.length / parts);
-    if (unit.repeat(parts) === s) return unit;
+function joinPath(root, file) {
+  if (!root || root === "." || root === "./") return file;
+  return `${root.replace(/\/+$/, "")}/${file}`;
+}
+function annotation(p, opts) {
+  const cmd = p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : "notice";
+  const props = [];
+  if (p.location?.file) {
+    props.push(`file=${escapeProperty(joinPath(opts.root, p.location.file))}`);
+    if (p.location.line) props.push(`line=${p.location.line}`);
   }
-  return s;
+  props.push(`title=${escapeProperty(`overfull ${p.rule}`)}`);
+  const page = p.location?.page && !p.location.file ? `Page ${p.location.page}: ` : "";
+  const msg = p.fix ? `${page}${p.message}
+Fix: ${p.fix}` : `${page}${p.message}`;
+  return `::${cmd} ${props.join(",")}::${escapeData(msg)}`;
 }
-function readInfo(info3) {
-  const out = {};
-  const map = [
-    ["title", "Title"],
-    ["author", "Author"],
-    ["subject", "Subject"],
-    ["keywords", "Keywords"],
-    ["creator", "Creator"],
-    ["producer", "Producer"],
-    ["pdfVersion", "PDFFormatVersion"]
-  ];
-  for (const [k, src] of map) {
-    const v = str(pick(info3, src));
-    if (v) out[k] = v;
-  }
-  return out;
-}
-function readXmp(md) {
-  if (!md) return {};
-  const out = {};
-  const title = dedupeRepeat(str(md.get("dc:title")));
-  if (title) out.title = title;
-  const lang = md.get("dc:language");
-  const langStr = Array.isArray(lang) ? str(lang[0]) : str(lang);
-  if (langStr) out.language = langStr;
-  const creators = md.get("dc:creator");
-  if (Array.isArray(creators)) {
-    const list3 = creators.filter((c) => typeof c === "string" && c.trim() !== "");
-    if (list3.length) out.creators = list3;
-  }
-  const part = Number.parseInt(String(md.get("pdfuaid:part") ?? ""), 10);
-  if (Number.isFinite(part)) out.pdfuaPart = part;
-  return out;
-}
-function pageText(items) {
-  let text2 = "";
-  for (const item of items) {
-    const s = pick(item, "str");
-    if (typeof s !== "string") continue;
-    text2 += s;
-    if (pick(item, "hasEOL") === true) text2 += "\n";
-  }
-  return text2;
-}
-function collectFigures(node, page, out) {
-  if (!node || typeof node !== "object") return;
-  const n = node;
-  if (n.role === "Figure") {
-    const alt = str(n.alt);
-    out.push(alt ? { page, alt } : { page });
-  }
-  if (Array.isArray(n.children)) for (const c of n.children) collectFigures(c, page, out);
-}
-async function extractPdfFacts(data, pdfjs) {
-  const task = pdfjs.getDocument({
-    data: data.slice(),
-    isEvalSupported: false,
-    useSystemFonts: false,
-    disableFontFace: true,
-    verbosity: 0
-  });
-  const doc = await task.promise;
-  try {
-    const { info: info3, metadata } = await doc.getMetadata();
-    const pdfInfo = readInfo(info3);
-    const xmp = readXmp(metadata);
-    const markInfo = await doc.getMarkInfo().catch(() => null);
-    const prefs = doc.getViewerPreferences ? await doc.getViewerPreferences().catch(() => null) : void 0;
-    const pages = [];
-    const figures = [];
-    let hasStructTree = false;
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = page.view;
-      let w = Math.abs(x1 - x0) * PT_TO_MM;
-      let h = Math.abs(y1 - y0) * PT_TO_MM;
-      if ((page.rotate ?? 0) % 180 !== 0) [w, h] = [h, w];
-      const content = await page.getTextContent();
-      pages.push({
-        number: i,
-        text: pageText(content.items),
-        widthMm: Math.round(w * 10) / 10,
-        heightMm: Math.round(h * 10) / 10
-      });
-      const tree = await page.getStructTree().catch(() => null);
-      if (tree) {
-        hasStructTree = true;
-        collectFigures(tree, i, figures);
-      }
-      page.cleanup?.();
-    }
-    const language = str(pick(info3, "Language")) ?? xmp.language;
-    const title = pdfInfo.title ?? xmp.title;
-    const display = pick(prefs, "DisplayDocTitle");
-    const facts = {
-      pageCount: doc.numPages,
-      pages,
-      info: pdfInfo,
-      xmp,
-      tagged: pick(markInfo, "Marked") === true,
-      hasStructTree,
-      figures
-    };
-    if (language) facts.language = language;
-    if (title) facts.title = title;
-    if (typeof display === "boolean") facts.displayDocTitle = display;
-    else if (prefs === null) facts.displayDocTitle = false;
-    if (xmp.pdfuaPart !== void 0) facts.pdfua = xmp.pdfuaPart;
-    return facts;
-  } finally {
-    await (task.destroy ? task.destroy() : doc.destroy?.());
-  }
+function githubAnnotations(report, opts = {}) {
+  const list3 = sortedProblems(report).map((p) => annotation(p, opts));
+  return opts.limit ? list3.slice(0, opts.limit) : list3;
 }
 
-// ../packages/core/src/pdf/fonts.ts
-function parsePdffonts(text2) {
-  const lines = text2.split(/\r?\n/);
-  const sepIndex = lines.findIndex((l) => /^-{4,}( -+)+\s*$/.test(l));
-  if (sepIndex < 0) return [];
-  const sep2 = lines[sepIndex] ?? "";
-  const starts = [];
-  const re = /-+/g;
-  for (let m = re.exec(sep2); m; m = re.exec(sep2)) starts.push(m.index);
-  const typeStart = starts[1] ?? 37;
-  const encStart = starts[2] ?? 55;
-  const fonts = [];
-  for (const line of lines.slice(sepIndex + 1)) {
-    if (!line.trim()) continue;
-    const tokens = line.trim().split(/\s+/);
-    const n = tokens.length;
-    if (n < 6) continue;
-    const flag = (i) => tokens[n - i] === "yes";
-    const overflow = line.length > typeStart && line[typeStart - 1] !== " ";
-    const name = overflow ? tokens[0] ?? "" : line.slice(0, typeStart).trim();
-    const type = overflow ? "" : line.slice(typeStart, encStart).trim();
-    fonts.push({ name, type, embedded: flag(5), subset: flag(4), unicode: flag(3) });
-  }
-  return fonts;
-}
-
-// ../packages/core/src/pdf/output.ts
-var REF_WORDS = [
-  "Figure",
-  "Figures",
-  "Fig\\.",
-  "Figs\\.",
-  "Table",
-  "Tables",
-  "Tab\\.",
-  "Section",
-  "Sections",
-  "Sec\\.",
-  "Secs\\.",
-  "Chapter",
-  "Chapters",
-  "Ch\\.",
-  "Appendix",
-  "Appendices",
-  "App\\.",
-  "Equation",
-  "Equations",
-  "Eq\\.",
-  "Eqs\\.",
-  "Algorithm",
-  "Alg\\.",
-  "Listing",
-  "Theorem",
-  "Thm\\.",
-  "Lemma",
-  "Definition",
-  "Def\\.",
-  "Corollary",
-  "Proposition",
-  "Prop\\.",
-  "Example",
-  "Remark",
-  "Line",
-  "Lines",
-  "Page",
-  "Pages",
-  "p\\.",
-  "pp\\.",
-  "Part",
-  "Step",
-  "Footnote",
-  "\xA7"
-];
-var CONTEXT_REF = new RegExp(
-  `(?<!\\p{L})(?:${REF_WORDS.join("|")})[\\s\\u00a0~]*\\(?\\?\\?\\)?`,
-  "giu"
-);
-var STANDALONE_REF = /(?:\(\?\?\))|(?:(?<=^|[\s ([])\?\?(?=[.,;:)\]]|\s*$))/gm;
-var UNRESOLVED_CITE = /\[\?(?:\s*[,;]\s*\?)*\]/g;
-function snippet(text2, index, length) {
-  const start = Math.max(0, index - 30);
-  const end = Math.min(text2.length, index + length + 30);
-  return text2.slice(start, end).replace(/\s+/g, " ").trim();
-}
-function findAll(text2, re) {
-  const hits = [];
-  re.lastIndex = 0;
-  for (let m = re.exec(text2); m; m = re.exec(text2)) {
-    hits.push({ index: m.index, length: m[0].length });
-    if (m[0].length === 0) re.lastIndex++;
-  }
-  return hits;
-}
-function refHits(text2) {
-  const ctx = findAll(text2, CONTEXT_REF);
-  const covered = (i) => ctx.some((h) => i >= h.index && i < h.index + h.length);
-  const alone = findAll(text2, STANDALONE_REF).filter((h) => !covered(h.index + h.length - 1));
-  return [...ctx, ...alone].sort((a, b) => a.index - b.index);
-}
-function pdfOutputProblems(facts) {
-  const problems = [];
-  for (const page of facts.pages) {
-    const refs = refHits(page.text);
-    if (refs.length > 0) {
-      const first2 = refs[0];
-      problems.push({
-        rule: "pdf-unresolved-reference",
-        check: "output",
-        severity: "error",
-        message: refs.length === 1 ? `"??" printed instead of a reference number` : `"??" printed instead of a reference number (${refs.length} times)`,
-        location: { page: page.number },
-        fix: "Check the label exists and is spelled the same in `\\label` and `\\ref`, then rebuild (latexmk runs LaTeX until references settle)",
-        evidence: snippet(page.text, first2.index, first2.length),
-        data: { count: refs.length }
-      });
-    }
-    const cites = findAll(page.text, UNRESOLVED_CITE);
-    if (cites.length > 0) {
-      const first2 = cites[0];
-      problems.push({
-        rule: "pdf-unresolved-citation",
-        check: "output",
-        severity: "error",
-        message: cites.length === 1 ? `"[?]" printed instead of a citation` : `"[?]" printed instead of a citation (${cites.length} times)`,
-        location: { page: page.number },
-        fix: "Add the missing key to the .bib file (or fix its spelling) and rerun biber/bibtex via latexmk",
-        evidence: snippet(page.text, first2.index, first2.length),
-        data: { count: cites.length }
-      });
-    }
-  }
-  return problems;
-}
-
-// ../packages/core/src/pdf/verapdf.ts
-var MAX_CONTEXTS = 3;
-function isObj(v) {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-function num(v) {
-  const n = typeof v === "number" ? v : Number.parseInt(String(v ?? ""), 10);
-  return Number.isFinite(n) ? n : void 0;
-}
-function text(v) {
-  return typeof v === "string" ? v.trim() : "";
-}
-function asArray(v) {
-  if (Array.isArray(v)) return v;
-  return v === void 0 || v === null ? [] : [v];
-}
-function decodeXml(s) {
-  return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d))).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(Number.parseInt(h, 16))).replace(/&amp;/g, "&").trim();
-}
-function attrs(tag2) {
-  const out = {};
-  const re = /([\w:-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
-  for (let m = re.exec(tag2); m; m = re.exec(tag2)) {
-    out[m[1]] = decodeXml(m[3] ?? m[4] ?? "");
-  }
-  return out;
-}
-function childText(xml, name) {
-  const m = new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`).exec(xml);
-  return m ? decodeXml(m[1] ?? "") : "";
-}
-function mergeByClause(failures) {
-  const byKey = /* @__PURE__ */ new Map();
-  for (const f of failures) {
-    const key = `${f.specification}|${f.clause}|${f.testNumber ?? ""}`;
-    const prev = byKey.get(key);
-    if (prev) {
-      prev.failedChecks += f.failedChecks;
-      prev.contexts = [...prev.contexts, ...f.contexts].slice(0, MAX_CONTEXTS);
-    } else byKey.set(key, { ...f });
-  }
-  return [...byKey.values()];
-}
-function parseXml(xml) {
-  const vr = /<validationReport\b([^>]*)>([\s\S]*?)<\/validationReport>/.exec(xml);
-  if (!vr) {
-    const exception = childText(xml, "exceptionMessage") || childText(xml, "message");
-    return {
-      compliant: false,
-      failures: [],
-      error: exception || "No <validationReport> element found in veraPDF output"
-    };
-  }
-  const head = attrs(vr[1] ?? "");
-  const body = vr[2] ?? "";
-  const details = /<details\b([^>]*)>/.exec(body);
-  const d = attrs(details?.[1] ?? "");
-  const failures = [];
-  const ruleRe = /<rule\b([^>]*?)(?:\/>|>([\s\S]*?)<\/rule>)/g;
-  for (let m = ruleRe.exec(body); m; m = ruleRe.exec(body)) {
-    const a = attrs(m[1] ?? "");
-    if (a.status && a.status !== "failed") continue;
-    const inner = m[2] ?? "";
-    const contexts = [];
-    const checkRe = /<check\b[^>]*status="failed"[^>]*>([\s\S]*?)<\/check>/g;
-    for (let c = checkRe.exec(inner); c && contexts.length < MAX_CONTEXTS; c = checkRe.exec(inner)) {
-      const ctx = childText(c[1] ?? "", "context");
-      if (ctx) contexts.push(ctx);
-    }
-    const failure = {
-      specification: a.specification ?? "",
-      clause: a.clause ?? "",
-      description: childText(inner, "description"),
-      failedChecks: num(a.failedChecks) ?? Math.max(1, contexts.length),
-      contexts
-    };
-    const tn = num(a.testNumber);
-    if (tn !== void 0) failure.testNumber = tn;
-    failures.push(failure);
-  }
-  const compliantAttr = head.isCompliant ?? head.compliant;
-  const result = {
-    compliant: compliantAttr === "true" || compliantAttr === void 0 && failures.length === 0,
-    failures: mergeByClause(failures)
+// ../packages/core/src/report/human.ts
+function palette(color) {
+  const wrap = (open, close) => (s) => color ? `\x1B[${open}m${s}\x1B[${close}m` : s;
+  return {
+    red: wrap(31, 39),
+    yellow: wrap(33, 39),
+    green: wrap(32, 39),
+    cyan: wrap(36, 39),
+    dim: wrap(2, 22),
+    bold: wrap(1, 22)
   };
-  if (head.profileName) result.profile = head.profileName;
-  if (head.statement) result.statement = head.statement;
-  const pr = num(d.passedRules);
-  const fr = num(d.failedRules);
-  const fc = num(d.failedChecks);
-  if (pr !== void 0) result.passedRules = pr;
-  if (fr !== void 0) result.failedRules = fr;
-  if (fc !== void 0) result.failedChecks = fc;
-  return result;
 }
-function findValidation(root) {
-  if (!isObj(root)) return void 0;
-  const report = isObj(root.report) ? root.report : root;
-  for (const job of asArray(report.jobs)) {
-    if (!isObj(job)) continue;
-    const vr = asArray(job.validationResult ?? job.validationReport)[0];
-    if (isObj(vr)) return vr;
-    if (isObj(job.taskException) || job.taskException) return { taskException: job.taskException };
-  }
-  if (isObj(report.validationResult)) return report.validationResult;
-  if (isObj(report.details)) return report;
-  return void 0;
+var STATUS_GLYPH = { pass: "\u2713", warn: "!", fail: "\u2715", skipped: "\u2013" };
+var SEVERITY_GLYPH = { error: "\u2715", warning: "!", info: "i" };
+function pad(s, width) {
+  return s.length >= width ? s : s + " ".repeat(width - s.length);
 }
-function parseJson(data) {
-  const vr = findValidation(data);
-  if (!vr) return { compliant: false, failures: [], error: "No validation result in veraPDF JSON" };
-  if (vr.taskException) {
-    const ex = vr.taskException;
-    const msg = isObj(ex) ? text(ex.exceptionMessage) || text(ex.message) : String(ex);
-    return { compliant: false, failures: [], error: msg || "veraPDF could not validate the file" };
+function formatHuman(report, opts = {}) {
+  const c = palette(opts.color ?? false);
+  const statusPaint = {
+    pass: c.green,
+    warn: c.yellow,
+    fail: c.red,
+    skipped: c.dim
+  };
+  const sevPaint = { error: c.red, warning: c.yellow, info: c.cyan };
+  const lines = [];
+  const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL" }[report.status];
+  const target = report.target ? ` ${report.target}` : "";
+  lines.push(`${c.bold(`overfull${target}`)}  ${statusPaint[report.status](c.bold(statusWord))}`);
+  const nameWidth = Math.max(...report.checks.map((ch2) => ch2.check.length), 5) + 2;
+  for (const ch2 of report.checks) {
+    const glyph = statusPaint[ch2.status](STATUS_GLYPH[ch2.status]);
+    const text2 = checkLine(ch2);
+    lines.push(
+      `  ${glyph} ${pad(ch2.check, nameWidth)}${ch2.status === "skipped" ? c.dim(text2) : text2}`
+    );
   }
-  const details = isObj(vr.details) ? vr.details : {};
-  const failures = [];
-  for (const r of asArray(details.ruleSummaries ?? details.rules)) {
-    if (!isObj(r)) continue;
-    const status = text(r.ruleStatus || r.status).toLowerCase();
-    if (status && status !== "failed") continue;
-    const contexts = asArray(r.checks).filter(isObj).filter((c) => text(c.status).toLowerCase() !== "passed").map((c) => text(c.context)).filter(Boolean).slice(0, MAX_CONTEXTS);
-    const failure = {
-      specification: text(r.specification),
-      clause: text(r.clause),
-      description: text(r.description),
-      failedChecks: num(r.failedChecks) ?? Math.max(1, contexts.length),
-      contexts
-    };
-    const tn = num(r.testNumber);
-    if (tn !== void 0) failure.testNumber = tn;
-    failures.push(failure);
+  const problems = sortedProblems(report);
+  if (problems.length > 0) {
+    lines.push("");
+    const locWidth = Math.min(
+      28,
+      Math.max(...problems.map((p) => formatLocation(p.location).length))
+    );
+    for (const p of problems)
+      lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
   }
-  const compliant = typeof vr.compliant === "boolean" ? vr.compliant : typeof vr.isCompliant === "boolean" ? vr.isCompliant : failures.length === 0;
-  const result = { compliant, failures: mergeByClause(failures) };
-  const profile = text(vr.profileName);
-  const statement = text(vr.statement);
-  if (profile) result.profile = profile;
-  if (statement) result.statement = statement;
-  const pr = num(details.passedRules);
-  const fr = num(details.failedRules);
-  const fc = num(details.failedChecks);
-  if (pr !== void 0) result.passedRules = pr;
-  if (fr !== void 0) result.failedRules = fr;
-  if (fc !== void 0) result.failedChecks = fc;
-  return result;
+  lines.push("");
+  lines.push(tallyLine(tally(report)));
+  if (!opts.verbose && problems.some((p) => p.fix || p.detail)) {
+    lines.push(c.dim("Run with --verbose for fixes, or `overfull explain <rule>`."));
+  }
+  return `${lines.join("\n")}
+`;
 }
-function parseVeraPdfReport(xmlOrJson) {
-  const trimmed = xmlOrJson.replace(/^﻿/, "").trim();
-  if (!trimmed) return { compliant: false, failures: [], error: "veraPDF produced no output" };
-  const jsonStart = trimmed.search(/^[{[]/m);
-  if (!trimmed.startsWith("<") && jsonStart >= 0) {
-    try {
-      return parseJson(JSON.parse(trimmed.slice(jsonStart)));
-    } catch {
-      return { compliant: false, failures: [], error: "veraPDF output is not valid JSON" };
+function problemLines(p, locWidth, verbose, c, sevPaint) {
+  const loc = formatLocation(p.location);
+  const locCol = locWidth > 0 ? `${pad(loc, locWidth)}  ` : "";
+  const related = p.related ? c.dim(` (+${p.related} follow-on)`) : "";
+  const out = [
+    `  ${sevPaint[p.severity](SEVERITY_GLYPH[p.severity])} ${locCol}${p.message}${related}  ${c.dim(p.rule)}`
+  ];
+  if (verbose) {
+    const indent = " ".repeat(4 + (locWidth > 0 ? locWidth + 2 : 0));
+    if (p.detail) out.push(`${indent}${c.dim("why:")} ${p.detail}`);
+    if (p.fix) out.push(`${indent}${c.dim("fix:")} ${p.fix}`);
+    if (p.evidence) {
+      for (const e of p.evidence.split("\n").slice(0, 4)) out.push(`${indent}${c.dim(`| ${e}`)}`);
     }
   }
-  const xmlStart = trimmed.indexOf("<");
-  if (xmlStart >= 0) return parseXml(trimmed.slice(xmlStart));
-  return { compliant: false, failures: [], error: trimmed.split("\n")[0] ?? "Unreadable output" };
+  return out;
+}
+
+// ../packages/core/src/report/json.ts
+function sortKeys(v) {
+  if (Array.isArray(v)) return v.map(sortKeys);
+  if (v && typeof v === "object") {
+    const out = {};
+    for (const k of Object.keys(v).sort()) out[k] = sortKeys(v[k]);
+    return out;
+  }
+  return v;
+}
+function ordered(obj, keys) {
+  const out = {};
+  for (const k of keys) if (obj[k] !== void 0) out[k] = obj[k];
+  return out;
+}
+function problem(p) {
+  const o = ordered(p, [
+    "rule",
+    "check",
+    "severity",
+    "message",
+    "location",
+    "detail",
+    "fix",
+    "related",
+    "evidence",
+    "data"
+  ]);
+  if (p.location) o.location = ordered(p.location, ["file", "line", "page"]);
+  if (p.data) o.data = sortKeys(p.data);
+  return o;
+}
+function check(c) {
+  const o = ordered(c, ["check", "status", "summary", "skippedReason", "stats", "problems"]);
+  if (c.stats) o.stats = sortKeys(c.stats);
+  o.problems = c.problems.map((p) => problem(p));
+  return o;
+}
+function formatJson(report) {
+  const o = ordered(report, ["tool", "version", "target", "status", "checks"]);
+  o.checks = report.checks.map((c) => check(c));
+  return `${JSON.stringify(o, null, 2)}
+`;
+}
+
+// ../packages/core/src/report/markdown.ts
+var STATUS_TEXT = { pass: "pass", warn: "warn", fail: "fail", skipped: "skipped" };
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function escapeMarkdown(s) {
+  return escapeHtml(s.replace(/\r?\n/g, " ")).replace(/([\\`*_{}[\]|~#])/g, "\\$1");
+}
+function inline(s) {
+  return s.replace(/\r?\n/g, " ").split("`").map(
+    (part, i) => i % 2 === 1 ? `<code>${escapeHtml(part).replace(/\|/g, "&#124;")}</code>` : escapeMarkdown(part)
+  ).join("");
+}
+function problemItem(p) {
+  const loc = formatLocation(p.location);
+  const head = `- **${p.severity}**${loc ? ` <code>${escapeHtml(loc)}</code>` : ""} ${escapeMarkdown(p.message)} <sub>${escapeHtml(p.rule)}</sub>`;
+  const sub = [];
+  if (p.detail) sub.push(`  - Why: ${inline(p.detail)}`);
+  if (p.fix) sub.push(`  - Fix: ${inline(p.fix)}`);
+  return [head, ...sub].join("\n");
+}
+function formatMarkdown(report) {
+  const out = [];
+  const target = report.target ? ` \u2014 ${escapeMarkdown(report.target)}` : "";
+  out.push(`## Overfull preflight: ${report.status.toUpperCase()}${target}`, "");
+  out.push("| Check | Status | Summary |", "| --- | --- | --- |");
+  for (const c of report.checks) {
+    out.push(`| ${c.check} | ${STATUS_TEXT[c.status]} | ${inline(checkLine(c))} |`);
+  }
+  out.push("", tallyLine(tally(report)), "");
+  const problems = sortedProblems(report);
+  for (const c of report.checks) {
+    const mine = problems.filter((p) => p.check === c.check);
+    if (mine.length === 0) continue;
+    const open = mine.some((p) => p.severity === "error") ? " open" : "";
+    out.push(
+      `<details${open}><summary><b>${c.check}</b>: ${mine.length} item${mine.length === 1 ? "" : "s"}</summary>`,
+      ""
+    );
+    for (const p of mine) out.push(problemItem(p));
+    out.push("", "</details>", "");
+  }
+  return `${out.join("\n").trimEnd()}
+`;
 }
 
 // ../packages/core/src/venue/tex.ts
@@ -113197,239 +113430,6 @@ function resolveProfile(nameOrInline) {
   if (inline2.pageLimit) merged.pageLimit = { ...parent.pageLimit, ...inline2.pageLimit };
   if (!inline2.id) merged.id = parent.id;
   return merged;
-}
-
-// ../packages/core/src/report/shared.ts
-var SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
-function formatLocation(loc) {
-  if (!loc) return "";
-  if (loc.file) return loc.line ? `${loc.file}:${loc.line}` : loc.file;
-  if (loc.page) return `p.${loc.page}`;
-  return "";
-}
-function sortedProblems(report) {
-  const checkIndex = (c) => CHECK_IDS.indexOf(c);
-  return report.checks.flatMap((c) => c.problems).map((p, i) => ({ p, i })).sort(
-    (a, b) => SEVERITY_ORDER[a.p.severity] - SEVERITY_ORDER[b.p.severity] || checkIndex(a.p.check) - checkIndex(b.p.check) || (a.p.location?.file ?? "").localeCompare(b.p.location?.file ?? "") || (a.p.location?.line ?? 0) - (b.p.location?.line ?? 0) || (a.p.location?.page ?? 0) - (b.p.location?.page ?? 0) || a.i - b.i
-  ).map(({ p }) => p);
-}
-function tally(report) {
-  const all = report.checks.flatMap((c) => c.problems);
-  return {
-    errors: all.filter((p) => p.severity === "error").length,
-    warnings: all.filter((p) => p.severity === "warning").length,
-    infos: all.filter((p) => p.severity === "info").length,
-    passed: report.checks.filter((c) => c.status === "pass").length,
-    skipped: report.checks.filter((c) => c.status === "skipped").length
-  };
-}
-function checkLine(c) {
-  if (c.status === "skipped") return `skipped: ${c.skippedReason ?? "not run"}`;
-  if (c.summary) return c.summary;
-  const n = c.problems.filter((p) => p.severity !== "info").length;
-  if (n === 0) return "no problems";
-  return `${n} problem${n === 1 ? "" : "s"}`;
-}
-function tallyLine(t) {
-  const parts = [`${t.errors} to fix`, `${t.warnings} to review`];
-  if (t.infos) parts.push(`${t.infos} note${t.infos === 1 ? "" : "s"}`);
-  parts.push(`${t.passed} passed`);
-  if (t.skipped) parts.push(`${t.skipped} skipped`);
-  return parts.join(" \xB7 ");
-}
-
-// ../packages/core/src/report/annotations.ts
-function escapeData(s) {
-  return s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-function escapeProperty(s) {
-  return escapeData(s).replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
-function joinPath(root, file) {
-  if (!root || root === "." || root === "./") return file;
-  return `${root.replace(/\/+$/, "")}/${file}`;
-}
-function annotation(p, opts) {
-  const cmd = p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : "notice";
-  const props = [];
-  if (p.location?.file) {
-    props.push(`file=${escapeProperty(joinPath(opts.root, p.location.file))}`);
-    if (p.location.line) props.push(`line=${p.location.line}`);
-  }
-  props.push(`title=${escapeProperty(`overfull ${p.rule}`)}`);
-  const page = p.location?.page && !p.location.file ? `Page ${p.location.page}: ` : "";
-  const msg = p.fix ? `${page}${p.message}
-Fix: ${p.fix}` : `${page}${p.message}`;
-  return `::${cmd} ${props.join(",")}::${escapeData(msg)}`;
-}
-function githubAnnotations(report, opts = {}) {
-  const list3 = sortedProblems(report).map((p) => annotation(p, opts));
-  return opts.limit ? list3.slice(0, opts.limit) : list3;
-}
-
-// ../packages/core/src/report/human.ts
-function palette(color) {
-  const wrap = (open, close) => (s) => color ? `\x1B[${open}m${s}\x1B[${close}m` : s;
-  return {
-    red: wrap(31, 39),
-    yellow: wrap(33, 39),
-    green: wrap(32, 39),
-    cyan: wrap(36, 39),
-    dim: wrap(2, 22),
-    bold: wrap(1, 22)
-  };
-}
-var STATUS_GLYPH = { pass: "\u2713", warn: "!", fail: "\u2715", skipped: "\u2013" };
-var SEVERITY_GLYPH = { error: "\u2715", warning: "!", info: "i" };
-function pad(s, width) {
-  return s.length >= width ? s : s + " ".repeat(width - s.length);
-}
-function formatHuman(report, opts = {}) {
-  const c = palette(opts.color ?? false);
-  const statusPaint = {
-    pass: c.green,
-    warn: c.yellow,
-    fail: c.red,
-    skipped: c.dim
-  };
-  const sevPaint = { error: c.red, warning: c.yellow, info: c.cyan };
-  const lines = [];
-  const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL" }[report.status];
-  const target = report.target ? ` ${report.target}` : "";
-  lines.push(`${c.bold(`overfull${target}`)}  ${statusPaint[report.status](c.bold(statusWord))}`);
-  const nameWidth = Math.max(...report.checks.map((ch2) => ch2.check.length), 5) + 2;
-  for (const ch2 of report.checks) {
-    const glyph = statusPaint[ch2.status](STATUS_GLYPH[ch2.status]);
-    const text2 = checkLine(ch2);
-    lines.push(
-      `  ${glyph} ${pad(ch2.check, nameWidth)}${ch2.status === "skipped" ? c.dim(text2) : text2}`
-    );
-  }
-  const problems = sortedProblems(report);
-  if (problems.length > 0) {
-    lines.push("");
-    const locWidth = Math.min(
-      28,
-      Math.max(...problems.map((p) => formatLocation(p.location).length))
-    );
-    for (const p of problems)
-      lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
-  }
-  lines.push("");
-  lines.push(tallyLine(tally(report)));
-  if (!opts.verbose && problems.some((p) => p.fix || p.detail)) {
-    lines.push(c.dim("Run with --verbose for fixes, or `overfull explain <rule>`."));
-  }
-  return `${lines.join("\n")}
-`;
-}
-function problemLines(p, locWidth, verbose, c, sevPaint) {
-  const loc = formatLocation(p.location);
-  const locCol = locWidth > 0 ? `${pad(loc, locWidth)}  ` : "";
-  const related = p.related ? c.dim(` (+${p.related} follow-on)`) : "";
-  const out = [
-    `  ${sevPaint[p.severity](SEVERITY_GLYPH[p.severity])} ${locCol}${p.message}${related}  ${c.dim(p.rule)}`
-  ];
-  if (verbose) {
-    const indent = " ".repeat(4 + (locWidth > 0 ? locWidth + 2 : 0));
-    if (p.detail) out.push(`${indent}${c.dim("why:")} ${p.detail}`);
-    if (p.fix) out.push(`${indent}${c.dim("fix:")} ${p.fix}`);
-    if (p.evidence) {
-      for (const e of p.evidence.split("\n").slice(0, 4)) out.push(`${indent}${c.dim(`| ${e}`)}`);
-    }
-  }
-  return out;
-}
-
-// ../packages/core/src/report/json.ts
-function sortKeys(v) {
-  if (Array.isArray(v)) return v.map(sortKeys);
-  if (v && typeof v === "object") {
-    const out = {};
-    for (const k of Object.keys(v).sort()) out[k] = sortKeys(v[k]);
-    return out;
-  }
-  return v;
-}
-function ordered(obj, keys) {
-  const out = {};
-  for (const k of keys) if (obj[k] !== void 0) out[k] = obj[k];
-  return out;
-}
-function problem(p) {
-  const o = ordered(p, [
-    "rule",
-    "check",
-    "severity",
-    "message",
-    "location",
-    "detail",
-    "fix",
-    "related",
-    "evidence",
-    "data"
-  ]);
-  if (p.location) o.location = ordered(p.location, ["file", "line", "page"]);
-  if (p.data) o.data = sortKeys(p.data);
-  return o;
-}
-function check(c) {
-  const o = ordered(c, ["check", "status", "summary", "skippedReason", "stats", "problems"]);
-  if (c.stats) o.stats = sortKeys(c.stats);
-  o.problems = c.problems.map((p) => problem(p));
-  return o;
-}
-function formatJson(report) {
-  const o = ordered(report, ["tool", "version", "target", "status", "checks"]);
-  o.checks = report.checks.map((c) => check(c));
-  return `${JSON.stringify(o, null, 2)}
-`;
-}
-
-// ../packages/core/src/report/markdown.ts
-var STATUS_TEXT = { pass: "pass", warn: "warn", fail: "fail", skipped: "skipped" };
-function escapeHtml(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-function escapeMarkdown(s) {
-  return escapeHtml(s.replace(/\r?\n/g, " ")).replace(/([\\`*_{}[\]|~#])/g, "\\$1");
-}
-function inline(s) {
-  return s.replace(/\r?\n/g, " ").split("`").map(
-    (part, i) => i % 2 === 1 ? `<code>${escapeHtml(part).replace(/\|/g, "&#124;")}</code>` : escapeMarkdown(part)
-  ).join("");
-}
-function problemItem(p) {
-  const loc = formatLocation(p.location);
-  const head = `- **${p.severity}**${loc ? ` <code>${escapeHtml(loc)}</code>` : ""} ${escapeMarkdown(p.message)} <sub>${escapeHtml(p.rule)}</sub>`;
-  const sub = [];
-  if (p.detail) sub.push(`  - Why: ${inline(p.detail)}`);
-  if (p.fix) sub.push(`  - Fix: ${inline(p.fix)}`);
-  return [head, ...sub].join("\n");
-}
-function formatMarkdown(report) {
-  const out = [];
-  const target = report.target ? ` \u2014 ${escapeMarkdown(report.target)}` : "";
-  out.push(`## Overfull preflight: ${report.status.toUpperCase()}${target}`, "");
-  out.push("| Check | Status | Summary |", "| --- | --- | --- |");
-  for (const c of report.checks) {
-    out.push(`| ${c.check} | ${STATUS_TEXT[c.status]} | ${inline(checkLine(c))} |`);
-  }
-  out.push("", tallyLine(tally(report)), "");
-  const problems = sortedProblems(report);
-  for (const c of report.checks) {
-    const mine = problems.filter((p) => p.check === c.check);
-    if (mine.length === 0) continue;
-    const open = mine.some((p) => p.severity === "error") ? " open" : "";
-    out.push(
-      `<details${open}><summary><b>${c.check}</b>: ${mine.length} item${mine.length === 1 ? "" : "s"}</summary>`,
-      ""
-    );
-    for (const p of mine) out.push(problemItem(p));
-    out.push("", "</details>", "");
-  }
-  return `${out.join("\n").trimEnd()}
-`;
 }
 
 // ../packages/cli/src/check.ts
