@@ -429,6 +429,21 @@ hr {
   font-weight: 600;
 }
 
+/* Narrow screens: margin notes follow the text they annotate */
+@media (max-width: 1099.98px) {
+  div.galley {
+    display: flex;
+    flex-direction: column;
+  }
+  div.galley > * {
+    min-width: 0;
+  }
+  div.galley > .marginal {
+    order: 99;
+    margin-top: 0.5rem;
+  }
+}
+
 @media (min-width: 1100px) {
   .galley {
     margin-right: calc(var(--margin-w) + var(--gap));

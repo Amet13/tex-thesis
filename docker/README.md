@@ -6,7 +6,7 @@ needed to build and check an Overfull project without installing TeX.
 ## What is inside
 
 | Component | Version / source |
-|-----------|------------------|
+| ----------- | ------------------ |
 | TeX Live 2026 | `texlive/texlive:latest` pinned by digest (LuaHBTeX 1.24, biber, latexmk, latexdiff, chktex) |
 | Fonts | Microsoft core fonts (Times New Roman, ...), GNU FreeFont, TeX Gyre |
 | PDF tools | poppler-utils (`pdfinfo`, `pdffonts`, `pdftoppm`), qpdf, Ghostscript |
