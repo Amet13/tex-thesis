@@ -1,0 +1,63 @@
+{"report":{"buildInformation":{"releaseDetails":[{
+  "id" : "core",
+  "version" : "1.30.3",
+  "buildDate" : 1791367320000
+},{
+  "id" : "validation-model",
+  "version" : "1.30.3",
+  "buildDate" : 1791380640000
+},{
+  "id" : "apps",
+  "version" : "1.30.3",
+  "buildDate" : 1791381120000
+}]},"jobs":[{"itemDetails":{
+  "name" : "/w/tagged.pdf",
+  "size" : 51071
+},"validationResult":[ {
+  "details" : {
+    "passedRules" : 1728,
+    "failedRules" : 0,
+    "passedChecks" : 1350,
+    "failedChecks" : 0,
+    "ruleSummaries" : [ ]
+  },
+  "jobEndStatus" : "normal",
+  "profileName" : "PDF/UA-2 + Tagged PDF validation profile",
+  "statement" : "PDF file is compliant with Validation Profile requirements.",
+  "compliant" : true
+} ],"processingTime":{
+  "start" : 1794156870126,
+  "finish" : 1794156870951,
+  "duration" : "00:00:00.825",
+  "difference" : 825
+}}],"batchSummary":{
+  "duration" : {
+    "start" : 1794156870033,
+    "finish" : 1794156870982,
+    "duration" : "00:00:00.949",
+    "difference" : 949
+  },
+  "totalJobs" : 1,
+  "outOfMemory" : 0,
+  "veraExceptions" : 0,
+  "failedEncryptedJobs" : 0,
+  "failedParsingJobs" : 0,
+  "validationSummary" : {
+    "nonCompliantPdfaCount" : 0,
+    "compliantPdfaCount" : 1,
+    "failedJobCount" : 0,
+    "totalJobCount" : 1,
+    "successfulJobCount" : 1
+  },
+  "multiJob" : false,
+  "featuresSummary" : {
+    "failedJobCount" : 0,
+    "totalJobCount" : 0,
+    "successfulJobCount" : 0
+  },
+  "repairSummary" : {
+    "failedJobCount" : 0,
+    "totalJobCount" : 0,
+    "successfulJobCount" : 0
+  }
+}}}

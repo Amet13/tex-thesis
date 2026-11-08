@@ -1,37 +1,30 @@
-# Git
+# Build context for docker/Dockerfile is the repository root.
+# Keep it small: only sources needed to build the overfull CLI.
 .git/
-.github/
-.gitignore
+**/node_modules/
+**/dist/
+!action/dist/
+**/.astro/
+coverage/
+**/.overfull/
+*.tsbuildinfo
 
-# Output PDFs (will be generated)
-*.pdf
+# LaTeX outputs anywhere in the tree (templates, corpus)
+**/*.pdf
+**/*.aux
+**/*.log
+**/*.fls
+**/*.fdb_latexmk
+**/*.synctex.gz
+**/*.bbl
+**/*.bcf
+**/*.blg
+**/*.run.xml
+**/*.toc
+**/*.out
 
-# Documentation
-README.md
-LICENSE
-LICENSE-GPL
-LICENSE-CC-BY-SA
-SECURITY.md
-CITATION.cff
-CONTRIBUTING.md
-CODE_OF_CONDUCT.md
-CHANGELOG.md
-docs/
-scripts/
-
-# Editor files
-.editorconfig
+# Editor / OS
 .vscode/
+.DS_Store
 *.swp
 *~
-
-# LaTeX auxiliary files (should not exist in repo, but just in case)
-*.aux
-*.log
-*.out
-*.toc
-*.lof
-*.lot
-*.synctex.gz
-*.fls
-*.fdb_latexmk

@@ -1,0 +1,1 @@
+{"title":"\\mathbb without amssymb","engine":"pdflatex","check":"build","expect":["undefined-control-sequence"]}

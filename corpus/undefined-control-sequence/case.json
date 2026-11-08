@@ -1,0 +1,1 @@
+{"title":"Typo in a command name","engine":"pdflatex","check":"build","expect":["undefined-control-sequence"]}

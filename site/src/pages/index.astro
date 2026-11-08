@@ -1,0 +1,650 @@
+---
+import Base from '../layouts/Base.astro';
+import { CHECK_LABELS, REPO_URL, url } from '../lib/paths';
+import { rulesByCheck } from '../lib/rules';
+import { renderSheet } from '../lib/sheet';
+import { sampleReport } from '../lib/sample';
+
+const groups = rulesByCheck();
+const ruleCount = (check: string) => groups.find((g) => g.check === check)?.rules.length ?? 0;
+const sheet = renderSheet(sampleReport(), { ruleHref: (r) => url(`rules/${r}/`), headingLevel: 4 });
+const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as const;
+---
+<Base title="Preflight for LaTeX papers and theses" description="Write your paper with any AI agent, or by hand. Overfull checks the build, the PDF, the references, accessibility and venue rules before you submit." section="home">
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="runhead"><span>Preflight for LaTeX papers and theses</span></p>
+    <div class="hero-grid">
+      <div class="hero-measure">
+        <h1 id="hero-title">Write your paper with any AI agent, or by hand. Ship one that checks out.</h1>
+        <span class="slug" aria-hidden="true"></span>
+        <span class="slug-note" aria-hidden="true">Overfull \hbox (14.2pt too wide)</span>
+      </div>
+      <div class="hero-text">
+        <p class="lede">Overfull is a free, open preflight kit for LaTeX. It compiles your document, reads the log and the PDF, looks up every reference, and tells you what is wrong in plain language, with the file and line to fix.</p>
+        <p class="hero-links">
+          <a class="caret-link" href={url('docs/')}>Read the guide</a>
+          <a class="caret-link" href={url('check/')}>Check a log or PDF in your browser</a>
+        </p>
+      </div>
+      <aside class="hero-aside" aria-label="At a glance">
+        <dl>
+          <dt>Licence</dt><dd>MIT; templates MIT-0</dd>
+          <dt>Runs on</dt><dd>Node 22+, or Docker alone</dd>
+          <dt>Agents</dt><dd>Claude Code, Codex, Cursor, Copilot, Gemini CLI, or none</dd>
+          <dt>TeX</dt><dd>TeX Live 2026, LuaLaTeX by default</dd>
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="gap-title">
+    <p class="runhead"><span>What goes wrong</span></p>
+    <div class="galley indent">
+      <aside class="marginal">
+        <p>Overfull never writes research content, and never calls a reference fake. It reports what the indexes say: verified, metadata differs, not found, or cannot be checked automatically.</p>
+      </aside>
+      <h2 id="gap-title">Agents write fluent LaTeX and verify none of it</h2>
+      <p>A language model cannot know from memory whether a paper it cites exists, whether the compiled PDF prints <code>??</code> where a figure number should be, or whether the workshop allows nine pages or ten. People miss the same things the night before a deadline. These are facts about files and public indexes, so a program can check them.</p>
+    </div>
+
+    <figure class="specimen" aria-labelledby="specimen-cap">
+      <div class="specimen-page">
+        <div class="sp-row">
+          <p class="sp-text">Retrieval improves proof search when the index is built from verified lemmas, as shown in Figure <span class="sp-circle">??</span> and in recent work on scaling <span class="sp-cite">[<span class="sp-circle">?</span>]</span>.</p>
+          <p class="sp-note"><span class="sr-only">Proof mark: </span>ref?</p>
+        </div>
+        <div class="sp-row">
+          <div class="sp-figure" role="img" aria-label="An empty figure frame standing in for a plot"><span>Fig. 3</span></div>
+          <p class="sp-note"><span class="sr-only">Proof mark: </span>no alt text</p>
+        </div>
+        <div class="sp-row sp-refs">
+          <ol class="sp-bib" start="17">
+            <li>A. Vaswani et al. Attention is all you need. <i>NeurIPS</i>, <span class="sp-ins">2017</span><span class="sp-strike">2018</span>.</li>
+            <li class="sp-deleted"><span class="sp-strike">L. Chen and R. Okafor. Scaling laws for retrieval-augmented proof search. <i>ICLR</i>, 2024.</span>
+              <svg class="sp-loop" viewBox="0 0 40 24" aria-hidden="true"><path d="M2 14 C 12 2, 26 2, 30 10 C 33 17, 24 21, 21 15 C 19 10, 28 5, 38 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+            </li>
+          </ol>
+          <p class="sp-note"><span class="sr-only">Proof marks: </span>year: 2017 (arXiv)<br />not in CrossRef, DBLP, arXiv</p>
+        </div>
+        <div class="sp-row sp-folio-row">
+          <p class="sp-folio">10</p>
+          <p class="sp-note"><span class="sr-only">Proof mark: </span>limit 9 pp.</p>
+        </div>
+      </div>
+      <figcaption id="specimen-cap">A draft page as an editor would mark it. Each red note is a problem <code>overfull check</code> reports with a rule id, a location and a fix.</figcaption>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="ways-title">
+    <p class="runhead"><span>Two ways in, one engine</span></p>
+    <h2 id="ways-title" class="sr-only">Two ways to work</h2>
+    <div class="ways">
+      <div class="way">
+        <h3>With an agent</h3>
+        <p>Start from a template. It ships <code>AGENTS.md</code> and skills that any coding agent reads. The agent adds references only through <code>overfull cite</code>, which writes the entry from CrossRef, arXiv or DBLP. After each change it runs <code>overfull check --json</code>, reads stable rule ids, fixes what is reported, and opens a pull request you review with the changes highlighted in the PDF.</p>
+        <p><a href={url('docs/')} class="caret-link">Working with an agent</a></p>
+      </div>
+      <div class="way">
+        <h3>By hand</h3>
+        <p>Write LaTeX the way you always have. <code>make build</code> compiles in Docker, so TeX Live is optional. <code>make check</code> prints the same report in plain language. The GitHub Action annotates pull requests with the file and line of each problem.</p>
+        <p><a href={url('docs/')} class="caret-link">Writing by hand</a></p>
+      </div>
+    </div>
+    <p class="ways-joint galley">Both paths call <code>@overfull/core</code>. A report means the same thing in a terminal, in CI and to an agent, and the browser check on this site runs the same code.</p>
+  </section>
+
+  <section class="block" aria-labelledby="checks-title">
+    <p class="runhead"><span>Five checks</span></p>
+    <div class="galley indent">
+      <aside class="marginal"><p>Reports list the checks in this order. A check is <em>skipped</em>, with a reason, when its inputs are missing: no PDF yet, or offline.</p></aside>
+      <h2 id="checks-title">What a preflight covers</h2>
+    </div>
+    <ol class="checks">
+      {checks.map((c) => (
+        <li>
+          <h3><a href={url(`rules/#${c}`)}>{CHECK_LABELS[c]!.name}</a></h3>
+          <p>{CHECK_LABELS[c]!.blurb}</p>
+          <p class="checks-count">{ruleCount(c)} rules</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="block" aria-labelledby="session-title">
+    <p class="runhead"><span>An agent session</span></p>
+    <div class="galley indent">
+      <aside class="marginal">
+        <p>The agent never types a BibTeX entry. <code>overfull cite</code> fetches the record, and <code>check</code> catches anything that slipped in another way.</p>
+        <p>JSON output is the <code>Report</code> type: stable rule ids, locations and fixes.</p>
+      </aside>
+      <h2 id="session-title">Cite, check, fix, repeat</h2>
+      <p>A workshop paper, a nine-page limit, one request. This is the loop the template’s instructions put an agent in.</p>
+    </div>
+    <figure class="transcript" aria-label="Example agent session">
+      <p class="t-you"><span class="t-who">you</span>Add the Vaswani et al. transformer paper to related work. We need to stay under the 9-page limit.</p>
+      <p class="t-agent"><span class="t-who">agent</span>I’ll look the paper up instead of writing the entry from memory.</p>
+      <pre class="t-cmd"><span class="t-ps">$</span> overfull cite arXiv:1706.03762
+<span class="t-out">found  arXiv 1706.03762  Attention Is All You Need
+       Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin (2017)
+added  vaswani2017attention → references.bib</span></pre>
+      <p class="t-agent"><span class="t-who">agent</span>Cited it in <code>sections/related.tex</code> as <code>\citet&#123;vaswani2017attention&#125;</code>. Building and checking.</p>
+      <pre class="t-cmd"><span class="t-ps">$</span> overfull build && overfull check --json
+<span class="t-out">&#123; "status": "fail", "checks": [ …
+  &#123; "check": "venue", "status": "fail", "problems": [
+    &#123; "rule": "page-limit-exceeded", "severity": "error",
+      "message": "Main text runs to page 10; the limit is 9",
+      "location": &#123; "page": 10 &#125; &#125; ] &#125; ] &#125;</span></pre>
+      <p class="t-agent"><span class="t-who">agent</span>Over by about half a page. Table 3 floats onto page 10. I’ll move the per-dataset rows to the appendix and keep the summary row in the main text.</p>
+      <pre class="t-cmd"><span class="t-ps">$</span> overfull build && overfull check
+<span class="t-out">build          pass
+output         pass
+references     pass   32 of 32 verified
+accessibility  pass   tagged, PDF/UA-2
+venue          pass   main text ends on page 9 of 9</span></pre>
+      <p class="t-agent"><span class="t-who">agent</span>All five checks pass. Opened pull request #42, “Cite Vaswani et al.; move Table 3 detail to appendix”, with the preflight report and a PDF showing the changes.</p>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="report-title">
+    <p class="runhead"><span>The preflight report</span></p>
+    <div class="report-grid">
+      <div>
+        <h2 id="report-title">One sheet per build</h2>
+        <p>Every problem carries a rule id, a location and a fix. Log cascades fold under their root cause, so one missing brace is one problem, not forty.</p>
+        <p>The same report comes out as terminal text, JSON for agents, Markdown for pull request comments, and GitHub annotations.</p>
+        <p><a class="caret-link" href={url('check/')}>Make one from your own files</a></p>
+      </div>
+      <div class="report-sheet" set:html={sheet} />
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="templates-title">
+    <p class="runhead"><span>Templates</span></p>
+    <div class="galley indent">
+      <aside class="marginal"><p>All three use LuaLaTeX, biblatex and TeX Live 2026, and are licensed MIT-0: copy them, owe nothing.</p></aside>
+      <h2 id="templates-title">Start from a document that already passes</h2>
+      <p>Each template is tagged for accessibility, sets its language and title, requires alt text on figures, and ships agent instructions, a Makefile and a CI workflow.</p>
+      <dl class="tpl-list">
+        <dt>Thesis</dt><dd>Bachelor’s, master’s and PhD. A4, chapters, front matter, PDF/UA-2. <code>npx overfull init thesis</code></dd>
+        <dt>Paper</dt><dd>Research papers and preprints, with a page-limit marker and arXiv packaging. <code>npx overfull init paper</code></dd>
+        <dt>Slides</dt><dd>Beamer for defences and conference talks. <code>npx overfull init slides</code></dd>
+      </dl>
+      <p><a class="caret-link" href={url('templates/')}>What is in each template</a></p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="start-title">
+    <p class="runhead"><span>Getting started</span></p>
+    <div class="galley indent">
+      <h2 id="start-title">Three commands</h2>
+      <ol class="steps">
+        <li>
+          <p>Create a project from a template.</p>
+          <div class="cmd"><span class="p">$ </span>npx overfull init paper my-paper && cd my-paper</div>
+        </li>
+        <li>
+          <p>Build it. Without a local TeX installation this runs in the Overfull Docker image.</p>
+          <div class="cmd"><span class="p">$ </span>make build</div>
+        </li>
+        <li>
+          <p>Check it. Or open the folder in your coding agent and ask for the change you want; it runs the check itself.</p>
+          <div class="cmd"><span class="p">$ </span>make check</div>
+        </li>
+      </ol>
+      <p>Already have a LaTeX project? Run <code>npx overfull check</code> in its folder, or add <code>uses: amet13/overfull@v1</code> to a workflow that builds it. Source and issues are on <a href={REPO_URL}>GitHub</a>.</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ----- Hero: the one bold overfull rule ----- */
+  .hero {
+    padding-top: 2.5rem;
+  }
+  .hero-grid {
+    display: grid;
+    gap: 2rem;
+  }
+  .hero-measure {
+    position: relative;
+    max-width: 34rem;
+    padding-block: 1.25rem;
+    margin-right: 2.2rem;
+  }
+  /* The dashed right margin, running past the text block like a guide */
+  .hero-measure::before {
+    content: '';
+    position: absolute;
+    top: -1rem;
+    bottom: -1rem;
+    right: 0;
+    border-right: 1px dashed var(--guide);
+  }
+  /* Crop marks at the top-left corner of the text block */
+  .hero-measure::after {
+    content: '';
+    position: absolute;
+    left: -0.9rem;
+    top: 0.35rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-right: 1px solid var(--hair-strong);
+    border-bottom: 1px solid var(--hair-strong);
+  }
+  .hero h1 {
+    font-size: clamp(2.05rem, 1.2rem + 3.6vw, var(--s5));
+    line-height: 1.08;
+    text-align: justify;
+    text-wrap: wrap;
+    hyphens: manual;
+    letter-spacing: -0.012em;
+  }
+  .slug {
+    position: absolute;
+    right: calc(-0.24em - 1px);
+    top: calc(1.25rem + 0.17em);
+    width: 0.24em;
+    height: 0.74em;
+    background: var(--slug);
+    font-size: clamp(2.05rem, 1.2rem + 3.6vw, var(--s5));
+    transform-origin: left center;
+    animation: overrun 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 350ms both;
+  }
+  .slug-note {
+    display: none;
+  }
+  @keyframes overrun {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @media (min-width: 900px) {
+    .slug-note {
+      display: block;
+      position: absolute;
+      left: calc(100% + 1.6rem);
+      top: 1.6rem;
+      width: 12rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      line-height: 1.4;
+      color: var(--pencil);
+      animation: note-in 400ms ease-out 1200ms both;
+    }
+  }
+  @keyframes note-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .hero-text {
+    max-width: 34rem;
+  }
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+  }
+  .hero-aside {
+    font-size: var(--s-1);
+    color: var(--ink-2);
+    border-top: 1px solid var(--hair);
+    padding-top: 0.75rem;
+  }
+  .hero-aside dl {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0;
+  }
+  .hero-aside dt {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
+  }
+  .hero-aside dd {
+    margin: 0;
+  }
+  @media (min-width: 1100px) {
+    .hero-grid {
+      grid-template-columns: minmax(0, 40rem) var(--margin-w);
+      column-gap: calc(var(--gap) + 1rem);
+      margin-left: clamp(0rem, 6vw, 6.5rem);
+    }
+    .hero-measure {
+      grid-column: 1;
+      max-width: 36rem;
+    }
+    .hero-text {
+      grid-column: 1;
+    }
+    .hero-aside {
+      grid-column: 2;
+      grid-row: 2;
+      border-top: 0;
+      padding-top: 0.3rem;
+    }
+    .hero-aside dl {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .hero-aside dd {
+      margin-bottom: 0.6rem;
+    }
+  }
+
+  /* ----- Specimen: a marked-up proof ----- */
+  .specimen {
+    margin: 2.5rem 0 0;
+    max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
+  }
+  @media (min-width: 1100px) {
+    .specimen {
+      margin-left: clamp(0rem, 6vw, 6.5rem);
+    }
+  }
+  .specimen-page {
+    background: var(--paper);
+    border: 1px solid var(--hair-strong);
+    padding: 1.5rem clamp(0.9rem, 3vw, 2rem);
+    font-size: var(--s-1);
+    position: relative;
+  }
+  .sp-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(6rem, 24%, 11rem);
+    gap: 1rem;
+    align-items: start;
+    border-right: 0;
+  }
+  .sp-text {
+    margin: 0 0 1rem;
+    text-align: justify;
+    hyphens: auto;
+  }
+  .sp-note {
+    margin: 0;
+    font-family: var(--sans);
+    font-style: italic;
+    font-size: var(--s-1);
+    color: var(--pencil);
+    line-height: 1.3;
+    border-left: 1px solid var(--pencil);
+    padding-left: 0.5rem;
+  }
+  .sp-circle {
+    display: inline-block;
+    padding: 0 0.2em;
+    border: 1.5px solid var(--pencil);
+    border-radius: 50%;
+    line-height: 1.1;
+  }
+  .sp-figure {
+    height: 5.5rem;
+    border: 1px dashed var(--hair-strong);
+    display: grid;
+    place-items: end start;
+    padding: 0.3rem 0.5rem;
+    color: var(--ink-3);
+    margin-bottom: 1rem;
+    background: repeating-linear-gradient(135deg, transparent 0 9px, var(--paper-2) 9px 10px);
+  }
+  .sp-bib {
+    margin: 0 0 1rem;
+    padding-left: 2em;
+    font-size: var(--s-1);
+  }
+  .sp-bib li {
+    margin-bottom: 0.3rem;
+  }
+  .sp-strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--pencil);
+    text-decoration-thickness: 1.5px;
+  }
+  .sp-ins {
+    color: var(--pencil);
+    font-style: italic;
+    margin-right: 0.25em;
+  }
+  .sp-ins::before {
+    content: '‸';
+  }
+  .sp-deleted {
+    position: relative;
+  }
+  .sp-loop {
+    width: 2.3rem;
+    height: 1.4rem;
+    color: var(--pencil);
+    vertical-align: middle;
+  }
+  .sp-folio {
+    margin: 0;
+    text-align: center;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .sp-folio-row {
+    border-top: 1px solid var(--hair);
+    padding-top: 0.6rem;
+  }
+  .specimen figcaption {
+    font-size: var(--s-1);
+    color: var(--ink-2);
+    margin-top: 0.75rem;
+    max-width: var(--measure);
+  }
+
+  /* ----- Two ways ----- */
+  .ways {
+    display: grid;
+    gap: 1.5rem 3rem;
+  }
+  .way h3 {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.6rem;
+  }
+  @media (min-width: 760px) {
+    .ways {
+      grid-template-columns: 1.15fr 1fr;
+    }
+    .way + .way {
+      border-left: 1px solid var(--hair);
+      padding-left: 3rem;
+    }
+  }
+  @media (min-width: 1100px) {
+    .ways,
+    .ways-joint {
+      margin-left: clamp(0rem, 6vw, 6.5rem);
+    }
+    .ways {
+      max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
+    }
+  }
+  .ways-joint {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--ink);
+  }
+
+  /* ----- Checks: ordered, because reports use this order ----- */
+  .checks {
+    list-style: none;
+    counter-reset: chk;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
+  }
+  @media (min-width: 1100px) {
+    .checks {
+      margin-left: clamp(0rem, 6vw, 6.5rem);
+    }
+  }
+  .checks li {
+    counter-increment: chk;
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--hair);
+  }
+  .checks li::before {
+    content: counter(chk);
+    grid-row: 1 / span 3;
+    font-size: var(--s3);
+    line-height: 1;
+    color: var(--pencil);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .checks h3 {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+    font-size: var(--s1);
+  }
+  .checks h3 a {
+    text-decoration: none;
+  }
+  .checks h3 a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .checks p {
+    margin: 0.2rem 0 0;
+  }
+  .checks-count {
+    font-size: var(--s-1);
+    color: var(--ink-3);
+  }
+  @media (min-width: 760px) {
+    .checks li {
+      grid-template-columns: 2.4rem 11rem minmax(0, 1fr) 5rem;
+      align-items: baseline;
+    }
+    .checks li::before {
+      grid-row: auto;
+    }
+    .checks p {
+      margin: 0;
+    }
+    .checks-count {
+      text-align: right;
+    }
+  }
+
+  /* ----- Transcript ----- */
+  .transcript {
+    margin: 1.25rem 0 0;
+    background: var(--code-paper);
+    border-left: 2px solid var(--guide);
+    padding: 1.25rem clamp(0.9rem, 3vw, 1.75rem);
+    font-size: var(--s-1);
+    max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
+  }
+  @media (min-width: 1100px) {
+    .transcript {
+      margin-left: clamp(0rem, 6vw, 6.5rem);
+    }
+  }
+  .transcript p {
+    margin: 0 0 0.8rem;
+    display: grid;
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+  }
+  .t-who {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+  }
+  .t-you {
+    font-style: italic;
+  }
+  .t-you .t-who {
+    font-style: normal;
+  }
+  .t-cmd {
+    margin: 0 0 0.9rem 3.75rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--paper);
+    border-left: 1px solid var(--hair-strong);
+    font-size: 0.72rem;
+  }
+  .t-ps {
+    color: var(--pencil);
+    user-select: none;
+  }
+  .t-out {
+    color: var(--ink-2);
+  }
+  @media (max-width: 560px) {
+    .transcript p {
+      grid-template-columns: 1fr;
+    }
+    .t-cmd {
+      margin-left: 0;
+    }
+  }
+
+  /* ----- Report ----- */
+  .report-grid {
+    display: grid;
+    gap: 2rem;
+  }
+  @media (min-width: 960px) {
+    .report-grid {
+      grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+      gap: 3rem;
+    }
+  }
+  @media (min-width: 1100px) {
+    .report-grid {
+      margin-left: clamp(0rem, 6vw, 6.5rem);
+    }
+  }
+
+  /* ----- Templates and steps ----- */
+  .tpl-list {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 0.6rem 1rem;
+    margin: 1.25rem 0 1.5rem;
+  }
+  .tpl-list dt {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+  }
+  .tpl-list dd {
+    margin: 0;
+  }
+  .tpl-list code {
+    white-space: nowrap;
+  }
+  @media (max-width: 480px) {
+    .tpl-list {
+      grid-template-columns: 1fr;
+      gap: 0.1rem;
+    }
+    .tpl-list dd {
+      margin-bottom: 0.7rem;
+    }
+  }
+  .steps {
+    padding-left: 1.5em;
+    margin: 1.25rem 0 1.5rem;
+  }
+  .steps li::marker {
+    color: var(--pencil);
+    font-variant-numeric: oldstyle-nums;
+  }
+  .steps p {
+    margin-bottom: 0.4rem;
+  }
+</style>

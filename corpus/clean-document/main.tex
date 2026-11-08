@@ -1,0 +1,25 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[style=authoryear]{biblatex}
+\addbibresource{references.bib}
+\usepackage{hyperref}
+\title{A Clean Document}
+\author{A. Author}
+\begin{document}
+\maketitle
+\section{Introduction}\label{sec:intro}
+Typesetting is a solved problem \parencite{knuth1984}. Figure~\ref{fig:example}
+shows an example, and Equation~\eqref{eq:energy} is famous.
+\begin{equation}
+  E = mc^2 \label{eq:energy}
+\end{equation}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.4\linewidth]{example-image}
+  \caption{An example image.}\label{fig:example}
+\end{figure}
+\section{Conclusion}
+Section~\ref{sec:intro} introduced the topic.
+\printbibliography
+\end{document}

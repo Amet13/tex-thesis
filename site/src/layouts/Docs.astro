@@ -1,0 +1,188 @@
+---
+import Base from './Base.astro';
+import DocsNav from '../components/DocsNav.astro';
+import type { Doc } from '../lib/docs';
+import { docSlug } from '../lib/docs';
+import { REPO_URL, url } from '../lib/paths';
+
+interface Props {
+  title: string;
+  description: string;
+  docs: Doc[];
+  current?: Doc;
+  headings?: { depth: number; slug: string; text: string }[];
+}
+const { title, description, docs, current, headings = [] } = Astro.props;
+const idx = current ? docs.findIndex((d) => d.id === current.id) : -1;
+const prev = idx > 0 ? docs[idx - 1] : undefined;
+const next = idx >= 0 && idx < docs.length - 1 ? docs[idx + 1] : undefined;
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const editUrl = current ? `${REPO_URL}/edit/main/docs/guide/${current.filePath?.split('docs/guide/')[1] ?? `${current.id}.md`}` : undefined;
+---
+<Base title={title} description={description} section="docs">
+  <div class="docs">
+    <aside class="docs-side">
+      <DocsNav docs={docs} current={current ? docSlug(current) : undefined} />
+    </aside>
+    <article class="docs-main">
+      <p class="runhead"><span>{current ? current.data.section : 'Guide'}</span></p>
+      <header class="docs-head">
+        <h1>{title}</h1>
+        {description && <p class="lede">{description}</p>}
+      </header>
+      {toc.length > 1 && (
+        <nav class="docs-toc" aria-label="On this page">
+          <p class="docs-toc-title">On this page</p>
+          <ol>
+            {toc.map((h) => (
+              <li class={`d${h.depth}`}><a href={`#${h.slug}`}>{h.text}</a></li>
+            ))}
+          </ol>
+        </nav>
+      )}
+      <div class="prose">
+        <slot />
+      </div>
+      {current && (
+        <nav class="pager" aria-label="Previous and next page">
+          {prev ? (
+            <a class="pager-prev" href={url(`docs/${docSlug(prev)}/`)} rel="prev">
+              <span class="pager-dir">Previous</span>
+              <span>{prev.data.title}</span>
+            </a>
+          ) : <span />}
+          {next && (
+            <a class="pager-next" href={url(`docs/${docSlug(next)}/`)} rel="next">
+              <span class="pager-dir">Next</span>
+              <span>{next.data.title}</span>
+            </a>
+          )}
+        </nav>
+      )}
+      {editUrl && <p class="docs-edit"><a href={editUrl}>Suggest a correction to this page</a></p>}
+    </article>
+  </div>
+</Base>
+<style>
+  .docs {
+    display: grid;
+    gap: 1rem 3rem;
+    padding-top: 1.5rem;
+  }
+  .docs-main {
+    min-width: 0;
+    max-width: var(--measure);
+  }
+  .docs-head {
+    margin-bottom: 2rem;
+  }
+  .docs-head h1 {
+    font-size: var(--s4);
+    margin-bottom: 0.75rem;
+  }
+  .docs-head .lede {
+    margin: 0;
+  }
+  .docs-toc {
+    font-size: var(--s-1);
+    line-height: 1.35;
+    margin: 0 0 2rem;
+    padding: 0.75rem 0 0.75rem 0.9rem;
+    border-left: 1px solid var(--guide);
+  }
+  .docs-toc-title {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    margin: 0 0 0.35rem;
+  }
+  .docs-toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .docs-toc li {
+    margin: 0.2rem 0;
+  }
+  .docs-toc li.d3 {
+    padding-left: 0.9rem;
+  }
+  .docs-toc a {
+    text-decoration: none;
+    color: var(--ink-2);
+  }
+  .docs-toc a:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 3.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--ink);
+  }
+  .pager a {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    padding: 0.4rem 0;
+  }
+  .pager a:hover span:last-child {
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .pager-next {
+    text-align: right;
+    grid-column: 2;
+  }
+  .pager-dir {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    font-size: var(--s-1);
+  }
+  .docs-edit {
+    font-size: var(--s-1);
+    color: var(--ink-3);
+    margin-top: 1.5rem;
+  }
+  @media (min-width: 1000px) {
+    .docs {
+      grid-template-columns: 13rem minmax(0, var(--measure));
+    }
+    .docs-side {
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+  }
+  @media (min-width: 1300px) {
+    .docs {
+      grid-template-columns: 13rem minmax(0, 1fr);
+    }
+    .docs-main {
+      display: grid;
+      grid-template-columns: minmax(0, var(--measure)) var(--margin-w);
+      column-gap: 3rem;
+      max-width: none;
+      align-content: start;
+    }
+    .docs-main > * {
+      grid-column: 1;
+    }
+    .docs-main > .docs-toc {
+      grid-column: 2;
+      grid-row: 1 / span 20;
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      margin-top: 2.6rem;
+    }
+  }
+</style>

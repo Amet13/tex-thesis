@@ -1,0 +1,1 @@
+{"title":"Two subscripts on one symbol","engine":"pdflatex","check":"build","expect":["double-script"]}

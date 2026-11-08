@@ -1,0 +1,1 @@
+{"title":"SVG figure included with \\includegraphics","engine":"pdflatex","check":"build","expect":["unknown-graphics-extension"]}

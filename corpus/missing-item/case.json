@@ -1,0 +1,1 @@
+{"title":"Text inside a list before the first \\item","engine":"pdflatex","check":"build","expect":["missing-item"]}

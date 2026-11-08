@@ -1,0 +1,17 @@
+---
+import { render } from 'astro:content';
+import Docs from '../../layouts/Docs.astro';
+import { docSlug, sortedDocs } from '../../lib/docs';
+
+export async function getStaticPaths() {
+  const docs = await sortedDocs();
+  return docs.filter((d) => docSlug(d) !== '').map((d) => ({ params: { slug: docSlug(d) }, props: { id: d.id } }));
+}
+
+const docs = await sortedDocs();
+const current = docs.find((d) => d.id === Astro.props.id)!;
+const { Content, headings } = await render(current);
+---
+<Docs title={current.data.title} description={current.data.description ?? ''} docs={docs} current={current} headings={headings}>
+  <Content />
+</Docs>

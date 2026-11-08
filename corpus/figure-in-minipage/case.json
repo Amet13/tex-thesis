@@ -1,0 +1,1 @@
+{"title":"Float inside a minipage","engine":"pdflatex","check":"build","expect":["not-in-outer-par-mode"]}

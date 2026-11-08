@@ -1,0 +1,1 @@
+{"title":"Greek letter command outside math mode","engine":"pdflatex","check":"build","expect":["missing-dollar"]}

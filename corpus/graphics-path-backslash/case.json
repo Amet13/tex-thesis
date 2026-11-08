@@ -1,0 +1,1 @@
+{"title":"Windows path with backslashes in \\includegraphics","engine":"pdflatex","check":"build","expect":["undefined-control-sequence"]}
