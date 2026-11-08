@@ -31,3 +31,12 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Node / tooling
+node_modules/
+dist/
+!action/dist/
+.astro/
+coverage/
+.overfull/cache/
+*.tsbuildinfo

@@ -1,0 +1,24 @@
+{
+  "name": "overfull-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/** run build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "biome check .",
+    "fmt": "biome check --write .",
+    "corpus:capture": "node scripts/corpus.mjs --capture",
+    "corpus:verify": "node scripts/corpus.mjs --verify",
+    "templates:sync": "node scripts/sync-templates.mjs",
+    "templates:check": "node scripts/sync-templates.mjs --check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@types/node": "^24.0.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}
