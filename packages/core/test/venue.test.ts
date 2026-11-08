@@ -131,6 +131,7 @@ describe('anonymity', () => {
         'In our previous work [3] we showed it.',
         '\\section*{Acknowledgments}',
         '\\section{Use of AI tools}',
+        'No generative AI tools were used in the research or the writing of this paper.',
       ].join('\n'),
     );
     const r = venueCheck(profile, {
@@ -151,7 +152,9 @@ describe('anonymity', () => {
     const r = venueCheck(profile, {
       facts: facts(1, { info: { author: 'Anonymous' } }),
       texFiles: [
-        tex('\\author{Anonymous Authors}\n\\section{AI use statement}'),
+        tex(
+          '\\author{Anonymous Authors}\n\\section{AI use statement}\nNo generative AI tools were used in the research or the writing of this paper.',
+        ),
         tex('\\author{\\metaAuthor}', 'b.tex'),
       ],
     });
@@ -173,7 +176,8 @@ describe('disclosure', () => {
     '\\subsection*{Statement}\\label{overfull:disclosure}',
   ])('accepts %s', (heading) => {
     const p = resolveProfile({ disclosure: 'required' });
-    expect(venueCheck(p, { texFiles: [tex(heading)] }).status).toBe('pass');
+    const statement = `${heading}\nNo generative AI tools were used in the research or the writing of this paper.`;
+    expect(venueCheck(p, { texFiles: [tex(statement)] }).status).toBe('pass');
   });
 
   it('is only advice when recommended', () => {
@@ -250,5 +254,41 @@ describe('venueCheck', () => {
     ]) {
       expect(ids.has(id)).toBe(true);
     }
+  });
+});
+
+describe('disclosure placeholder', () => {
+  const file = (content: string) => ({ path: 'sections/ai.tex', content });
+  it('flags placeholder text in a required disclosure as an error', () => {
+    const r = venueCheck(resolveProfile({ extends: 'paper', disclosure: 'required' }), {
+      texFiles: [
+        file(
+          '\\section*{Use of AI tools}\n\\textit{[Placeholder: describe the use of AI tools here.]}\n',
+        ),
+      ],
+    });
+    expect(r.problems.map((p) => [p.rule, p.severity])).toContainEqual([
+      'disclosure-placeholder',
+      'error',
+    ]);
+  });
+  it('flags a nearly empty disclosure as a warning when recommended', () => {
+    const r = venueCheck(resolveProfile('paper'), {
+      texFiles: [file('\\section*{Use of Generative AI}\nTBD.\n\\section{Next}')],
+    });
+    expect(r.problems.map((p) => [p.rule, p.severity])).toContainEqual([
+      'disclosure-placeholder',
+      'warning',
+    ]);
+  });
+  it('accepts a written statement', () => {
+    const r = venueCheck(resolveProfile({ extends: 'paper', disclosure: 'required' }), {
+      texFiles: [
+        file(
+          '\\section*{Use of Generative AI}\nWe used a coding assistant to fix LaTeX build errors and to format tables. The authors wrote all text and checked every change.\n\\printbibliography',
+        ),
+      ],
+    });
+    expect(r.problems.filter((p) => p.rule.startsWith('disclosure'))).toEqual([]);
   });
 });

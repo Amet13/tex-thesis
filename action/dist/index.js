@@ -113202,39 +113202,75 @@ function anonymityProblems(ctx) {
 // ../packages/core/src/venue/disclosure.ts
 var AI = /\b(AI|LLMs?|large\s+language\s+models?|generative|artificial\s+intelligence|GenAI|ChatGPT)\b/i;
 var USE = /\b(use|usage|used|disclosure|statement|declaration|assist\w*|tools?)\b/i;
+var HEADINGS = ["section", "subsection", "subsubsection", "paragraph", "chapter", "addsec"];
+var PLACEHOLDER = /\b(placeholder|todo|tbd|tbc|lorem ipsum|xxx+|fill (this|in))\b|\[(describe|write|insert)[^\]]*\]/i;
+var MIN_STATEMENT_CHARS = 40;
 function isDisclosureTitle(title) {
   return AI.test(title) && USE.test(title);
 }
-function hasDisclosure(ctx) {
+function sectionBody(src, start) {
+  const rest = src.slice(start);
+  const next = rest.search(
+    /\\(section|subsection|subsubsection|paragraph|chapter|addsec|appendix|printbibliography|bibliography)\b|\\end\{document\}/
+  );
+  const raw = next < 0 ? rest : rest.slice(0, next);
+  return raw.replace(/\\label\s*\{[^}]*\}/g, " ").replace(/\\[a-zA-Z@]+\*?/g, " ").replace(/[{}~]/g, " ").replace(/\s+/g, " ").trim();
+}
+function bodyAfterHeading(f, line) {
+  const src = stripComments(f.content);
+  const lines = src.split("\n");
+  const offset = lines.slice(0, line - 1).join("\n").length;
+  const headingEnd = src.indexOf("}", offset);
+  return sectionBody(src, headingEnd < 0 ? offset : headingEnd + 1);
+}
+function findDisclosure(ctx) {
   const files = ctx.texFiles ?? [];
-  if (grepTex(files, /\\label\s*\{overfull:disclosure\}/).length > 0) return true;
-  const headings = findCommands(files, [
-    "section",
-    "subsection",
-    "subsubsection",
-    "paragraph",
-    "chapter",
-    "addsec"
-  ]);
-  if (headings.some((h) => isDisclosureTitle(h.arg))) return true;
+  const label = grepTex(files, /\\label\s*\{overfull:disclosure\}/)[0];
+  const heading = findCommands(files, HEADINGS).find((h) => isDisclosureTitle(h.arg));
+  const hit = heading ?? label;
+  if (hit) {
+    const f = files.find((x) => x.path === hit.file);
+    return {
+      file: hit.file,
+      line: hit.line,
+      ...f ? { body: bodyAfterHeading(f, hit.line) } : {}
+    };
+  }
   if (files.length === 0 && ctx.facts) {
-    return ctx.facts.pages.some(
+    const page = ctx.facts.pages.findIndex(
       (p) => p.text.split("\n").some((l) => l.length < 80 && isDisclosureTitle(l))
     );
+    if (page >= 0) return { file: "", line: 0 };
   }
-  return false;
+  return null;
 }
 function disclosureProblems(level, ctx) {
   if (!level || level === "off") return [];
   if (!ctx.texFiles?.length && !ctx.facts) return [];
-  if (hasDisclosure(ctx)) return [];
+  const found = findDisclosure(ctx);
+  if (!found) {
+    return [
+      {
+        rule: "disclosure-missing",
+        check: "venue",
+        severity: level === "required" ? "error" : "info",
+        message: level === "required" ? "No AI-use disclosure statement found (required by this venue)" : "No AI-use disclosure statement found (many venues now ask for one)",
+        fix: "Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}` stating which tools were used and how"
+      }
+    ];
+  }
+  if (found.body === void 0) return [];
+  const unfinished = PLACEHOLDER.test(found.body) || found.body.length < MIN_STATEMENT_CHARS;
+  if (!unfinished) return [];
   return [
     {
-      rule: "disclosure-missing",
+      rule: "disclosure-placeholder",
       check: "venue",
-      severity: level === "required" ? "error" : "info",
-      message: level === "required" ? "No AI-use disclosure statement found (required by this venue)" : "No AI-use disclosure statement found (many venues now ask for one)",
-      fix: "Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}` stating which tools were used and how"
+      severity: level === "required" ? "error" : "warning",
+      message: "The AI-use disclosure is still a placeholder or nearly empty",
+      location: { file: found.file, line: found.line },
+      detail: `The section reads: "${found.body.slice(0, 120)}${found.body.length > 120 ? "\u2026" : ""}"`,
+      fix: "The author writes the statement: which AI tools were used, for what, and that the authors checked the output. If none were used, say so"
     }
   ];
 }

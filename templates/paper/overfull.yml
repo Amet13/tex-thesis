@@ -17,7 +17,7 @@ venue:
   # Set max to your venue's limit.
   pageLimit: { max: 8, endLabel: overfull:main-end }
   anonymous: false         # true for double-blind review
-  disclosure: required     # the "Use of AI tools" section must be filled in
+  disclosure: recommended  # set to required if your venue asks for an AI-use statement
 build:
   engine: auto             # local latexmk if installed, otherwise Docker
   image: ghcr.io/amet13/overfull:0.1
