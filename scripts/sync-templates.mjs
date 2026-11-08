@@ -10,7 +10,17 @@
 //   node scripts/sync-templates.mjs           write changes
 //   node scripts/sync-templates.mjs --check   exit 1 and list drift (CI)
 
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -80,7 +90,10 @@ function syncLink(link, target) {
 }
 
 const templates = isDir(templatesDir)
-  ? readdirSync(templatesDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
+  ? readdirSync(templatesDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort()
   : [];
 if (templates.length === 0) {
   console.error('error: no templates found in templates/');
@@ -127,5 +140,9 @@ if (check) {
   }
   console.log(`Templates in sync (${templates.join(', ')}).`);
 } else {
-  console.log(drift.length > 0 ? `Synced ${drift.length} change(s) into ${templates.join(', ')}.` : 'Templates already in sync.');
+  console.log(
+    drift.length > 0
+      ? `Synced ${drift.length} change(s) into ${templates.join(', ')}.`
+      : 'Templates already in sync.',
+  );
 }
