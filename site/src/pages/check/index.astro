@@ -48,7 +48,7 @@ const samples = [
         <div class="drop" id="drop" data-active="false">
           <p class="drop-main">Drop files here</p>
           <p class="drop-types"><code>.log</code> <code>.bib</code> <code>.aux</code> <code>.bcf</code> <code>.pdf</code> <code>.tex</code>, several at once</p>
-          <input id="file-input" type="file" multiple accept=".log,.bib,.aux,.bcf,.pdf,.tex,.blg,text/plain,application/pdf" class="sr-only" />
+          <input id="file-input" type="file" multiple aria-label="Choose files to check" tabindex="-1" accept=".log,.bib,.aux,.bcf,.pdf,.tex,.blg,text/plain,application/pdf" class="sr-only" />
           <button type="button" class="btn" id="choose">Choose files</button>
         </div>
 
@@ -116,7 +116,7 @@ const samples = [
         </div>
         <div id="agent-view" class="agent-view" hidden>
           <p class="agent-note">This is the <code>Report</code> JSON that <code>overfull check --json</code> prints. Paste it into your agent’s chat, or let the agent run the command itself.</p>
-          <pre><code id="json-out"></code></pre>
+          <pre tabindex="0" aria-label="Report JSON"><code id="json-out"></code></pre>
         </div>
       </section>
     </div>

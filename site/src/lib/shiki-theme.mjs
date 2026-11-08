@@ -4,7 +4,7 @@ const v = (name) => `var(--code-${name})`;
 
 /** @type {import('shiki').ThemeRegistration} */
 export const galleyTheme = {
-  name: 'galley',
+  name: 'proof-ink',
   type: 'light',
   fg: v('ink'),
   bg: v('paper'),

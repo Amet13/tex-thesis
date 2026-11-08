@@ -25,10 +25,12 @@ export function venueCheck(profile: VenueProfile, ctx: VenueContext): CheckResul
   const stats: Record<string, number> = {};
   if (ctx.facts) stats.pages = ctx.facts.pageCount;
   if (profile.pageLimit) stats.pageLimit = profile.pageLimit.max;
-  const issues = problems.filter((p) => p.severity !== 'info').length;
+  const errors = problems.filter((p) => p.severity === 'error').length;
+  const warnings = problems.filter((p) => p.severity === 'warning').length;
   const parts = [`profile ${profile.id}`];
   if (profile.pageLimit && ctx.facts) parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
   else if (ctx.facts) parts.push(`${ctx.facts.pageCount} pages`);
-  if (issues) parts.push(`${issues} to review`);
+  if (errors) parts.push(`${errors} to fix`);
+  if (warnings) parts.push(`${warnings} to review`);
   return { check: 'venue', status: statusOf(problems), problems, summary: parts.join(', '), stats };
 }

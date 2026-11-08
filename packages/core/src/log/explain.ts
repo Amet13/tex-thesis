@@ -76,6 +76,13 @@ function escapeSpecials(text: string): string {
   return text.replace(/\\?([_&#%$])/g, '\\$1').replace(/\^/g, '\\^{}');
 }
 
+/** "Add `\usepackage{x}` …" for a package description such as `algorithm (or algorithm2e)`. */
+function loadAdvice(pkg: string): string {
+  const m = /^([a-z][\w-]*)(.*)$/.exec(pkg);
+  if (!m) return `Load ${pkg}.`;
+  return `Add ${code(`\\usepackage{${m[1]}}`)}${m[2]} to the preamble.`;
+}
+
 function hasPackage(ctx: ExplainContext, name: string): boolean {
   return ctx.packages.has(name);
 }
@@ -168,7 +175,7 @@ function packageAdvice(cs: string, ctx: ExplainContext): Explanation | undefined
   if (!pkg) return undefined;
   const name = pkg.split(' ')[0] ?? pkg;
   if (/^[a-z][\w-]*$/.test(name) && hasPackage(ctx, name)) return undefined;
-  const load = /^[a-z][\w-]*$/.test(pkg) ? `Add ${code(`\\usepackage{${pkg}}`)} to the preamble.` : `Load ${pkg}.`;
+  const load = loadAdvice(pkg);
   return {
     rule: 'undefined-control-sequence',
     check: 'build',
@@ -492,7 +499,7 @@ const explainEnvironmentUndefined: Explainer = (m) => {
       ...base,
       message: `The ${code(env)} environment needs the ${pkg} package`,
       detail: `${code(env)} is defined by ${pkg}, which this document does not load.`,
-      fix: /^[a-z][\w-]*$/.test(pkg) ? `Add ${code(`\\usepackage{${pkg}}`)} to the preamble.` : `Load ${pkg}.`,
+      fix: loadAdvice(pkg),
       data: { environment: env, package: pkg },
     };
   }
@@ -791,7 +798,7 @@ const EXPLAINERS: [RegExp, Explainer][] = [
   [/^Misplaced alignment tab character &/, explainAlignmentTab],
   [/^Missing ([{}]) inserted/, explainMissingBrace],
   [/^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/, explainExtraBrace],
-  [/^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?\S+?)(?: was complete)?\.?\s*$/, explainRunaway],
+  [/^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/, explainRunaway],
   [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
   [/^I can't find file [`'](.+?)'/, explainFileNotFound],
   [/^LaTeX Error: Option clash for package (\S+?)\.?$/, explainOptionClash],

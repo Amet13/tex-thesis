@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.13)  8 NOV 2026 16:52
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.13)  8 NOV 2026 21:15
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -63,8 +63,8 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 4.
 ! Undefined control sequence.
-l.5 \toprule
-            
+l.4 \begin{tabular}{ll}\toprule
+                               
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct
@@ -74,8 +74,8 @@ and I'll forget about whatever was undefined.
 ! Undefined control sequence.
 <recently read> \bottomrule 
                             
-l.7 \bottomrule
-               
+l.5   A & B \\ \bottomrule
+                          
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
 misspelled it (e.g., `\hobx'), type `I' and the correct

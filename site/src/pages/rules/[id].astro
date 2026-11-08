@@ -57,7 +57,7 @@ const engine = kase?.engine ?? 'lualatex';
           </figure>
           <figure class="case-log">
             <figcaption>From <code>main.log</code></figcaption>
-            <pre class="log"><code>{kase.excerpt}</code></pre>
+            <pre class="log" tabindex="0" aria-label="Log excerpt"><code>{kase.excerpt}</code></pre>
           </figure>
           {kase.fixed && (
             <figure class="case-fixed">

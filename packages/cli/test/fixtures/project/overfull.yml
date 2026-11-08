@@ -1,0 +1,9 @@
+main: main.tex
+jobname: thesis
+bib: [references.bib]
+profile: thesis
+references:
+  mailto: test@example.org
+  ignore: [rfc9110]
+venue:
+  pageLimit: { max: 1, endLabel: overfull:main-end }

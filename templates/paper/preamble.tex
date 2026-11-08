@@ -1,0 +1,53 @@
+% preamble.tex — packages and style. Works with LuaLaTeX and pdfLaTeX.
+% Every package here is compatible with PDF tagging in TeX Live 2026.
+
+\usepackage{iftex}
+
+% ---- Fonts --------------------------------------------------------------
+% Latin Modern under both engines, so the page count is the same whichever
+% engine builds the paper.
+\ifluatex
+  % LuaLaTeX: OpenType fonts, Unicode math (tagged as MathML).
+  \usepackage{amsmath}
+  \usepackage{fontspec}           % Latin Modern is the default text font
+  \usepackage{unicode-math}
+  \setmathfont{Latin Modern Math}
+\else
+  % pdfLaTeX (arXiv): Type 1 fonts with T1 encoding.
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+  \usepackage{amsmath,amssymb}
+\fi
+\usepackage{microtype}
+
+% ---- Page ---------------------------------------------------------------
+\usepackage[margin=1in]{geometry}
+
+% ---- Figures, tables, plots ------------------------------------------------
+% ACCESSIBILITY: every \includegraphics needs alt={...} and every
+% tikzpicture needs [alt={...}]; decorative graphics use [artifact].
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18, compat/show suggested version=false}
+
+% ---- Links, cross-references, bibliography --------------------------------
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black,
+  urlcolor=blue!50!black,
+  pdftitle={\PaperTitle},
+  pdfauthor={\PaperAuthors},
+  pdfkeywords={\PaperKeywords},
+  pdfdisplaydoctitle=true,
+}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% Citation style: numeric-comp gives [1,2]; for author-year use
+%   style=authoryear, and \textcite / \parencite in the text.
+\usepackage{csquotes}
+\usepackage[backend=biber, style=numeric-comp, sorting=none]{biblatex}
+\addbibresource{references.bib}

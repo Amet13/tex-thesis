@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.13)  8 NOV 2026 16:52
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.13)  8 NOV 2026 21:15
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -48,31 +48,42 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 3.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 3.
-)
-Runaway argument?
-{1 + e^{-x} \] \end {document} 
-! File ended while scanning use of \frac .
+
+! Missing } inserted.
 <inserted text> 
-                \par 
-<*> main.tex
-            
-I suspect you have forgotten a `}', causing me
-to read past where you wanted me to stop.
-I'll try to recover; but if the error is serious,
-you'd better type `E' or `X' now and fix your file.
+                }
+l.3 The variance $\sigma^{2$
+                             is small for every run.
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
 
-! Emergency stop.
-<*> main.tex
-            
-*** (job aborted, no legal \end found)
+[1
 
- 
+{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+(./main.aux)
+ ***********
+LaTeX2e <2026-06-01>
+L3 programming layer <2026-08-10>
+ ***********
+ ) 
 Here is how much of TeX's memory you used:
- 429 strings out of 467099
- 8052 string characters out of 5408265
+ 437 strings out of 467099
+ 8183 string characters out of 5408265
  435796 words of memory out of 5000000
- 29849 multiletter control sequences out of 15000+600000
+ 29853 multiletter control sequences out of 15000+600000
  627721 words of font info for 40 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 35i,1n,38p,145b,62s stack positions out of 10000i,1000n,20000p,200000b,200000s
-!  ==> Fatal error occurred, no output PDF file produced!
+ 35i,5n,38p,145b,124s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb
+></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><
+/usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb>
+Output written on main.pdf (1 page, 30436 bytes).
+PDF statistics:
+ 23 PDF objects out of 1000 (max. 8388607)
+ 13 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+

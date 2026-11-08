@@ -1,0 +1,26 @@
+{
+  // VS Code / GitHub Codespaces: open this folder in the Overfull image
+  // (TeX Live 2026, fonts, veraPDF, overfull CLI) with LaTeX Workshop.
+  "name": "Overfull paper",
+  "image": "ghcr.io/amet13/overfull:0.1",
+  "workspaceFolder": "/work",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/work,type=bind",
+  "customizations": {
+    "vscode": {
+      "extensions": ["james-yu.latex-workshop"],
+      "settings": {
+        // Build with latexmk; options come from the project's .latexmkrc.
+        "latex-workshop.latex.recipes": [
+          { "name": "latexmk (.latexmkrc)", "tools": ["latexmk-rc"] }
+        ],
+        "latex-workshop.latex.tools": [
+          { "name": "latexmk-rc", "command": "latexmk", "args": [], "env": {} }
+        ],
+        "latex-workshop.latex.recipe.default": "first",
+        "latex-workshop.latex.outDir": "%DIR%",
+        "latex-workshop.latex.autoBuild.run": "onSave",
+        "latex-workshop.view.pdf.viewer": "tab"
+      }
+    }
+  }
+}

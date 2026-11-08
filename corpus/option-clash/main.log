@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.13)  8 NOV 2026 16:52
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.13)  8 NOV 2026 21:15
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -23,45 +23,32 @@ File: size10.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
 \belowcaptionskip=\skip50
 \bibindent=\dimen150
 )
-(/usr/local/texlive/2026/texmf-dist/tex/latex/xcolor/xcolor.sty
-Package: xcolor 2024/09/29 v3.02 LaTeX color extensions (UK)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2010/09/13 8.31b (PWD, AO)
+\bibhang=\skip51
+\bibsep=\skip52
+LaTeX Info: Redefining \cite on input line 694.
+\c@NAT@ctr=\count284
+)
 
-(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
-File: color.cfg 2016/01/02 v1.6 sample color configuration
-)
-Package xcolor Info: Driver file: pdftex.def on input line 274.
+! LaTeX Error: Option clash for package natbib.
 
-(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def
-File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
-)
-(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx)
-Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1349.
-Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1353.
-Package xcolor Info: Model `RGB' extended on input line 1365.
-Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1367.
-Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1368.
-Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
-Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
-Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
-Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
-)
-(/usr/local/texlive/2026/texmf-dist/tex/latex/colortbl/colortbl.sty
-Package: colortbl 2026/05/01 v1.0l Color table columns (DPC)
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.4 \begin
+          {document}
+The package natbib has already been loaded with options:
+  []
+There has now been an attempt to load it with options
+  [numbers]
+Adding the global options:
+  ,numbers
+to your \documentclass declaration may fix this.
+Try typing  <return>  to proceed.
 
-(/usr/local/texlive/2026/texmf-dist/tex/latex/tools/array.sty
-Package: array 2026/02/24 v2.7b Tabular extension package (FMi)
-\col@sep=\dimen151
-\ar@mcellbox=\box53
-\extrarowheight=\dimen152
-\NC@list=\toks17
-\extratabsurround=\skip51
-\backup@length=\skip52
-\ar@cellbox=\box54
-)
-new hooks used!!
-\minrowclearance=\skip53
-\rownum=\count284
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/l3kernel/l3backend-pdftex.def
+(/usr/local/texlive/2026/texmf-dist/tex/latex/l3kernel/l3backend-pdftex.def
 File: l3backend-pdftex.def 2026-08-10 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count285
 )
@@ -82,40 +69,26 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
+ [1
 
-(/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
-[Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count286
-\scratchdimen=\dimen153
-\scratchbox=\box55
-\nofMPsegments=\count287
-\nofMParguments=\count288
-\everyMPshowfont=\toks18
-\MPscratchCnt=\count289
-\MPscratchDim=\dimen154
-\MPnumerator=\count290
-\makeMPintoPDFobject=\count291
-\everyMPtoPDFconversion=\toks19
-) [1
-
-{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-(./main.aux)
+{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./main
+.aux)
  ***********
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-08-10>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 1558 strings out of 467099
- 23809 string characters out of 5408265
- 440361 words of memory out of 5000000
- 30945 multiletter control sequences out of 15000+600000
+ 786 strings out of 467099
+ 12513 string characters out of 5408265
+ 435796 words of memory out of 5000000
+ 30197 multiletter control sequences out of 15000+600000
  627721 words of font info for 40 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,5n,88p,209b,125s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 35i,5n,39p,145b,124s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb>
 
-Output written on main.pdf (1 page, 12295 bytes).
+Output written on main.pdf (1 page, 11928 bytes).
 PDF statistics:
  13 PDF objects out of 1000 (max. 8388607)
  7 compressed objects within 1 object stream

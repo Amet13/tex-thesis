@@ -121,19 +121,19 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
     <figure class="transcript" aria-label="Example agent session">
       <p class="t-you"><span class="t-who">you</span><span class="t-say">Add the Vaswani et al. transformer paper to related work. We need to stay under the 9-page limit.</span></p>
       <p class="t-agent"><span class="t-who">agent</span><span class="t-say">I’ll look the paper up instead of writing the entry from memory.</span></p>
-      <pre class="t-cmd"><span class="t-ps">$</span> overfull cite arXiv:1706.03762
+      <pre class="t-cmd" tabindex="0"><span class="t-ps">$</span> overfull cite arXiv:1706.03762
 <span class="t-out">found  arXiv 1706.03762  Attention Is All You Need
        Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin (2017)
 added  vaswani2017attention → references.bib</span></pre>
       <p class="t-agent"><span class="t-who">agent</span><span class="t-say">Cited it in <code>sections/related.tex</code> as <code>\citet&#123;vaswani2017attention&#125;</code>. Building and checking.</span></p>
-      <pre class="t-cmd"><span class="t-ps">$</span> overfull build && overfull check --json
+      <pre class="t-cmd" tabindex="0"><span class="t-ps">$</span> overfull build && overfull check --json
 <span class="t-out">&#123; "status": "fail", "checks": [ …
   &#123; "check": "venue", "status": "fail", "problems": [
     &#123; "rule": "page-limit-exceeded", "severity": "error",
       "message": "Main text runs to page 10; the limit is 9",
       "location": &#123; "page": 10 &#125; &#125; ] &#125; ] &#125;</span></pre>
       <p class="t-agent"><span class="t-who">agent</span><span class="t-say">Over by about half a page. Table 3 floats onto page 10. I’ll move the per-dataset rows to the appendix and keep the summary row in the main text.</span></p>
-      <pre class="t-cmd"><span class="t-ps">$</span> overfull build && overfull check
+      <pre class="t-cmd" tabindex="0"><span class="t-ps">$</span> overfull build && overfull check
 <span class="t-out">build          pass
 output         pass
 references     pass   32 of 32 verified
@@ -178,15 +178,15 @@ venue          pass   main text ends on page 9 of 9</span></pre>
       <ol class="steps">
         <li>
           <p>Create a project from a template.</p>
-          <div class="cmd"><span class="p">$ </span>npx overfull init paper my-paper && cd my-paper</div>
+          <div class="cmd" tabindex="0"><span class="p">$ </span>npx overfull init paper my-paper && cd my-paper</div>
         </li>
         <li>
           <p>Build it. Without a local TeX installation this runs in the Overfull Docker image.</p>
-          <div class="cmd"><span class="p">$ </span>make build</div>
+          <div class="cmd" tabindex="0"><span class="p">$ </span>make build</div>
         </li>
         <li>
           <p>Check it. Or open the folder in your coding agent and ask for the change you want; it runs the check itself.</p>
-          <div class="cmd"><span class="p">$ </span>make check</div>
+          <div class="cmd" tabindex="0"><span class="p">$ </span>make check</div>
         </li>
       </ol>
       <p>Already have a LaTeX project? Run <code>npx overfull check</code> in its folder, or add <code>uses: amet13/overfull@v1</code> to a workflow that builds it. Source and issues are on <a href={REPO_URL}>GitHub</a>.</p>

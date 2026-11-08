@@ -4,3 +4,14 @@ export { type Io, processIo, UsageError } from './io.js';
 export { main } from './main.js';
 export { loadPdfjs, readPdfFacts } from './pdf.js';
 export { VERSION } from './version.js';
+export {
+  CHECK_IDS,
+  type CheckId,
+  type CheckResult,
+  formatHuman,
+  formatJson,
+  formatMarkdown,
+  githubAnnotations,
+  type Problem,
+  type Report,
+} from '@overfull/core';

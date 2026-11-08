@@ -57,7 +57,7 @@ function problemHtml(p: Problem, opts: SheetOptions): string {
   <div class="sheet-meta">${loc ? `<span class="sheet-loc">${esc(loc)}</span>` : ''}<span class="sheet-rule">${ruleLink}</span></div>
   ${p.detail ? `<p class="sheet-detail">${inline(p.detail)}</p>` : ''}
   ${p.fix ? `<p class="sheet-fix"><span class="caret" aria-hidden="true">‸</span><span class="sr-only">Fix: </span>${inline(p.fix)}</p>` : ''}
-  ${p.evidence ? `<details class="sheet-evidence"><summary>Evidence</summary><pre><code>${esc(p.evidence)}</code></pre></details>` : ''}
+  ${p.evidence ? `<details class="sheet-evidence"><summary>Evidence</summary><pre tabindex="0"><code>${esc(p.evidence)}</code></pre></details>` : ''}
 </li>`;
 }
 

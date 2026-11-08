@@ -1,0 +1,20 @@
+\section{Method}\label{sec:method}
+
+% Define notation once, then describe the method precisely enough to reproduce.
+Let $\mathcal{D} = \{(x_i, y_i)\}_{i=1}^{n}$ be a training set.
+We minimize the regularized empirical risk
+\begin{equation}\label{eq:objective}
+  \hat{\theta} = \arg\min_{\theta} \frac{1}{n} \sum_{i=1}^{n} \ell\bigl(f_\theta(x_i), y_i\bigr) + \lambda \lVert \theta \rVert_2^2 ,
+\end{equation}
+where $\ell$ is the cross-entropy loss and $\lambda \ge 0$ controls regularization.
+Parameters are updated with Adam~\cite{kingma2014adam} at learning rate $\eta = \num{3e-4}$.
+
+\Cref{fig:overview} sketches the pipeline.
+
+\begin{figure}[htbp]
+  \centering
+  % Replace the placeholder with your own diagram; keep the alt text accurate.
+  \includegraphics[width=0.45\linewidth, alt={Placeholder image standing in
+    for a diagram of the method pipeline}]{sample-photo}
+  \caption{Overview of the method (placeholder image).}\label{fig:overview}
+\end{figure}

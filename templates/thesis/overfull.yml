@@ -1,0 +1,18 @@
+# overfull.yml — configuration for the `overfull` CLI (build, check, diff ...).
+# Docs: https://github.com/amet13/overfull
+main: main.tex
+jobname: thesis            # output: thesis.pdf / thesis.log
+bib: [references.bib]
+profile: thesis
+checks: [build, output, references, accessibility, venue]
+references:
+  # Your e-mail lets CrossRef/OpenAlex put you in their faster "polite pool".
+  # mailto: you@example.org
+  ignore: []
+venue:
+  # Page limit for the main matter (up to \label{overfull:main-end}).
+  # pageLimit: { max: 80, endLabel: overfull:main-end }
+  anonymous: false
+build:
+  engine: auto             # local latexmk if installed, otherwise Docker
+  image: ghcr.io/amet13/overfull:0.1

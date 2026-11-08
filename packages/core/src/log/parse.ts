@@ -86,7 +86,11 @@ class FileStack {
   /** Last page number shipped out (`[12]`). */
   page = 0;
 
-  constructor(private readonly root: string | undefined) {}
+  private readonly root: string | undefined;
+
+  constructor(root: string | undefined) {
+    this.root = root;
+  }
 
   current(): string | undefined {
     for (let i = this.entries.length - 1; i >= 0; i--) {
@@ -151,10 +155,10 @@ class Parser {
     files: [],
   };
 
-  constructor(
-    text: string,
-    private readonly root: string | undefined,
-  ) {
+  private readonly root: string | undefined;
+
+  constructor(text: string, root: string | undefined) {
+    this.root = root;
     this.reader = new LineReader(text);
     this.stack = new FileStack(root);
   }

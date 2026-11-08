@@ -1,0 +1,56 @@
+name: Overfull preflight
+description: Check a built LaTeX document (log, PDF, bibliography) for errors, unresolved references, unverifiable citations, accessibility and venue rules.
+author: Amet13
+branding:
+  icon: check-square
+  color: green
+inputs:
+  working-directory:
+    description: Project directory (where overfull.yml, the log and the PDF are).
+    required: false
+    default: .
+  checks:
+    description: Comma-separated checks to run (build, output, references, accessibility, venue). Default from overfull.yml, else all.
+    required: false
+  profile:
+    description: Venue profile (generic, thesis, paper, arxiv, double-blind). Default from overfull.yml.
+    required: false
+  pdf:
+    description: PDF to check, relative to working-directory. Default <jobname>.pdf.
+    required: false
+  log:
+    description: Build log, relative to working-directory. Default <jobname>.log.
+    required: false
+  bib:
+    description: Comma-separated .bib files. Default from overfull.yml or main.tex.
+    required: false
+  aux:
+    description: .aux file. Default <jobname>.aux.
+    required: false
+  fail-on:
+    description: Fail the step on `error` (default), `warning`, or `never`.
+    required: false
+    default: error
+  offline:
+    description: Skip online reference lookups.
+    required: false
+    default: 'false'
+  mailto:
+    description: Contact address for CrossRef's polite pool (or set references.mailto in overfull.yml).
+    required: false
+  annotations:
+    description: Write problems as file annotations.
+    required: false
+    default: 'true'
+  summary:
+    description: Write a Markdown report to the job summary.
+    required: false
+    default: 'true'
+outputs:
+  status:
+    description: Overall status: pass, warn or fail.
+  report:
+    description: Path to the JSON report (in $RUNNER_TEMP).
+runs:
+  using: node24
+  main: action/dist/index.js

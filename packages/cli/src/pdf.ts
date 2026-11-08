@@ -11,9 +11,20 @@ let pdfjsPromise: Promise<PdfjsLike> | undefined;
  */
 export function loadPdfjs(): Promise<PdfjsLike> {
   pdfjsPromise ??= (async () => {
-    const worker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
-    (globalThis as { pdfjsWorker?: unknown }).pdfjsWorker = worker;
-    return (await import('pdfjs-dist/legacy/build/pdf.mjs')) as unknown as PdfjsLike;
+    // pdf.js warns (console.warn) at import time when the optional
+    // @napi-rs/canvas is missing; rendering needs it, text extraction does not.
+    const warn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      if (typeof args[0] === 'string' && /^Warning: Cannot (load "@napi-rs|polyfill|access the `require`)/.test(args[0])) return;
+      warn(...args);
+    };
+    try {
+      const worker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+      (globalThis as { pdfjsWorker?: unknown }).pdfjsWorker = worker;
+      return (await import('pdfjs-dist/legacy/build/pdf.mjs')) as unknown as PdfjsLike;
+    } finally {
+      console.warn = warn;
+    }
   })();
   return pdfjsPromise;
 }

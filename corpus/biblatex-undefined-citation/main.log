@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.24.0 (TeX Live 2026)  (format=lualatex 2026.9.13)  8 NOV 2026 16:52
+This is LuaHBTeX, Version 1.24.0 (TeX Live 2026)  (format=lualatex 2026.9.13)  8 NOV 2026 21:15
  restricted system commands enabled.
 **main.tex
 (./main.tex
@@ -382,7 +382,7 @@ Package biblatex Info: ... file 'main.bbl' found.
 
 Package biblatex Warning: The following entry could not be found
 (biblatex)                in the database:
-(biblatex)                knuth1992literate
+(biblatex)                knuth92
 (biblatex)                Please verify the spelling and rerun
 (biblatex)                LaTeX afterwards.
 
@@ -391,14 +391,7 @@ Package biblatex Info: Reference section=0 on input line 4.
 Package biblatex Info: Reference segment=0 on input line 4.
 
 
-LaTeX Warning: Citation 'knuth1992literate' on page 1 undefined on input line 6
-.
-
-
-Overfull \hbox (33.91202pt too wide) in paragraph at lines 5--8
-[]\TU/lmr/m/n/10 Type-set-ting is a solved prob-lem [1], as is lit-er-ate pro-gr
-am-ming [[]]. 
- []
+LaTeX Warning: Citation 'knuth92' on page 1 undefined on input line 6.
 
 [1
 
@@ -419,7 +412,7 @@ Here is how much of LuaTeX's memory you used:
  471 words of node memory still in use:
    3 hlist, 1 vlist, 1 rule, 2 glue, 3 kern, 1 glyph, 4 attribute, 61 glue_spec,
  4 attribute_list, 1 write nodes
-   avail lists: 1:1,2:96,3:20,4:5,5:36,6:6,7:386,9:32,11:26
+   avail lists: 1:1,2:96,3:20,4:5,5:36,6:6,7:362,9:32,11:22
  31693 multiletter control sequences out of 65536+600000
  19 fonts using 1250183 bytes
  60i,5n,63p,692b,1619s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -428,7 +421,7 @@ f></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman12-bold.ot
 f></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman10-bold.ot
 f></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman10-regular
 .otf>
-Output written on main.pdf (1 page, 13124 bytes).
+Output written on main.pdf (1 page, 12573 bytes).
 
 PDF statistics: 36 PDF objects out of 1000 (max. 8388607)
  20 compressed objects within 1 object stream
