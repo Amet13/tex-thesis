@@ -1,7 +1,9 @@
 {
   "id": "fit-page-limit",
   "template": "paper",
-  "setup": { "overfull.yml": { "venue": { "pageLimit": { "max": 3, "endLabel": "overfull:main-end" } } } },
+  "setup": {
+    "overfull.yml": { "venue": { "pageLimit": { "max": 3, "endLabel": "overfull:main-end" } } }
+  },
   "title": "Bring the paper within a 3-page limit",
   "prompt": "The venue's page limit for the main text is 3 pages (overfull.yml already says so). Make the paper fit without changing fonts, margins, or line spacing, and without deleting the references or the AI-use section. Move material to the appendix if needed.",
   "expect": {

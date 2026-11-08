@@ -9,7 +9,15 @@
 // The agent command runs on the host inside the copied project; {prompt} is shell-quoted.
 // Scoring always happens in the Docker image, so every variant is judged identically.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -46,16 +54,21 @@ function prepare(task, variant) {
   const dir = mkdtempSync(join(tmpdir(), `overfull-eval-${task.id}-${variant}-`));
   cpSync(join(root, 'templates', task.template), dir, { recursive: true, verbatimSymlinks: true });
   if (variant === 'bare') {
-    for (const p of ['AGENTS.md', 'CLAUDE.md', '.agents', '.claude']) rmSync(join(dir, p), { recursive: true, force: true });
+    for (const p of ['AGENTS.md', 'CLAUDE.md', '.agents', '.claude'])
+      rmSync(join(dir, p), { recursive: true, force: true });
   }
   for (const [file, patch] of Object.entries(task.setup ?? {})) {
     const path = join(dir, file);
-    const current = existsSync(path) ? parseYaml(readFileSync(path, 'utf8')) ?? {} : {};
+    const current = existsSync(path) ? (parseYaml(readFileSync(path, 'utf8')) ?? {}) : {};
     writeFileSync(path, stringifyYaml(deepMerge(current, patch)));
   }
   execFileSync('git', ['init', '-q'], { cwd: dir });
   execFileSync('git', ['add', '-A'], { cwd: dir });
-  execFileSync('git', ['-c', 'user.email=eval@overfull', '-c', 'user.name=eval', 'commit', '-qm', 'start'], { cwd: dir });
+  execFileSync(
+    'git',
+    ['-c', 'user.email=eval@overfull', '-c', 'user.name=eval', 'commit', '-qm', 'start'],
+    { cwd: dir },
+  );
   return dir;
 }
 
@@ -67,10 +80,14 @@ function deepMerge(a, b) {
 }
 
 function docker(dir, args) {
-  return spawnSync('docker', ['run', '--rm', '-v', `${dir}:/work`, '-w', '/work', values.image, ...args], {
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
+  return spawnSync(
+    'docker',
+    ['run', '--rm', '-v', `${dir}:/work`, '-w', '/work', values.image, ...args],
+    {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    },
+  );
 }
 
 function score(task, dir) {
@@ -94,7 +111,12 @@ function score(task, dir) {
     const cited = refs?.stats?.cited ?? 0;
     if (cited < task.expect.citedAtLeast) failures.push(`only ${cited} cited`);
   }
-  return { pass: failures.length === 0, failures, status: report.status, errors: errors.map((e) => e.rule) };
+  return {
+    pass: failures.length === 0,
+    failures,
+    status: report.status,
+    errors: errors.map((e) => e.rule),
+  };
 }
 
 const results = [];
@@ -104,10 +126,23 @@ for (const task of tasks) {
       const dir = prepare(task, variant);
       const cmd = values.agent.replaceAll('{prompt}', shellQuote(task.prompt));
       const started = Date.now();
-      const agent = spawnSync('bash', ['-lc', cmd], { cwd: dir, encoding: 'utf8', timeout: 30 * 60 * 1000 });
-      const result = { task: task.id, variant, run: i + 1, seconds: Math.round((Date.now() - started) / 1000), agentExit: agent.status, ...score(task, dir) };
+      const agent = spawnSync('bash', ['-lc', cmd], {
+        cwd: dir,
+        encoding: 'utf8',
+        timeout: 30 * 60 * 1000,
+      });
+      const result = {
+        task: task.id,
+        variant,
+        run: i + 1,
+        seconds: Math.round((Date.now() - started) / 1000),
+        agentExit: agent.status,
+        ...score(task, dir),
+      };
       results.push(result);
-      console.log(`${result.pass ? 'PASS' : 'FAIL'}  ${task.id.padEnd(16)} ${variant.padEnd(4)} run ${i + 1}  ${result.failures?.join(', ') ?? ''}`);
+      console.log(
+        `${result.pass ? 'PASS' : 'FAIL'}  ${task.id.padEnd(16)} ${variant.padEnd(4)} run ${i + 1}  ${result.failures?.join(', ') ?? ''}`,
+      );
       if (!values.keep) rmSync(dir, { recursive: true, force: true });
       else console.log(`      kept ${dir}`);
     }
@@ -120,5 +155,8 @@ const summary = Object.fromEntries(
     return [v, { passed: rs.filter((r) => r.pass).length, total: rs.length }];
   }),
 );
-writeFileSync(values.out, `${JSON.stringify({ date: new Date().toISOString(), agent: values.agent, summary, results }, null, 2)}\n`);
+writeFileSync(
+  values.out,
+  `${JSON.stringify({ date: new Date().toISOString(), agent: values.agent, summary, results }, null, 2)}\n`,
+);
 console.log('\nSummary:', JSON.stringify(summary));

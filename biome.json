@@ -8,13 +8,14 @@
       "!site/.astro",
       "!action/dist",
       "!corpus/**/*.log",
-      "!templates/**",
+      "!templates",
       "!**/*.tex",
       "!**/*.md",
       "!site/dist",
       "!**/test/fixtures/**/*.json",
       "!**/*.yml",
-      "!**/*.yaml"
+      "!**/*.yaml",
+      "!corpus/**/*.svg"
     ]
   },
   "formatter": {
