@@ -332,6 +332,19 @@ hr {
   background: var(--slug);
   margin-left: -0.08em;
 }
+.masthead nav {
+  order: 3;
+  width: 100%;
+}
+@media (min-width: 900px) {
+  .masthead nav {
+    order: 2;
+    width: auto;
+  }
+  .theme-toggle {
+    order: 3;
+  }
+}
 .nav {
   display: flex;
   flex-wrap: wrap;
@@ -356,6 +369,7 @@ hr {
   border-bottom: 2px solid var(--pencil);
 }
 .theme-toggle {
+  order: 2;
   font: inherit;
   font-variant-caps: all-small-caps;
   letter-spacing: 0.07em;
@@ -395,6 +409,7 @@ hr {
 /* Galley: the measured text block with a margin for notes */
 .galley {
   max-width: var(--measure);
+  display: flow-root;
 }
 .wide {
   max-width: calc(var(--measure) + var(--gap) + var(--margin-w));

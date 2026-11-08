@@ -20,13 +20,13 @@ The outputs include processed results, performance metrics, and generated report
     \node[box] (sys) {\textbf{System}};
 
     % Inputs
-    \node[lbl, left=2.2cm of sys, yshift=0.7cm] (in1) {Raw data};
-    \node[lbl, left=2.2cm of sys] (in2) {Configuration};
-    \node[lbl, left=2.2cm of sys, yshift=-0.7cm] (in3) {User requirements};
+    \node[lbl, left=2cm of sys, yshift=0.7cm] (in1) {Raw data};
+    \node[lbl, left=2cm of sys] (in2) {Configuration};
+    \node[lbl, left=2cm of sys, yshift=-0.7cm] (in3) {User requirements};
 
     % Outputs
-    \node[lbl, right=2.2cm of sys, yshift=0.5cm] (out1) {Processed results};
-    \node[lbl, right=2.2cm of sys, yshift=-0.5cm] (out2) {Performance metrics};
+    \node[lbl, right=2cm of sys, yshift=0.5cm] (out1) {Processed results};
+    \node[lbl, right=2cm of sys, yshift=-0.5cm] (out2) {Performance metrics};
 
     \draw[io] (in1) -- (sys.west |- in1);
     \draw[io] (in2) -- (sys.west |- in2);

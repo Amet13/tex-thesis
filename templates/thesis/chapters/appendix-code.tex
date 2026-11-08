@@ -1,10 +1,9 @@
 % Appendices: unnumbered sections listed in the table of contents.
 \unnumberedsection{Appendix A. Sample code listing}\label{app:code}
 
-The following listing demonstrates the notification module used by the monitoring system.
+The notification module used by the monitoring system (file \texttt{notifier.py}) is reproduced below.
+Long code in an appendix is set without a float, so it may run over several pages.
 
-\begin{codelisting}[htbp]
-  \caption{Notification module (notifier.py)}\label{lst:notifier}
 \begin{verbatim}
 """Notification module for the monitoring system."""
 
@@ -23,7 +22,8 @@ class EmailNotifier:
     def __init__(self, host: str, port: int, sender: str):
         self.host, self.port, self.sender = host, port, sender
 
-    def send(self, subject: str, body: str, to: list[str]) -> bool:
+    def send(self, subject: str, body: str,
+             to: list[str]) -> bool:
         msg = MIMEText(body)
         msg["Subject"], msg["From"] = subject, self.sender
         msg["To"] = ", ".join(to)
@@ -55,4 +55,3 @@ class WebhookNotifier:
             logger.error("Webhook failed: %s", err)
             return False
 \end{verbatim}
-\end{codelisting}

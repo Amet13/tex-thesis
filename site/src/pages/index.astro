@@ -15,9 +15,7 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
     <p class="runhead"><span>Preflight for LaTeX papers and theses</span></p>
     <div class="hero-grid">
       <div class="hero-measure">
-        <h1 id="hero-title">Write your paper with any AI agent, or by hand. Ship one that checks out.</h1>
-        <span class="slug" aria-hidden="true"></span>
-        <span class="slug-note" aria-hidden="true">Overfull \hbox (14.2pt too wide)</span>
+        <h1 id="hero-title"><span class="l">Write your paper</span> <span class="l l-over">with any AI agent, or by hand.<span class="slug" aria-hidden="true"></span><span class="slug-note" aria-hidden="true">Overfull \hbox (14.2pt too wide) in paragraph at line 1</span></span> <span class="l">Ship one that checks out.</span></h1>
       </div>
       <div class="hero-text">
         <p class="lede">Overfull is a free, open preflight kit for LaTeX. It compiles your document, reads the log and the PDF, looks up every reference, and tells you what is wrong in plain language, with the file and line to fix.</p>
@@ -121,27 +119,27 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
       <p>A workshop paper, a nine-page limit, one request. This is the loop the template’s instructions put an agent in.</p>
     </div>
     <figure class="transcript" aria-label="Example agent session">
-      <p class="t-you"><span class="t-who">you</span>Add the Vaswani et al. transformer paper to related work. We need to stay under the 9-page limit.</p>
-      <p class="t-agent"><span class="t-who">agent</span>I’ll look the paper up instead of writing the entry from memory.</p>
+      <p class="t-you"><span class="t-who">you</span><span class="t-say">Add the Vaswani et al. transformer paper to related work. We need to stay under the 9-page limit.</span></p>
+      <p class="t-agent"><span class="t-who">agent</span><span class="t-say">I’ll look the paper up instead of writing the entry from memory.</span></p>
       <pre class="t-cmd"><span class="t-ps">$</span> overfull cite arXiv:1706.03762
 <span class="t-out">found  arXiv 1706.03762  Attention Is All You Need
        Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin (2017)
 added  vaswani2017attention → references.bib</span></pre>
-      <p class="t-agent"><span class="t-who">agent</span>Cited it in <code>sections/related.tex</code> as <code>\citet&#123;vaswani2017attention&#125;</code>. Building and checking.</p>
+      <p class="t-agent"><span class="t-who">agent</span><span class="t-say">Cited it in <code>sections/related.tex</code> as <code>\citet&#123;vaswani2017attention&#125;</code>. Building and checking.</span></p>
       <pre class="t-cmd"><span class="t-ps">$</span> overfull build && overfull check --json
 <span class="t-out">&#123; "status": "fail", "checks": [ …
   &#123; "check": "venue", "status": "fail", "problems": [
     &#123; "rule": "page-limit-exceeded", "severity": "error",
       "message": "Main text runs to page 10; the limit is 9",
       "location": &#123; "page": 10 &#125; &#125; ] &#125; ] &#125;</span></pre>
-      <p class="t-agent"><span class="t-who">agent</span>Over by about half a page. Table 3 floats onto page 10. I’ll move the per-dataset rows to the appendix and keep the summary row in the main text.</p>
+      <p class="t-agent"><span class="t-who">agent</span><span class="t-say">Over by about half a page. Table 3 floats onto page 10. I’ll move the per-dataset rows to the appendix and keep the summary row in the main text.</span></p>
       <pre class="t-cmd"><span class="t-ps">$</span> overfull build && overfull check
 <span class="t-out">build          pass
 output         pass
 references     pass   32 of 32 verified
 accessibility  pass   tagged, PDF/UA-2
 venue          pass   main text ends on page 9 of 9</span></pre>
-      <p class="t-agent"><span class="t-who">agent</span>All five checks pass. Opened pull request #42, “Cite Vaswani et al.; move Table 3 detail to appendix”, with the preflight report and a PDF showing the changes.</p>
+      <p class="t-agent"><span class="t-who">agent</span><span class="t-say">All five checks pass. Opened pull request #42, “Cite Vaswani et al.; move Table 3 detail to appendix”, with the preflight report and a PDF showing the changes.</span></p>
     </figure>
   </section>
 
@@ -207,22 +205,11 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   }
   .hero-measure {
     position: relative;
-    max-width: 34rem;
     padding-block: 1.25rem;
-    margin-right: 2.2rem;
   }
-  /* The dashed right margin, running past the text block like a guide */
-  .hero-measure::before {
-    content: '';
-    position: absolute;
-    top: -1rem;
-    bottom: -1rem;
-    right: 0;
-    border-right: 1px dashed var(--guide);
-  }
-  /* Crop marks at the top-left corner of the text block */
+  /* Crop mark at the top-left corner of the text block */
   .hero-measure::after {
-    content: '';
+    content: none;
     position: absolute;
     left: -0.9rem;
     top: 0.35rem;
@@ -232,26 +219,46 @@ venue          pass   main text ends on page 9 of 9</span></pre>
     border-bottom: 1px solid var(--hair-strong);
   }
   .hero h1 {
-    font-size: clamp(2.05rem, 1.2rem + 3.6vw, var(--s5));
-    line-height: 1.08;
-    text-align: justify;
-    text-wrap: wrap;
-    hyphens: manual;
+    font-size: clamp(2.1rem, 1.3rem + 3.4vw, var(--s4));
+    line-height: 1.1;
     letter-spacing: -0.012em;
   }
-  .slug {
-    position: absolute;
-    right: calc(-0.24em - 1px);
-    top: calc(1.25rem + 0.17em);
-    width: 0.24em;
-    height: 0.74em;
-    background: var(--slug);
-    font-size: clamp(2.05rem, 1.2rem + 3.6vw, var(--s5));
-    transform-origin: left center;
-    animation: overrun 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 350ms both;
-  }
+  .slug,
   .slug-note {
     display: none;
+  }
+  @media (min-width: 760px) {
+    .hero-measure::after {
+      content: '';
+    }
+    .hero h1 .l {
+      display: block;
+      white-space: nowrap;
+    }
+    /* The line that does not fit: it runs past the dashed right margin, and
+       draft mode marks it with a black rule, exactly as LaTeX does. */
+    .l-over {
+      position: relative;
+      width: max-content;
+    }
+    .l-over::before {
+      content: '';
+      position: absolute;
+      right: 0.78em;
+      top: -1.6em;
+      bottom: -1.6em;
+      border-right: 1px dashed var(--guide);
+    }
+    .slug {
+      display: inline-block;
+      width: 0.28em;
+      height: 0.72em;
+      margin-left: 0.1em;
+      background: var(--slug);
+      vertical-align: -0.02em;
+      transform-origin: left center;
+      animation: overrun 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 350ms both;
+    }
   }
   @keyframes overrun {
     from {
@@ -261,15 +268,18 @@ venue          pass   main text ends on page 9 of 9</span></pre>
       transform: scaleX(1);
     }
   }
-  @media (min-width: 900px) {
+  @media (min-width: 1100px) {
     .slug-note {
       display: block;
       position: absolute;
-      left: calc(100% + 1.6rem);
-      top: 1.6rem;
+      left: calc(100% + 1.5rem);
+      top: 0.1em;
       width: 12rem;
       font-family: var(--mono);
-      font-size: 0.7rem;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      white-space: normal;
       line-height: 1.4;
       color: var(--pencil);
       animation: note-in 400ms ease-out 1200ms both;
@@ -319,7 +329,6 @@ venue          pass   main text ends on page 9 of 9</span></pre>
     }
     .hero-measure {
       grid-column: 1;
-      max-width: 36rem;
     }
     .hero-text {
       grid-column: 1;
@@ -557,6 +566,9 @@ venue          pass   main text ends on page 9 of 9</span></pre>
     margin: 0 0 0.8rem;
     display: grid;
     grid-template-columns: 3.75rem minmax(0, 1fr);
+  }
+  .t-say {
+    min-width: 0;
   }
   .t-who {
     font-variant-caps: all-small-caps;

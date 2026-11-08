@@ -76,12 +76,16 @@ The implementation timeline is shown in \cref{fig:timeline}.
         \draw (\x,-0.1) -- (\x,0.1) node[below=3pt] {\small \x};
       }
 
-    % Task bars
-    \fill[blue!40] (1,0.5) rectangle (3,1) node[midway, font=\small] {Analysis};
-    \fill[green!40] (3,0.5) rectangle (6,1) node[midway, font=\small] {Design};
-    \fill[orange!40] (5,1.2) rectangle (9,1.7) node[midway, font=\small] {Implementation};
-    \fill[red!30] (8,0.5) rectangle (11,1) node[midway, font=\small] {Testing};
-    \fill[purple!30] (10,1.2) rectangle (12,1.7) node[midway, font=\small] {Writing};
+    % Task bars: \bar{start}{end}{row}{colour}{label}
+    \newcommand*\ganttbar[5]{%
+      \fill[#4] (#1,#3) rectangle (#2,#3+0.5);
+      \node[font=\small] at ({(#1+#2)/2},#3+0.25) {#5};
+    }
+    \ganttbar{1}{3}{0.5}{blue!30}{Analysis}
+    \ganttbar{3}{6}{1.2}{green!30}{Design}
+    \ganttbar{5}{9}{0.5}{orange!30}{Implementation}
+    \ganttbar{8}{11}{1.2}{red!25}{Testing}
+    \ganttbar{10}{12}{1.9}{violet!25}{Writing}
   \end{tikzpicture}
   \caption{Project timeline (Gantt chart)}\label{fig:timeline}
 \end{figure}

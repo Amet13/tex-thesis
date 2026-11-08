@@ -26,6 +26,9 @@
 % directly, e.g. \begin{enumerate}[label=\alph*)]. The enumitem package
 % itself must NOT be loaded (it is not compatible with tagging yet).
 % Here we only change the default labels: 1) 2) 3) for enumerate.
+% Indent lists by the paragraph indent.
+\setlength{\leftmargini}{1.27cm}
+\setlength{\leftmarginii}{1.27cm}
 \renewcommand{\labelenumi}{\arabic{enumi})}
 \renewcommand{\labelenumii}{\alph{enumii})}
 
