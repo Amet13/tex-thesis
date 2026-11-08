@@ -30,6 +30,8 @@ export interface TitleSearch {
   isTex: boolean;
   firstAuthor?: string;
   year?: number;
+  /** A user-supplied author hint narrows results, so it must be part of the cache key. */
+  hinted?: boolean;
 }
 
 type TitleCacheValue = Partial<Record<RefSource, WorkRecord[]>>;
@@ -97,7 +99,9 @@ export async function titleSearch(
   visit: (records: WorkRecord[], source: RefSource) => boolean,
 ): Promise<SearchOutcome> {
   const outcome: SearchOutcome = { searched: [], failures: [] };
-  const cacheKey = titleCacheKey(q.title, q.year, q.isTex);
+  const cacheKey =
+    titleCacheKey(q.title, q.year, q.isTex) +
+    (q.hinted && q.firstAuthor ? `|author:${q.firstAuthor.toLowerCase()}` : '');
   for (const [source, run] of titleSources(ctx, q)) {
     let records: WorkRecord[];
     try {

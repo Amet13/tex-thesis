@@ -10,7 +10,13 @@ import { foldName, namesMatch, titleSimilarity } from './normalize.js';
 import { arxivByIdCached, type Ctx, resolveDoiCached, titleSearch } from './search.js';
 import { parseArxivId } from './sources/arxiv.js';
 import { fetchDoiBibtex, parseDoi } from './sources/doi.js';
-import type { LookupResult, RefsOptions, WorkRecord } from './types.js';
+import type {
+  LookupCandidate,
+  LookupHint,
+  LookupResult,
+  RefsOptions,
+  WorkRecord,
+} from './types.js';
 
 /** Minimum title similarity for a title query to return anything. */
 export const LOOKUP_TITLE_THRESHOLD = 0.95;
@@ -36,6 +42,72 @@ const PUBLISHED_TYPES = new Set([
 ]);
 
 export type QueryKind = 'doi' | 'arxiv' | 'title';
+
+/**
+ * Thrown when a title query matches several distinct works (for example two
+ * papers both titled "Literate Programming"). Callers show the candidates and
+ * ask for a DOI, or retry with an author/year hint. Never pick one silently.
+ */
+export class AmbiguousLookupError extends Error {
+  readonly candidates: LookupCandidate[];
+  constructor(query: string, candidates: LookupCandidate[]) {
+    super(
+      candidates.length > 1
+        ? `"${query}" matches ${candidates.length} different works. Use a DOI or arXiv id, or narrow it with an author or year.`
+        : `"${query}" is too short to identify one work. Use a DOI or arXiv id, or add an author or year.`,
+    );
+    this.name = 'AmbiguousLookupError';
+    this.candidates = candidates;
+  }
+}
+
+/** Short titles ("Literate programming") are shared by many works: require a hint. */
+const MIN_UNHINTED_TITLE_WORDS = 3;
+const STOPWORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'of',
+  'on',
+  'in',
+  'for',
+  'and',
+  'to',
+  'with',
+  'by',
+  'at',
+]);
+
+function significantWords(title: string): number {
+  return title
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w && !STOPWORDS.has(w)).length;
+}
+
+function matchesHint(r: WorkRecord, hint: LookupHint | undefined): boolean {
+  if (!hint) return true;
+  if (hint.author) {
+    const surname = foldName(hint.author.trim().split(/\s+/).pop() ?? '');
+    if (!r.authors.some((a) => namesMatch(foldName(a.family), surname))) return false;
+  }
+  if (hint.year !== undefined && !r.years.some((y) => Math.abs(y - (hint.year as number)) <= 1)) {
+    return false;
+  }
+  return true;
+}
+
+export function toCandidate(r: WorkRecord): LookupCandidate {
+  return {
+    title: r.title,
+    authors: r.authors.map((a) => (a.given ? `${a.given} ${a.family}` : a.family)),
+    ...(r.years.length ? { year: Math.min(...r.years) } : {}),
+    ...(r.venue ? { venue: r.venue } : {}),
+    ...(r.doi ? { doi: r.doi } : {}),
+    ...(r.arxivId ? { arxivId: r.arxivId } : {}),
+    source: r.source,
+  };
+}
 
 /** Classifies a lookup query. */
 export function queryKind(query: string): { kind: QueryKind; value: string } {
@@ -72,10 +144,19 @@ interface Pick {
  * and spam re-deposits come later); within the anchor's author family the
  * published version wins. A strong match by different authors lowers confidence.
  */
-export function pickTitleMatch(query: string, records: WorkRecord[]): Pick | null {
+export type TitlePick = Pick | { ambiguous: WorkRecord[] } | null;
+
+/**
+ * Among near-exact title matches (filtered by the hint), the earliest record
+ * anchors the work (copies and spam re-deposits come later); within the
+ * anchor's author family the published version wins. If another author family
+ * also has a published or arXiv record with the same title, the query is
+ * ambiguous and the caller must ask, never guess.
+ */
+export function pickTitleMatch(query: string, records: WorkRecord[], hint?: LookupHint): TitlePick {
   const strong = records
     .map((record) => ({ record, sim: titleSimilarity(query, record.title) }))
-    .filter((c) => c.sim >= LOOKUP_TITLE_THRESHOLD);
+    .filter((c) => c.sim >= LOOKUP_TITLE_THRESHOLD && matchesHint(c.record, hint));
   if (!strong.length) return null;
   const anchor = [...strong].sort(
     (a, b) => firstYear(a.record) - firstYear(b.record) || typeRank(b.record) - typeRank(a.record),
@@ -91,8 +172,18 @@ export function pickTitleMatch(query: string, records: WorkRecord[]): Pick | nul
       Number(!!b.record.doi) - Number(!!a.record.doi) ||
       firstYear(a.record) - firstYear(b.record),
   )[0] as (typeof strong)[number];
-  const competitor = strong.some((c) => !family.includes(c) && effectiveRank(c.record) >= 2);
-  return { record: best.record, confidence: best.sim * (competitor ? 0.85 : 1) };
+  const rivals = strong.filter((c) => !family.includes(c) && effectiveRank(c.record) >= 2);
+  const unhintedShort =
+    !hint?.author && hint?.year === undefined && significantWords(query) < MIN_UNHINTED_TITLE_WORDS;
+  if (rivals.length || unhintedShort) {
+    const seen: WorkRecord[] = [best.record];
+    for (const c of [...rivals, ...strong]) {
+      if (!seen.some((r) => r === c.record || sharesAuthor(r, c.record))) seen.push(c.record);
+    }
+    // A short title is too generic to trust even with a single match.
+    if (seen.length > 1 || unhintedShort) return { ambiguous: seen.slice(0, 5) };
+  }
+  return { record: best.record, confidence: best.sim };
 }
 
 async function lookupDoi(ctx: Ctx, doi: string): Promise<LookupResult | null> {
@@ -108,13 +199,28 @@ async function lookupArxiv(ctx: Ctx, id: string): Promise<LookupResult | null> {
   return record ? { entry: entryFromRecord(record), source: 'arxiv', confidence: 1 } : null;
 }
 
-async function lookupTitle(ctx: Ctx, title: string): Promise<LookupResult | null> {
+async function lookupTitle(
+  ctx: Ctx,
+  title: string,
+  hint?: LookupHint,
+): Promise<LookupResult | null> {
   const records: WorkRecord[] = [];
-  const outcome = await titleSearch(ctx, { title, isTex: false }, (found) => {
+  const surname = hint?.author?.trim().split(/\s+/).pop();
+  const query = {
+    title,
+    isTex: false,
+    ...(surname ? { firstAuthor: surname, hinted: true } : {}),
+    ...(hint?.year !== undefined ? { year: hint.year } : {}),
+  };
+  const outcome = await titleSearch(ctx, query, (found) => {
     records.push(...found);
     return false;
   });
-  const pick = pickTitleMatch(title, records);
+  const picked = pickTitleMatch(title, records, hint);
+  if (picked && 'ambiguous' in picked) {
+    throw new AmbiguousLookupError(title, picked.ambiguous.map(toCandidate));
+  }
+  const pick = picked;
   if (!pick || pick.confidence < LOOKUP_MIN_CONFIDENCE) {
     if (!outcome.searched.length && outcome.failures.length) {
       throw new Error(`lookup failed: ${outcome.failures.map((f) => f.reason).join('; ')}`);
@@ -137,7 +243,8 @@ async function lookupTitle(ctx: Ctx, title: string): Promise<LookupResult | null
 /**
  * Looks up a DOI (bare or doi.org URL), an arXiv id (`arXiv:2401.12345`,
  * `2401.12345v2`) or a title. Returns null when nothing confident is found;
- * throws when no source could be reached at all.
+ * throws `AmbiguousLookupError` when a title matches several works, and a plain
+ * Error when no source could be reached at all.
  */
 export async function lookup(query: string, opts: RefsOptions = {}): Promise<LookupResult | null> {
   if (opts.offline) return null;
@@ -145,5 +252,5 @@ export async function lookup(query: string, opts: RefsOptions = {}): Promise<Loo
   const { kind, value } = queryKind(query);
   if (kind === 'doi') return lookupDoi(ctx, value);
   if (kind === 'arxiv') return lookupArxiv(ctx, value);
-  return lookupTitle(ctx, value);
+  return lookupTitle(ctx, value, opts.hint);
 }

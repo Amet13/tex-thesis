@@ -63,6 +63,25 @@ export interface RefsOptions {
   arxivIntervalMs?: number;
   /** Base delay before the single retry on 429/5xx when no Retry-After is given (default 1000). */
   retryDelayMs?: number;
+  /** Disambiguates title lookups: an author surname and/or publication year. */
+  hint?: LookupHint;
+}
+
+export interface LookupHint {
+  /** Any author's surname (or full name; the last word is used). */
+  author?: string;
+  year?: number;
+}
+
+/** One possible work for an ambiguous title query. */
+export interface LookupCandidate {
+  title: string;
+  authors: string[];
+  year?: number;
+  venue?: string;
+  doi?: string;
+  arxivId?: string;
+  source: RefSource;
 }
 
 export interface LookupResult {

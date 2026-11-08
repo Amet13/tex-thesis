@@ -9,7 +9,7 @@ section: Reference
 overfull init [thesis|paper|slides] [dir]
 overfull build [main.tex] [--engine auto|local|docker]
 overfull check [--json|--markdown] [--checks a,b] [--profile p] [--offline] [--fail-on error|warning]
-overfull cite <doi | arXiv:id | "title"> [--bib file] [--key k] [--dry-run]
+overfull cite <doi | arXiv:id | "title"> [--bib file] [--key k] [--author name] [--year yyyy] [--dry-run] [--json]
 overfull pages <range> [--pdf file] [--out dir] [--dpi n]
 overfull diff [--base ref] [--main main.tex]
 overfull explain <rule>
@@ -75,9 +75,21 @@ indexed record to the bibliography. Prints the citation key.
 | --- | --- |
 | `--bib file` | Write to this file (default: the first file in `bib`). |
 | `--key k` | Use this citation key. |
+| `--author name` | Narrow a title query to works with this author surname. |
+| `--year yyyy` | Narrow a title query to works from this year (±1). |
 | `--dry-run` | Print the entry, write nothing. |
+| `--json` | Print `{key, entry, source, confidence, added}`, or `{ambiguous, candidates}`. |
 
 If no confident match is found, nothing is written and the command exits with 1.
+
+Short or shared titles are ambiguous: for example, several works are titled
+"Literate Programming". Then cite lists the candidates with their DOIs, writes
+nothing and exits with 1. Cite the right one by DOI, or rerun with `--author`
+or `--year`:
+
+```sh
+overfull cite "Literate programming" --author Knuth
+```
 
 ## pages
 

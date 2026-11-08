@@ -38,6 +38,16 @@ entry from the indexed record. You only choose where to cite it.
    document already uses.
 6. `overfull build` then `overfull check --json --checks build,output,references`.
 
+## When cite says the title is ambiguous
+
+Short or shared titles ("Literate programming") match several works. Cite then
+lists candidates with their DOIs and adds nothing. Pick the one the author means:
+
+- If the author or `notes/` names the authors or year, rerun with
+  `--author <surname>` and/or `--year <yyyy>`, or cite the listed DOI directly.
+- If you cannot tell which work is meant, show the candidates to the author and ask.
+  Never pick one by guessing.
+
 ## When cite finds nothing
 
 If `overfull cite` reports no confident match, do not retry with guessed

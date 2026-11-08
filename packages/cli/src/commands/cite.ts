@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  AmbiguousLookupError,
   type BibEntry,
   lookup as coreLookup,
   formatBibEntry,
@@ -23,6 +24,8 @@ Never invents an entry: without a confident match it exits 1 and writes nothing.
 Options:
   --bib file      Bibliography to append to (default: first \`bib\` in overfull.yml)
   --key key       Use this citation key instead of the generated one
+  --author name   Disambiguate a title: an author's surname
+  --year yyyy     Disambiguate a title: the publication year
   --dry-run       Print the entry without writing it
   --json          Print {key, entry, source, confidence, added}
   --mailto addr   Contact address for CrossRef's polite pool
@@ -33,6 +36,10 @@ Examples:
   overfull cite 10.1145/359545.359563
   overfull cite arXiv:1706.03762
   overfull cite "Attention is all you need"
+  overfull cite "Literate programming" --author Knuth
+
+Short or shared titles are ambiguous: cite lists the candidates with their DOIs
+and adds nothing. Pick one by DOI, or rerun with --author/--year.
 `;
 
 export type LookupFn = (query: string, opts: RefsOptions) => Promise<LookupResult | null>;
@@ -78,6 +85,8 @@ export async function citeCommand(
     {
       bib: { type: 'string' },
       key: { type: 'string' },
+      author: { type: 'string' },
+      year: { type: 'string' },
       'dry-run': { type: 'boolean' },
       json: { type: 'boolean' },
       mailto: { type: 'string' },
@@ -100,11 +109,49 @@ export async function citeCommand(
 
   const mailto = str(values.mailto) ?? config.references.mailto;
   const openalexKey = io.env.OPENALEX_API_KEY;
-  const found = await lookup(query, {
-    ...(io.fetch ? { fetch: io.fetch } : {}),
-    ...(mailto ? { mailto } : {}),
-    ...(openalexKey ? { openalexKey } : {}),
-  });
+  const author = str(values.author);
+  const yearText = str(values.year);
+  const year = yearText === undefined ? undefined : Number(yearText);
+  if (year !== undefined && !(Number.isInteger(year) && year > 1000 && year < 3000)) {
+    throw new UsageError(`--year must be a four-digit year, got \`${yearText}\``);
+  }
+  const hint =
+    author || year !== undefined
+      ? { ...(author ? { author } : {}), ...(year !== undefined ? { year } : {}) }
+      : undefined;
+  let found: LookupResult | null;
+  try {
+    found = await lookup(query, {
+      ...(io.fetch ? { fetch: io.fetch } : {}),
+      ...(mailto ? { mailto } : {}),
+      ...(openalexKey ? { openalexKey } : {}),
+      ...(hint ? { hint } : {}),
+    });
+  } catch (error) {
+    if (!(error instanceof AmbiguousLookupError)) throw error;
+    if (values.json) {
+      io.stdout(
+        `${JSON.stringify({ ambiguous: true, message: error.message, candidates: error.candidates }, null, 2)}\n`,
+      );
+    } else {
+      const lines = error.candidates.map((c) => {
+        const who = c.authors.length
+          ? `${c.authors[0]}${c.authors.length > 1 ? ' et al.' : ''}`
+          : 'unknown author';
+        const id = c.doi
+          ? `doi ${c.doi}`
+          : c.arxivId
+            ? `arXiv:${c.arxivId}`
+            : `${c.source}, no DOI`;
+        return `  - ${c.title} (${who}${c.year ? `, ${c.year}` : ''}${c.venue ? `, ${c.venue}` : ''}) — ${id}`;
+      });
+      io.stderr(
+        `${error.message} Nothing was added.\n${lines.join('\n')}\n` +
+          'Cite the right one by DOI (`overfull cite <doi>`), or rerun with --author/--year. If none is right, ask the author.\n',
+      );
+    }
+    return 1;
+  }
   if (!found) {
     io.stderr(
       `No confident match for "${query}" in CrossRef, arXiv or dblp. Nothing was added.\n` +
