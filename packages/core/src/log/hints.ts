@@ -219,10 +219,12 @@ export const ENVIRONMENT_PACKAGES: Record<string, string> = {
 };
 
 /** Theorem-like environments that need `\newtheorem`. */
-export const THEOREM_LIKE = new Set(words(`
+export const THEOREM_LIKE = new Set(
+  words(`
   theorem lemma corollary proposition definition remark example conjecture claim
   assumption hypothesis observation notation problem
-`));
+`),
+);
 
 export const COMMON_ENVIRONMENTS = words(`
   itemize enumerate description figure figure* table table* tabular equation center
@@ -233,7 +235,8 @@ export const COMMON_ENVIRONMENTS = words(`
 `);
 
 /** Math-only commands that cause `Missing $ inserted` in running text. */
-export const MATH_COMMANDS = new Set(words(`
+export const MATH_COMMANDS = new Set(
+  words(`
   alpha beta gamma delta epsilon varepsilon zeta eta theta vartheta iota kappa lambda mu
   nu xi pi rho sigma tau upsilon phi varphi chi psi omega Gamma Delta Theta Lambda Xi Pi
   Sigma Phi Psi Omega frac dfrac sqrt sum prod int oint lim infty leq geq neq le ge ne
@@ -243,7 +246,8 @@ export const MATH_COMMANDS = new Set(words(`
   boldsymbol hat bar tilde vec dot ddot overline underbrace overbrace log ln exp sin cos
   tan max min arg argmax argmin det mid parallel perp angle ell hbar Re Im aleph prime
   langle rangle lfloor rfloor lceil rceil left right
-`));
+`),
+);
 
 /** Replacements for Unicode characters that pdfLaTeX does not know by default. */
 export const UNICODE_REPLACEMENTS: Record<string, string> = {

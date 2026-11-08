@@ -1,1 +1,6 @@
-{"title":"Underscore in a file name outside math","engine":"pdflatex","check":"build","expect":["missing-dollar"]}
+{
+  "title": "Underscore in a file name outside math",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["missing-dollar"]
+}

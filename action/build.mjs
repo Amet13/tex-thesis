@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 
-const { version } = JSON.parse(readFileSync(new URL('../packages/cli/package.json', import.meta.url), 'utf8'));
+const { version } = JSON.parse(
+  readFileSync(new URL('../packages/cli/package.json', import.meta.url), 'utf8'),
+);
 
 await build({
   entryPoints: ['src/index.ts'],

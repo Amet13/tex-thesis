@@ -7,7 +7,11 @@ export function input(env: Record<string, string | undefined>, name: string): st
   return t ? t : undefined;
 }
 
-export function boolInput(env: Record<string, string | undefined>, name: string, fallback: boolean): boolean {
+export function boolInput(
+  env: Record<string, string | undefined>,
+  name: string,
+  fallback: boolean,
+): boolean {
   const v = input(env, name);
   if (v === undefined) return fallback;
   if (/^(true|yes|1|on)$/i.test(v)) return true;
@@ -30,7 +34,10 @@ export interface ActionInputs {
 }
 
 /** Turns the Action inputs into check options. Empty inputs fall back to overfull.yml. */
-export function readInputs(env: Record<string, string | undefined>, workspace: string): ActionInputs {
+export function readInputs(
+  env: Record<string, string | undefined>,
+  workspace: string,
+): ActionInputs {
   const workingDirectory = input(env, 'working-directory') ?? '.';
   const failOn = input(env, 'fail-on') ?? 'error';
   if (!['error', 'warning', 'never'].includes(failOn)) {

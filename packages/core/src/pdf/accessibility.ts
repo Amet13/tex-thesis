@@ -1,4 +1,4 @@
-import { type Problem, type Severity, statusOf, type CheckResult } from '../types.js';
+import { type CheckResult, type Problem, type Severity, statusOf } from '../types.js';
 import type { CheckLevel, PdfFacts, VeraPdfResult } from './types.js';
 
 export interface AccessibilityOptions {
@@ -191,7 +191,10 @@ export function accessibilityCheck(facts: PdfFacts, opts: AccessibilityOptions =
   if (opts.verapdf && !opts.verapdf.error) stats.verapdfFailedRules = opts.verapdf.failures.length;
   let summary: string;
   if (counted.length === 0) {
-    summary = opts.verapdf && !opts.verapdf.error ? 'Tagged, PDF/UA valid (veraPDF)' : 'Tagged, language and title set';
+    summary =
+      opts.verapdf && !opts.verapdf.error
+        ? 'Tagged, PDF/UA valid (veraPDF)'
+        : 'Tagged, language and title set';
   } else {
     summary = `${plural(counted.length, 'accessibility problem')}`;
   }

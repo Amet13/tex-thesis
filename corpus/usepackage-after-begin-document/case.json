@@ -1,1 +1,6 @@
-{"title":"\\usepackage after \\begin{document}","engine":"pdflatex","check":"build","expect":["preamble-only"]}
+{
+  "title": "\\usepackage after \\begin{document}",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["preamble-only"]
+}

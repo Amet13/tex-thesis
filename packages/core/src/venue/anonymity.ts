@@ -42,7 +42,8 @@ export function anonymityProblems(ctx: VenueContext): Problem[] {
       fix: 'Use `\\author{Anonymous}` or the venue class’s review/anonymous option',
     });
   }
-  const ack = /\\(?:section|chapter|subsection|paragraph|subsubsection)\*?\s*\{\s*Acknowledg|\\begin\{acknowledg|\\acknowledg(?:e)?ments\b/i;
+  const ack =
+    /\\(?:section|chapter|subsection|paragraph|subsubsection)\*?\s*\{\s*Acknowledg|\\begin\{acknowledg|\\acknowledg(?:e)?ments\b/i;
   for (const hit of grepTex(files, ack)) {
     problems.push({
       rule: 'anonymity-acknowledgments',
@@ -53,7 +54,8 @@ export function anonymityProblems(ctx: VenueContext): Problem[] {
       fix: 'Remove or comment out acknowledgments until the camera-ready version',
     });
   }
-  const self = /\b(?:our|my)\s+(?:previous|prior|earlier|own|recent)\s+(?:work|paper|papers|study|studies|publication|results?)\b/gi;
+  const self =
+    /\b(?:our|my)\s+(?:previous|prior|earlier|own|recent)\s+(?:work|paper|papers|study|studies|publication|results?)\b/gi;
   for (const hit of grepTex(files, self)) {
     problems.push({
       rule: 'anonymity-self-reference',

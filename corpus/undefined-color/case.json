@@ -1,1 +1,6 @@
-{"title":"Misspelled color name","engine":"pdflatex","check":"build","expect":["undefined-color"]}
+{
+  "title": "Misspelled color name",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["undefined-color"]
+}

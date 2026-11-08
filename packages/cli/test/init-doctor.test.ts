@@ -10,14 +10,25 @@ describe('templates', () => {
     expect(isTemplateFile('main.tex')).toBe(true);
     expect(isTemplateFile('figures/plot.pdf')).toBe(true);
     expect(isTemplateFile('.agents/skills/cite/SKILL.md')).toBe(true);
-    for (const f of ['thesis.pdf', 'thesis.aux', 'thesis.log', 'thesis.synctex.gz', 'thesis.bcf-SAVE-ERROR', 'thesis-luamml-mathml.html', '.overfull/cache/refs.json', 'chapters/intro.aux']) {
+    for (const f of [
+      'thesis.pdf',
+      'thesis.aux',
+      'thesis.log',
+      'thesis.synctex.gz',
+      'thesis.bcf-SAVE-ERROR',
+      'thesis-luamml-mathml.html',
+      '.overfull/cache/refs.json',
+      'chapters/intro.aux',
+    ]) {
       expect(isTemplateFile(f), f).toBe(false);
     }
   });
 });
 
 describe('overfull init', () => {
-  const haveTemplates = Boolean(templatesDir() && existsSync(join(templatesDir() as string, 'thesis', 'main.tex')));
+  const haveTemplates = Boolean(
+    templatesDir() && existsSync(join(templatesDir() as string, 'thesis', 'main.tex')),
+  );
 
   it.skipIf(!haveTemplates)('copies the thesis template and prints next steps', async () => {
     const cwd = tempDir();
@@ -52,7 +63,16 @@ describe('overfull doctor', () => {
     const io = memIo(tempDir());
     expect(await main(['doctor'], io)).toBe(0);
     const text = io.stdoutText();
-    for (const name of ['node', 'latexmk', 'docker', 'pdftoppm', 'verapdf', 'latexdiff', 'api.crossref.org', 'overfull.yml']) {
+    for (const name of [
+      'node',
+      'latexmk',
+      'docker',
+      'pdftoppm',
+      'verapdf',
+      'latexdiff',
+      'api.crossref.org',
+      'overfull.yml',
+    ]) {
       expect(text).toContain(name);
     }
     expect(text).toMatch(/api\.crossref\.org +unreachable/);
@@ -63,7 +83,9 @@ describe('overfull doctor', () => {
     writeFileSync(join(dir, 'overfull.yml'), 'mian: x.tex');
     const io = memIo(dir);
     expect(await main(['doctor', '--json'], io)).toBe(0);
-    const { items } = JSON.parse(io.stdoutText()) as { items: { name: string; ok: boolean; detail: string }[] };
+    const { items } = JSON.parse(io.stdoutText()) as {
+      items: { name: string; ok: boolean; detail: string }[];
+    };
     expect(items.find((i) => i.name === 'overfull.yml')).toMatchObject({ ok: false });
   });
 });

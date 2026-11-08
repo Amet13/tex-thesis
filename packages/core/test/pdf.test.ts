@@ -189,7 +189,10 @@ describe('accessibilityCheck', () => {
     );
     const r = accessibilityCheck(facts({ fonts }), { level: 'required' });
     expect(r.problems).toHaveLength(1);
-    expect(r.problems[0]).toMatchObject({ rule: 'font-not-embedded', data: { fonts: ['Helvetica'] } });
+    expect(r.problems[0]).toMatchObject({
+      rule: 'font-not-embedded',
+      data: { fonts: ['Helvetica'] },
+    });
   });
 
   it('adds an info when veraPDF is unavailable', () => {

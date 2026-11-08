@@ -3,7 +3,10 @@ import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
 
 /** Absolute path of an executable on PATH, or undefined. */
-export function which(cmd: string, env: Record<string, string | undefined> = process.env): string | undefined {
+export function which(
+  cmd: string,
+  env: Record<string, string | undefined> = process.env,
+): string | undefined {
   const exts = process.platform === 'win32' ? (env.PATHEXT ?? '.EXE;.CMD;.BAT').split(';') : [''];
   for (const dir of (env.PATH ?? '').split(delimiter)) {
     if (!dir) continue;
@@ -47,7 +50,9 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
       env: opts.env as NodeJS.ProcessEnv | undefined,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    const timer = opts.timeoutMs ? setTimeout(() => child.kill('SIGTERM'), opts.timeoutMs) : undefined;
+    const timer = opts.timeoutMs
+      ? setTimeout(() => child.kill('SIGTERM'), opts.timeoutMs)
+      : undefined;
     const feed = (chunk: string) => {
       if (!opts.onLine) return;
       pending += chunk;
@@ -101,7 +106,11 @@ export function dockerRunArgs(
     typeof process.getuid === 'function' && typeof process.getgid === 'function'
       ? ['--user', `${process.getuid()}:${process.getgid()}`]
       : [];
-  const env = Object.entries({ HOME: '/tmp', ...opts.env }).flatMap(([k, v]) => ['-e', `${k}=${v}`]);
-  const workdir = opts.subdir && opts.subdir !== '.' ? `/work/${opts.subdir.split('\\').join('/')}` : '/work';
+  const env = Object.entries({ HOME: '/tmp', ...opts.env }).flatMap(([k, v]) => [
+    '-e',
+    `${k}=${v}`,
+  ]);
+  const workdir =
+    opts.subdir && opts.subdir !== '.' ? `/work/${opts.subdir.split('\\').join('/')}` : '/work';
   return ['run', '--rm', ...user, ...env, '-v', `${dir}:/work`, '-w', workdir, image, ...command];
 }

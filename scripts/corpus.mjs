@@ -75,9 +75,9 @@ function commandFor(spec) {
   return ['latexmk', `-${spec.engine}`, ...flags, 'main.tex'];
 }
 
-function run(cmd, args) {
+function run(cmd, args, opts = {}) {
   return new Promise((done) => {
-    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
     let output = '';
     child.stdout.on('data', (chunk) => {
       output += chunk;
@@ -99,10 +99,20 @@ async function compile(testCase, { fixed = false } = {}) {
       filter: (src) => !CASE_ONLY_FILES.has(src.slice(testCase.dir.length + 1)),
     });
     if (fixed) await cp(join(testCase.dir, 'fixed.tex'), join(work, 'main.tex'));
-    const user = typeof process.getuid === 'function' ? [`--user`, `${process.getuid()}:${process.getgid()}`] : [];
-    const docker = ['run', '--rm', '--network', 'none', ...user, '-e', 'HOME=/tmp'];
-    docker.push('-v', `${work}:/w`, '-w', '/w', IMAGE, ...commandFor(testCase.spec));
-    const result = await run('docker', docker);
+    const user =
+      typeof process.getuid === 'function'
+        ? [`--user`, `${process.getuid()}:${process.getgid()}`]
+        : [];
+    let result;
+    if (process.env.OVERFULL_TEX_LOCAL) {
+      // Already inside a TeX Live image (CI runs the corpus in the Overfull image).
+      const [cmd, ...args] = commandFor(testCase.spec);
+      result = await run(cmd, args, { cwd: work });
+    } else {
+      const docker = ['run', '--rm', '--network', 'none', ...user, '-e', 'HOME=/tmp'];
+      docker.push('-v', `${work}:/w`, '-w', '/w', IMAGE, ...commandFor(testCase.spec));
+      result = await run('docker', docker);
+    }
     let log;
     try {
       log = await readFile(join(work, 'main.log'), 'utf8');
@@ -165,7 +175,14 @@ async function capture(cases) {
     const fired = rulesIn(log);
     const reasons = judge(c.spec, fired);
     const all = new Set([...fired.build, ...fired.output]);
-    return [c.id, c.spec.engine, c.spec.expect.join(',') || '-', list(all), '', reasons.length ? 'MISMATCH' : 'ok'];
+    return [
+      c.id,
+      c.spec.engine,
+      c.spec.expect.join(',') || '-',
+      list(all),
+      '',
+      reasons.length ? 'MISMATCH' : 'ok',
+    ];
   });
   printTable(rows);
   return rows.every((r) => r[5] === 'ok');
@@ -179,7 +196,9 @@ async function verify(cases, { recompile }) {
     let fixedCell = '';
     if (recompile && c.hasFixed) {
       const fixedFired = rulesIn(await compile(c, { fixed: true }));
-      const leaked = c.spec.expect.filter((r) => fixedFired.build.has(r) || fixedFired.output.has(r));
+      const leaked = c.spec.expect.filter(
+        (r) => fixedFired.build.has(r) || fixedFired.output.has(r),
+      );
       fixedCell = leaked.length ? `FAIL(${leaked.join(',')})` : 'clean';
       if (leaked.length) reasons.push(`fixed.tex still fires ${leaked.join(',')}`);
     }

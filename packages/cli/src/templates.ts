@@ -47,8 +47,14 @@ export function copyTemplate(src: string, dest: string): void {
 /** Templates bundled with the package (published), or the repo's templates/ in development. */
 export function templatesDir(): string | undefined {
   const here = dirname(fileURLToPath(import.meta.url));
-  for (const candidate of [join(here, '..', 'templates'), join(here, '..', '..', '..', 'templates')]) {
-    if (existsSync(candidate) && readdirSync(candidate).some((n) => (TEMPLATE_NAMES as readonly string[]).includes(n))) {
+  for (const candidate of [
+    join(here, '..', 'templates'),
+    join(here, '..', '..', '..', 'templates'),
+  ]) {
+    if (
+      existsSync(candidate) &&
+      readdirSync(candidate).some((n) => (TEMPLATE_NAMES as readonly string[]).includes(n))
+    ) {
       return candidate;
     }
   }

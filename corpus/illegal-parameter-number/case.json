@@ -1,1 +1,6 @@
-{"title":"Macro uses #2 but takes one argument","engine":"pdflatex","check":"build","expect":["illegal-parameter-number"]}
+{
+  "title": "Macro uses #2 but takes one argument",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["illegal-parameter-number"]
+}

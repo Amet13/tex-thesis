@@ -28,7 +28,8 @@ export function venueCheck(profile: VenueProfile, ctx: VenueContext): CheckResul
   const errors = problems.filter((p) => p.severity === 'error').length;
   const warnings = problems.filter((p) => p.severity === 'warning').length;
   const parts = [`profile ${profile.id}`];
-  if (profile.pageLimit && ctx.facts) parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
+  if (profile.pageLimit && ctx.facts)
+    parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
   else if (ctx.facts) parts.push(`${ctx.facts.pageCount} pages`);
   if (errors) parts.push(`${errors} to fix`);
   if (warnings) parts.push(`${warnings} to review`);

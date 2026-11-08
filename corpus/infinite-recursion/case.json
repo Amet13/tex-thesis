@@ -1,1 +1,6 @@
-{"title":"Macro that calls itself","engine":"pdflatex","check":"build","expect":["tex-capacity-exceeded"]}
+{
+  "title": "Macro that calls itself",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["tex-capacity-exceeded"]
+}

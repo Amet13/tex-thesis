@@ -1,4 +1,11 @@
-import { CHECK_IDS, type CheckResult, type Location, type Problem, type Report, type Severity } from '../types.js';
+import {
+  CHECK_IDS,
+  type CheckResult,
+  type Location,
+  type Problem,
+  type Report,
+  type Severity,
+} from '../types.js';
 
 export const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
 

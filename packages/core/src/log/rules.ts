@@ -8,7 +8,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Unknown command',
-    summary: 'The document uses a command that no loaded package defines: a typo, a missing package, or a command from another citation package.',
+    summary:
+      'The document uses a command that no loaded package defines: a typo, a missing package, or a command from another citation package.',
     fix: 'Fix the spelling or load the package that defines the command.',
     corpus: 'undefined-control-sequence',
   },
@@ -17,7 +18,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Math symbol outside math mode',
-    summary: 'A `_`, `^` or math command appears in running text, or a formula is not closed, so TeX inserted a `$`.',
+    summary:
+      'A `_`, `^` or math command appears in running text, or a formula is not closed, so TeX inserted a `$`.',
     fix: 'Escape `_` as `\\_` in text, or put the formula inside `$…$`.',
     corpus: 'underscore-in-text',
   },
@@ -26,7 +28,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Missing brace',
-    summary: 'A `{` group is still open where TeX needs it closed, for example at the end of a formula.',
+    summary:
+      'A `{` group is still open where TeX needs it closed, for example at the end of a formula.',
     fix: 'Close every `{` before the formula or environment ends.',
     corpus: 'missing-brace-inserted',
   },
@@ -44,7 +47,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Unclosed command argument',
-    summary: 'The argument of a command is never closed, so TeX read to the end of the paragraph or file.',
+    summary:
+      'The argument of a command is never closed, so TeX read to the end of the paragraph or file.',
     fix: 'Add the missing `}` after the argument.',
     corpus: 'unclosed-brace',
   },
@@ -53,7 +57,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Package or class not installed',
-    summary: 'A `\\usepackage` or `\\documentclass` names a file that is not in the TeX installation.',
+    summary:
+      'A `\\usepackage` or `\\documentclass` names a file that is not in the TeX installation.',
     fix: 'Check the spelling, install it with `tlmgr install <name>`, or build in the Overfull Docker image.',
     corpus: 'missing-package',
   },
@@ -80,7 +85,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Unsupported image format',
-    summary: '`\\includegraphics` was given a format such as SVG or GIF that the engine cannot embed.',
+    summary:
+      '`\\includegraphics` was given a format such as SVG or GIF that the engine cannot embed.',
     fix: 'Convert the image to PDF, PNG or JPEG.',
     corpus: 'unknown-graphics-extension',
   },
@@ -89,7 +95,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Unknown environment',
-    summary: 'A `\\begin{…}` names an environment that is not defined (theorem environments must be declared).',
+    summary:
+      'A `\\begin{…}` names an environment that is not defined (theorem environments must be declared).',
     fix: 'Load the package that defines it, declare it with `\\newtheorem`, or fix the spelling.',
     corpus: 'environment-undefined',
   },
@@ -116,7 +123,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Missing \\item',
-    summary: 'LaTeX expected `\\item`, typically because text appears in a list before the first item.',
+    summary:
+      'LaTeX expected `\\item`, typically because text appears in a list before the first item.',
     fix: 'Start each entry with `\\item` and move other text out of the list.',
     corpus: 'missing-item',
   },
@@ -169,7 +177,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'biblatex error',
-    summary: 'biblatex stopped: BibTeX commands used with biblatex, an incompatible package, or a backend/version mismatch.',
+    summary:
+      'biblatex stopped: BibTeX commands used with biblatex, an incompatible package, or a backend/version mismatch.',
     fix: 'Use biblatex options instead of BibTeX commands; delete the .bbl and rebuild on mismatches.',
     corpus: 'biblatex-bibliographystyle',
   },
@@ -178,7 +187,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Misused # character',
-    summary: 'A macro definition uses `#n` beyond its declared arguments, or a literal `#` appears in text.',
+    summary:
+      'A macro definition uses `#n` beyond its declared arguments, or a literal `#` appears in text.',
     fix: 'Declare enough arguments, or write `\\#` for a hash sign.',
     corpus: 'illegal-parameter-number',
   },
@@ -196,7 +206,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'Unescaped & in text',
-    summary: '`&` separates table columns and cannot appear in running text or a .bib field unescaped.',
+    summary:
+      '`&` separates table columns and cannot appear in running text or a .bib field unescaped.',
     fix: 'Write `\\&`.',
     corpus: 'ampersand-in-text',
   },
@@ -232,7 +243,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'TeX ran out of capacity',
-    summary: 'Usually infinite recursion (a command that calls itself); otherwise a very large figure.',
+    summary:
+      'Usually infinite recursion (a command that calls itself); otherwise a very large figure.',
     fix: 'Check recent `\\newcommand`/`\\renewcommand` definitions; for big figures use LuaLaTeX or externalize them.',
     corpus: 'infinite-recursion',
   },
@@ -274,7 +286,8 @@ export const logRules: RuleInfo[] = [
     check: 'build',
     severity: 'error',
     title: 'TeX error',
-    summary: 'TeX reported an error Overfull has no specific explanation for; the original message is shown.',
+    summary:
+      'TeX reported an error Overfull has no specific explanation for; the original message is shown.',
     fix: 'Read the message and fix the first error in the log first.',
   },
   // output
@@ -301,7 +314,8 @@ export const logRules: RuleInfo[] = [
     check: 'output',
     severity: 'error',
     title: 'Bibliography not built',
-    summary: 'Biber or BibTeX was never run, so all citations are undefined and the bibliography is empty.',
+    summary:
+      'Biber or BibTeX was never run, so all citations are undefined and the bibliography is empty.',
     fix: 'Build with `latexmk`, or run biber/bibtex and then LaTeX twice.',
     corpus: 'biblatex-rerun-biber',
   },
@@ -318,7 +332,8 @@ export const logRules: RuleInfo[] = [
     check: 'output',
     severity: 'warning',
     title: 'LaTeX needs another run',
-    summary: 'Labels changed during the run; references and page numbers may be wrong until LaTeX runs again.',
+    summary:
+      'Labels changed during the run; references and page numbers may be wrong until LaTeX runs again.',
     fix: 'Build with `latexmk`, which reruns LaTeX as needed.',
     corpus: 'labels-changed',
   },
@@ -354,7 +369,8 @@ export const logRules: RuleInfo[] = [
     check: 'output',
     severity: 'warning',
     title: 'Text in the margin',
-    summary: 'A line is wider than the text block by more than the threshold (default 10pt). The worst box per file is reported.',
+    summary:
+      'A line is wider than the text block by more than the threshold (default 10pt). The worst box per file is reported.',
     fix: 'Rephrase, use `\\url`/`\\path` for long identifiers, or scale wide material to `\\linewidth`.',
     corpus: 'overfull-hbox',
   },

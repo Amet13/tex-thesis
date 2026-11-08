@@ -85,7 +85,11 @@ function parseXml(xml: string): VeraPdfResult {
     const inner = m[2] ?? '';
     const contexts: string[] = [];
     const checkRe = /<check\b[^>]*status="failed"[^>]*>([\s\S]*?)<\/check>/g;
-    for (let c = checkRe.exec(inner); c && contexts.length < MAX_CONTEXTS; c = checkRe.exec(inner)) {
+    for (
+      let c = checkRe.exec(inner);
+      c && contexts.length < MAX_CONTEXTS;
+      c = checkRe.exec(inner)
+    ) {
       const ctx = childText(c[1] ?? '', 'context');
       if (ctx) contexts.push(ctx);
     }

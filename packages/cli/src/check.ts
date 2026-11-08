@@ -3,17 +3,17 @@ import { join } from 'node:path';
 import {
   accessibilityCheck,
   analyzeLog,
+  type BibEntry,
+  type BibParseIssue,
   CHECK_IDS,
   type CheckId,
   type CheckResult,
   citedKeys,
-  type BibEntry,
-  type BibParseIssue,
   missingKeys,
   type PdfFacts,
   type Problem,
-  pdfOutputProblems,
   parseBibWithIssues,
+  pdfOutputProblems,
   type Report,
   refsCheck,
   reportStatus,
@@ -29,8 +29,8 @@ import { type Config, loadConfig } from './config.js';
 import { UsageError } from './io.js';
 import { readPdfFacts } from './pdf.js';
 import { listFiles, readAux, readIfExists, readTexFiles } from './project.js';
-import { VERSION } from './version.js';
 import { runVeraPdf } from './verapdf.js';
+import { VERSION } from './version.js';
 
 export interface CheckOptions {
   /** Project directory (default: process.cwd()). */
@@ -99,7 +99,9 @@ function missingPdfReason(inp: Inputs): string {
 export function mergeOutput(output: CheckResult, pdfProblems: Problem[]): CheckResult {
   const has = (re: RegExp) => output.problems.some((p) => re.test(p.rule));
   const extra = pdfProblems.filter((p) =>
-    p.rule === 'pdf-unresolved-reference' ? !has(/undefined-reference|reference-undefined/) : !has(/undefined-citation|citation-undefined/),
+    p.rule === 'pdf-unresolved-reference'
+      ? !has(/undefined-reference|reference-undefined/)
+      : !has(/undefined-citation|citation-undefined/),
   );
   if (extra.length === 0) return output;
   const problems = [...output.problems, ...extra];
@@ -118,7 +120,9 @@ function buildAndOutput(inp: Inputs, wanted: Set<CheckId>): CheckResult[] {
           check: 'output',
           status: statusOf(problems),
           problems,
-          summary: problems.length ? `${problems.length} problem(s) in the PDF text (no log)` : 'No "??" or "[?]" in the PDF (no log)',
+          summary: problems.length
+            ? `${problems.length} problem(s) in the PDF text (no log)`
+            : 'No "??" or "[?]" in the PDF (no log)',
         });
       } else out.push(skipped('output', reason));
     }
@@ -126,14 +130,16 @@ function buildAndOutput(inp: Inputs, wanted: Set<CheckId>): CheckResult[] {
   }
   const { build, output } = analyzeLog(inp.log, { root: inp.root });
   if (wanted.has('build')) out.push(build);
-  if (wanted.has('output')) out.push(inp.facts ? mergeOutput(output, pdfOutputProblems(inp.facts)) : output);
+  if (wanted.has('output'))
+    out.push(inp.facts ? mergeOutput(output, pdfOutputProblems(inp.facts)) : output);
   return out;
 }
 
 async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult> {
   const { config, root } = inp;
   const bibFiles = opts.bib ?? config.bib;
-  if (bibFiles.length === 0) return skipped('references', 'No .bib file found (set `bib:` in overfull.yml)');
+  if (bibFiles.length === 0)
+    return skipped('references', 'No .bib file found (set `bib:` in overfull.yml)');
   const entries: BibEntry[] = [];
   const parseProblems: Problem[] = [];
   const missingFiles: string[] = [];
@@ -143,7 +149,10 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
       missingFiles.push(file);
       continue;
     }
-    const { entries: es, issues } = parseBibWithIssues(text) as { entries: BibEntry[]; issues: BibParseIssue[] };
+    const { entries: es, issues } = parseBibWithIssues(text) as {
+      entries: BibEntry[];
+      issues: BibParseIssue[];
+    };
     for (const e of es) entries.push({ ...e, file });
     for (const i of issues) {
       parseProblems.push({
@@ -176,7 +185,8 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
     });
   }
   const env = opts.env ?? process.env;
-  const cache = opts.cache === false ? undefined : new FileCache(join(root, '.overfull', 'cache', 'refs.json'));
+  const cache =
+    opts.cache === false ? undefined : new FileCache(join(root, '.overfull', 'cache', 'refs.json'));
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
   const results = await verifyEntries(toVerify, {
@@ -190,7 +200,8 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   cache?.save();
   const result = refsCheck(results, { entries: toVerify, extra });
   if (!keys) {
-    result.summary = `${result.summary ?? ''} — all entries checked (no .aux to tell which are cited)`.trim();
+    result.summary =
+      `${result.summary ?? ''} — all entries checked (no .aux to tell which are cited)`.trim();
   }
   if (result.status === 'skipped' && result.problems.some((p) => p.severity !== 'info')) {
     // Offline: lookups skipped, but missing keys and parse errors still count.
@@ -201,7 +212,8 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
 
 async function accessibility(inp: Inputs, opts: CheckOptions): Promise<CheckResult> {
   const level = inp.config.profile.accessibility ?? 'recommended';
-  if (level === 'off') return skipped('accessibility', `Accessibility is off for profile ${inp.config.profile.id}`);
+  if (level === 'off')
+    return skipped('accessibility', `Accessibility is off for profile ${inp.config.profile.id}`);
   if (!inp.facts) return skipped('accessibility', missingPdfReason(inp));
   let verapdf: VeraPdfResult | null | undefined;
   if (opts.verapdf !== false) verapdf = await runVeraPdf(join(inp.root, inp.pdfPath), opts.env);
@@ -247,7 +259,13 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   if (wanted.has('venue')) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
   const target = existsSync(join(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
-  return { tool: 'overfull', version: VERSION, target, status: reportStatus(results), checks: results };
+  return {
+    tool: 'overfull',
+    version: VERSION,
+    target,
+    status: reportStatus(results),
+    checks: results,
+  };
 }
 
 /** Exit code for a report: 1 when it fails the `failOn` threshold. */
@@ -257,4 +275,3 @@ export function exitCodeFor(report: Report, failOn: 'error' | 'warning' | 'never
   if (failOn === 'warning' && report.status === 'warn') return 1;
   return 0;
 }
-

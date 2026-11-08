@@ -17,13 +17,20 @@ describe('loadConfig', () => {
       references: { mailto: 'test@example.org', ignore: ['rfc9110'] },
       build: { engine: 'auto', image: DEFAULT_IMAGE },
     });
-    expect(c.profile).toMatchObject({ id: 'thesis', accessibility: 'required', pageLimit: { max: 1, endLabel: 'overfull:main-end' } });
+    expect(c.profile).toMatchObject({
+      id: 'thesis',
+      accessibility: 'required',
+      pageLimit: { max: 1, endLabel: 'overfull:main-end' },
+    });
     expect(c.checks).toEqual(['build', 'output', 'references', 'accessibility', 'venue']);
   });
 
   it('uses defaults without a config file and finds the bibliography in main.tex', () => {
     const dir = tempDir();
-    writeFileSync(join(dir, 'main.tex'), '% \\addbibresource{old.bib}\n\\addbibresource{refs/papers.bib}\n');
+    writeFileSync(
+      join(dir, 'main.tex'),
+      '% \\addbibresource{old.bib}\n\\addbibresource{refs/papers.bib}\n',
+    );
     const c = loadConfig(dir);
     expect(c.file).toBeUndefined();
     expect(c).toMatchObject({ main: 'main.tex', jobname: 'main', bib: ['refs/papers.bib'] });
@@ -34,7 +41,10 @@ describe('loadConfig', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'b.bib'), '');
     writeFileSync(join(dir, 'a.bib'), '');
-    const c = loadConfig(dir, undefined, { OVERFULL_IMAGE: 'local:dev', OVERFULL_MAILTO: 'me@x.org' });
+    const c = loadConfig(dir, undefined, {
+      OVERFULL_IMAGE: 'local:dev',
+      OVERFULL_MAILTO: 'me@x.org',
+    });
     expect(c.bib).toEqual(['a.bib', 'b.bib']);
     expect(c.build.image).toBe('local:dev');
     expect(c.references.mailto).toBe('me@x.org');

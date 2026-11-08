@@ -31,7 +31,8 @@ export const pdfRules: RuleInfo[] = [
     check: 'accessibility',
     severity: 'error',
     title: 'Document language not set',
-    summary: 'The PDF does not declare its language, so assistive technology may read it with the wrong voice.',
+    summary:
+      'The PDF does not declare its language, so assistive technology may read it with the wrong voice.',
     fix: 'Set `lang=` in `\\DocumentMetadata{...}` (for example `lang=en-US`).',
   },
   {
@@ -56,7 +57,8 @@ export const pdfRules: RuleInfo[] = [
     check: 'accessibility',
     severity: 'error',
     title: 'Font not embedded',
-    summary: 'A font is referenced but not embedded, so the PDF may render differently elsewhere and fails PDF/UA and most venue checks.',
+    summary:
+      'A font is referenced but not embedded, so the PDF may render differently elsewhere and fails PDF/UA and most venue checks.',
     fix: 'Use OpenType or Type 1 fonts (LuaLaTeX with fontspec embeds them); re-export figures with fonts embedded.',
   },
   {
@@ -64,7 +66,8 @@ export const pdfRules: RuleInfo[] = [
     check: 'accessibility',
     severity: 'info',
     title: 'PDF/UA conformance not claimed',
-    summary: 'The XMP metadata does not claim PDF/UA, so validators and archives will not treat it as accessible.',
+    summary:
+      'The XMP metadata does not claim PDF/UA, so validators and archives will not treat it as accessible.',
     fix: 'Add `pdfstandard=ua-2` to `\\DocumentMetadata{...}`.',
   },
   {
@@ -72,7 +75,8 @@ export const pdfRules: RuleInfo[] = [
     check: 'accessibility',
     severity: 'info',
     title: 'veraPDF validation not run',
-    summary: 'veraPDF was not available, so only Overfull’s own accessibility checks ran (no full PDF/UA validation).',
+    summary:
+      'veraPDF was not available, so only Overfull’s own accessibility checks ran (no full PDF/UA validation).',
     fix: 'Install veraPDF (https://verapdf.org) or run `overfull check` in the Overfull Docker image.',
   },
   {

@@ -42,7 +42,10 @@ function location(file?: string, line?: number, page?: number): Problem['locatio
 function evidence(lines: string[]): string {
   const all = lines.join('\n').split('\n');
   if (all.length <= MAX_EVIDENCE_LINES) return all.join('\n');
-  return [...all.slice(0, MAX_EVIDENCE_LINES), `… (${all.length - MAX_EVIDENCE_LINES} more lines)`].join('\n');
+  return [
+    ...all.slice(0, MAX_EVIDENCE_LINES),
+    `… (${all.length - MAX_EVIDENCE_LINES} more lines)`,
+  ].join('\n');
 }
 
 function compact<T extends object>(value: T): T {
@@ -57,7 +60,9 @@ function compact<T extends object>(value: T): T {
 
 /** Errors that only report that the run stopped; they belong to the error before them. */
 function isTerminationNotice(error: LogError): boolean {
-  return /^(?:Emergency stop|==> Fatal error occurred|\s*==> Fatal error occurred)/.test(error.message.trim());
+  return /^(?:Emergency stop|==> Fatal error occurred|\s*==> Fatal error occurred)/.test(
+    error.message.trim(),
+  );
 }
 
 function atEndDocument(error: LogError): boolean {
@@ -87,7 +92,12 @@ const CONSEQUENCE_RULES = new Set([
  * A follow-on error is folded into the preceding root when it sits in the same file within
  * `CASCADE_LINES` lines after it and is the same kind of error or a typical side effect.
  */
-function isFollower(error: LogError, rule: string, check: Problem['check'], group: Group | undefined): boolean {
+function isFollower(
+  error: LogError,
+  rule: string,
+  check: Problem['check'],
+  group: Group | undefined,
+): boolean {
   if (!group) return false;
   if (isTerminationNotice(error)) return true;
   const { root, problem } = group;
@@ -128,7 +138,12 @@ function errorProblems(parsed: ParsedLog, ctx: ExplainContext): Problem[] {
     // Fatal file errors print their source line only in the follow-up "Emergency stop".
     const lined = followers.find((f) => f.line !== undefined && f.file === root.file);
     // (\usepackage reads ahead one line, so a missing package would point past its line.)
-    if (root.line === undefined && lined?.line !== undefined && problem.location && problem.rule !== 'missing-package') {
+    if (
+      root.line === undefined &&
+      lined?.line !== undefined &&
+      problem.location &&
+      problem.rule !== 'missing-package'
+    ) {
       problem.location.line = lined.line;
     }
     problem.evidence = evidence([root.raw, ...followers.map((f) => f.raw)]);
@@ -143,7 +158,9 @@ function fatalWithoutError(parsed: ParsedLog, problems: Problem[]): Problem[] {
       rule: 'tex-error',
       check: 'build',
       severity: 'error',
-      message: parsed.noPages ? 'The build produced no pages' : 'The build stopped before finishing',
+      message: parsed.noPages
+        ? 'The build produced no pages'
+        : 'The build stopped before finishing',
       detail: parsed.noPages
         ? 'TeX finished without typesetting anything, so there is no PDF.'
         : 'TeX aborted the run; the PDF is missing or incomplete.',
@@ -244,7 +261,9 @@ function bibliographyProblem(state: StaleState, citations: LogWarning[], raw: st
   const command = tool === 'Biber' ? '`biber main`' : '`bibtex main`';
   const missing = state.bibliography === 'missing';
   const suffix =
-    keys.length > 0 ? ` (${plural(keys.length, 'citation')} ${keys.length === 1 ? 'shows' : 'show'} as [?])` : '';
+    keys.length > 0
+      ? ` (${plural(keys.length, 'citation')} ${keys.length === 1 ? 'shows' : 'show'} as [?])`
+      : '';
   return compact({
     rule: missing ? 'bibliography-missing' : 'bibliography-stale',
     check: 'output' as const,
@@ -272,7 +291,8 @@ function rerunProblem(references: LogWarning[], raw: string[]): Problem {
       labels.length > 0
         ? `Cross-references are out of date: rerun LaTeX (${plural(labels.length, 'reference')} ${labels.length === 1 ? 'shows' : 'show'} as ??)`
         : 'Cross-references may be out of date: rerun LaTeX',
-    detail: 'Labels changed during this run, so page numbers and references in the PDF may be wrong until LaTeX runs again.',
+    detail:
+      'Labels changed during this run, so page numbers and references in the PDF may be wrong until LaTeX runs again.',
     fix: 'Build with `latexmk`, which reruns LaTeX until references settle, or run LaTeX once more.',
     related: labels.length > 0 ? labels.length : undefined,
     evidence: evidence(raw),
@@ -289,7 +309,10 @@ function duplicateLabels(list: LogWarning[]): Problem[] {
       severity: 'warning' as const,
       message: `Label ${code(label)} is defined more than once`,
       // LaTeX notices duplicates while reading the .aux file, which says nothing about the source.
-      location: extension(first.file ?? '') === 'aux' ? undefined : location(first.file, first.line, first.page),
+      location:
+        extension(first.file ?? '') === 'aux'
+          ? undefined
+          : location(first.file, first.line, first.page),
       detail: `References to ${code(label)} point to whichever definition LaTeX saw last, which may be the wrong one.`,
       fix: `Search for ${code(`\\label{${label}}`)} and give each one a unique name.`,
       evidence: evidence(items.map((w) => w.raw)),
@@ -332,13 +355,19 @@ function overfullBoxes(list: LogWarning[], thresholdPt: number, errors: LogError
     else byFile.set(key, [w]);
   }
   return [...byFile.values()].map((items) => {
-    const worst = items.reduce((a, b) => (Number(b.data.amountPt) > Number(a.data.amountPt) ? b : a));
+    const worst = items.reduce((a, b) =>
+      Number(b.data.amountPt) > Number(a.data.amountPt) ? b : a,
+    );
     const amount = Number(worst.data.amountPt);
     const lines = worst.data.lines as [number, number] | undefined;
     const vertical = worst.data.box === 'vbox';
     const others = items.length - 1;
     const text = vertical ? '' : boxText(worst.raw);
-    const where = lines ? (lines[0] === lines[1] ? `line ${lines[0]}` : `lines ${lines[0]}–${lines[1]}`) : '';
+    const where = lines
+      ? lines[0] === lines[1]
+        ? `line ${lines[0]}`
+        : `lines ${lines[0]}–${lines[1]}`
+      : '';
     return compact({
       rule: 'overfull-box',
       check: 'output' as const,
@@ -404,7 +433,8 @@ function missingGlyphs(list: LogWarning[]): Problem[] {
       severity: 'error' as const,
       message: `${plural(chars.length, 'character')} missing from the font ${code(fontName)}: ${chars.slice(0, 12).join(' ')}`,
       location: location(first.file, first.line, first.page),
-      detail: 'The font has no glyph for these characters, so they are silently left out of the PDF.',
+      detail:
+        'The font has no glyph for these characters, so they are silently left out of the PDF.',
       fix: 'Switch to a font that covers them (for CJK text: `\\usepackage{xeCJK}` or `luatexja`, or `\\setmainfont{Noto Serif CJK SC}`), or use a fallback font for these characters.',
       evidence: evidence(items.slice(0, 5).map((w) => w.raw)),
       data: { font, chars, count: items.length },
@@ -423,7 +453,8 @@ function pdfStringTokens(list: LogWarning[]): Problem[] {
       severity: 'info' as const,
       message: `Math or commands in a heading were dropped from the PDF bookmarks (${tokens.map(code).join(', ')})`,
       location: location(first.file, first.line, first.page),
-      detail: 'hyperref turns headings into PDF bookmarks, which are plain text; it removed what it could not convert.',
+      detail:
+        'hyperref turns headings into PDF bookmarks, which are plain text; it removed what it could not convert.',
       fix: 'Give a plain-text alternative: `\\section{\\texorpdfstring{$\\alpha < 1$}{alpha < 1}}`.',
       related: list.length > 1 ? list.length - 1 : undefined,
       evidence: evidence(list.slice(0, 4).map((w) => w.raw)),
@@ -456,7 +487,8 @@ function simpleWarnings(w: WarningsByKind): Problem[] {
         severity: 'warning' as const,
         message: `fontspec: ${font.message}`,
         location: location(font.file, font.line),
-        detail: 'The selected font lacks a requested feature or script, so text may look different than intended.',
+        detail:
+          'The selected font lacks a requested feature or script, so text may look different than intended.',
         fix: 'Choose a font that supports the feature/script, or remove the option from `\\setmainfont`.',
         evidence: font.raw,
       }),
@@ -532,7 +564,8 @@ function warningProblems(parsed: ParsedLog, buildFailed: boolean, thresholdPt: n
           severity: 'warning' as const,
           message: 'The bibliography is empty',
           location: location(empty.file, empty.line),
-          detail: '`\\printbibliography` printed nothing: there are no citations, or no cited key was found in the .bib files.',
+          detail:
+            '`\\printbibliography` printed nothing: there are no citations, or no cited key was found in the .bib files.',
           fix: 'Cite sources with `\\cite{…}`, check `\\addbibresource{…}` points at the right .bib file, or use `\\nocite{*}` to list everything.',
           evidence: empty.raw,
         }),
@@ -555,7 +588,11 @@ function warningProblems(parsed: ParsedLog, buildFailed: boolean, thresholdPt: n
 // ---------------------------------------------------------------------------
 
 function packagesOf(parsed: ParsedLog): Set<string> {
-  return new Set(parsed.files.filter((f) => extension(f) === 'sty').map((f) => f.replace(/^.*\//, '').replace(/\.sty$/, '')));
+  return new Set(
+    parsed.files
+      .filter((f) => extension(f) === 'sty')
+      .map((f) => f.replace(/^.*\//, '').replace(/\.sty$/, '')),
+  );
 }
 
 function buildSummary(problems: Problem[], parsed: ParsedLog): string {
@@ -582,11 +619,18 @@ function skipped(check: 'build' | 'output', reason: string): CheckResult {
 export function analyzeLog(text: string, opts: AnalyzeLogOptions = {}): LogAnalysis {
   const parsed = parseLog(text, { root: opts.root });
   if (text.trim() === '') {
-    return { build: skipped('build', 'The log file is empty'), output: skipped('output', 'The log file is empty'), parsed };
+    return {
+      build: skipped('build', 'The log file is empty'),
+      output: skipped('output', 'The log file is empty'),
+      parsed,
+    };
   }
   const threshold = opts.overfullThresholdPt ?? DEFAULT_OVERFULL_PT;
   const fromErrors = errorProblems(parsed, { packages: packagesOf(parsed) });
-  const buildProblems = [...fromErrors.filter((p) => p.check === 'build'), ...fatalWithoutError(parsed, fromErrors)];
+  const buildProblems = [
+    ...fromErrors.filter((p) => p.check === 'build'),
+    ...fatalWithoutError(parsed, fromErrors),
+  ];
   const buildFailed = buildProblems.length > 0;
   const outputProblems = [
     ...fromErrors.filter((p) => p.check === 'output'),

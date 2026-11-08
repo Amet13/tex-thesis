@@ -48,7 +48,9 @@ export function formatHuman(report: Report, opts: HumanOptions = {}): string {
   for (const ch of report.checks) {
     const glyph = statusPaint[ch.status](STATUS_GLYPH[ch.status]);
     const text = checkLine(ch);
-    lines.push(`  ${glyph} ${pad(ch.check, nameWidth)}${ch.status === 'skipped' ? c.dim(text) : text}`);
+    lines.push(
+      `  ${glyph} ${pad(ch.check, nameWidth)}${ch.status === 'skipped' ? c.dim(text) : text}`,
+    );
   }
   const problems = sortedProblems(report);
   if (problems.length > 0) {
@@ -57,7 +59,8 @@ export function formatHuman(report: Report, opts: HumanOptions = {}): string {
       28,
       Math.max(...problems.map((p) => formatLocation(p.location).length)),
     );
-    for (const p of problems) lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
+    for (const p of problems)
+      lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
   }
   lines.push('');
   lines.push(tallyLine(tally(report)));

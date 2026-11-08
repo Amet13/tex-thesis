@@ -17,7 +17,11 @@ function inline(s: string): string {
   return s
     .replace(/\r?\n/g, ' ')
     .split('`')
-    .map((part, i) => (i % 2 === 1 ? `<code>${escapeHtml(part).replace(/\|/g, '&#124;')}</code>` : escapeMarkdown(part)))
+    .map((part, i) =>
+      i % 2 === 1
+        ? `<code>${escapeHtml(part).replace(/\|/g, '&#124;')}</code>`
+        : escapeMarkdown(part),
+    )
     .join('');
 }
 
@@ -45,7 +49,10 @@ export function formatMarkdown(report: Report): string {
     const mine = problems.filter((p) => p.check === c.check);
     if (mine.length === 0) continue;
     const open = mine.some((p) => p.severity === 'error') ? ' open' : '';
-    out.push(`<details${open}><summary><b>${c.check}</b>: ${mine.length} item${mine.length === 1 ? '' : 's'}</summary>`, '');
+    out.push(
+      `<details${open}><summary><b>${c.check}</b>: ${mine.length} item${mine.length === 1 ? '' : 's'}</summary>`,
+      '',
+    );
     for (const p of mine) out.push(problemItem(p));
     out.push('', '</details>', '');
   }

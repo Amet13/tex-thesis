@@ -1,5 +1,5 @@
-import type { CheckId } from '../types.js';
 import type { PdfFacts } from '../pdf/types.js';
+import type { CheckId } from '../types.js';
 
 export type Level = 'required' | 'recommended' | 'off';
 

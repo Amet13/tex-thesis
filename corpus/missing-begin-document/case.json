@@ -1,1 +1,6 @@
-{"title":"Text in the preamble","engine":"pdflatex","check":"build","expect":["missing-begin-document"]}
+{
+  "title": "Text in the preamble",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["missing-begin-document"]
+}

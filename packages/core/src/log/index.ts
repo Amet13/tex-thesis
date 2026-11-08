@@ -5,7 +5,7 @@
  */
 
 export { type AnalyzeLogOptions, analyzeLog, type LogAnalysis } from './analyze.js';
-export { normalizePath } from './paths.js';
 export { type ParseOptions, parseLog } from './parse.js';
+export { normalizePath } from './paths.js';
 export { logRules } from './rules.js';
 export type { LogError, LogOutputFile, LogWarning, LogWarningKind, ParsedLog } from './types.js';

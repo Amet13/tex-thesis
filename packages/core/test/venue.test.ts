@@ -66,7 +66,12 @@ describe('resolveProfile', () => {
 
   it('merges inline fields over the base profile', () => {
     const p = resolveProfile({ extends: 'paper', pageLimit: { max: 9 }, anonymous: true });
-    expect(p).toMatchObject({ id: 'paper', disclosure: 'recommended', anonymous: true, pageLimit: { max: 9 } });
+    expect(p).toMatchObject({
+      id: 'paper',
+      disclosure: 'recommended',
+      anonymous: true,
+      pageLimit: { max: 9 },
+    });
     expect(builtinProfiles.paper?.anonymous).toBeUndefined();
   });
 
@@ -128,7 +133,10 @@ describe('anonymity', () => {
         '\\section{Use of AI tools}',
       ].join('\n'),
     );
-    const r = venueCheck(profile, { facts: facts(1, { info: { author: 'Ada Lovelace' } }), texFiles: [src] });
+    const r = venueCheck(profile, {
+      facts: facts(1, { info: { author: 'Ada Lovelace' } }),
+      texFiles: [src],
+    });
     expect(rules(r)).toEqual([
       'anonymity-pdf-author',
       'anonymity-author-named',
@@ -142,7 +150,10 @@ describe('anonymity', () => {
   it('accepts Anonymous authors and macro-only \\author', () => {
     const r = venueCheck(profile, {
       facts: facts(1, { info: { author: 'Anonymous' } }),
-      texFiles: [tex('\\author{Anonymous Authors}\n\\section{AI use statement}'), tex('\\author{\\metaAuthor}', 'b.tex')],
+      texFiles: [
+        tex('\\author{Anonymous Authors}\n\\section{AI use statement}'),
+        tex('\\author{\\metaAuthor}', 'b.tex'),
+      ],
     });
     expect(r.status).toBe('pass');
   });
@@ -231,7 +242,12 @@ describe('venueCheck', () => {
 
   it('documents every rule it can emit', () => {
     const ids = new Set(venueRules.map((r) => r.id));
-    for (const id of ['page-limit-exceeded', 'paper-size-mismatch', 'disclosure-missing', 'arxiv-missing-bbl']) {
+    for (const id of [
+      'page-limit-exceeded',
+      'paper-size-mismatch',
+      'disclosure-missing',
+      'arxiv-missing-bbl',
+    ]) {
       expect(ids.has(id)).toBe(true);
     }
   });

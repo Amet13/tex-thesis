@@ -15,7 +15,9 @@ const PATH_COMMANDS = [
 ];
 
 /** Detects the TeX engine from the first line of a log ("This is pdfTeX, ..."). */
-export function detectEngine(log: string | undefined): 'pdflatex' | 'lualatex' | 'xelatex' | undefined {
+export function detectEngine(
+  log: string | undefined,
+): 'pdflatex' | 'lualatex' | 'xelatex' | undefined {
   if (!log) return undefined;
   const head = log.slice(0, 400);
   if (/This is LuaH?B?TeX|This is LuaTeX/i.test(head)) return 'lualatex';
@@ -62,7 +64,9 @@ export function arxivProblems(ctx: VenueContext): Problem[] {
   }
   const engine = detectEngine(ctx.log);
   if (engine === 'pdflatex') {
-    for (const use of uses.filter((u) => u.name === 'includegraphics' && /\.e?ps$/i.test(u.arg.trim()))) {
+    for (const use of uses.filter(
+      (u) => u.name === 'includegraphics' && /\.e?ps$/i.test(u.arg.trim()),
+    )) {
       problems.push({
         rule: 'arxiv-eps-pdflatex',
         check: 'venue',
@@ -73,7 +77,8 @@ export function arxivProblems(ctx: VenueContext): Problem[] {
       });
     }
   }
-  const shell = /\\usepackage(\[[^\]]*\])?\{[^}]*\b(minted|pythontex|svg|gnuplottex|shellesc)\b[^}]*\}|\\write18|\\ShellEscape|\\immediate\\write18/g;
+  const shell =
+    /\\usepackage(\[[^\]]*\])?\{[^}]*\b(minted|pythontex|svg|gnuplottex|shellesc)\b[^}]*\}|\\write18|\\ShellEscape|\\immediate\\write18/g;
   for (const hit of grepTex(files, shell)) {
     problems.push({
       rule: 'arxiv-shell-escape',
@@ -97,7 +102,9 @@ export function arxivProblems(ctx: VenueContext): Problem[] {
     }
     const usesBib = uses.some((u) => u.name === 'addbibresource' || u.name === 'bibliography');
     const stem = ctx.main.replace(/\.tex$/i, '');
-    const hasBbl = ctx.files.some((f) => f.toLowerCase().endsWith('.bbl') && dirname(f) === dirname(ctx.main ?? ''));
+    const hasBbl = ctx.files.some(
+      (f) => f.toLowerCase().endsWith('.bbl') && dirname(f) === dirname(ctx.main ?? ''),
+    );
     if (usesBib && !hasBbl) {
       problems.push({
         rule: 'arxiv-missing-bbl',

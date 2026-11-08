@@ -75,7 +75,12 @@ export function findCommands(files: TexFile[], names: string[]): CommandUse[] {
       }
       const g = readGroup(src, i);
       if (!g) continue;
-      const use: CommandUse = { file: f.path, line: lineAt(src, m.index), name: m[1] as string, arg: g.value };
+      const use: CommandUse = {
+        file: f.path,
+        line: lineAt(src, m.index),
+        name: m[1] as string,
+        arg: g.value,
+      };
       if (optional !== undefined) use.optional = optional;
       out.push(use);
     }

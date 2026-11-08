@@ -2,9 +2,9 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   type BibEntry,
+  lookup as coreLookup,
   formatBibEntry,
   type LookupResult,
-  lookup as coreLookup,
   parseBib,
   parseDoi,
   type RefsOptions,
@@ -55,7 +55,8 @@ export function findExisting(entries: BibEntry[], entry: BibEntry): BibEntry | u
     if (byEprint) return byEprint;
   }
   const sameKey = entries.find((e) => e.key === entry.key);
-  if (sameKey && titleSimilarity(sameKey.fields.title ?? '', entry.fields.title ?? '') >= 0.9) return sameKey;
+  if (sameKey && titleSimilarity(sameKey.fields.title ?? '', entry.fields.title ?? '') >= 0.9)
+    return sameKey;
   return undefined;
 }
 
@@ -67,7 +68,11 @@ function uniqueKey(base: string, taken: Set<string>): string {
   return `${base}-${taken.size}`;
 }
 
-export async function citeCommand(args: string[], io: Io, lookup: LookupFn = coreLookup): Promise<number> {
+export async function citeCommand(
+  args: string[],
+  io: Io,
+  lookup: LookupFn = coreLookup,
+): Promise<number> {
   const { values, positionals } = parse(
     args,
     {
@@ -85,7 +90,8 @@ export async function citeCommand(args: string[], io: Io, lookup: LookupFn = cor
     return 0;
   }
   const query = positionals.join(' ').trim();
-  if (!query) throw new UsageError('Give a DOI, arXiv id or title: `overfull cite 10.1145/359545.359563`');
+  if (!query)
+    throw new UsageError('Give a DOI, arXiv id or title: `overfull cite 10.1145/359545.359563`');
   const config = loadConfig(io.cwd, str(values.config), io.env);
   const bibRel = str(values.bib) ?? config.bib[0] ?? 'references.bib';
   const bibPath = join(config.root, bibRel);
@@ -120,22 +126,39 @@ export async function citeCommand(args: string[], io: Io, lookup: LookupFn = cor
     }
   };
   if (existing) {
-    emit(existing.key, existing.raw, false, `Already in ${bibRel} as \`${existing.key}\`; nothing added.`);
+    emit(
+      existing.key,
+      existing.raw,
+      false,
+      `Already in ${bibRel} as \`${existing.key}\`; nothing added.`,
+    );
     return 0;
   }
   const taken = new Set(entries.map((e) => e.key));
   if (explicitKey && taken.has(explicitKey)) {
-    throw new UsageError(`Key \`${explicitKey}\` is already used in ${bibRel} by a different entry. Choose another --key.`);
+    throw new UsageError(
+      `Key \`${explicitKey}\` is already used in ${bibRel} by a different entry. Choose another --key.`,
+    );
   }
   entry.key = uniqueKey(entry.key, taken);
   const formatted = formatBibEntry(entry);
   const where = `from ${found.source} (confidence ${found.confidence.toFixed(2)})`;
   if (values['dry-run']) {
-    emit(entry.key, formatted, false, `${formatted}\nDry run: not written to ${bibRel}. Match ${where}.`);
+    emit(
+      entry.key,
+      formatted,
+      false,
+      `${formatted}\nDry run: not written to ${bibRel}. Match ${where}.`,
+    );
     return 0;
   }
   const sep = text === '' ? '' : text.endsWith('\n\n') ? '' : text.endsWith('\n') ? '\n' : '\n\n';
   writeFileSync(bibPath, `${text}${sep}${formatted}`);
-  emit(entry.key, formatted, true, `Added \`${entry.key}\` to ${bibRel} ${where}. Cite it with \\cite{${entry.key}}.`);
+  emit(
+    entry.key,
+    formatted,
+    true,
+    `Added \`${entry.key}\` to ${bibRel} ${where}. Cite it with \\cite{${entry.key}}.`,
+  );
   return 0;
 }

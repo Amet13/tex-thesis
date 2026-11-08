@@ -2,7 +2,8 @@ import type { Problem } from '../types.js';
 import { findCommands, grepTex } from './tex.js';
 import type { Level, VenueContext } from './types.js';
 
-const AI = /\b(AI|LLMs?|large\s+language\s+models?|generative|artificial\s+intelligence|GenAI|ChatGPT)\b/i;
+const AI =
+  /\b(AI|LLMs?|large\s+language\s+models?|generative|artificial\s+intelligence|GenAI|ChatGPT)\b/i;
 const USE = /\b(use|usage|used|disclosure|statement|declaration|assist\w*|tools?)\b/i;
 
 function isDisclosureTitle(title: string): boolean {
@@ -23,7 +24,9 @@ export function hasDisclosure(ctx: VenueContext): boolean {
   ]);
   if (headings.some((h) => isDisclosureTitle(h.arg))) return true;
   if (files.length === 0 && ctx.facts) {
-    return ctx.facts.pages.some((p) => p.text.split('\n').some((l) => l.length < 80 && isDisclosureTitle(l)));
+    return ctx.facts.pages.some((p) =>
+      p.text.split('\n').some((l) => l.length < 80 && isDisclosureTitle(l)),
+    );
   }
   return false;
 }

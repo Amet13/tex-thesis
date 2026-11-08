@@ -2,7 +2,16 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import type { TexFile } from '@overfull/core';
 
-const SKIP_DIRS = new Set(['.git', 'node_modules', '.overfull', '_minted', 'dist', '.github', '.agents', '.claude']);
+const SKIP_DIRS = new Set([
+  '.git',
+  'node_modules',
+  '.overfull',
+  '_minted',
+  'dist',
+  '.github',
+  '.agents',
+  '.claude',
+]);
 const MAX_FILES = 5000;
 
 /** Project files relative to root (forward slashes), skipping VCS, caches and build dirs. */

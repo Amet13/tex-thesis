@@ -1,1 +1,6 @@
-{"title":"Unclosed brace in a command argument","engine":"pdflatex","check":"build","expect":["runaway-argument"]}
+{
+  "title": "Unclosed brace in a command argument",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["runaway-argument"]
+}

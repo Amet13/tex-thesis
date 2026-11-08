@@ -61,7 +61,10 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
     throw new UsageError(`--fail-on must be error, warning or never, got "${failOn}"`);
   }
   const formats = ['json', 'markdown', 'annotations'].filter((f) => values[f]);
-  if (formats.length > 1) throw new UsageError(`Choose one output format, not ${formats.map((f) => `--${f}`).join(' and ')}`);
+  if (formats.length > 1)
+    throw new UsageError(
+      `Choose one output format, not ${formats.map((f) => `--${f}`).join(' and ')}`,
+    );
   const checksArg = list(values.checks);
   const report = await runCheck({
     cwd: io.cwd,

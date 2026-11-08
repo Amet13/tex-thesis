@@ -48,7 +48,7 @@ inputs:
     default: 'true'
 outputs:
   status:
-    description: Overall status: pass, warn or fail.
+    description: 'Overall status: pass, warn or fail.'
   report:
     description: Path to the JSON report (in $RUNNER_TEMP).
 runs:

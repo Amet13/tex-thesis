@@ -1,1 +1,7 @@
-{"title":"Log written with -file-line-error","engine":"lualatex","check":"build","expect":["undefined-control-sequence","environment-undefined","undefined-reference"],"flags":["-file-line-error"]}
+{
+  "title": "Log written with -file-line-error",
+  "engine": "lualatex",
+  "check": "build",
+  "expect": ["undefined-control-sequence", "environment-undefined", "undefined-reference"],
+  "flags": ["-file-line-error"]
+}

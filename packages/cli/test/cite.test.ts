@@ -24,7 +24,13 @@ const vaswani: LookupResult = {
 const knuth: LookupResult = {
   entry: entry(
     'knuth1984literate',
-    { author: 'Knuth, Donald E.', title: 'Literate Programming', journal: 'The Computer Journal', year: '1984', doi: '10.1093/COMJNL/27.2.97' },
+    {
+      author: 'Knuth, Donald E.',
+      title: 'Literate Programming',
+      journal: 'The Computer Journal',
+      year: '1984',
+      doi: '10.1093/COMJNL/27.2.97',
+    },
     'article',
   ),
   source: 'doi.org',
@@ -73,7 +79,9 @@ describe('overfull cite', () => {
     const dir = tempCopy('project');
     const io = memIo(dir);
     const before = readFileSync(join(dir, 'references.bib'), 'utf8');
-    expect(await citeCommand(['x', '--key', 'attn', '--dry-run', '--json'], io, fixed(vaswani))).toBe(0);
+    expect(
+      await citeCommand(['x', '--key', 'attn', '--dry-run', '--json'], io, fixed(vaswani)),
+    ).toBe(0);
     const out = JSON.parse(io.stdoutText()) as Record<string, unknown>;
     expect(out).toMatchObject({ key: 'attn', source: 'crossref', confidence: 0.98, added: false });
     expect(out.entry).toMatch(/^@inproceedings\{attn,/);
@@ -82,7 +90,10 @@ describe('overfull cite', () => {
 
   it('suffixes a generated key that is taken by a different work', async () => {
     const dir = tempCopy('project');
-    writeFileSync(join(dir, 'references.bib'), '@misc{vaswani2017attention, title = {Something else}}\n');
+    writeFileSync(
+      join(dir, 'references.bib'),
+      '@misc{vaswani2017attention, title = {Something else}}\n',
+    );
     const io = memIo(dir);
     await citeCommand(['x'], io, fixed(vaswani));
     expect(io.stdoutText().trimEnd().split('\n').at(-1)).toBe('vaswani2017attentionb');
@@ -90,13 +101,17 @@ describe('overfull cite', () => {
 
   it('rejects an explicit key used by a different entry', async () => {
     const io = memIo(tempCopy('project'));
-    await expect(citeCommand(['x', '--key', 'rfc9110'], io, fixed(vaswani))).rejects.toThrow(/already used/);
+    await expect(citeCommand(['x', '--key', 'rfc9110'], io, fixed(vaswani))).rejects.toThrow(
+      /already used/,
+    );
   });
 
   it('writes to --bib', async () => {
     const dir = tempCopy('project');
     const io = memIo(dir);
     await citeCommand(['x', '--bib', 'extra.bib'], io, fixed(vaswani));
-    expect(readFileSync(join(dir, 'extra.bib'), 'utf8')).toMatch(/^@inproceedings\{vaswani2017attention,/);
+    expect(readFileSync(join(dir, 'extra.bib'), 'utf8')).toMatch(
+      /^@inproceedings\{vaswani2017attention,/,
+    );
   });
 });

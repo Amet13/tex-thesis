@@ -1,4 +1,4 @@
-import { parseArgs, type ParseArgsConfig } from 'node:util';
+import { type ParseArgsConfig, parseArgs } from 'node:util';
 import { UsageError } from './io.js';
 
 type Options = NonNullable<ParseArgsConfig['options']>;
@@ -41,6 +41,7 @@ export function int(v: unknown, name: string): number | undefined {
   const s = str(v);
   if (s === undefined) return undefined;
   const n = Number(s);
-  if (!Number.isInteger(n) || n <= 0) throw new UsageError(`--${name} must be a positive integer, got "${s}"`);
+  if (!Number.isInteger(n) || n <= 0)
+    throw new UsageError(`--${name} must be a positive integer, got "${s}"`);
   return n;
 }

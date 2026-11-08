@@ -12,7 +12,8 @@ import {
 } from 'overfull';
 import { readInputs } from './inputs.js';
 
-const escapeData = (s: string) => s.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+const escapeData = (s: string) =>
+  s.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 
 function setOutput(name: string, value: string): void {
   const file = process.env.GITHUB_OUTPUT;
@@ -34,7 +35,8 @@ async function main(): Promise<number> {
 
   if (inputs.annotations) {
     const root = relative(workspace, resolve(inputs.check.cwd ?? workspace)) || '.';
-    for (const line of githubAnnotations(report, { root, limit: 50 })) process.stdout.write(`${line}\n`);
+    for (const line of githubAnnotations(report, { root, limit: 50 }))
+      process.stdout.write(`${line}\n`);
   }
   if (inputs.summary && env.GITHUB_STEP_SUMMARY) {
     appendFileSync(env.GITHUB_STEP_SUMMARY, `${formatMarkdown(report)}\n`);

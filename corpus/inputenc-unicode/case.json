@@ -1,1 +1,6 @@
-{"title":"Unicode symbol with pdfLaTeX","engine":"pdflatex","check":"build","expect":["unicode-character"]}
+{
+  "title": "Unicode symbol with pdfLaTeX",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["unicode-character"]
+}

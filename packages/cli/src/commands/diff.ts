@@ -54,16 +54,23 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
   const main = str(values.main) ?? config.main;
   if (!existsSync(join(config.root, main))) throw new UsageError(`${main} not found. Pass --main.`);
   const top = await git(['rev-parse', '--show-toplevel'], config.root);
-  if (!top) throw new UsageError('Not a git repository: `overfull diff` compares against a git revision.');
+  if (!top)
+    throw new UsageError('Not a git repository: `overfull diff` compares against a git revision.');
   const baseRef = str(values.base) ?? (await defaultBase(config.root));
   if (!baseRef) throw new UsageError('No earlier revision to compare with. Pass --base <ref>.');
   const sha = await git(['rev-parse', '--short', `${baseRef}^{commit}`], config.root);
-  if (!sha) throw new UsageError(`Unknown revision "${baseRef}". Try \`git log --oneline\` to pick one.`);
+  if (!sha)
+    throw new UsageError(`Unknown revision "${baseRef}". Try \`git log --oneline\` to pick one.`);
 
-  const engine = await resolveEngine((str(values.engine) as 'auto' | 'local' | 'docker' | undefined) ?? config.build.engine, io.env);
+  const engine = await resolveEngine(
+    (str(values.engine) as 'auto' | 'local' | 'docker' | undefined) ?? config.build.engine,
+    io.env,
+  );
   const localDiff = engine === 'local' && Boolean(which('latexdiff-vc', io.env));
   if (engine === 'local' && !localDiff && !(await dockerAvailable(io.env))) {
-    throw new UsageError('latexdiff-vc not found and Docker is not running. Install latexdiff (part of TeX Live) or start Docker.');
+    throw new UsageError(
+      'latexdiff-vc not found and Docker is not running. Install latexdiff (part of TeX Live) or start Docker.',
+    );
   }
   const useDocker = !localDiff;
   const sub = relative(top, config.root) || '.';
@@ -73,7 +80,11 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
           'docker',
           dockerRunArgs(config.build.image, top, cmd, {
             subdir: sub,
-            env: { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'safe.directory', GIT_CONFIG_VALUE_0: '*' },
+            env: {
+              GIT_CONFIG_COUNT: '1',
+              GIT_CONFIG_KEY_0: 'safe.directory',
+              GIT_CONFIG_VALUE_0: '*',
+            },
           }),
         )
       : run(cmd[0] as string, cmd.slice(1), { cwd: config.root });
@@ -82,10 +93,21 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
   const diffTex = join(dirname(main), `${stem}-diff${sha}.tex`).split('\\').join('/');
   const outPdf = str(values.out) ?? 'overfull-diff.pdf';
   const jobname = 'overfull-diff';
-  io.stderr(`Comparing ${main} with ${baseRef === sha ? sha : `${baseRef} (${sha})`}${useDocker ? ` in ${config.build.image}` : ''}…\n`);
+  io.stderr(
+    `Comparing ${main} with ${baseRef === sha || /^[0-9a-f]{40}$/.test(baseRef) ? sha : `${baseRef} (${sha})`}${useDocker ? ` in ${config.build.image}` : ''}…\n`,
+  );
   let lastError = '';
   for (const extra of ATTEMPTS) {
-    const ld = await exec(['latexdiff-vc', '--git', '--flatten', '--force', ...extra, '-r', sha, main]);
+    const ld = await exec([
+      'latexdiff-vc',
+      '--git',
+      '--flatten',
+      '--force',
+      ...extra,
+      '-r',
+      sha,
+      main,
+    ]);
     if (ld.code !== 0 || !existsSync(join(config.root, diffTex))) {
       lastError = (ld.error ?? ld.stderr).trim().split('\n').slice(-8).join('\n');
       continue;
@@ -102,13 +124,19 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
     ]);
     if (existsSync(produced) && (lmk.code === 0 || extra === ATTEMPTS[ATTEMPTS.length - 1])) {
       if (outPdf !== `${jobname}.pdf`) renameSync(produced, join(config.root, outPdf));
-      if (lmk.code !== 0) io.stderr('The diff document had LaTeX errors; the PDF may be incomplete.\n');
+      if (lmk.code !== 0)
+        io.stderr('The diff document had LaTeX errors; the PDF may be incomplete.\n');
       io.stdout(`${relative(io.cwd, join(config.root, outPdf)) || outPdf}\n`);
       return 0;
     }
     lastError = `latexmk failed on ${diffTex} (see ${jobname}.log)`;
-    if (extra.length < 2) io.stderr(`latexdiff markup did not compile; retrying with ${ATTEMPTS[ATTEMPTS.indexOf(extra) + 1]?.join(' ')}…\n`);
+    if (extra.length < 2)
+      io.stderr(
+        `latexdiff markup did not compile; retrying with ${ATTEMPTS[ATTEMPTS.indexOf(extra) + 1]?.join(' ')}…\n`,
+      );
   }
-  io.stderr(`${lastError}\nCould not build a diff PDF. Try an older --base, or compare a smaller change.\n`);
+  io.stderr(
+    `${lastError}\nCould not build a diff PDF. Try an older --base, or compare a smaller change.\n`,
+  );
   return 1;
 }

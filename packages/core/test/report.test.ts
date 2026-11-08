@@ -80,7 +80,9 @@ describe('formatHuman', () => {
     expect(lines[4]).toBe('  – accessibility  skipped: No thesis.pdf — run `overfull build` first');
     expect(lines[5]).toBe('  ✓ venue          no problems');
     const problems = lines.slice(7, 11);
-    expect(problems[1]).toMatch(/^ {2}✕ chapters\/intro\.tex:12 {2}Undefined control sequence \\foo \(\+2 follow-on\) {2}undefined-control-sequence$/);
+    expect(problems[1]).toMatch(
+      /^ {2}✕ chapters\/intro\.tex:12 {2}Undefined control sequence \\foo \(\+2 follow-on\) {2}undefined-control-sequence$/,
+    );
     expect(problems[0]).toMatch(/^ {2}✕ p\.3 +"\?\?" printed/);
     expect(problems[2]).toMatch(/^ {2}! references\.bib:40 +Year differs/);
     expect(problems[3]).toMatch(/^ {2}i {24}Website, not checked/);
@@ -107,7 +109,15 @@ describe('formatJson', () => {
     expect(Object.keys(parsed)).toEqual(['tool', 'version', 'target', 'status', 'checks']);
     expect(Object.keys(parsed.checks[1] ?? {})).toEqual(['check', 'status', 'summary', 'problems']);
     const p = parsed.checks[2]?.problems[0];
-    expect(Object.keys(p ?? {})).toEqual(['rule', 'check', 'severity', 'message', 'location', 'detail', 'data']);
+    expect(Object.keys(p ?? {})).toEqual([
+      'rule',
+      'check',
+      'severity',
+      'message',
+      'location',
+      'detail',
+      'data',
+    ]);
     expect(Object.keys(p?.data ?? {})).toEqual(['a', 'z']);
     expect(json).toContain('\n  "checks": [');
     expect(formatJson(JSON.parse(json) as Report)).toBe(json);
@@ -120,7 +130,9 @@ describe('formatMarkdown', () => {
   it('renders a check table and details lists', () => {
     expect(md).toContain('## Overfull preflight: FAIL');
     expect(md).toContain('| Check | Status | Summary |');
-    expect(md).toContain('| accessibility | skipped | skipped: No thesis.pdf — run <code>overfull build</code> first |');
+    expect(md).toContain(
+      '| accessibility | skipped | skipped: No thesis.pdf — run <code>overfull build</code> first |',
+    );
     expect(md).toContain('<details open><summary><b>output</b>: 1 item</summary>');
     expect(md).toContain('  - Fix: Check <code>\\label</code> spelling');
   });

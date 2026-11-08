@@ -34,7 +34,8 @@ Exit codes: 0 built, 1 build failed, 2 usage error.
 `;
 
 export function latexmkArgs(config: Config, main: string): string[] {
-  const rc = existsSync(join(config.root, '.latexmkrc')) || existsSync(join(config.root, 'latexmkrc'));
+  const rc =
+    existsSync(join(config.root, '.latexmkrc')) || existsSync(join(config.root, 'latexmkrc'));
   return [
     ...(rc ? [] : ['-lualatex']),
     '-interaction=nonstopmode',
@@ -46,7 +47,10 @@ export function latexmkArgs(config: Config, main: string): string[] {
 
 export async function resolveEngine(engine: Engine, env: Io['env']): Promise<'local' | 'docker'> {
   if (engine === 'local') {
-    if (!which('latexmk', env)) throw new UsageError('latexmk not found on PATH. Install TeX Live, or use `--engine docker`.');
+    if (!which('latexmk', env))
+      throw new UsageError(
+        'latexmk not found on PATH. Install TeX Live, or use `--engine docker`.',
+      );
     return 'local';
   }
   if (engine === 'docker' || !which('latexmk', env)) {
@@ -69,9 +73,14 @@ function progress(io: Io, verbose: boolean): (line: string) => void {
       io.stderr(`${line}\n`);
       return;
     }
-    const m = /Run number (\d+) of rule '([^']+)'/.exec(line) ?? /Running '?(biber|bibtex|makeindex|makeglossaries)\b/.exec(line);
+    const m =
+      /Run number (\d+) of rule '([^']+)'/.exec(line) ??
+      /Running '?(biber|bibtex|makeindex|makeglossaries)\b/.exec(line);
     if (!m) return;
-    const rule = (m[2] ?? m[1] ?? '').replace(/^(pdf|lua|xe)?latex.*$/, (s) => s.split(/\s/)[0] ?? s);
+    const rule = (m[2] ?? m[1] ?? '').replace(
+      /^(pdf|lua|xe)?latex.*$/,
+      (s) => s.split(/\s/)[0] ?? s,
+    );
     io.stderr(m[2] ? `  ${rule} (run ${m[1]})\n` : `  ${rule}\n`);
   };
 }
@@ -95,13 +104,17 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   const main = positionals[0] ?? config.main;
   if (positionals[0] && !str(values.config)) {
     config.main = main;
-    if (!existsSync(join(config.root, 'overfull.yml'))) config.jobname = main.replace(/^.*\//, '').replace(/\.tex$/i, '');
+    if (!existsSync(join(config.root, 'overfull.yml')))
+      config.jobname = main.replace(/^.*\//, '').replace(/\.tex$/i, '');
   }
   if (!existsSync(join(config.root, main))) {
-    throw new UsageError(`${main} not found in ${config.root}. Pass the main file: \`overfull build thesis.tex\`.`);
+    throw new UsageError(
+      `${main} not found in ${config.root}. Pass the main file: \`overfull build thesis.tex\`.`,
+    );
   }
   const engineArg = (str(values.engine) ?? config.build.engine) as Engine;
-  if (!['auto', 'local', 'docker'].includes(engineArg)) throw new UsageError('--engine must be auto, local or docker');
+  if (!['auto', 'local', 'docker'].includes(engineArg))
+    throw new UsageError('--engine must be auto, local or docker');
   const image = str(values.image) ?? config.build.image;
   const engine = await resolveEngine(engineArg, io.env);
   const lmk = latexmkArgs(config, main);
@@ -112,20 +125,26 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
     result = await run('latexmk', lmk, { cwd: config.root, onLine: progress(io, verbose) });
   } else {
     const present = await dockerImagePresent(image);
-    io.stderr(`Building ${main} with latexmk in ${image}${present ? '' : ' (pulling the image first; this takes a few minutes once)'}…\n`);
+    io.stderr(
+      `Building ${main} with latexmk in ${image}${present ? '' : ' (pulling the image first; this takes a few minutes once)'}…\n`,
+    );
     result = await run('docker', dockerRunArgs(image, config.root, ['latexmk', ...lmk]), {
       cwd: config.root,
       onLine: progress(io, verbose),
     });
     if (result.code === 125) {
       io.stderr(`${result.stderr.trim()}\n`);
-      throw new UsageError(`Docker could not start ${image}. Check the image name (build.image in overfull.yml).`);
+      throw new UsageError(
+        `Docker could not start ${image}. Check the image name (build.image in overfull.yml).`,
+      );
     }
   }
   const logText = readIfExists(join(config.root, `${config.jobname}.log`));
   if (logText === undefined) {
     io.stderr(`${(result.stderr || result.stdout).trim().split('\n').slice(-15).join('\n')}\n`);
-    io.stderr(`Build failed before LaTeX wrote ${config.jobname}.log (latexmk exit code ${result.code}).\n`);
+    io.stderr(
+      `Build failed before LaTeX wrote ${config.jobname}.log (latexmk exit code ${result.code}).\n`,
+    );
     return 1;
   }
   const { build, output } = analyzeLog(logText, { root: config.root });
@@ -148,7 +167,9 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   };
   io.stdout(formatHuman(report, { color: useColor(io), verbose }));
   if (failed && build.status !== 'fail') {
-    io.stderr(`latexmk exited with code ${result.code}. Run \`overfull build --verbose\` to see its output.\n`);
+    io.stderr(
+      `latexmk exited with code ${result.code}. Run \`overfull build --verbose\` to see its output.\n`,
+    );
   }
   return failed ? 1 : 0;
 }

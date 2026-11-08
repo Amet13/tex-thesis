@@ -108284,10 +108284,6 @@ import { appendFileSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join as join5, relative as relative2, resolve as resolve2 } from "node:path";
 
-// ../packages/cli/src/check.ts
-import { existsSync as existsSync3 } from "node:fs";
-import { join as join4 } from "node:path";
-
 // ../packages/core/src/types.ts
 var CHECK_IDS = ["build", "output", "references", "accessibility", "venue"];
 function statusOf(problems) {
@@ -108503,10 +108499,12 @@ var ENVIRONMENT_PACKAGES = {
   singlespace: "setspace",
   CJK: "CJK"
 };
-var THEOREM_LIKE = new Set(words(`
+var THEOREM_LIKE = new Set(
+  words(`
   theorem lemma corollary proposition definition remark example conjecture claim
   assumption hypothesis observation notation problem
-`));
+`)
+);
 var COMMON_ENVIRONMENTS = words(`
   itemize enumerate description figure figure* table table* tabular equation center
   flushleft flushright verbatim quote quotation minipage abstract document
@@ -108514,7 +108512,8 @@ var COMMON_ENVIRONMENTS = words(`
   tikzpicture algorithm algorithmic subfigure tabularx longtable lstlisting appendix
   titlepage displaymath
 `);
-var MATH_COMMANDS = new Set(words(`
+var MATH_COMMANDS = new Set(
+  words(`
   alpha beta gamma delta epsilon varepsilon zeta eta theta vartheta iota kappa lambda mu
   nu xi pi rho sigma tau upsilon phi varphi chi psi omega Gamma Delta Theta Lambda Xi Pi
   Sigma Phi Psi Omega frac dfrac sqrt sum prod int oint lim infty leq geq neq le ge ne
@@ -108524,7 +108523,8 @@ var MATH_COMMANDS = new Set(words(`
   boldsymbol hat bar tilde vec dot ddot overline underbrace overbrace log ln exp sin cos
   tan max min arg argmax argmin det mid parallel perp angle ell hbar Re Im aleph prime
   langle rangle lfloor rfloor lceil rceil left right
-`));
+`)
+);
 var UNICODE_REPLACEMENTS = {
   "\u2265": "$\\geq$",
   "\u2264": "$\\leq$",
@@ -108988,7 +108988,11 @@ var explainOptionClash = (m, error) => {
     message: `${code(pkg)} is loaded twice with different options${shown}`,
     detail: `A package can be loaded only once. It was loaded again (by you, the class, or another package) with options it was not first loaded with.${arxiv}`,
     fix: merged ? `Load it once with all options: ${code(`\\usepackage[${merged}]{${pkg}}`)}. If the class or another package loads it first, put ${code(`\\PassOptionsToPackage{${merged}}{${pkg}}`)} before ${code("\\documentclass")}.` : `Remove the second ${code(`\\usepackage{${pkg}}`)} and merge its options into the first; use ${code("\\PassOptionsToPackage")} before ${code("\\documentclass")} if a class loads it.`,
-    data: { package: pkg, ...first2 !== void 0 ? { firstOptions: first2 } : {}, ...second !== void 0 ? { secondOptions: second } : {} }
+    data: {
+      package: pkg,
+      ...first2 !== void 0 ? { firstOptions: first2 } : {},
+      ...second !== void 0 ? { secondOptions: second } : {}
+    }
   };
 };
 var explainGraphicsExtension = (m, error) => {
@@ -109014,7 +109018,11 @@ var explainGraphicsExtension = (m, error) => {
 };
 var explainEnvironmentUndefined = (m) => {
   const env = m[1] ?? "";
-  const base = { rule: "environment-undefined", check: "build", data: { environment: env } };
+  const base = {
+    rule: "environment-undefined",
+    check: "build",
+    data: { environment: env }
+  };
   if (THEOREM_LIKE.has(env)) {
     const title = env.charAt(0).toUpperCase() + env.slice(1);
     return {
@@ -109191,7 +109199,9 @@ var explainColor = (m) => {
 var explainCapacity = (m, error) => {
   const what = m[1] ?? "";
   const cs = trailingControlSequence(error.source?.before ?? "");
-  const recursion = /grouping levels|input stack size|save size|parameter stack|expansion depth|semantic nest/.test(what);
+  const recursion = /grouping levels|input stack size|save size|parameter stack|expansion depth|semantic nest/.test(
+    what
+  );
   return {
     rule: "tex-capacity-exceeded",
     check: "build",
@@ -109284,14 +109294,23 @@ var EXPLAINERS = [
   [/^Double (subscript|superscript)/, explainDoubleScript],
   [/^Misplaced alignment tab character &/, explainAlignmentTab],
   [/^Missing ([{}]) inserted/, explainMissingBrace],
-  [/^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/, explainExtraBrace],
-  [/^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/, explainRunaway],
+  [
+    /^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/,
+    explainExtraBrace
+  ],
+  [
+    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/,
+    explainRunaway
+  ],
   [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
   [/^I can't find file [`'](.+?)'/, explainFileNotFound],
   [/^LaTeX Error: Option clash for package (\S+?)\.?$/, explainOptionClash],
   [/^LaTeX Error: Unknown graphics extension: (\.\S+?)\.?$/, explainGraphicsExtension],
   [/^LaTeX Error: Environment (\S+) undefined/, explainEnvironmentUndefined],
-  [/^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/, explainEnvironmentMismatch],
+  [
+    /^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/,
+    explainEnvironmentMismatch
+  ],
   [/^LaTeX Error: \\begin\{(document)\}() ended by \\end\{([^}]*)\}/, explainEnvironmentMismatch],
   [
     /^LaTeX Error: Lonely \\item/,
@@ -109322,7 +109341,10 @@ var EXPLAINERS = [
   ],
   [/^LaTeX Error: Missing \\begin\{document\}/, explainMissingBeginDocument],
   [/^LaTeX Error: Can be used only in preamble/, explainPreambleOnly],
-  [/^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/, explainUnicode],
+  [
+    /^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/,
+    explainUnicode
+  ],
   [
     /^Package inputenc Error: Invalid UTF-8 byte/,
     simple(
@@ -109332,7 +109354,10 @@ var EXPLAINERS = [
       "Re-save the file as UTF-8 in your editor (or convert it with `iconv -f latin1 -t utf-8`)."
     )
   ],
-  [/^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: .*?font "([^"]+)".*not found/, explainFontNotFound],
+  [
+    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: .*?font "([^"]+)".*not found/,
+    explainFontNotFound
+  ],
   [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, explainTfmFont],
   [/^Package biblatex Error: (.*)$/, explainBiblatex],
   [/^Illegal parameter number in definition of (\\\S+?)\.?$/, explainParameterNumber],
@@ -109360,7 +109385,10 @@ var EXPLAINERS = [
   [/^Package (pgfkeys|tikz|pgf|pgfplots) Error: (.*)$/, explainTikz],
   [/^Package hyperref Error: (.*)$/, explainHyperref],
   [/^LaTeX Error: Command (\\\S+?) already defined/, explainCommandDefined],
-  [/^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/, explainUnknownOption],
+  [
+    /^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/,
+    explainUnknownOption
+  ],
   [
     /^LaTeX Error: Float\(s\) lost/,
     simple(
@@ -109589,15 +109617,27 @@ var Parser = class {
   handle(line) {
     const text2 = line.text;
     if (line.start === 0 && this.banner(text2)) return;
-    if (ERROR_START.test(text2) || this.fileLineError(text2)) return this.error(line);
+    if (ERROR_START.test(text2) || this.fileLineError(text2)) {
+      this.error(line);
+      return;
+    }
     if (RUNAWAY.test(text2)) {
       this.runaway = this.reader.done ? "" : this.reader.next().text;
       return;
     }
     const header = messageHeader(text2);
-    if (header) return this.message(line, header);
-    if (BOX.test(text2)) return this.box(line);
-    if (MISSING_CHAR.test(text2)) return this.missingChar(line);
+    if (header) {
+      this.message(line, header);
+      return;
+    }
+    if (BOX.test(text2)) {
+      this.box(line);
+      return;
+    }
+    if (MISSING_CHAR.test(text2)) {
+      this.missingChar(line);
+      return;
+    }
     if (this.output(text2)) return;
     const noFile = NO_FILE.exec(text2);
     if (noFile) {
@@ -109675,7 +109715,9 @@ var Parser = class {
       const file = this.stack.current();
       if (file) error.file = file;
     }
-    if (/^(?:Emergency stop|==> Fatal error occurred|TeX capacity exceeded|Interruption)/.test(message)) {
+    if (/^(?:Emergency stop|==> Fatal error occurred|TeX capacity exceeded|Interruption)/.test(
+      message
+    )) {
       this.result.fatal = true;
     }
     this.result.errors.push(error);
@@ -109829,7 +109871,10 @@ function location(file, line, page) {
 function evidence(lines) {
   const all = lines.join("\n").split("\n");
   if (all.length <= MAX_EVIDENCE_LINES) return all.join("\n");
-  return [...all.slice(0, MAX_EVIDENCE_LINES), `\u2026 (${all.length - MAX_EVIDENCE_LINES} more lines)`].join("\n");
+  return [
+    ...all.slice(0, MAX_EVIDENCE_LINES),
+    `\u2026 (${all.length - MAX_EVIDENCE_LINES} more lines)`
+  ].join("\n");
 }
 function compact(value) {
   for (const key of Object.keys(value)) {
@@ -109838,7 +109883,9 @@ function compact(value) {
   return value;
 }
 function isTerminationNotice(error) {
-  return /^(?:Emergency stop|==> Fatal error occurred|\s*==> Fatal error occurred)/.test(error.message.trim());
+  return /^(?:Emergency stop|==> Fatal error occurred|\s*==> Fatal error occurred)/.test(
+    error.message.trim()
+  );
 }
 function atEndDocument(error) {
   return /^\s*(?:\.\.\.)?\\end\s*\{document\}/.test(error.source?.before ?? "");
@@ -110047,7 +110094,9 @@ function overfullBoxes(list3, thresholdPt, errors) {
     else byFile.set(key, [w]);
   }
   return [...byFile.values()].map((items) => {
-    const worst = items.reduce((a, b) => Number(b.data.amountPt) > Number(a.data.amountPt) ? b : a);
+    const worst = items.reduce(
+      (a, b) => Number(b.data.amountPt) > Number(a.data.amountPt) ? b : a
+    );
     const amount = Number(worst.data.amountPt);
     const lines = worst.data.lines;
     const vertical = worst.data.box === "vbox";
@@ -110243,7 +110292,9 @@ function warningProblems(parsed, buildFailed, thresholdPt) {
   return problems;
 }
 function packagesOf(parsed) {
-  return new Set(parsed.files.filter((f) => extension(f) === "sty").map((f) => f.replace(/^.*\//, "").replace(/\.sty$/, "")));
+  return new Set(
+    parsed.files.filter((f) => extension(f) === "sty").map((f) => f.replace(/^.*\//, "").replace(/\.sty$/, ""))
+  );
 }
 function buildSummary(problems, parsed) {
   const errors = problems.filter((p) => p.severity === "error").length;
@@ -110263,11 +110314,18 @@ function skipped(check2, reason) {
 function analyzeLog(text2, opts = {}) {
   const parsed = parseLog(text2, { root: opts.root });
   if (text2.trim() === "") {
-    return { build: skipped("build", "The log file is empty"), output: skipped("output", "The log file is empty"), parsed };
+    return {
+      build: skipped("build", "The log file is empty"),
+      output: skipped("output", "The log file is empty"),
+      parsed
+    };
   }
   const threshold = opts.overfullThresholdPt ?? DEFAULT_OVERFULL_PT;
   const fromErrors = errorProblems(parsed, { packages: packagesOf(parsed) });
-  const buildProblems = [...fromErrors.filter((p) => p.check === "build"), ...fatalWithoutError(parsed, fromErrors)];
+  const buildProblems = [
+    ...fromErrors.filter((p) => p.check === "build"),
+    ...fatalWithoutError(parsed, fromErrors)
+  ];
   const buildFailed = buildProblems.length > 0;
   const outputProblems = [
     ...fromErrors.filter((p) => p.check === "output"),
@@ -112019,6 +112077,180 @@ function refsCheck(results, opts = {}) {
   };
 }
 
+// ../packages/core/src/pdf/accessibility.ts
+function veraPdfRuleId(clause) {
+  const slug = clause.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return slug ? `verapdf-${slug}` : "verapdf";
+}
+function plural2(n, one, many = `${one}s`) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+function isMissingAlt(alt) {
+  if (!alt?.trim()) return true;
+  return /^[\w./\\-]+\.(pdf|png|jpe?g|eps|svg|gif|tiff?|webp|bmp)$/i.test(alt.trim());
+}
+function figureProblems(facts, sev) {
+  const byPage = /* @__PURE__ */ new Map();
+  for (const f of facts.figures) {
+    if (!isMissingAlt(f.alt)) continue;
+    const e = byPage.get(f.page) ?? { count: 0, placeholder: 0 };
+    e.count++;
+    if (f.alt) e.placeholder++;
+    byPage.set(f.page, e);
+  }
+  return [...byPage.entries()].map(([page, { count, placeholder }]) => ({
+    rule: "figure-missing-alt",
+    check: "accessibility",
+    severity: sev,
+    message: `${plural2(count, "figure")} without alt text${placeholder ? " (LaTeX used the file name)" : ""}`,
+    location: { page },
+    fix: "Add `alt={...}` to the `\\includegraphics` on this page",
+    data: { count }
+  }));
+}
+function fontProblems(facts, sev) {
+  const missing = (facts.fonts ?? []).filter((f) => !f.embedded);
+  if (missing.length === 0) return [];
+  const names = [...new Set(missing.map((f) => f.name || "(unnamed)"))];
+  return [
+    {
+      rule: "font-not-embedded",
+      check: "accessibility",
+      severity: sev,
+      message: `${plural2(names.length, "font")} not embedded: ${names.slice(0, 5).join(", ")}${names.length > 5 ? ", \u2026" : ""}`,
+      fix: "Embed all fonts: compile with LuaLaTeX and re-export figures (PDF/EPS) with fonts embedded",
+      data: { fonts: names }
+    }
+  ];
+}
+function veraPdfProblems(v, sev) {
+  if (v.error) {
+    return [
+      {
+        rule: "verapdf-error",
+        check: "accessibility",
+        severity: "warning",
+        message: `veraPDF could not validate the PDF: ${v.error}`,
+        fix: "Run `verapdf --flavour ua2 <file.pdf>` by hand to see the full error"
+      }
+    ];
+  }
+  const groups = /* @__PURE__ */ new Map();
+  for (const f of v.failures) {
+    const rule = veraPdfRuleId(f.clause);
+    const prev = groups.get(rule);
+    if (prev) {
+      const data = prev.data;
+      data.count += f.failedChecks;
+      if (f.testNumber !== void 0) data.tests.push(f.testNumber);
+      prev.message = `${f.specification} \xA7${f.clause}: ${prev.detail ?? ""} (${plural2(data.count, "failed check")})`;
+      continue;
+    }
+    const desc = f.description.replace(/\s+/g, " ").trim();
+    const problem2 = {
+      rule,
+      check: "accessibility",
+      severity: sev,
+      message: `${f.specification} \xA7${f.clause}: ${desc} (${plural2(f.failedChecks, "failed check")})`,
+      detail: desc,
+      fix: "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed",
+      data: {
+        specification: f.specification,
+        clause: f.clause,
+        count: f.failedChecks,
+        tests: f.testNumber === void 0 ? [] : [f.testNumber]
+      }
+    };
+    if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
+    groups.set(rule, problem2);
+  }
+  return [...groups.values()];
+}
+function accessibilityCheck(facts, opts = {}) {
+  const level = opts.level ?? "required";
+  if (level === "off") {
+    return {
+      check: "accessibility",
+      status: "skipped",
+      problems: [],
+      skippedReason: "Accessibility is off for this venue profile"
+    };
+  }
+  const sev = level === "required" ? "error" : "warning";
+  const problems = [];
+  if (!facts.tagged) {
+    problems.push({
+      rule: "pdf-not-tagged",
+      check: "accessibility",
+      severity: sev,
+      message: "PDF is not tagged (no structure for screen readers)",
+      fix: "Add `\\DocumentMetadata{lang=en-US, pdfstandard=ua-2, tagging=on}` before `\\documentclass` and build with LuaLaTeX"
+    });
+  }
+  if (!facts.language) {
+    problems.push({
+      rule: "pdf-missing-language",
+      check: "accessibility",
+      severity: sev,
+      message: "Document language is not set",
+      fix: "Set `lang=en-US` (or your language) in `\\DocumentMetadata{...}`"
+    });
+  }
+  if (!facts.title) {
+    problems.push({
+      rule: "pdf-missing-title",
+      check: "accessibility",
+      severity: sev,
+      message: "PDF has no title in its metadata",
+      fix: "Set `\\hypersetup{pdftitle={...}, pdfdisplaydoctitle=true}`"
+    });
+  } else if (facts.displayDocTitle === false) {
+    problems.push({
+      rule: "pdf-missing-title",
+      check: "accessibility",
+      severity: sev,
+      message: "Viewers will show the file name instead of the title (DisplayDocTitle is off)",
+      fix: "Set `\\hypersetup{pdfdisplaydoctitle=true}`",
+      data: { title: facts.title }
+    });
+  }
+  problems.push(...figureProblems(facts, sev));
+  problems.push(...fontProblems(facts, sev));
+  if (facts.pdfua === void 0) {
+    problems.push({
+      rule: "pdfua-not-claimed",
+      check: "accessibility",
+      severity: "info",
+      message: "PDF does not claim PDF/UA conformance",
+      fix: "Add `pdfstandard=ua-2` to `\\DocumentMetadata{...}`"
+    });
+  }
+  if (opts.verapdf === null) {
+    problems.push({
+      rule: "verapdf-not-run",
+      check: "accessibility",
+      severity: "info",
+      message: "veraPDF not found, full PDF/UA validation skipped",
+      fix: "Install veraPDF or run the check in the Overfull Docker image"
+    });
+  } else if (opts.verapdf) {
+    problems.push(...veraPdfProblems(opts.verapdf, sev));
+  }
+  const counted = problems.filter((p) => p.severity !== "info");
+  const stats = {
+    figures: facts.figures.length,
+    figuresWithAlt: facts.figures.filter((f) => !isMissingAlt(f.alt)).length
+  };
+  if (opts.verapdf && !opts.verapdf.error) stats.verapdfFailedRules = opts.verapdf.failures.length;
+  let summary;
+  if (counted.length === 0) {
+    summary = opts.verapdf && !opts.verapdf.error ? "Tagged, PDF/UA valid (veraPDF)" : "Tagged, language and title set";
+  } else {
+    summary = `${plural2(counted.length, "accessibility problem")}`;
+  }
+  return { check: "accessibility", status: statusOf(problems), problems, summary, stats };
+}
+
 // ../packages/core/src/pdf/extract.ts
 var PT_TO_MM = 25.4 / 72;
 function pick(source, key) {
@@ -112452,258 +112684,6 @@ function parseVeraPdfReport(xmlOrJson) {
   return { compliant: false, failures: [], error: trimmed.split("\n")[0] ?? "Unreadable output" };
 }
 
-// ../packages/core/src/pdf/accessibility.ts
-function veraPdfRuleId(clause) {
-  const slug = clause.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return slug ? `verapdf-${slug}` : "verapdf";
-}
-function plural2(n, one, many = `${one}s`) {
-  return `${n} ${n === 1 ? one : many}`;
-}
-function isMissingAlt(alt) {
-  if (!alt?.trim()) return true;
-  return /^[\w./\\-]+\.(pdf|png|jpe?g|eps|svg|gif|tiff?|webp|bmp)$/i.test(alt.trim());
-}
-function figureProblems(facts, sev) {
-  const byPage = /* @__PURE__ */ new Map();
-  for (const f of facts.figures) {
-    if (!isMissingAlt(f.alt)) continue;
-    const e = byPage.get(f.page) ?? { count: 0, placeholder: 0 };
-    e.count++;
-    if (f.alt) e.placeholder++;
-    byPage.set(f.page, e);
-  }
-  return [...byPage.entries()].map(([page, { count, placeholder }]) => ({
-    rule: "figure-missing-alt",
-    check: "accessibility",
-    severity: sev,
-    message: `${plural2(count, "figure")} without alt text${placeholder ? " (LaTeX used the file name)" : ""}`,
-    location: { page },
-    fix: "Add `alt={...}` to the `\\includegraphics` on this page",
-    data: { count }
-  }));
-}
-function fontProblems(facts, sev) {
-  const missing = (facts.fonts ?? []).filter((f) => !f.embedded);
-  if (missing.length === 0) return [];
-  const names = [...new Set(missing.map((f) => f.name || "(unnamed)"))];
-  return [
-    {
-      rule: "font-not-embedded",
-      check: "accessibility",
-      severity: sev,
-      message: `${plural2(names.length, "font")} not embedded: ${names.slice(0, 5).join(", ")}${names.length > 5 ? ", \u2026" : ""}`,
-      fix: "Embed all fonts: compile with LuaLaTeX and re-export figures (PDF/EPS) with fonts embedded",
-      data: { fonts: names }
-    }
-  ];
-}
-function veraPdfProblems(v, sev) {
-  if (v.error) {
-    return [
-      {
-        rule: "verapdf-error",
-        check: "accessibility",
-        severity: "warning",
-        message: `veraPDF could not validate the PDF: ${v.error}`,
-        fix: "Run `verapdf --flavour ua2 <file.pdf>` by hand to see the full error"
-      }
-    ];
-  }
-  const groups = /* @__PURE__ */ new Map();
-  for (const f of v.failures) {
-    const rule = veraPdfRuleId(f.clause);
-    const prev = groups.get(rule);
-    if (prev) {
-      const data = prev.data;
-      data.count += f.failedChecks;
-      if (f.testNumber !== void 0) data.tests.push(f.testNumber);
-      prev.message = `${f.specification} \xA7${f.clause}: ${prev.detail ?? ""} (${plural2(data.count, "failed check")})`;
-      continue;
-    }
-    const desc = f.description.replace(/\s+/g, " ").trim();
-    const problem2 = {
-      rule,
-      check: "accessibility",
-      severity: sev,
-      message: `${f.specification} \xA7${f.clause}: ${desc} (${plural2(f.failedChecks, "failed check")})`,
-      detail: desc,
-      fix: "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed",
-      data: {
-        specification: f.specification,
-        clause: f.clause,
-        count: f.failedChecks,
-        tests: f.testNumber === void 0 ? [] : [f.testNumber]
-      }
-    };
-    if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
-    groups.set(rule, problem2);
-  }
-  return [...groups.values()];
-}
-function accessibilityCheck(facts, opts = {}) {
-  const level = opts.level ?? "required";
-  if (level === "off") {
-    return {
-      check: "accessibility",
-      status: "skipped",
-      problems: [],
-      skippedReason: "Accessibility is off for this venue profile"
-    };
-  }
-  const sev = level === "required" ? "error" : "warning";
-  const problems = [];
-  if (!facts.tagged) {
-    problems.push({
-      rule: "pdf-not-tagged",
-      check: "accessibility",
-      severity: sev,
-      message: "PDF is not tagged (no structure for screen readers)",
-      fix: "Add `\\DocumentMetadata{lang=en-US, pdfstandard=ua-2, tagging=on}` before `\\documentclass` and build with LuaLaTeX"
-    });
-  }
-  if (!facts.language) {
-    problems.push({
-      rule: "pdf-missing-language",
-      check: "accessibility",
-      severity: sev,
-      message: "Document language is not set",
-      fix: "Set `lang=en-US` (or your language) in `\\DocumentMetadata{...}`"
-    });
-  }
-  if (!facts.title) {
-    problems.push({
-      rule: "pdf-missing-title",
-      check: "accessibility",
-      severity: sev,
-      message: "PDF has no title in its metadata",
-      fix: "Set `\\hypersetup{pdftitle={...}, pdfdisplaydoctitle=true}`"
-    });
-  } else if (facts.displayDocTitle === false) {
-    problems.push({
-      rule: "pdf-missing-title",
-      check: "accessibility",
-      severity: sev,
-      message: "Viewers will show the file name instead of the title (DisplayDocTitle is off)",
-      fix: "Set `\\hypersetup{pdfdisplaydoctitle=true}`",
-      data: { title: facts.title }
-    });
-  }
-  problems.push(...figureProblems(facts, sev));
-  problems.push(...fontProblems(facts, sev));
-  if (facts.pdfua === void 0) {
-    problems.push({
-      rule: "pdfua-not-claimed",
-      check: "accessibility",
-      severity: "info",
-      message: "PDF does not claim PDF/UA conformance",
-      fix: "Add `pdfstandard=ua-2` to `\\DocumentMetadata{...}`"
-    });
-  }
-  if (opts.verapdf === null) {
-    problems.push({
-      rule: "verapdf-not-run",
-      check: "accessibility",
-      severity: "info",
-      message: "veraPDF not found, full PDF/UA validation skipped",
-      fix: "Install veraPDF or run the check in the Overfull Docker image"
-    });
-  } else if (opts.verapdf) {
-    problems.push(...veraPdfProblems(opts.verapdf, sev));
-  }
-  const counted = problems.filter((p) => p.severity !== "info");
-  const stats = {
-    figures: facts.figures.length,
-    figuresWithAlt: facts.figures.filter((f) => !isMissingAlt(f.alt)).length
-  };
-  if (opts.verapdf && !opts.verapdf.error) stats.verapdfFailedRules = opts.verapdf.failures.length;
-  let summary;
-  if (counted.length === 0) {
-    summary = opts.verapdf && !opts.verapdf.error ? "Tagged, PDF/UA valid (veraPDF)" : "Tagged, language and title set";
-  } else {
-    summary = `${plural2(counted.length, "accessibility problem")}`;
-  }
-  return { check: "accessibility", status: statusOf(problems), problems, summary, stats };
-}
-
-// ../packages/core/src/venue/profiles.ts
-var ALL_CHECKS = [...CHECK_IDS];
-var builtinProfiles = {
-  generic: {
-    id: "generic",
-    name: "Generic",
-    description: "Any LaTeX document: build, output, references; accessibility as advice.",
-    paper: "any",
-    disclosure: "off",
-    accessibility: "recommended",
-    checks: ALL_CHECKS
-  },
-  thesis: {
-    id: "thesis",
-    name: "Thesis",
-    description: "Theses and dissertations: accessible PDF/UA output required, no page limit.",
-    paper: "any",
-    disclosure: "off",
-    accessibility: "required",
-    checks: ALL_CHECKS
-  },
-  paper: {
-    id: "paper",
-    name: "Paper",
-    description: "Conference or journal paper: AI-use disclosure and accessibility recommended.",
-    paper: "any",
-    disclosure: "recommended",
-    accessibility: "recommended",
-    checks: ALL_CHECKS
-  },
-  arxiv: {
-    id: "arxiv",
-    name: "arXiv",
-    description: "arXiv submission: no absolute paths, no shell escape, .bbl included, pdfLaTeX-safe figures.",
-    paper: "any",
-    disclosure: "off",
-    accessibility: "recommended",
-    arxiv: true,
-    checks: ALL_CHECKS
-  },
-  "double-blind": {
-    id: "double-blind",
-    name: "Double-blind review",
-    description: "Anonymous submission: no author names in the PDF metadata or source, no acknowledgments.",
-    paper: "any",
-    anonymous: true,
-    disclosure: "recommended",
-    accessibility: "recommended",
-    checks: ALL_CHECKS
-  }
-};
-var UnknownProfileError = class extends Error {
-  constructor(name) {
-    super(
-      `Unknown profile "${name}". Built-in profiles: ${Object.keys(builtinProfiles).join(", ")}`
-    );
-    this.name = "UnknownProfileError";
-  }
-};
-function builtin(name) {
-  const p = builtinProfiles[name];
-  if (!p) throw new UnknownProfileError(name);
-  return p;
-}
-function resolveProfile(nameOrInline) {
-  if (typeof nameOrInline === "string") return { ...builtin(nameOrInline) };
-  const { extends: base, ...inline2 } = nameOrInline;
-  const baseName = base ?? (inline2.id && builtinProfiles[inline2.id] ? inline2.id : "generic");
-  const parent = builtin(baseName);
-  const merged = { ...parent };
-  for (const [k, v] of Object.entries(inline2)) {
-    if (v !== void 0) merged[k] = v;
-  }
-  if (inline2.pageLimit) merged.pageLimit = { ...parent.pageLimit, ...inline2.pageLimit };
-  if (!inline2.id) merged.id = parent.id;
-  return merged;
-}
-
 // ../packages/core/src/venue/tex.ts
 function stripComments(content) {
   return content.split("\n").map((line) => {
@@ -112758,7 +112738,12 @@ function findCommands(files, names) {
       }
       const g = readGroup(src, i);
       if (!g) continue;
-      const use = { file: f.path, line: lineAt(src, m.index), name: m[1], arg: g.value };
+      const use = {
+        file: f.path,
+        line: lineAt(src, m.index),
+        name: m[1],
+        arg: g.value
+      };
       if (optional !== void 0) use.optional = optional;
       out.push(use);
     }
@@ -112777,6 +112762,151 @@ function grepTex(files, re) {
     }
   }
   return out;
+}
+
+// ../packages/core/src/venue/arxiv.ts
+var PATH_COMMANDS = [
+  "includegraphics",
+  "input",
+  "include",
+  "addbibresource",
+  "bibliography",
+  "subfile",
+  "includepdf",
+  "lstinputlisting",
+  "inputminted"
+];
+function detectEngine(log) {
+  if (!log) return void 0;
+  const head = log.slice(0, 400);
+  if (/This is LuaH?B?TeX|This is LuaTeX/i.test(head)) return "lualatex";
+  if (/This is XeTeX/i.test(head)) return "xelatex";
+  if (/This is pdfTeX|This is e-pTeX/i.test(head)) return "pdflatex";
+  return void 0;
+}
+function isAbsolute(p) {
+  return /^(\/|~[/\\]|[A-Za-z]:[\\/]|\\\\)/.test(p.trim());
+}
+function dirname(p) {
+  const i = p.lastIndexOf("/");
+  return i < 0 ? "" : p.slice(0, i + 1);
+}
+function arxivProblems(ctx) {
+  const problems = [];
+  const files = ctx.texFiles ?? [];
+  const uses = findCommands(files, PATH_COMMANDS);
+  for (const use of uses) {
+    for (const p of use.arg.split(",")) {
+      if (!isAbsolute(p)) continue;
+      problems.push({
+        rule: "arxiv-absolute-path",
+        check: "venue",
+        severity: "error",
+        message: `Absolute path in \\${use.name}: ${p.trim()}`,
+        location: { file: use.file, line: use.line },
+        fix: "Use a path relative to the main file (arXiv only has your uploaded files)"
+      });
+    }
+    if (/\s/.test(use.arg.trim()) && use.name !== "bibliography") {
+      problems.push({
+        rule: "arxiv-filename-space",
+        check: "venue",
+        severity: "warning",
+        message: `File name with a space in \\${use.name}: ${use.arg.trim()}`,
+        location: { file: use.file, line: use.line },
+        fix: "Rename the file without spaces (use - or _)"
+      });
+    }
+  }
+  const engine = detectEngine(ctx.log);
+  if (engine === "pdflatex") {
+    for (const use of uses.filter(
+      (u) => u.name === "includegraphics" && /\.e?ps$/i.test(u.arg.trim())
+    )) {
+      problems.push({
+        rule: "arxiv-eps-pdflatex",
+        check: "venue",
+        severity: "warning",
+        message: `EPS figure with pdfLaTeX: ${use.arg.trim()}`,
+        location: { file: use.file, line: use.line },
+        fix: "Convert to PDF (`epstopdf figure.eps`) and include the .pdf; arXiv\u2019s pdfLaTeX will not convert it"
+      });
+    }
+  }
+  const shell = /\\usepackage(\[[^\]]*\])?\{[^}]*\b(minted|pythontex|svg|gnuplottex|shellesc)\b[^}]*\}|\\write18|\\ShellEscape|\\immediate\\write18/g;
+  for (const hit of grepTex(files, shell)) {
+    problems.push({
+      rule: "arxiv-shell-escape",
+      check: "venue",
+      severity: "warning",
+      message: `Needs shell escape, which arXiv does not allow: ${hit.match.slice(0, 60)}`,
+      location: { file: hit.file, line: hit.line },
+      fix: "Use `listings` instead of `minted`, or pre-generate the output (minted: `frozencache`) and upload it"
+    });
+  }
+  if (ctx.main && ctx.files) {
+    for (const f of ctx.files.filter((f2) => /\s/.test(f2) && !f2.startsWith("."))) {
+      problems.push({
+        rule: "arxiv-filename-space",
+        check: "venue",
+        severity: "warning",
+        message: `File name with a space: ${f}`,
+        location: { file: f },
+        fix: "Rename the file without spaces (use - or _)"
+      });
+    }
+    const usesBib = uses.some((u) => u.name === "addbibresource" || u.name === "bibliography");
+    const stem = ctx.main.replace(/\.tex$/i, "");
+    const hasBbl = ctx.files.some(
+      (f) => f.toLowerCase().endsWith(".bbl") && dirname(f) === dirname(ctx.main ?? "")
+    );
+    if (usesBib && !hasBbl) {
+      problems.push({
+        rule: "arxiv-missing-bbl",
+        check: "venue",
+        severity: "info",
+        message: `No ${stem}.bbl next to ${ctx.main}; arXiv does not run biber`,
+        fix: "Build once, then upload the generated .bbl (named like your main file) with your sources"
+      });
+    }
+  }
+  const seen = /* @__PURE__ */ new Set();
+  return problems.filter((p) => {
+    const key = `${p.rule}|${p.location?.file}|${p.location?.line}|${p.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// ../packages/core/src/venue/aux.ts
+function parseAuxLabels(aux) {
+  const labels = /* @__PURE__ */ new Map();
+  const re = /\\newlabel\s*\{/g;
+  for (let m = re.exec(aux); m; m = re.exec(aux)) {
+    const name = readGroup(aux, m.index + m[0].length - 1);
+    if (!name) continue;
+    let i = name.end;
+    while (aux[i] === " ") i++;
+    const body = readGroup(aux, i);
+    if (!body) continue;
+    const fields = [];
+    let j = 0;
+    while (j < body.value.length && fields.length < 2) {
+      while (body.value[j] === " ") j++;
+      const g = readGroup(body.value, j);
+      if (!g) break;
+      fields.push(g.value);
+      j = g.end;
+    }
+    if (fields.length < 2) continue;
+    labels.set(name.value, { ref: clean(fields[0] ?? ""), page: clean(fields[1] ?? "") });
+    re.lastIndex = body.end;
+  }
+  return labels;
+}
+function clean(s) {
+  return s.replace(/\\relax\s*/g, "").replace(/\\protect\s*/g, "").replace(/[{}]/g, "").trim();
 }
 
 // ../packages/core/src/venue/anonymity.ts
@@ -112836,117 +112966,6 @@ function anonymityProblems(ctx) {
   return problems;
 }
 
-// ../packages/core/src/venue/arxiv.ts
-var PATH_COMMANDS = [
-  "includegraphics",
-  "input",
-  "include",
-  "addbibresource",
-  "bibliography",
-  "subfile",
-  "includepdf",
-  "lstinputlisting",
-  "inputminted"
-];
-function detectEngine(log) {
-  if (!log) return void 0;
-  const head = log.slice(0, 400);
-  if (/This is LuaH?B?TeX|This is LuaTeX/i.test(head)) return "lualatex";
-  if (/This is XeTeX/i.test(head)) return "xelatex";
-  if (/This is pdfTeX|This is e-pTeX/i.test(head)) return "pdflatex";
-  return void 0;
-}
-function isAbsolute(p) {
-  return /^(\/|~[/\\]|[A-Za-z]:[\\/]|\\\\)/.test(p.trim());
-}
-function dirname(p) {
-  const i = p.lastIndexOf("/");
-  return i < 0 ? "" : p.slice(0, i + 1);
-}
-function arxivProblems(ctx) {
-  const problems = [];
-  const files = ctx.texFiles ?? [];
-  const uses = findCommands(files, PATH_COMMANDS);
-  for (const use of uses) {
-    for (const p of use.arg.split(",")) {
-      if (!isAbsolute(p)) continue;
-      problems.push({
-        rule: "arxiv-absolute-path",
-        check: "venue",
-        severity: "error",
-        message: `Absolute path in \\${use.name}: ${p.trim()}`,
-        location: { file: use.file, line: use.line },
-        fix: "Use a path relative to the main file (arXiv only has your uploaded files)"
-      });
-    }
-    if (/\s/.test(use.arg.trim()) && use.name !== "bibliography") {
-      problems.push({
-        rule: "arxiv-filename-space",
-        check: "venue",
-        severity: "warning",
-        message: `File name with a space in \\${use.name}: ${use.arg.trim()}`,
-        location: { file: use.file, line: use.line },
-        fix: "Rename the file without spaces (use - or _)"
-      });
-    }
-  }
-  const engine = detectEngine(ctx.log);
-  if (engine === "pdflatex") {
-    for (const use of uses.filter((u) => u.name === "includegraphics" && /\.e?ps$/i.test(u.arg.trim()))) {
-      problems.push({
-        rule: "arxiv-eps-pdflatex",
-        check: "venue",
-        severity: "warning",
-        message: `EPS figure with pdfLaTeX: ${use.arg.trim()}`,
-        location: { file: use.file, line: use.line },
-        fix: "Convert to PDF (`epstopdf figure.eps`) and include the .pdf; arXiv\u2019s pdfLaTeX will not convert it"
-      });
-    }
-  }
-  const shell = /\\usepackage(\[[^\]]*\])?\{[^}]*\b(minted|pythontex|svg|gnuplottex|shellesc)\b[^}]*\}|\\write18|\\ShellEscape|\\immediate\\write18/g;
-  for (const hit of grepTex(files, shell)) {
-    problems.push({
-      rule: "arxiv-shell-escape",
-      check: "venue",
-      severity: "warning",
-      message: `Needs shell escape, which arXiv does not allow: ${hit.match.slice(0, 60)}`,
-      location: { file: hit.file, line: hit.line },
-      fix: "Use `listings` instead of `minted`, or pre-generate the output (minted: `frozencache`) and upload it"
-    });
-  }
-  if (ctx.main && ctx.files) {
-    for (const f of ctx.files.filter((f2) => /\s/.test(f2) && !f2.startsWith("."))) {
-      problems.push({
-        rule: "arxiv-filename-space",
-        check: "venue",
-        severity: "warning",
-        message: `File name with a space: ${f}`,
-        location: { file: f },
-        fix: "Rename the file without spaces (use - or _)"
-      });
-    }
-    const usesBib = uses.some((u) => u.name === "addbibresource" || u.name === "bibliography");
-    const stem = ctx.main.replace(/\.tex$/i, "");
-    const hasBbl = ctx.files.some((f) => f.toLowerCase().endsWith(".bbl") && dirname(f) === dirname(ctx.main ?? ""));
-    if (usesBib && !hasBbl) {
-      problems.push({
-        rule: "arxiv-missing-bbl",
-        check: "venue",
-        severity: "info",
-        message: `No ${stem}.bbl next to ${ctx.main}; arXiv does not run biber`,
-        fix: "Build once, then upload the generated .bbl (named like your main file) with your sources"
-      });
-    }
-  }
-  const seen = /* @__PURE__ */ new Set();
-  return problems.filter((p) => {
-    const key = `${p.rule}|${p.location?.file}|${p.location?.line}|${p.message}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 // ../packages/core/src/venue/disclosure.ts
 var AI = /\b(AI|LLMs?|large\s+language\s+models?|generative|artificial\s+intelligence|GenAI|ChatGPT)\b/i;
 var USE = /\b(use|usage|used|disclosure|statement|declaration|assist\w*|tools?)\b/i;
@@ -112966,7 +112985,9 @@ function hasDisclosure(ctx) {
   ]);
   if (headings.some((h) => isDisclosureTitle(h.arg))) return true;
   if (files.length === 0 && ctx.facts) {
-    return ctx.facts.pages.some((p) => p.text.split("\n").some((l) => l.length < 80 && isDisclosureTitle(l)));
+    return ctx.facts.pages.some(
+      (p) => p.text.split("\n").some((l) => l.length < 80 && isDisclosureTitle(l))
+    );
   }
   return false;
 }
@@ -112983,36 +113004,6 @@ function disclosureProblems(level, ctx) {
       fix: "Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}` stating which tools were used and how"
     }
   ];
-}
-
-// ../packages/core/src/venue/aux.ts
-function parseAuxLabels(aux) {
-  const labels = /* @__PURE__ */ new Map();
-  const re = /\\newlabel\s*\{/g;
-  for (let m = re.exec(aux); m; m = re.exec(aux)) {
-    const name = readGroup(aux, m.index + m[0].length - 1);
-    if (!name) continue;
-    let i = name.end;
-    while (aux[i] === " ") i++;
-    const body = readGroup(aux, i);
-    if (!body) continue;
-    const fields = [];
-    let j = 0;
-    while (j < body.value.length && fields.length < 2) {
-      while (body.value[j] === " ") j++;
-      const g = readGroup(body.value, j);
-      if (!g) break;
-      fields.push(g.value);
-      j = g.end;
-    }
-    if (fields.length < 2) continue;
-    labels.set(name.value, { ref: clean(fields[0] ?? ""), page: clean(fields[1] ?? "") });
-    re.lastIndex = body.end;
-  }
-  return labels;
-}
-function clean(s) {
-  return s.replace(/\\relax\s*/g, "").replace(/\\protect\s*/g, "").replace(/[{}]/g, "").trim();
 }
 
 // ../packages/core/src/venue/pages.ts
@@ -113122,11 +113113,90 @@ function venueCheck(profile, ctx) {
   const errors = problems.filter((p) => p.severity === "error").length;
   const warnings = problems.filter((p) => p.severity === "warning").length;
   const parts = [`profile ${profile.id}`];
-  if (profile.pageLimit && ctx.facts) parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
+  if (profile.pageLimit && ctx.facts)
+    parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
   else if (ctx.facts) parts.push(`${ctx.facts.pageCount} pages`);
   if (errors) parts.push(`${errors} to fix`);
   if (warnings) parts.push(`${warnings} to review`);
   return { check: "venue", status: statusOf(problems), problems, summary: parts.join(", "), stats };
+}
+
+// ../packages/core/src/venue/profiles.ts
+var ALL_CHECKS = [...CHECK_IDS];
+var builtinProfiles = {
+  generic: {
+    id: "generic",
+    name: "Generic",
+    description: "Any LaTeX document: build, output, references; accessibility as advice.",
+    paper: "any",
+    disclosure: "off",
+    accessibility: "recommended",
+    checks: ALL_CHECKS
+  },
+  thesis: {
+    id: "thesis",
+    name: "Thesis",
+    description: "Theses and dissertations: accessible PDF/UA output required, no page limit.",
+    paper: "any",
+    disclosure: "off",
+    accessibility: "required",
+    checks: ALL_CHECKS
+  },
+  paper: {
+    id: "paper",
+    name: "Paper",
+    description: "Conference or journal paper: AI-use disclosure and accessibility recommended.",
+    paper: "any",
+    disclosure: "recommended",
+    accessibility: "recommended",
+    checks: ALL_CHECKS
+  },
+  arxiv: {
+    id: "arxiv",
+    name: "arXiv",
+    description: "arXiv submission: no absolute paths, no shell escape, .bbl included, pdfLaTeX-safe figures.",
+    paper: "any",
+    disclosure: "off",
+    accessibility: "recommended",
+    arxiv: true,
+    checks: ALL_CHECKS
+  },
+  "double-blind": {
+    id: "double-blind",
+    name: "Double-blind review",
+    description: "Anonymous submission: no author names in the PDF metadata or source, no acknowledgments.",
+    paper: "any",
+    anonymous: true,
+    disclosure: "recommended",
+    accessibility: "recommended",
+    checks: ALL_CHECKS
+  }
+};
+var UnknownProfileError = class extends Error {
+  constructor(name) {
+    super(
+      `Unknown profile "${name}". Built-in profiles: ${Object.keys(builtinProfiles).join(", ")}`
+    );
+    this.name = "UnknownProfileError";
+  }
+};
+function builtin(name) {
+  const p = builtinProfiles[name];
+  if (!p) throw new UnknownProfileError(name);
+  return p;
+}
+function resolveProfile(nameOrInline) {
+  if (typeof nameOrInline === "string") return { ...builtin(nameOrInline) };
+  const { extends: base, ...inline2 } = nameOrInline;
+  const baseName = base ?? (inline2.id && builtinProfiles[inline2.id] ? inline2.id : "generic");
+  const parent = builtin(baseName);
+  const merged = { ...parent };
+  for (const [k, v] of Object.entries(inline2)) {
+    if (v !== void 0) merged[k] = v;
+  }
+  if (inline2.pageLimit) merged.pageLimit = { ...parent.pageLimit, ...inline2.pageLimit };
+  if (!inline2.id) merged.id = parent.id;
+  return merged;
 }
 
 // ../packages/core/src/report/shared.ts
@@ -113168,6 +113238,35 @@ function tallyLine(t) {
   return parts.join(" \xB7 ");
 }
 
+// ../packages/core/src/report/annotations.ts
+function escapeData(s) {
+  return s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+function escapeProperty(s) {
+  return escapeData(s).replace(/:/g, "%3A").replace(/,/g, "%2C");
+}
+function joinPath(root, file) {
+  if (!root || root === "." || root === "./") return file;
+  return `${root.replace(/\/+$/, "")}/${file}`;
+}
+function annotation(p, opts) {
+  const cmd = p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : "notice";
+  const props = [];
+  if (p.location?.file) {
+    props.push(`file=${escapeProperty(joinPath(opts.root, p.location.file))}`);
+    if (p.location.line) props.push(`line=${p.location.line}`);
+  }
+  props.push(`title=${escapeProperty(`overfull ${p.rule}`)}`);
+  const page = p.location?.page && !p.location.file ? `Page ${p.location.page}: ` : "";
+  const msg = p.fix ? `${page}${p.message}
+Fix: ${p.fix}` : `${page}${p.message}`;
+  return `::${cmd} ${props.join(",")}::${escapeData(msg)}`;
+}
+function githubAnnotations(report, opts = {}) {
+  const list3 = sortedProblems(report).map((p) => annotation(p, opts));
+  return opts.limit ? list3.slice(0, opts.limit) : list3;
+}
+
 // ../packages/core/src/report/human.ts
 function palette(color) {
   const wrap = (open, close) => (s) => color ? `\x1B[${open}m${s}\x1B[${close}m` : s;
@@ -113202,7 +113301,9 @@ function formatHuman(report, opts = {}) {
   for (const ch2 of report.checks) {
     const glyph = statusPaint[ch2.status](STATUS_GLYPH[ch2.status]);
     const text2 = checkLine(ch2);
-    lines.push(`  ${glyph} ${pad(ch2.check, nameWidth)}${ch2.status === "skipped" ? c.dim(text2) : text2}`);
+    lines.push(
+      `  ${glyph} ${pad(ch2.check, nameWidth)}${ch2.status === "skipped" ? c.dim(text2) : text2}`
+    );
   }
   const problems = sortedProblems(report);
   if (problems.length > 0) {
@@ -113211,7 +113312,8 @@ function formatHuman(report, opts = {}) {
       28,
       Math.max(...problems.map((p) => formatLocation(p.location).length))
     );
-    for (const p of problems) lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
+    for (const p of problems)
+      lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
   }
   lines.push("");
   lines.push(tallyLine(tally(report)));
@@ -113293,7 +113395,9 @@ function escapeMarkdown(s) {
   return escapeHtml(s.replace(/\r?\n/g, " ")).replace(/([\\`*_{}[\]|~#])/g, "\\$1");
 }
 function inline(s) {
-  return s.replace(/\r?\n/g, " ").split("`").map((part, i) => i % 2 === 1 ? `<code>${escapeHtml(part).replace(/\|/g, "&#124;")}</code>` : escapeMarkdown(part)).join("");
+  return s.replace(/\r?\n/g, " ").split("`").map(
+    (part, i) => i % 2 === 1 ? `<code>${escapeHtml(part).replace(/\|/g, "&#124;")}</code>` : escapeMarkdown(part)
+  ).join("");
 }
 function problemItem(p) {
   const loc = formatLocation(p.location);
@@ -113317,7 +113421,10 @@ function formatMarkdown(report) {
     const mine = problems.filter((p) => p.check === c.check);
     if (mine.length === 0) continue;
     const open = mine.some((p) => p.severity === "error") ? " open" : "";
-    out.push(`<details${open}><summary><b>${c.check}</b>: ${mine.length} item${mine.length === 1 ? "" : "s"}</summary>`, "");
+    out.push(
+      `<details${open}><summary><b>${c.check}</b>: ${mine.length} item${mine.length === 1 ? "" : "s"}</summary>`,
+      ""
+    );
     for (const p of mine) out.push(problemItem(p));
     out.push("", "</details>", "");
   }
@@ -113325,34 +113432,9 @@ function formatMarkdown(report) {
 `;
 }
 
-// ../packages/core/src/report/annotations.ts
-function escapeData(s) {
-  return s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-function escapeProperty(s) {
-  return escapeData(s).replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
-function joinPath(root, file) {
-  if (!root || root === "." || root === "./") return file;
-  return `${root.replace(/\/+$/, "")}/${file}`;
-}
-function annotation(p, opts) {
-  const cmd = p.severity === "error" ? "error" : p.severity === "warning" ? "warning" : "notice";
-  const props = [];
-  if (p.location?.file) {
-    props.push(`file=${escapeProperty(joinPath(opts.root, p.location.file))}`);
-    if (p.location.line) props.push(`line=${p.location.line}`);
-  }
-  props.push(`title=${escapeProperty(`overfull ${p.rule}`)}`);
-  const page = p.location?.page && !p.location.file ? `Page ${p.location.page}: ` : "";
-  const msg = p.fix ? `${page}${p.message}
-Fix: ${p.fix}` : `${page}${p.message}`;
-  return `::${cmd} ${props.join(",")}::${escapeData(msg)}`;
-}
-function githubAnnotations(report, opts = {}) {
-  const list3 = sortedProblems(report).map((p) => annotation(p, opts));
-  return opts.limit ? list3.slice(0, opts.limit) : list3;
-}
+// ../packages/cli/src/check.ts
+import { existsSync as existsSync3 } from "node:fs";
+import { join as join4 } from "node:path";
 
 // ../packages/cli/src/cache.ts
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -113362,7 +113444,8 @@ var FileCache = class {
     this.path = path;
     try {
       const parsed = JSON.parse(readFileSync(path, "utf8"));
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) this.data = parsed;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+        this.data = parsed;
     } catch {
       this.data = {};
     }
@@ -113406,7 +113489,18 @@ var UsageError = class extends Error {
 var DEFAULT_IMAGE = "ghcr.io/amet13/overfull:0.1";
 var CONFIG_FILE = "overfull.yml";
 var TOP_KEYS = ["main", "jobname", "bib", "profile", "checks", "references", "venue", "build"];
-var VENUE_KEYS = ["pageLimit", "paper", "anonymous", "disclosure", "accessibility", "arxiv", "checks", "name", "description", "extends"];
+var VENUE_KEYS = [
+  "pageLimit",
+  "paper",
+  "anonymous",
+  "disclosure",
+  "accessibility",
+  "arxiv",
+  "checks",
+  "name",
+  "description",
+  "extends"
+];
 var LEVELS = ["required", "recommended", "off"];
 var ConfigError = class extends UsageError {
   constructor(file, message) {
@@ -113421,7 +113515,10 @@ function stringList(v, field, file) {
 }
 function closest2(word, options) {
   const dist = (a, b) => {
-    const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    const d = Array.from(
+      { length: a.length + 1 },
+      (_, i) => [i, ...Array(b.length).fill(0)]
+    );
     for (let j = 1; j <= b.length; j++) d[0][j] = j;
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
@@ -113443,7 +113540,10 @@ function checkKeys(obj, allowed, where, file) {
   for (const k of Object.keys(obj)) {
     if (allowed.includes(k)) continue;
     const hint = closest2(k, allowed);
-    throw new ConfigError(file, `unknown key \`${where}${k}\`${hint ? ` (did you mean \`${where}${hint}\`?)` : ""}`);
+    throw new ConfigError(
+      file,
+      `unknown key \`${where}${k}\`${hint ? ` (did you mean \`${where}${hint}\`?)` : ""}`
+    );
   }
 }
 function validateVenue(v, file) {
@@ -113456,23 +113556,31 @@ function validateVenue(v, file) {
     else if (isObj2(pl) && typeof pl.max === "number" && pl.max > 0) {
       out.pageLimit = { max: pl.max };
       if (pl.endLabel !== void 0) {
-        if (typeof pl.endLabel !== "string") throw new ConfigError(file, "`venue.pageLimit.endLabel` must be a string");
+        if (typeof pl.endLabel !== "string")
+          throw new ConfigError(file, "`venue.pageLimit.endLabel` must be a string");
         out.pageLimit.endLabel = pl.endLabel;
       }
-    } else throw new ConfigError(file, "`venue.pageLimit` must be a number or `{ max: 9, endLabel: overfull:main-end }`");
+    } else
+      throw new ConfigError(
+        file,
+        "`venue.pageLimit` must be a number or `{ max: 9, endLabel: overfull:main-end }`"
+      );
   }
   if (v.paper !== void 0) {
-    if (!["a4", "letter", "any"].includes(String(v.paper))) throw new ConfigError(file, "`venue.paper` must be a4, letter or any");
+    if (!["a4", "letter", "any"].includes(String(v.paper)))
+      throw new ConfigError(file, "`venue.paper` must be a4, letter or any");
     out.paper = v.paper;
   }
   for (const k of ["anonymous", "arxiv"]) {
     if (v[k] === void 0) continue;
-    if (typeof v[k] !== "boolean") throw new ConfigError(file, `\`venue.${k}\` must be true or false`);
+    if (typeof v[k] !== "boolean")
+      throw new ConfigError(file, `\`venue.${k}\` must be true or false`);
     out[k] = v[k];
   }
   for (const k of ["disclosure", "accessibility"]) {
     if (v[k] === void 0) continue;
-    if (!LEVELS.includes(String(v[k]))) throw new ConfigError(file, `\`venue.${k}\` must be required, recommended or off`);
+    if (!LEVELS.includes(String(v[k])))
+      throw new ConfigError(file, `\`venue.${k}\` must be required, recommended or off`);
     out[k] = v[k];
   }
   for (const k of ["name", "description", "extends"]) {
@@ -113485,7 +113593,10 @@ function parseChecks(v, file, field = "checks") {
   const list3 = stringList(v, field, file);
   for (const c of list3) {
     if (!CHECK_IDS.includes(c)) {
-      throw new ConfigError(file, `unknown check "${c}" in \`${field}\`; use ${CHECK_IDS.join(", ")}`);
+      throw new ConfigError(
+        file,
+        `unknown check "${c}" in \`${field}\`; use ${CHECK_IDS.join(", ")}`
+      );
     }
   }
   return list3;
@@ -113495,7 +113606,8 @@ function discoverBib(root, main3) {
   if (existsSync(mainPath)) {
     const src = readFileSync2(mainPath, "utf8").replace(/(^|[^\\])%.*$/gm, "$1");
     const found = [];
-    for (const m of src.matchAll(/\\addbibresource(?:\[[^\]]*\])?\{([^}]+)\}/g)) found.push(m[1].trim());
+    for (const m of src.matchAll(/\\addbibresource(?:\[[^\]]*\])?\{([^}]+)\}/g))
+      found.push(m[1].trim());
     for (const m of src.matchAll(/\\bibliography\{([^}]+)\}/g)) {
       for (const b of m[1].split(",")) {
         const name = b.trim();
@@ -113529,16 +113641,22 @@ function loadConfig(cwd, explicit, env = {}) {
     try {
       data = (0, import_yaml.parse)(readFileSync2(file, "utf8"));
     } catch (err) {
-      throw new ConfigError(file, `invalid YAML: ${err instanceof Error ? err.message.split("\n")[0] : String(err)}`);
+      throw new ConfigError(
+        file,
+        `invalid YAML: ${err instanceof Error ? err.message.split("\n")[0] : String(err)}`
+      );
     }
-    if (data !== null && data !== void 0 && !isObj2(data)) throw new ConfigError(file, "must be a mapping of keys to values");
+    if (data !== null && data !== void 0 && !isObj2(data))
+      throw new ConfigError(file, "must be a mapping of keys to values");
     raw = data ?? {};
     checkKeys(raw, TOP_KEYS, "", file);
   }
   const f = file ?? join(root, CONFIG_FILE);
-  if (raw.main !== void 0 && typeof raw.main !== "string") throw new ConfigError(f, "`main` must be a file name");
+  if (raw.main !== void 0 && typeof raw.main !== "string")
+    throw new ConfigError(f, "`main` must be a file name");
   const main3 = raw.main ?? "main.tex";
-  if (raw.jobname !== void 0 && typeof raw.jobname !== "string") throw new ConfigError(f, "`jobname` must be a string");
+  if (raw.jobname !== void 0 && typeof raw.jobname !== "string")
+    throw new ConfigError(f, "`jobname` must be a string");
   const jobname = raw.jobname ?? basename2(main3).replace(/\.tex$/i, "");
   const bib = raw.bib !== void 0 ? stringList(raw.bib, "bib", f) : discoverBib(root, main3);
   let inline2 = {};
@@ -113564,7 +113682,8 @@ function loadConfig(cwd, explicit, env = {}) {
   if (!isObj2(build2)) throw new ConfigError(f, "`build` must be a mapping");
   checkKeys(build2, ["engine", "image"], "build.", f);
   const engine = build2.engine ?? "auto";
-  if (!["auto", "local", "docker"].includes(engine)) throw new ConfigError(f, "`build.engine` must be auto, local or docker");
+  if (!["auto", "local", "docker"].includes(engine))
+    throw new ConfigError(f, "`build.engine` must be auto, local or docker");
   const image = env.OVERFULL_IMAGE || (typeof build2.image === "string" ? build2.image : DEFAULT_IMAGE);
   const config = {
     root,
@@ -113647,7 +113766,8 @@ function loadPdfjs() {
   pdfjsPromise ??= (async () => {
     const warn3 = console.warn;
     console.warn = (...args) => {
-      if (typeof args[0] === "string" && /^Warning: Cannot (load "@napi-rs|polyfill|access the `require`)/.test(args[0])) return;
+      if (typeof args[0] === "string" && /^Warning: Cannot (load "@napi-rs|polyfill|access the `require`)/.test(args[0]))
+        return;
       warn3(...args);
     };
     try {
@@ -113673,7 +113793,16 @@ async function readPdfFacts(path) {
 // ../packages/cli/src/project.ts
 import { existsSync as existsSync2, readdirSync as readdirSync2, readFileSync as readFileSync4, statSync } from "node:fs";
 import { join as join3, relative, sep } from "node:path";
-var SKIP_DIRS = /* @__PURE__ */ new Set([".git", "node_modules", ".overfull", "_minted", "dist", ".github", ".agents", ".claude"]);
+var SKIP_DIRS = /* @__PURE__ */ new Set([
+  ".git",
+  "node_modules",
+  ".overfull",
+  "_minted",
+  "dist",
+  ".github",
+  ".agents",
+  ".claude"
+]);
 var MAX_FILES = 5e3;
 function listFiles(root) {
   const out = [];
@@ -113718,14 +113847,13 @@ function readAux(root, jobname) {
   return parts.join("\n");
 }
 
-// ../packages/cli/src/version.ts
-var VERSION = true ? "0.1.0" : readVersion();
-
 // ../packages/cli/src/verapdf.ts
 async function runVeraPdf(pdf, env) {
   if (!which("verapdf", env)) return null;
   const attempt = async (flavour) => {
-    const r = await run("verapdf", ["--flavour", flavour, "--format", "json", pdf], { timeoutMs: 18e4 });
+    const r = await run("verapdf", ["--flavour", flavour, "--format", "json", pdf], {
+      timeoutMs: 18e4
+    });
     if (r.error) return { compliant: false, failures: [], error: r.error };
     return parseVeraPdfReport(r.stdout || r.stderr);
   };
@@ -113734,6 +113862,9 @@ async function runVeraPdf(pdf, env) {
   const ua1 = await attempt("ua1");
   return ua1.error ? ua2 : ua1;
 }
+
+// ../packages/cli/src/version.ts
+var VERSION = true ? "0.1.0" : readVersion();
 
 // ../packages/cli/src/check.ts
 var skipped2 = (check2, reason) => ({
@@ -113793,13 +113924,15 @@ function buildAndOutput(inp, wanted) {
   }
   const { build: build2, output } = analyzeLog(inp.log, { root: inp.root });
   if (wanted.has("build")) out.push(build2);
-  if (wanted.has("output")) out.push(inp.facts ? mergeOutput(output, pdfOutputProblems(inp.facts)) : output);
+  if (wanted.has("output"))
+    out.push(inp.facts ? mergeOutput(output, pdfOutputProblems(inp.facts)) : output);
   return out;
 }
 async function references(inp, opts) {
   const { config, root } = inp;
   const bibFiles = opts.bib ?? config.bib;
-  if (bibFiles.length === 0) return skipped2("references", "No .bib file found (set `bib:` in overfull.yml)");
+  if (bibFiles.length === 0)
+    return skipped2("references", "No .bib file found (set `bib:` in overfull.yml)");
   const entries = [];
   const parseProblems = [];
   const missingFiles = [];
@@ -113865,7 +113998,8 @@ async function references(inp, opts) {
 }
 async function accessibility(inp, opts) {
   const level = inp.config.profile.accessibility ?? "recommended";
-  if (level === "off") return skipped2("accessibility", `Accessibility is off for profile ${inp.config.profile.id}`);
+  if (level === "off")
+    return skipped2("accessibility", `Accessibility is off for profile ${inp.config.profile.id}`);
   if (!inp.facts) return skipped2("accessibility", missingPdfReason(inp));
   let verapdf;
   if (opts.verapdf !== false) verapdf = await runVeraPdf(join4(inp.root, inp.pdfPath), opts.env);
@@ -113908,7 +114042,13 @@ async function runCheck(opts = {}) {
   if (wanted.has("venue")) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
   const target = existsSync3(join4(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
-  return { tool: "overfull", version: VERSION, target, status: reportStatus(results), checks: results };
+  return {
+    tool: "overfull",
+    version: VERSION,
+    target,
+    status: reportStatus(results),
+    checks: results
+  };
 }
 function exitCodeFor(report, failOn) {
   if (failOn === "never") return 0;
@@ -114003,7 +114143,8 @@ async function main2() {
   process.stdout.write(formatHuman(report, { color: true, verbose: true }));
   if (inputs.annotations) {
     const root = relative2(workspace, resolve2(inputs.check.cwd ?? workspace)) || ".";
-    for (const line of githubAnnotations(report, { root, limit: 50 })) process.stdout.write(`${line}
+    for (const line of githubAnnotations(report, { root, limit: 50 }))
+      process.stdout.write(`${line}
 `);
   }
   if (inputs.summary && env.GITHUB_STEP_SUMMARY) {

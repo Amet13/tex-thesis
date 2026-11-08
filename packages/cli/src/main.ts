@@ -55,7 +55,9 @@ export async function main(argv: string[], io: Io): Promise<number> {
   const command = COMMANDS[cmd];
   if (!command) {
     const hint = closest(cmd, Object.keys(COMMANDS));
-    io.stderr(`Unknown command "${cmd}".${hint ? ` Did you mean \`overfull ${hint}\`?` : ''}\nRun \`overfull --help\` for the list of commands.\n`);
+    io.stderr(
+      `Unknown command "${cmd}".${hint ? ` Did you mean \`overfull ${hint}\`?` : ''}\nRun \`overfull --help\` for the list of commands.\n`,
+    );
     return 2;
   }
   if (rest.includes('--version') || rest.includes('-V')) {
@@ -69,8 +71,15 @@ export async function main(argv: string[], io: Io): Promise<number> {
       io.stderr(`overfull ${cmd}: ${err.message}\n`);
       return 2;
     }
-    const msg = err instanceof Error ? (io.env.OVERFULL_DEBUG ? (err.stack ?? err.message) : err.message) : String(err);
-    io.stderr(`overfull ${cmd}: internal error: ${msg}\nSet OVERFULL_DEBUG=1 for a stack trace and report it at https://github.com/amet13/overfull/issues\n`);
+    const msg =
+      err instanceof Error
+        ? io.env.OVERFULL_DEBUG
+          ? (err.stack ?? err.message)
+          : err.message
+        : String(err);
+    io.stderr(
+      `overfull ${cmd}: internal error: ${msg}\nSet OVERFULL_DEBUG=1 for a stack trace and report it at https://github.com/amet13/overfull/issues\n`,
+    );
     return 2;
   }
 }

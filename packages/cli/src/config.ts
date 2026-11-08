@@ -33,7 +33,18 @@ export interface Config {
 }
 
 const TOP_KEYS = ['main', 'jobname', 'bib', 'profile', 'checks', 'references', 'venue', 'build'];
-const VENUE_KEYS = ['pageLimit', 'paper', 'anonymous', 'disclosure', 'accessibility', 'arxiv', 'checks', 'name', 'description', 'extends'];
+const VENUE_KEYS = [
+  'pageLimit',
+  'paper',
+  'anonymous',
+  'disclosure',
+  'accessibility',
+  'arxiv',
+  'checks',
+  'name',
+  'description',
+  'extends',
+];
 const LEVELS = ['required', 'recommended', 'off'];
 
 class ConfigError extends UsageError {
@@ -53,7 +64,10 @@ function stringList(v: unknown, field: string, file: string): string[] {
 
 function closest(word: string, options: string[]): string | undefined {
   const dist = (a: string, b: string) => {
-    const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)] as number[]);
+    const d = Array.from(
+      { length: a.length + 1 },
+      (_, i) => [i, ...Array(b.length).fill(0)] as number[],
+    );
     for (let j = 1; j <= b.length; j++) (d[0] as number[])[j] = j;
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
@@ -68,7 +82,9 @@ function closest(word: string, options: string[]): string | undefined {
     }
     return (d[a.length] as number[])[b.length] as number;
   };
-  const best = options.map((o) => ({ o, d: dist(word.toLowerCase(), o.toLowerCase()) })).sort((x, y) => x.d - y.d)[0];
+  const best = options
+    .map((o) => ({ o, d: dist(word.toLowerCase(), o.toLowerCase()) }))
+    .sort((x, y) => x.d - y.d)[0];
   return best && best.d <= Math.max(2, Math.floor(word.length / 3)) ? best.o : undefined;
 }
 
@@ -76,7 +92,10 @@ function checkKeys(obj: Obj, allowed: string[], where: string, file: string): vo
   for (const k of Object.keys(obj)) {
     if (allowed.includes(k)) continue;
     const hint = closest(k, allowed);
-    throw new ConfigError(file, `unknown key \`${where}${k}\`${hint ? ` (did you mean \`${where}${hint}\`?)` : ''}`);
+    throw new ConfigError(
+      file,
+      `unknown key \`${where}${k}\`${hint ? ` (did you mean \`${where}${hint}\`?)` : ''}`,
+    );
   }
 }
 
@@ -90,23 +109,31 @@ function validateVenue(v: unknown, file: string): InlineProfile {
     else if (isObj(pl) && typeof pl.max === 'number' && pl.max > 0) {
       out.pageLimit = { max: pl.max };
       if (pl.endLabel !== undefined) {
-        if (typeof pl.endLabel !== 'string') throw new ConfigError(file, '`venue.pageLimit.endLabel` must be a string');
+        if (typeof pl.endLabel !== 'string')
+          throw new ConfigError(file, '`venue.pageLimit.endLabel` must be a string');
         out.pageLimit.endLabel = pl.endLabel;
       }
-    } else throw new ConfigError(file, '`venue.pageLimit` must be a number or `{ max: 9, endLabel: overfull:main-end }`');
+    } else
+      throw new ConfigError(
+        file,
+        '`venue.pageLimit` must be a number or `{ max: 9, endLabel: overfull:main-end }`',
+      );
   }
   if (v.paper !== undefined) {
-    if (!['a4', 'letter', 'any'].includes(String(v.paper))) throw new ConfigError(file, '`venue.paper` must be a4, letter or any');
+    if (!['a4', 'letter', 'any'].includes(String(v.paper)))
+      throw new ConfigError(file, '`venue.paper` must be a4, letter or any');
     out.paper = v.paper as 'a4' | 'letter' | 'any';
   }
   for (const k of ['anonymous', 'arxiv'] as const) {
     if (v[k] === undefined) continue;
-    if (typeof v[k] !== 'boolean') throw new ConfigError(file, `\`venue.${k}\` must be true or false`);
+    if (typeof v[k] !== 'boolean')
+      throw new ConfigError(file, `\`venue.${k}\` must be true or false`);
     out[k] = v[k] as boolean;
   }
   for (const k of ['disclosure', 'accessibility'] as const) {
     if (v[k] === undefined) continue;
-    if (!LEVELS.includes(String(v[k]))) throw new ConfigError(file, `\`venue.${k}\` must be required, recommended or off`);
+    if (!LEVELS.includes(String(v[k])))
+      throw new ConfigError(file, `\`venue.${k}\` must be required, recommended or off`);
     out[k] = v[k] as 'required' | 'recommended' | 'off';
   }
   for (const k of ['name', 'description', 'extends'] as const) {
@@ -120,7 +147,10 @@ export function parseChecks(v: unknown, file: string, field = 'checks'): CheckId
   const list = stringList(v, field, file);
   for (const c of list) {
     if (!(CHECK_IDS as readonly string[]).includes(c)) {
-      throw new ConfigError(file, `unknown check "${c}" in \`${field}\`; use ${CHECK_IDS.join(', ')}`);
+      throw new ConfigError(
+        file,
+        `unknown check "${c}" in \`${field}\`; use ${CHECK_IDS.join(', ')}`,
+      );
     }
   }
   return list as CheckId[];
@@ -132,7 +162,8 @@ export function discoverBib(root: string, main: string): string[] {
   if (existsSync(mainPath)) {
     const src = readFileSync(mainPath, 'utf8').replace(/(^|[^\\])%.*$/gm, '$1');
     const found: string[] = [];
-    for (const m of src.matchAll(/\\addbibresource(?:\[[^\]]*\])?\{([^}]+)\}/g)) found.push((m[1] as string).trim());
+    for (const m of src.matchAll(/\\addbibresource(?:\[[^\]]*\])?\{([^}]+)\}/g))
+      found.push((m[1] as string).trim());
     for (const m of src.matchAll(/\\bibliography\{([^}]+)\}/g)) {
       for (const b of (m[1] as string).split(',')) {
         const name = b.trim();
@@ -153,7 +184,11 @@ export function discoverBib(root: string, main: string): string[] {
 }
 
 /** Finds overfull.yml in `cwd` (or uses `explicit`) and returns the validated config with defaults. */
-export function loadConfig(cwd: string, explicit?: string, env: Record<string, string | undefined> = {}): Config {
+export function loadConfig(
+  cwd: string,
+  explicit?: string,
+  env: Record<string, string | undefined> = {},
+): Config {
   let file: string | undefined;
   if (explicit) {
     file = resolve(cwd, explicit);
@@ -170,16 +205,22 @@ export function loadConfig(cwd: string, explicit?: string, env: Record<string, s
     try {
       data = parseYaml(readFileSync(file, 'utf8'));
     } catch (err) {
-      throw new ConfigError(file, `invalid YAML: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
+      throw new ConfigError(
+        file,
+        `invalid YAML: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`,
+      );
     }
-    if (data !== null && data !== undefined && !isObj(data)) throw new ConfigError(file, 'must be a mapping of keys to values');
+    if (data !== null && data !== undefined && !isObj(data))
+      throw new ConfigError(file, 'must be a mapping of keys to values');
     raw = (data as Obj | null) ?? {};
     checkKeys(raw, TOP_KEYS, '', file);
   }
   const f = file ?? join(root, CONFIG_FILE);
-  if (raw.main !== undefined && typeof raw.main !== 'string') throw new ConfigError(f, '`main` must be a file name');
+  if (raw.main !== undefined && typeof raw.main !== 'string')
+    throw new ConfigError(f, '`main` must be a file name');
   const main = (raw.main as string | undefined) ?? 'main.tex';
-  if (raw.jobname !== undefined && typeof raw.jobname !== 'string') throw new ConfigError(f, '`jobname` must be a string');
+  if (raw.jobname !== undefined && typeof raw.jobname !== 'string')
+    throw new ConfigError(f, '`jobname` must be a string');
   const jobname = (raw.jobname as string | undefined) ?? basename(main).replace(/\.tex$/i, '');
   const bib = raw.bib !== undefined ? stringList(raw.bib, 'bib', f) : discoverBib(root, main);
 
@@ -196,7 +237,8 @@ export function loadConfig(cwd: string, explicit?: string, env: Record<string, s
     if (err instanceof UnknownProfileError) throw new ConfigError(f, err.message);
     throw err;
   }
-  const checks = raw.checks !== undefined ? parseChecks(raw.checks, f) : (profile.checks ?? [...CHECK_IDS]);
+  const checks =
+    raw.checks !== undefined ? parseChecks(raw.checks, f) : (profile.checks ?? [...CHECK_IDS]);
 
   const refs = raw.references ?? {};
   if (!isObj(refs)) throw new ConfigError(f, '`references` must be a mapping');
@@ -208,8 +250,10 @@ export function loadConfig(cwd: string, explicit?: string, env: Record<string, s
   if (!isObj(build)) throw new ConfigError(f, '`build` must be a mapping');
   checkKeys(build, ['engine', 'image'], 'build.', f);
   const engine = (build.engine ?? 'auto') as Engine;
-  if (!['auto', 'local', 'docker'].includes(engine)) throw new ConfigError(f, '`build.engine` must be auto, local or docker');
-  const image = env.OVERFULL_IMAGE || (typeof build.image === 'string' ? build.image : DEFAULT_IMAGE);
+  if (!['auto', 'local', 'docker'].includes(engine))
+    throw new ConfigError(f, '`build.engine` must be auto, local or docker');
+  const image =
+    env.OVERFULL_IMAGE || (typeof build.image === 'string' ? build.image : DEFAULT_IMAGE);
 
   const config: Config = {
     root,

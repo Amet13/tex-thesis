@@ -1,1 +1,6 @@
-{"title":"\\ref to a label that does not exist","engine":"pdflatex","check":"output","expect":["undefined-reference"]}
+{
+  "title": "\\ref to a label that does not exist",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["undefined-reference"]
+}

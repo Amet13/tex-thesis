@@ -1,1 +1,6 @@
-{"title":"Group opened in a formula is not closed before the formula ends","engine":"pdflatex","check":"build","expect":["missing-brace"]}
+{
+  "title": "Group opened in a formula is not closed before the formula ends",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["missing-brace"]
+}

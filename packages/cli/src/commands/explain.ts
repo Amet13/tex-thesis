@@ -30,7 +30,11 @@ function format(rule: RuleInfo, color: boolean): string {
 }
 
 export async function explainCommand(args: string[], io: Io): Promise<number> {
-  const { values, positionals } = parse(args, { json: { type: 'boolean' }, list: { type: 'boolean' } }, 'explain');
+  const { values, positionals } = parse(
+    args,
+    { json: { type: 'boolean' }, list: { type: 'boolean' } },
+    'explain',
+  );
   if (values.help) {
     io.stdout(explainHelp);
     return 0;
@@ -40,12 +44,17 @@ export async function explainCommand(args: string[], io: Io): Promise<number> {
     if (values.json) io.stdout(`${JSON.stringify(rules, null, 2)}\n`);
     else {
       const w = Math.max(...rules.map((r) => r.id.length)) + 2;
-      io.stdout(`${rules.map((r) => `${r.id.padEnd(w)}${r.check.padEnd(14)}${r.title}`).join('\n')}\n`);
+      io.stdout(
+        `${rules.map((r) => `${r.id.padEnd(w)}${r.check.padEnd(14)}${r.title}`).join('\n')}\n`,
+      );
     }
     return 0;
   }
   const id = positionals[0]?.trim();
-  if (!id) throw new UsageError('Give a rule id, e.g. `overfull explain undefined-control-sequence` (or --list).');
+  if (!id)
+    throw new UsageError(
+      'Give a rule id, e.g. `overfull explain undefined-control-sequence` (or --list).',
+    );
   const rule = getRule(id);
   if (!rule) {
     const ids = allRules().map((r) => r.id);

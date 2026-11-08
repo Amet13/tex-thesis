@@ -22,11 +22,15 @@ const RUNAWAY = /^Runaway (?:argument|definition|preamble|text)\?$/;
 const CONTEXT_BEFORE = /^(?:<[^>]*>|\\\S|\s?\.\.\.)/;
 const SOURCE_LINE = /^l\.(\d+)(?: (.*))?$/;
 const TERMINAL_CONTEXT = /^<(?:\*|read [^>]*|insert)>/;
-const ERROR_BOILERPLATE = /^(?:See the .* for explanation\.|Type {1,2}H <return> {1,2}for immediate help\.)$/;
-const BANNER = /^This is (\S+), Version (\S+)\s*\(([^)]*)\)(?:\s+\((?:preloaded )?format=([^\s)]+)[^)]*\))?/;
+const ERROR_BOILERPLATE =
+  /^(?:See the .* for explanation\.|Type {1,2}H <return> {1,2}for immediate help\.)$/;
+const BANNER =
+  /^This is (\S+), Version (\S+)\s*\(([^)]*)\)(?:\s+\((?:preloaded )?format=([^\s)]+)[^)]*\))?/;
 const OUTPUT = /^Output written on (.+?) \((\d+) pages?(?:, (\d+) bytes)?\)\.?$/;
-const BOX = /^(Overfull|Underfull) \\([hv]box) \((?:(-?[\d.]+)pt too (?:wide|high)|badness (\d+))\)(.*)$/;
-const MISSING_CHAR = /^Missing character: There is no (.+?) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
+const BOX =
+  /^(Overfull|Underfull) \\([hv]box) \((?:(-?[\d.]+)pt too (?:wide|high)|badness (\d+))\)(.*)$/;
+const MISSING_CHAR =
+  /^Missing character: There is no (.+?) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
 const NO_FILE = /^No file (.+?)\.$/;
 const MAX_ERROR_LINES = 60;
 
@@ -71,10 +75,7 @@ const PLAIN_MESSAGE =
   /^(?:Package: |File: |Document Class: |Language: |Dictionary: |\\[A-Za-z@]+=\\|\\openout\d+ = |\([\w@.-]+\) {2,})/;
 
 function joinParts(parts: string[]): string {
-  return parts
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /** The stack of files TeX has open, as printed with `(` and `)`. */
@@ -172,15 +173,27 @@ class Parser {
   private handle(line: LogicalLine): void {
     const text = line.text;
     if (line.start === 0 && this.banner(text)) return;
-    if (ERROR_START.test(text) || this.fileLineError(text)) return this.error(line);
+    if (ERROR_START.test(text) || this.fileLineError(text)) {
+      this.error(line);
+      return;
+    }
     if (RUNAWAY.test(text)) {
       this.runaway = this.reader.done ? '' : this.reader.next().text;
       return;
     }
     const header = messageHeader(text);
-    if (header) return this.message(line, header);
-    if (BOX.test(text)) return this.box(line);
-    if (MISSING_CHAR.test(text)) return this.missingChar(line);
+    if (header) {
+      this.message(line, header);
+      return;
+    }
+    if (BOX.test(text)) {
+      this.box(line);
+      return;
+    }
+    if (MISSING_CHAR.test(text)) {
+      this.missingChar(line);
+      return;
+    }
     if (this.output(text)) return;
     const noFile = NO_FILE.exec(text);
     if (noFile) {
@@ -266,7 +279,11 @@ class Parser {
       const file = this.stack.current();
       if (file) error.file = file;
     }
-    if (/^(?:Emergency stop|==> Fatal error occurred|TeX capacity exceeded|Interruption)/.test(message)) {
+    if (
+      /^(?:Emergency stop|==> Fatal error occurred|TeX capacity exceeded|Interruption)/.test(
+        message,
+      )
+    ) {
       this.result.fatal = true;
     }
     this.result.errors.push(error);
@@ -415,7 +432,10 @@ export function classifyWarning(
   if (m) return { kind: 'font-substitution', data: { from: m[1], to: m[2] } };
   m = /^Token not allowed in a PDF string.*?removing [`'](.+?)'/.exec(message);
   if (m) return { kind: 'pdf-string-token', data: { token: m[1] } };
-  if (source === 'fontspec' && /does not contain requested|not available|cannot be found/.test(message)) {
+  if (
+    source === 'fontspec' &&
+    /does not contain requested|not available|cannot be found/.test(message)
+  ) {
     return { kind: 'font-feature', data: {} };
   }
   m = /^Float too large for page by ([\d.]+)pt/.exec(message);

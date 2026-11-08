@@ -36,10 +36,13 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
   }
   const root = templatesDir();
   const src = root ? join(root, template) : undefined;
-  if (!src || !existsSync(src)) throw new UsageError(`Template "${template}" is not bundled with this overfull install.`);
+  if (!src || !existsSync(src))
+    throw new UsageError(`Template "${template}" is not bundled with this overfull install.`);
   const target = resolve(io.cwd, dir ?? template);
   if (existsSync(target) && readdirSync(target).length > 0 && values.force !== true) {
-    throw new UsageError(`${relative(io.cwd, target) || '.'} is not empty. Choose another directory or pass --force.`);
+    throw new UsageError(
+      `${relative(io.cwd, target) || '.'} is not empty. Choose another directory or pass --force.`,
+    );
   }
   copyTemplate(src, target);
   const shown = relative(io.cwd, target) || '.';

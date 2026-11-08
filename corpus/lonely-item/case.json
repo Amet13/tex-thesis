@@ -1,1 +1,6 @@
-{"title":"\\item outside a list","engine":"pdflatex","check":"build","expect":["lonely-item"]}
+{
+  "title": "\\item outside a list",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["lonely-item"]
+}

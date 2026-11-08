@@ -15,7 +15,11 @@ export function loadPdfjs(): Promise<PdfjsLike> {
     // @napi-rs/canvas is missing; rendering needs it, text extraction does not.
     const warn = console.warn;
     console.warn = (...args: unknown[]) => {
-      if (typeof args[0] === 'string' && /^Warning: Cannot (load "@napi-rs|polyfill|access the `require`)/.test(args[0])) return;
+      if (
+        typeof args[0] === 'string' &&
+        /^Warning: Cannot (load "@napi-rs|polyfill|access the `require`)/.test(args[0])
+      )
+        return;
       warn(...args);
     };
     try {

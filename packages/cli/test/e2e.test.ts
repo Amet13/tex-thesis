@@ -26,7 +26,10 @@ describe.skipIf(process.env.OVERFULL_E2E !== '1')('e2e: build then check in Dock
         '',
       ].join('\n'),
     );
-    writeFileSync(join(dir, 'overfull.yml'), 'main: main.tex\nprofile: thesis\nbuild:\n  engine: docker\n');
+    writeFileSync(
+      join(dir, 'overfull.yml'),
+      'main: main.tex\nprofile: thesis\nbuild:\n  engine: docker\n',
+    );
     const env = { OVERFULL_IMAGE: process.env.OVERFULL_IMAGE ?? 'overfull-tex:dev' };
     const build = memIo(dir, env);
     expect(await main(['build'], build), build.stderrText()).toBe(0);

@@ -10,7 +10,8 @@ export class FileCache implements RefCache {
   constructor(private readonly path: string) {
     try {
       const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) this.data = parsed as Record<string, unknown>;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+        this.data = parsed as Record<string, unknown>;
     } catch {
       this.data = {};
     }

@@ -1,1 +1,6 @@
-{"title":"Package loaded twice with different options","engine":"pdflatex","check":"build","expect":["option-clash"]}
+{
+  "title": "Package loaded twice with different options",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["option-clash"]
+}

@@ -73,7 +73,9 @@ export function paperSizeProblems(profile: VenueProfile, ctx: VenueContext): Pro
   if (!want || want === 'any' || !ctx.facts) return [];
   const target = PAPER[want];
   const off = ctx.facts.pages.filter(
-    (p) => Math.abs(p.widthMm - target.w) > TOLERANCE_MM || Math.abs(p.heightMm - target.h) > TOLERANCE_MM,
+    (p) =>
+      Math.abs(p.widthMm - target.w) > TOLERANCE_MM ||
+      Math.abs(p.heightMm - target.h) > TOLERANCE_MM,
   );
   const first = off[0];
   if (!first) return [];
@@ -89,7 +91,10 @@ export function paperSizeProblems(profile: VenueProfile, ctx: VenueContext): Pro
       severity: 'warning',
       message: `Page ${first.number} is ${size}, venue expects ${target.label}${off.length > 1 ? ` (${off.length} pages differ)` : ''}`,
       location: { page: first.number },
-      fix: want === 'a4' ? 'Use `\\documentclass[a4paper]{...}` or `\\usepackage[a4paper]{geometry}`' : 'Use `\\documentclass[letterpaper]{...}` or `\\usepackage[letterpaper]{geometry}`',
+      fix:
+        want === 'a4'
+          ? 'Use `\\documentclass[a4paper]{...}` or `\\usepackage[a4paper]{geometry}`'
+          : 'Use `\\documentclass[letterpaper]{...}` or `\\usepackage[letterpaper]{geometry}`',
       data: { expected: want, widthMm: first.widthMm, heightMm: first.heightMm, pages: off.length },
     },
   ];

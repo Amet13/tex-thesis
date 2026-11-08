@@ -7,10 +7,10 @@
  */
 
 import {
-  closest,
   COMMAND_PACKAGES,
   COMMON_COMMANDS,
   COMMON_ENVIRONMENTS,
+  closest,
   ENVIRONMENT_PACKAGES,
   MATH_COMMANDS,
   NATBIB_TO_BIBLATEX,
@@ -118,7 +118,8 @@ function natbibAdvice(cs: string, ctx: ExplainContext): Explanation | undefined 
       rule: 'undefined-control-sequence',
       check: 'build',
       message: `${code(`\\${cs}`)} is a natbib command, but this document uses biblatex`,
-      detail: 'biblatex has its own citation commands and does not define the natbib ones by default.',
+      detail:
+        'biblatex has its own citation commands and does not define the natbib ones by default.',
       fix: `Write ${code(`${replacement}{…}`)} instead, or load biblatex with ${code('\\usepackage[natbib=true]{biblatex}')} to keep the natbib names.`,
       data: { command: `\\${cs}`, replacement },
     };
@@ -151,7 +152,8 @@ function siunitxAdvice(cs: string, ctx: ExplainContext): Explanation | undefined
       rule: 'undefined-control-sequence',
       check: 'build',
       message: `${code(`\\${cs}`)} needs siunitx version 3, but an older siunitx is installed`,
-      detail: 'siunitx version 3 (2021) introduced `\\qty` and `\\unit`; older versions only have `\\SI` and `\\si`.',
+      detail:
+        'siunitx version 3 (2021) introduced `\\qty` and `\\unit`; older versions only have `\\SI` and `\\si`.',
       fix: 'Update TeX Live (or use the Overfull Docker image), or write `\\SI{…}{…}` and `\\si{…}`.',
       data: { command: `\\${cs}`, package: 'siunitx' },
     };
@@ -285,7 +287,8 @@ const explainMissingDollar: Explainer = (_m, error) => {
       rule: 'missing-dollar',
       check: 'build',
       message: 'A formula is interrupted by a blank line or is not closed',
-      detail: 'Formulas cannot contain blank lines (paragraph breaks), and every `$` or `\\(` must be closed in the same paragraph.',
+      detail:
+        'Formulas cannot contain blank lines (paragraph breaks), and every `$` or `\\(` must be closed in the same paragraph.',
       fix: 'Remove blank lines inside the equation environment or `\\[ … \\]`, and check that every `$` has a matching `$`.',
     };
   }
@@ -293,7 +296,8 @@ const explainMissingDollar: Explainer = (_m, error) => {
     rule: 'missing-dollar',
     check: 'build',
     message: `Math-only text outside math mode near ${code(textNearStop(error))}`,
-    detail: 'TeX met a symbol that only works in formulas (such as `_`, `^` or a math command), or a formula that is not closed.',
+    detail:
+      'TeX met a symbol that only works in formulas (such as `_`, `^` or a math command), or a formula that is not closed.',
     fix: 'Put the formula inside `$…$`, escape `_` as `\\_` in text, and check that every `$` is closed.',
   };
 };
@@ -325,7 +329,9 @@ const explainAlignmentTab: Explainer = (_m, error) => {
   return {
     rule: 'misplaced-alignment-tab',
     check: 'build',
-    message: phrase ? `Unescaped ${code('&')} in ${code(phrase)}` : `Unescaped ${code('&')} outside a table`,
+    message: phrase
+      ? `Unescaped ${code('&')} in ${code(phrase)}`
+      : `Unescaped ${code('&')} outside a table`,
     detail: fromBib
       ? '`&` separates table columns; this one comes from a .bib field (often a journal or publisher name).'
       : '`&` separates table columns and cannot appear in running text.',
@@ -358,7 +364,9 @@ const explainExtraBrace: Explainer = (m, error) => {
   return {
     rule: 'extra-brace',
     check: 'build',
-    message: near ? `A ${code('}')} has no matching ${code('{')} near ${code(near)}` : `A ${code('}')} has no matching ${code('{')}`,
+    message: near
+      ? `A ${code('}')} has no matching ${code('{')} near ${code(near)}`
+      : `A ${code('}')} has no matching ${code('{')}`,
     detail: forgottenDollar
       ? 'TeX found a `}` that closes nothing, often a typo or a `$` that ends a formula too early.'
       : 'There are more closing braces than opening ones, so TeX ignored the extra `}`.',
@@ -368,7 +376,10 @@ const explainExtraBrace: Explainer = (m, error) => {
 
 const explainRunaway: Explainer = (m, error) => {
   const command = m[2] ?? '';
-  const arg = (error.runaway ?? '').replace(/\s*\\par\b.*$/, '').replace(/\\ETC\.$/, '').trim();
+  const arg = (error.runaway ?? '')
+    .replace(/\s*\\par\b.*$/, '')
+    .replace(/\\ETC\.$/, '')
+    .trim();
   const fileEnded = m[1]?.startsWith('File ended');
   const definition = /definition/.test(m[1] ?? '');
   return {
@@ -442,8 +453,14 @@ const explainOptionClash: Explainer = (m, error) => {
     .map((o) => o.trim())
     .filter(Boolean);
   const merged = [...new Set(options)].join(',');
-  const shown = first !== undefined && second !== undefined ? ` (${code(`[${first}]`)} and ${code(`[${second}]`)})` : '';
-  const arxiv = pkg === 'hyperref' ? ' Note that arXiv and many classes load hyperref themselves; use `\\hypersetup{…}` for options instead of loading it again.' : '';
+  const shown =
+    first !== undefined && second !== undefined
+      ? ` (${code(`[${first}]`)} and ${code(`[${second}]`)})`
+      : '';
+  const arxiv =
+    pkg === 'hyperref'
+      ? ' Note that arXiv and many classes load hyperref themselves; use `\\hypersetup{…}` for options instead of loading it again.'
+      : '';
   return {
     rule: 'option-clash',
     check: 'build',
@@ -452,7 +469,11 @@ const explainOptionClash: Explainer = (m, error) => {
     fix: merged
       ? `Load it once with all options: ${code(`\\usepackage[${merged}]{${pkg}}`)}. If the class or another package loads it first, put ${code(`\\PassOptionsToPackage{${merged}}{${pkg}}`)} before ${code('\\documentclass')}.`
       : `Remove the second ${code(`\\usepackage{${pkg}}`)} and merge its options into the first; use ${code('\\PassOptionsToPackage')} before ${code('\\documentclass')} if a class loads it.`,
-    data: { package: pkg, ...(first !== undefined ? { firstOptions: first } : {}), ...(second !== undefined ? { secondOptions: second } : {}) },
+    data: {
+      package: pkg,
+      ...(first !== undefined ? { firstOptions: first } : {}),
+      ...(second !== undefined ? { secondOptions: second } : {}),
+    },
   };
 };
 
@@ -472,7 +493,8 @@ const explainGraphicsExtension: Explainer = (m, error) => {
     rule: 'unknown-graphics-extension',
     check: 'build',
     message: `${code('\\includegraphics')} cannot use ${code(ext)} files${path ? `: ${code(path)}` : ''}`,
-    detail: 'pdfLaTeX, LuaLaTeX and XeLaTeX include PDF, PNG and JPEG images (and EPS via conversion). Other formats must be converted first.',
+    detail:
+      'pdfLaTeX, LuaLaTeX and XeLaTeX include PDF, PNG and JPEG images (and EPS via conversion). Other formats must be converted first.',
     fix,
     data: { extension: ext, ...(path ? { file: path } : {}) },
   };
@@ -483,7 +505,11 @@ const explainGraphicsExtension: Explainer = (m, error) => {
 
 const explainEnvironmentUndefined: Explainer = (m) => {
   const env = m[1] ?? '';
-  const base = { rule: 'environment-undefined', check: 'build' as const, data: { environment: env } };
+  const base = {
+    rule: 'environment-undefined',
+    check: 'build' as const,
+    data: { environment: env },
+  };
   if (THEOREM_LIKE.has(env)) {
     const title = env.charAt(0).toUpperCase() + env.slice(1);
     return {
@@ -561,14 +587,17 @@ const explainMissingBeginDocument: Explainer = (_m, error) => {
 
 const explainPreambleOnly: Explainer = (_m, error) => {
   const cs = trailingControlSequence(error.source?.before ?? '');
-  const statement = cs ? `\\${cs}${/^\s*(\[[^\]]*\])?\{[^}]*\}/.exec(error.source?.after ?? '')?.[0].trim() ?? ''}` : '';
+  const statement = cs
+    ? `\\${cs}${/^\s*(\[[^\]]*\])?\{[^}]*\}/.exec(error.source?.after ?? '')?.[0].trim() ?? ''}`
+    : '';
   return {
     rule: 'preamble-only',
     check: 'build',
     message: statement
       ? `${code(statement)} must come before ${code('\\begin{document}')}`
       : `A preamble-only command is used after ${code('\\begin{document}')}`,
-    detail: 'Commands such as `\\usepackage` and `\\documentclass` options only work in the preamble.',
+    detail:
+      'Commands such as `\\usepackage` and `\\documentclass` options only work in the preamble.',
     fix: statement
       ? `Move ${code(statement)} above ${code('\\begin{document}')}.`
       : 'Move the command above `\\begin{document}`.',
@@ -584,7 +613,8 @@ const explainUnicode: Explainer = (m) => {
     rule: 'unicode-character',
     check: 'build',
     message: `pdfLaTeX cannot typeset the character ${code(char)} (U+${codePoint})`,
-    detail: 'pdfLaTeX only knows the Unicode characters its font encodings define. LuaLaTeX and XeLaTeX handle any character the font has.',
+    detail:
+      'pdfLaTeX only knows the Unicode characters its font encodings define. LuaLaTeX and XeLaTeX handle any character the font has.',
     fix: replacement
       ? `Write ${code(replacement)} instead, or compile with LuaLaTeX (\`latexmk -lualatex\`).`
       : `Compile with LuaLaTeX (\`latexmk -lualatex\`), or replace the character with a LaTeX command, or declare it with ${code(`\\DeclareUnicodeCharacter{${codePoint}}{…}`)}.`,
@@ -598,7 +628,8 @@ const explainFontNotFound: Explainer = (m) => {
     rule: 'font-not-found',
     check: 'build',
     message: `The font ${code(font)} is not installed`,
-    detail: 'fontspec looks fonts up by name among the fonts installed on this machine (or in the TeX tree). CI machines and Docker images rarely have commercial fonts.',
+    detail:
+      'fontspec looks fonts up by name among the fonts installed on this machine (or in the TeX tree). CI machines and Docker images rarely have commercial fonts.',
     fix: `Use a font that ships with TeX Live (e.g. ${code('TeX Gyre Termes')}, ${code('TeX Gyre Heros')}, ${code('Latin Modern Roman')}), or add the font files to the project and load them by file name: ${code('\\setmainfont{MyFont-Regular.otf}[Path=fonts/]')}. List installed names with ${code('luaotfload-tool --list=*')} or ${code('fc-list')}.`,
     data: { font },
   };
@@ -608,7 +639,8 @@ const explainTfmFont: Explainer = (m) => ({
   rule: 'font-not-found',
   check: 'build',
   message: `The font ${code(m[1] ?? '')} cannot be loaded`,
-  detail: 'TeX found no metric file for this font: the font package is missing from the installation, or a font name is wrong.',
+  detail:
+    'TeX found no metric file for this font: the font package is missing from the installation, or a font name is wrong.',
   fix: 'Install the font package that provides it (`tlmgr install …`), or switch to LuaLaTeX with fontspec and an installed font.',
   data: { font: m[1] },
 });
@@ -620,7 +652,8 @@ const explainBiblatex: Explainer = (m) => {
     return {
       ...base,
       message: `${code('\\bibliographystyle')} cannot be used with biblatex`,
-      detail: '`\\bibliographystyle` belongs to BibTeX. biblatex chooses its style with a package option.',
+      detail:
+        '`\\bibliographystyle` belongs to BibTeX. biblatex chooses its style with a package option.',
       fix: 'Delete `\\bibliographystyle{…}` and set the style when loading biblatex, e.g. `\\usepackage[style=numeric]{biblatex}`.',
     };
   }
@@ -689,7 +722,10 @@ const explainColor: Explainer = (m) => {
 const explainCapacity: Explainer = (m, error) => {
   const what = m[1] ?? '';
   const cs = trailingControlSequence(error.source?.before ?? '');
-  const recursion = /grouping levels|input stack size|save size|parameter stack|expansion depth|semantic nest/.test(what);
+  const recursion =
+    /grouping levels|input stack size|save size|parameter stack|expansion depth|semantic nest/.test(
+      what,
+    );
   return {
     rule: 'tex-capacity-exceeded',
     check: 'build',
@@ -741,7 +777,8 @@ const explainTikz: Explainer = (m) => {
       rule: 'tikz-error',
       check: 'build',
       message: `TikZ node ${code(shape[1] ?? '')} does not exist`,
-      detail: 'A path refers to a node name that was never defined (or is defined later, or in another picture).',
+      detail:
+        'A path refers to a node name that was never defined (or is defined later, or in another picture).',
       fix: `Check the spelling of ${code(`(${shape[1]})`)} and define the node before it is used; across pictures use ${code('remember picture')}.`,
       data: { node: shape[1] },
     };
@@ -759,7 +796,8 @@ const explainHyperref: Explainer = (m) => ({
   rule: 'hyperref-error',
   check: 'build',
   message: `hyperref: ${m[1] ?? ''}`,
-  detail: 'hyperref reported an error; links or PDF metadata may be wrong. hyperref should normally be loaded last.',
+  detail:
+    'hyperref reported an error; links or PDF metadata may be wrong. hyperref should normally be loaded last.',
   fix: 'Load hyperref after other packages (except cleveref), pass options with `\\hypersetup{…}`, and use `\\texorpdfstring{…}{…}` for math or commands in headings.',
 });
 
@@ -797,14 +835,23 @@ const EXPLAINERS: [RegExp, Explainer][] = [
   [/^Double (subscript|superscript)/, explainDoubleScript],
   [/^Misplaced alignment tab character &/, explainAlignmentTab],
   [/^Missing ([{}]) inserted/, explainMissingBrace],
-  [/^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/, explainExtraBrace],
-  [/^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/, explainRunaway],
+  [
+    /^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/,
+    explainExtraBrace,
+  ],
+  [
+    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/,
+    explainRunaway,
+  ],
   [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
   [/^I can't find file [`'](.+?)'/, explainFileNotFound],
   [/^LaTeX Error: Option clash for package (\S+?)\.?$/, explainOptionClash],
   [/^LaTeX Error: Unknown graphics extension: (\.\S+?)\.?$/, explainGraphicsExtension],
   [/^LaTeX Error: Environment (\S+) undefined/, explainEnvironmentUndefined],
-  [/^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/, explainEnvironmentMismatch],
+  [
+    /^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/,
+    explainEnvironmentMismatch,
+  ],
   [/^LaTeX Error: \\begin\{(document)\}() ended by \\end\{([^}]*)\}/, explainEnvironmentMismatch],
   [
     /^LaTeX Error: Lonely \\item/,
@@ -835,7 +882,10 @@ const EXPLAINERS: [RegExp, Explainer][] = [
   ],
   [/^LaTeX Error: Missing \\begin\{document\}/, explainMissingBeginDocument],
   [/^LaTeX Error: Can be used only in preamble/, explainPreambleOnly],
-  [/^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/, explainUnicode],
+  [
+    /^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/,
+    explainUnicode,
+  ],
   [
     /^Package inputenc Error: Invalid UTF-8 byte/,
     simple(
@@ -845,7 +895,10 @@ const EXPLAINERS: [RegExp, Explainer][] = [
       'Re-save the file as UTF-8 in your editor (or convert it with `iconv -f latin1 -t utf-8`).',
     ),
   ],
-  [/^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: .*?font "([^"]+)".*not found/, explainFontNotFound],
+  [
+    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: .*?font "([^"]+)".*not found/,
+    explainFontNotFound,
+  ],
   [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, explainTfmFont],
   [/^Package biblatex Error: (.*)$/, explainBiblatex],
   [/^Illegal parameter number in definition of (\\\S+?)\.?$/, explainParameterNumber],
@@ -873,7 +926,10 @@ const EXPLAINERS: [RegExp, Explainer][] = [
   [/^Package (pgfkeys|tikz|pgf|pgfplots) Error: (.*)$/, explainTikz],
   [/^Package hyperref Error: (.*)$/, explainHyperref],
   [/^LaTeX Error: Command (\\\S+?) already defined/, explainCommandDefined],
-  [/^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/, explainUnknownOption],
+  [
+    /^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/,
+    explainUnknownOption,
+  ],
   [
     /^LaTeX Error: Float\(s\) lost/,
     simple(

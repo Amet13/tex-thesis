@@ -1,1 +1,6 @@
-{"title":"Superscript written in running text","engine":"lualatex","check":"build","expect":["missing-dollar"]}
+{
+  "title": "Superscript written in running text",
+  "engine": "lualatex",
+  "check": "build",
+  "expect": ["missing-dollar"]
+}

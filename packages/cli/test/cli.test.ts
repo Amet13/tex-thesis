@@ -2,12 +2,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Report } from '@overfull/core';
 import { describe, expect, it } from 'vitest';
-import { main } from '../src/main.js';
 import { parseRange } from '../src/commands/pages.js';
 import { UsageError } from '../src/io.js';
+import { main } from '../src/main.js';
 import { memIo, tempCopy, tempDir } from './helpers.js';
 
-const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+  version: string;
+};
 
 describe('global flags', () => {
   it('prints help and version', async () => {
@@ -58,13 +60,21 @@ describe('overfull check', () => {
     const report = JSON.parse(io.stdoutText()) as Report;
     expect(Object.keys(report)).toEqual(['tool', 'version', 'target', 'status', 'checks']);
     expect(report).toMatchObject({ tool: 'overfull', target: 'thesis.pdf', status: 'fail' });
-    expect(report.checks.map((c) => c.check)).toEqual(['build', 'output', 'references', 'accessibility', 'venue']);
+    expect(report.checks.map((c) => c.check)).toEqual([
+      'build',
+      'output',
+      'references',
+      'accessibility',
+      'venue',
+    ]);
     const problems = report.checks.flatMap((c) => c.problems);
     const rules = problems.map((p) => p.rule);
     expect(rules).toContain('citation-key-missing');
     expect(rules).toContain('figure-missing-alt');
     expect(rules).toContain('page-limit-exceeded');
-    expect(problems.find((p) => p.rule === 'page-limit-exceeded')?.message).toBe('Main text ends on page 2, limit is 1');
+    expect(problems.find((p) => p.rule === 'page-limit-exceeded')?.message).toBe(
+      'Main text ends on page 2, limit is 1',
+    );
     for (const p of problems) {
       expect(typeof p.message).toBe('string');
       expect(p.rule).toMatch(/^[a-z0-9-]+$/);
@@ -100,7 +110,10 @@ describe('overfull check', () => {
   it('skips checks whose inputs are missing, with a reason', async () => {
     const dir = tempDir();
     const io = memIo(dir);
-    const code = await main(['check', '--json', '--offline', '--checks', 'build,accessibility'], io);
+    const code = await main(
+      ['check', '--json', '--offline', '--checks', 'build,accessibility'],
+      io,
+    );
     expect(code).toBe(0);
     const report = JSON.parse(io.stdoutText()) as Report;
     expect(report.checks.map((c) => [c.check, c.status, c.skippedReason])).toEqual([
@@ -128,7 +141,10 @@ describe('overfull check', () => {
   it('works on a project path given through --config', async () => {
     const dir = tempCopy('project');
     const io = memIo(tempDir());
-    await main(['check', '--offline', '--json', '--checks', 'venue', '--config', join(dir, 'overfull.yml')], io);
+    await main(
+      ['check', '--offline', '--json', '--checks', 'venue', '--config', join(dir, 'overfull.yml')],
+      io,
+    );
     expect((JSON.parse(io.stdoutText()) as Report).target).toBe('thesis.pdf');
   });
 });
@@ -157,14 +173,19 @@ describe('overfull explain', () => {
   it('explains a rule', async () => {
     const io = memIo(tempDir());
     expect(await main(['explain', 'pdf-not-tagged'], io)).toBe(0);
-    expect(io.stdoutText()).toMatch(/^pdf-not-tagged {2}accessibility · error\nPDF is not tagged\n/);
+    expect(io.stdoutText()).toMatch(
+      /^pdf-not-tagged {2}accessibility · error\nPDF is not tagged\n/,
+    );
     expect(io.stdoutText()).toContain('Fix: ');
   });
 
   it('prints JSON and lists rules', async () => {
     const io = memIo(tempDir());
     await main(['explain', 'page-limit-exceeded', '--json'], io);
-    expect(JSON.parse(io.stdoutText())).toMatchObject({ id: 'page-limit-exceeded', check: 'venue' });
+    expect(JSON.parse(io.stdoutText())).toMatchObject({
+      id: 'page-limit-exceeded',
+      check: 'venue',
+    });
     const list = memIo(tempDir());
     await main(['explain', '--list'], list);
     expect(list.stdoutText()).toContain('arxiv-absolute-path');
@@ -185,7 +206,9 @@ describe('overfull pages', () => {
     if (code === 2 && io.stderrText().includes('pdftoppm not found')) return; // no poppler, no Docker
     expect(code).toBe(0);
     expect(io.stdoutText()).toBe('.overfull/pages/page-1.png\n.overfull/pages/page-2.png\n');
-    expect(readFileSync(join(dir, '.overfull/pages/page-1.png')).subarray(1, 4).toString()).toBe('PNG');
+    expect(readFileSync(join(dir, '.overfull/pages/page-1.png')).subarray(1, 4).toString()).toBe(
+      'PNG',
+    );
   });
 
   it('rejects pages beyond the end', async () => {

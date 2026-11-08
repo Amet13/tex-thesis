@@ -34,7 +34,8 @@ export const builtinProfiles: Record<string, VenueProfile> = {
   arxiv: {
     id: 'arxiv',
     name: 'arXiv',
-    description: 'arXiv submission: no absolute paths, no shell escape, .bbl included, pdfLaTeX-safe figures.',
+    description:
+      'arXiv submission: no absolute paths, no shell escape, .bbl included, pdfLaTeX-safe figures.',
     paper: 'any',
     disclosure: 'off',
     accessibility: 'recommended',
@@ -44,7 +45,8 @@ export const builtinProfiles: Record<string, VenueProfile> = {
   'double-blind': {
     id: 'double-blind',
     name: 'Double-blind review',
-    description: 'Anonymous submission: no author names in the PDF metadata or source, no acknowledgments.',
+    description:
+      'Anonymous submission: no author names in the PDF metadata or source, no acknowledgments.',
     paper: 'any',
     anonymous: true,
     disclosure: 'recommended',
