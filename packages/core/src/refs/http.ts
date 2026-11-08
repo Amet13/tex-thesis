@@ -61,7 +61,9 @@ export class HttpClient {
   constructor(opts: RefsOptions) {
     const f = opts.fetch ?? globalThis.fetch;
     if (!f) throw new Error('no fetch available; pass opts.fetch');
-    this.fetchFn = f;
+    // Browsers throw "Illegal invocation" when window.fetch is called as a method of
+    // another object, so always call it detached from `this`.
+    this.fetchFn = (input, init) => f.call(globalThis, input, init);
     this.timeoutMs = opts.timeoutMs ?? 10_000;
     this.retryDelayMs = opts.retryDelayMs ?? 1000;
     this.signal = opts.signal;

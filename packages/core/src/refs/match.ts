@@ -152,7 +152,32 @@ function verdictFor(s: Signals, identified: boolean): { verdict: Verdict; differ
  * Assesses one record against an entry. `identified` means the record was
  * reached through the entry's own DOI or arXiv id rather than a search.
  */
+/** Record types that are often later re-deposits (posted copies, components), never the original. */
+const REDEPOSIT_TYPES = new Set(['posted-content', 'preprint', 'other', 'component', 'dataset']);
+
+/**
+ * A posted copy that appeared after the entry's year says nothing about the
+ * original publication (e.g. a 2025 re-deposit of a 2017 paper). Using it would
+ * report a bogus "year differs", so a search hit like that is ignored.
+ */
+function isLaterRedeposit(facts: BibFacts, record: WorkRecord, identified: boolean): boolean {
+  if (identified || facts.year === undefined || !record.years.length) return false;
+  return REDEPOSIT_TYPES.has(record.type ?? '') && Math.min(...record.years) > facts.year + 1;
+}
+
 export function assess(facts: BibFacts, record: WorkRecord, identified: boolean): Assessment {
+  if (isLaterRedeposit(facts, record, identified)) {
+    return {
+      record,
+      verdict: 'none',
+      titleScore: 0,
+      authorOverlap: null,
+      yearDiff: null,
+      differences: [],
+      differentWork: false,
+      score: 0,
+    };
+  }
   const signals: Signals = {
     titleScore: facts.title ? titleSimilarity(facts.title, record.title) : identified ? 1 : 0,
     overlap: authorOverlap(facts, record),

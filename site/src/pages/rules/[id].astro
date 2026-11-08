@@ -53,7 +53,7 @@ const engine = kase?.engine ?? 'lualatex';
         <div class="case-head">
           <h2 id="case-title">Example</h2>
           <p class="repro">Reproduced on TeX Live 2026 by CI · <span class="engine">{engine}</span> · <a href={`${REPO_URL}/tree/main/corpus/${kase.id}`}>corpus/{kase.id}</a></p>
-          {kase.title && <p class="case-title">{kase.title}</p>}
+          {kase.title && kase.title !== rule.title && <p class="case-title">{kase.title}</p>}
         </div>
         <div class="case-grid">
           <figure class="case-tex">

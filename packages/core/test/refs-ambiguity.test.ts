@@ -70,3 +70,31 @@ describe('pickTitleMatch ambiguity', () => {
     expect(pickTitleMatch('Literate programming', [knuth], { author: 'Turing' })).toBeNull();
   });
 });
+
+import { parseBib } from '../src/bib/index.js';
+import { assess, bibFacts } from '../src/refs/match.js';
+
+describe('later re-deposits', () => {
+  const [entry] = parseBib(
+    '@inproceedings{vaswani2017attention, author={Vaswani, Ashish and Shazeer, Noam}, title={Attention Is All You Need}, booktitle={NeurIPS}, year={2017}}',
+  );
+  const copy: WorkRecord = {
+    source: 'crossref',
+    title: 'Attention Is All You Need',
+    authors: [
+      { family: 'Vaswani', given: 'Ashish' },
+      { family: 'Shazeer', given: 'Noam' },
+    ],
+    years: [2025],
+    type: 'posted-content',
+    doi: '10.65215/r5bs2d54',
+  };
+  it('a 2025 posted copy of a 2017 paper is ignored, not reported as a year mismatch', () => {
+    const a = assess(bibFacts(entry as NonNullable<typeof entry>), copy, false);
+    expect(a.verdict).toBe('none');
+  });
+  it('the same record reached through the entry DOI is still assessed', () => {
+    const a = assess(bibFacts(entry as NonNullable<typeof entry>), copy, true);
+    expect(a.verdict).toBe('mismatch');
+  });
+});

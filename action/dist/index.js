@@ -111733,7 +111733,7 @@ var HttpClient = class {
   constructor(opts) {
     const f = opts.fetch ?? globalThis.fetch;
     if (!f) throw new Error("no fetch available; pass opts.fetch");
-    this.fetchFn = f;
+    this.fetchFn = (input2, init) => f.call(globalThis, input2, init);
     this.timeoutMs = opts.timeoutMs ?? 1e4;
     this.retryDelayMs = opts.retryDelayMs ?? 1e3;
     this.signal = opts.signal;
@@ -112141,7 +112141,24 @@ function verdictFor(s, identified) {
   const differentWork = s.titleScore < DIFFERENT_WORK_TITLE || !sameAuthors;
   return { verdict: "mismatch", differentWork };
 }
+var REDEPOSIT_TYPES = /* @__PURE__ */ new Set(["posted-content", "preprint", "other", "component", "dataset"]);
+function isLaterRedeposit(facts, record, identified) {
+  if (identified || facts.year === void 0 || !record.years.length) return false;
+  return REDEPOSIT_TYPES.has(record.type ?? "") && Math.min(...record.years) > facts.year + 1;
+}
 function assess(facts, record, identified) {
+  if (isLaterRedeposit(facts, record, identified)) {
+    return {
+      record,
+      verdict: "none",
+      titleScore: 0,
+      authorOverlap: null,
+      yearDiff: null,
+      differences: [],
+      differentWork: false,
+      score: 0
+    };
+  }
   const signals = {
     titleScore: facts.title ? titleSimilarity(facts.title, record.title) : identified ? 1 : 0,
     overlap: authorOverlap(facts, record),
