@@ -41,5 +41,7 @@ coverage/
 .overfull/cache/
 *.tsbuildinfo
 
-# Standalone CLI build output
+# Standalone CLI build output, `make e2e` / release output
 dist-standalone/
+/out/
+/assets/

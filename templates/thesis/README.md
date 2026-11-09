@@ -32,7 +32,8 @@ make clean    # remove build files (keeps the PDF)
 make help     # all targets
 ```
 
-With the `overfull` CLI installed (`npm i -g overfull`) you can also run
+With the `overfull` CLI installed (a single-file download from the Overfull
+GitHub Releases, or the Docker image) you can also run
 `overfull check`, `overfull cite 10.1145/2890784` (adds a verified BibTeX
 entry) and `overfull explain <rule>` (or `overfull explain --list`) directly.
 

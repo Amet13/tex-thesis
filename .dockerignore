@@ -6,6 +6,9 @@
 !action/dist/
 **/.astro/
 coverage/
+dist-standalone/
+out/
+assets/
 **/.overfull/
 *.tsbuildinfo
 

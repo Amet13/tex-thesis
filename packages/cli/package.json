@@ -1,6 +1,7 @@
 {
   "name": "overfull",
   "version": "3.0.0",
+  "private": true,
   "description": "Preflight for LaTeX papers and theses, for people and AI agents: build, cite, check, pages, diff.",
   "license": "MIT",
   "type": "module",

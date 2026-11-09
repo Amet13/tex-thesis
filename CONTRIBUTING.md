@@ -11,7 +11,8 @@ pnpm build
 pnpm test
 ```
 
-You need Node 22.12 or newer and pnpm 12. Docker is needed for anything that
+You need Node 22.12 or newer (CI uses 24) and pnpm 12 (`corepack enable` or
+`npm install -g pnpm@12`). Docker is needed for anything that
 compiles LaTeX (corpus, templates, end-to-end tests).
 
 ## Where things live
@@ -40,10 +41,38 @@ Then run `pnpm templates:sync`. CI fails if templates drift.
 ## Checks before you push
 
 ```bash
-pnpm lint
+pnpm lint            # Biome, markdownlint, portable file names
+pnpm build
 pnpm typecheck
 pnpm test
+pnpm templates:check
 ```
+
+If you changed `action/src` or anything it bundles, rebuild the Action and
+commit `action/dist`: `pnpm --filter overfull-action build` (CI checks it).
+
+`make help` lists the Docker tasks: `make image`, `make corpus`, `make e2e`.
+
+## Cutting a release (maintainers)
+
+Overfull ships as a Docker image, GitHub Release downloads and the Action. It is
+not published to npm.
+
+1. `node scripts/bump-version.mjs X.Y.Z --dry-run`, then without `--dry-run`.
+   It updates every `package.json`, core's `VERSION`, `CITATION.cff` and, on a
+   new major version, every `:<major>` image tag and `@v<major>` Action
+   reference.
+2. Add the `## [vX.Y.Z]` section to `CHANGELOG.md`; run
+   `pnpm build && pnpm --filter overfull-action build` and the checks above.
+3. Optional dry run: run the `release` workflow manually on the branch
+   (Actions → release → Run workflow). It builds every asset and publishes nothing.
+4. Commit, merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
+   `image.yml` publishes `ghcr.io/amet13/overfull:X.Y.Z`, `X.Y` and `X`;
+   `release.yml` publishes the executables, `overfull.cjs`, template PDFs,
+   `SHA256SUMS` and provenance attestations. Both refuse a tag that does not
+   match the package version.
+5. Move the Action's major tag: `git tag -f vX vX.Y.Z && git push -f origin vX`.
+   Only full `vX.Y.Z` tags trigger workflows.
 
 ## Code of conduct
 

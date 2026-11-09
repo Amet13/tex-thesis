@@ -35,7 +35,7 @@ skills/             canonical Agent Skills (SKILL.md); synced into each template
 docker/             TeX Live 2026 image + poppler + veraPDF + latexdiff + overfull
 site/               Astro static site → GitHub Pages (docs, rules, browser check)
 evals/              agent tasks scored by preflight
-scripts/            corpus runner, template sync, misc
+scripts/            corpus runner, template sync, e2e, standalone build, version bump
 ```
 
 ## Tooling (2026)
