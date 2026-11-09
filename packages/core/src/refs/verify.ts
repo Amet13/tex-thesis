@@ -307,7 +307,9 @@ export async function verifyEntry(
   };
   // The entry's own identifiers are authoritative: their verdict is final.
   const viaId =
-    (ids.doi && sourceAllowed(ctx.opts, 'doi.org') ? await checkDoi(ctx, ids.doi, facts, ev) : null) ??
+    (ids.doi && sourceAllowed(ctx.opts, 'doi.org')
+      ? await checkDoi(ctx, ids.doi, facts, ev)
+      : null) ??
     (ids.arxivId && sourceAllowed(ctx.opts, 'arxiv')
       ? await checkArxiv(ctx, ids.arxivId, facts, ev)
       : null);

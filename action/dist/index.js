@@ -108488,14 +108488,44 @@ function replaceAccents(s) {
     (_m, cmd, a, b) => accent(a ?? b, LETTER_ACCENTS[cmd])
   );
 }
+var LOGOS = {
+  TeX: "TeX",
+  LaTeX: "LaTeX",
+  LaTeXe: "LaTeX2\u03B5",
+  BibTeX: "BibTeX",
+  BibLaTeX: "BibLaTeX",
+  XeTeX: "XeTeX",
+  XeLaTeX: "XeLaTeX",
+  LuaTeX: "LuaTeX",
+  LuaLaTeX: "LuaLaTeX",
+  pdfTeX: "pdfTeX",
+  pdfLaTeX: "pdfLaTeX",
+  eTeX: "eTeX",
+  ConTeXt: "ConTeXt",
+  AmS: "AMS",
+  AMS: "AMS",
+  AmSTeX: "AMS-TeX",
+  AMSTeX: "AMS-TeX",
+  AmSLaTeX: "AMS-LaTeX",
+  SliTeX: "SliTeX",
+  METAFONT: "METAFONT",
+  MF: "METAFONT",
+  MP: "MetaPost",
+  MetaPost: "MetaPost"
+};
 function replaceCommands(s) {
-  return s.replace(/\\([A-Za-z]+|[,; ])\*?(?:\{\})?/g, (_m, name) => {
-    if (name in SPECIAL_LETTERS) return SPECIAL_LETTERS[name];
-    if (name in GREEK_MAP) return GREEK_MAP[name];
-    if (name in NAMED_SYMBOLS) return NAMED_SYMBOLS[name];
-    if (MATH_OPERATORS.has(name)) return name;
-    return "";
-  });
+  return s.replace(
+    /\\([A-Za-z]+|[,; ])\*?(\{\})?( ?)/g,
+    (_m, name, empty, space = "") => {
+      if (name in LOGOS) return LOGOS[name] + (empty ? space : "");
+      const keep = (text2) => text2 + space;
+      if (name in SPECIAL_LETTERS) return keep(SPECIAL_LETTERS[name]);
+      if (name in GREEK_MAP) return keep(GREEK_MAP[name]);
+      if (name in NAMED_SYMBOLS) return keep(NAMED_SYMBOLS[name]);
+      if (MATH_OPERATORS.has(name)) return keep(name);
+      return space;
+    }
+  );
 }
 function texToPlain(s) {
   let out = s.replace(/\\([{}$&%#_])/g, (_m, c) => ESCAPES[c]);
@@ -110302,7 +110332,10 @@ var Parser2 = class {
   error(first2) {
     const raw = [first2.text];
     const fle = this.fileLineError(first2.text);
-    let message = (fle ? fle[3] ?? "" : (ERROR_START.exec(first2.text)?.[1] ?? "").trim()).slice(0, MAX_MESSAGE_LENGTH);
+    let message = (fle ? fle[3] ?? "" : (ERROR_START.exec(first2.text)?.[1] ?? "").trim()).slice(
+      0,
+      MAX_MESSAGE_LENGTH
+    );
     const pkg = /^(?:Package|Class|Module) (\S+) Error:/.exec(message);
     if (pkg) {
       const pattern = new RegExp(`^\\(${escapeRegExp(pkg[1] ?? "")}\\)\\s*(.*)$`);
@@ -110522,6 +110555,12 @@ function isFollower(error, rule, check2, group) {
   if (!group) return false;
   if (isTerminationNotice(error)) return true;
   const { root, problem: problem2 } = group;
+  if (rule === "runaway-argument" && problem2.rule === "missing-dollar" && isInternalRunaway(error)) {
+    return true;
+  }
+  if (problem2.rule === "undefined-control-sequence" && rule === "missing-dollar") {
+    return atEndDocument(error);
+  }
   if (atEndDocument(error) && check2 === problem2.check) return true;
   if (error.file !== root.file || error.line === void 0 || root.line === void 0) return false;
   if (error.line === root.line) return true;
@@ -110529,6 +110568,18 @@ function isFollower(error, rule, check2, group) {
   if (error.line < root.line || error.line - root.line > CASCADE_LINES) return false;
   const sideEffect = CONSEQUENCE_RULES.has(rule) || rule === "undefined-control-sequence" && problem2.rule !== rule;
   return rule === problem2.rule || sideEffect;
+}
+function isInternalRunaway(error) {
+  return /\\__[A-Za-z]/.test(error.message);
+}
+function bySourcePosition(groups, files) {
+  const order = new Map(files.map((f, i) => [f, i]));
+  const key = (g) => {
+    const loc = g.problem.location;
+    const file = loc?.file !== void 0 ? order.get(loc.file) ?? files.length : files.length + 1;
+    return [file, loc?.line ?? Number.POSITIVE_INFINITY];
+  };
+  return groups.map((g, i) => ({ g, k: key(g), i })).sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.i - b.i).map(({ g }) => g);
 }
 function errorProblems(parsed, ctx) {
   const groups = [];
@@ -110552,7 +110603,7 @@ function errorProblems(parsed, ctx) {
     last = { root: error, problem: problem2, followers: [] };
     groups.push(last);
   }
-  return groups.map(({ root, problem: problem2, followers }) => {
+  return bySourcePosition(groups, parsed.files).map(({ root, problem: problem2, followers }) => {
     if (followers.length > 0) problem2.related = followers.length;
     const lined = followers.find((f) => f.line !== void 0 && f.file === root.file);
     if (root.line === void 0 && lined?.line !== void 0 && problem2.location && problem2.rule !== "missing-package") {
@@ -110973,7 +111024,195 @@ function analyzeLog(text2, opts = {}) {
   return { build: build2, output, parsed };
 }
 
+// ../packages/core/src/venue/tex.ts
+function stripComments(content) {
+  return content.split("\n").map((line) => {
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === "\\") {
+        i++;
+        continue;
+      }
+      if (line[i] === "%") return line.slice(0, i);
+    }
+    return line;
+  }).join("\n");
+}
+function readGroup(s, open) {
+  if (s[open] !== "{") return null;
+  let depth = 0;
+  for (let i = open; i < s.length; i++) {
+    const c = s[i];
+    if (c === "\\") {
+      i++;
+      continue;
+    }
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return { value: s.slice(open + 1, i), end: i + 1 };
+    }
+  }
+  return null;
+}
+function lineCounter(s) {
+  let pos = 0;
+  let line = 1;
+  return (index) => {
+    if (index < pos) {
+      pos = 0;
+      line = 1;
+    }
+    for (; pos < index; pos++) if (s.charCodeAt(pos) === 10) line++;
+    return line;
+  };
+}
+function braceMatches(s) {
+  const close = new Int32Array(s.length).fill(-1);
+  const stack = [];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 92) {
+      i++;
+    } else if (c === 123) {
+      stack.push(i);
+    } else if (c === 125) {
+      const open = stack.pop();
+      if (open !== void 0) close[open] = i;
+    }
+  }
+  return close;
+}
+var MAX_OPTIONAL = 4096;
+function findCommands(files, names) {
+  const out = [];
+  const re = new RegExp(`\\\\(${names.join("|")})\\*?(?![A-Za-z@])`, "g");
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    let braces;
+    re.lastIndex = 0;
+    for (let m = re.exec(src); m; m = re.exec(src)) {
+      let i = m.index + m[0].length;
+      while (src[i] === " " || src[i] === "\n") i++;
+      let optional;
+      if (src[i] === "[") {
+        let close = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
+        if (close < 0) continue;
+        close += i;
+        optional = src.slice(i + 1, close);
+        i = close + 1;
+        while (src[i] === " " || src[i] === "\n") i++;
+      }
+      if (src[i] !== "{") continue;
+      braces ??= braceMatches(src);
+      const end = braces[i] ?? -1;
+      if (end < 0) continue;
+      const use = {
+        file: f.path,
+        line: lineAt(m.index),
+        name: m[1],
+        arg: src.slice(i + 1, end)
+      };
+      if (optional !== void 0) use.optional = optional;
+      out.push(use);
+    }
+  }
+  return out;
+}
+function grepTex(files, re) {
+  const out = [];
+  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+  const g = new RegExp(re.source, flags);
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    g.lastIndex = 0;
+    for (let m = g.exec(src); m; m = g.exec(src)) {
+      out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
+      if (m[0].length === 0) g.lastIndex++;
+    }
+  }
+  return out;
+}
+var CITE_COMMAND = /\\([A-Za-z]{0,12}cite[A-Za-z]{0,8})\*?(?![A-Za-z@])/g;
+function citeLocations(files, keys) {
+  const wanted = keys ? new Set(keys) : void 0;
+  const out = /* @__PURE__ */ new Map();
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    CITE_COMMAND.lastIndex = 0;
+    for (let m = CITE_COMMAND.exec(src); m; m = CITE_COMMAND.exec(src)) {
+      let i = m.index + m[0].length;
+      for (let opt = 0; opt < 2; opt++) {
+        while (src[i] === " " || src[i] === "\n") i++;
+        if (src[i] !== "[") break;
+        const close2 = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
+        if (close2 < 0) break;
+        i += close2 + 1;
+      }
+      while (src[i] === " " || src[i] === "\n") i++;
+      if (src[i] !== "{") continue;
+      const close = src.slice(i, i + MAX_OPTIONAL).indexOf("}");
+      if (close < 0) continue;
+      const body = src.slice(i + 1, i + close);
+      if (body.includes("{")) continue;
+      for (const raw of body.split(",")) {
+        const key = raw.trim();
+        if (!key || out.has(key) || wanted && !wanted.has(key)) continue;
+        out.set(key, { file: f.path, line: lineAt(m.index) });
+      }
+    }
+  }
+  return out;
+}
+
 // ../packages/core/src/pdf/accessibility.ts
+var FIGURE_ALT_FIX = "Describe what the figure shows: `\\includegraphics[alt={...}]{file}`, or `\\begin{tikzpicture}[alt={...}]` for TikZ; use `artifact` instead of `alt` for purely decorative images";
+function hasAltKey(options) {
+  return options !== void 0 && /(?:^|[,\s])(?:alt\s*=|artifact\b)/.test(options);
+}
+function figureAltSourceProblems(texFiles, severity) {
+  const problems = [];
+  for (const use of findCommands(texFiles, ["includegraphics"])) {
+    if (hasAltKey(use.optional)) continue;
+    problems.push({
+      rule: "figure-missing-alt",
+      check: "accessibility",
+      severity,
+      message: `\`\\includegraphics{${use.arg.trim()}}\` has no alt text`,
+      location: { file: use.file, line: use.line },
+      fix: FIGURE_ALT_FIX,
+      data: { kind: "includegraphics", file: use.arg.trim() }
+    });
+  }
+  const begin = /\\begin\s*\{tikzpicture\}/g;
+  for (const f of texFiles) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    begin.lastIndex = 0;
+    for (let m = begin.exec(src); m; m = begin.exec(src)) {
+      let i = m.index + m[0].length;
+      while (src[i] === " " || src[i] === "\n") i++;
+      let options;
+      if (src[i] === "[") {
+        const close = src.slice(i, i + 4096).indexOf("]");
+        if (close > 0) options = src.slice(i + 1, i + close);
+      }
+      if (hasAltKey(options)) continue;
+      problems.push({
+        rule: "figure-missing-alt",
+        check: "accessibility",
+        severity,
+        message: "`tikzpicture` has no alt text",
+        location: { file: f.path, line: lineAt(m.index) },
+        fix: FIGURE_ALT_FIX,
+        data: { kind: "tikzpicture" }
+      });
+    }
+  }
+  return problems;
+}
 function veraPdfRuleId(clause) {
   const slug = clause.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return slug ? `verapdf-${slug}` : "verapdf";
@@ -111000,7 +111239,7 @@ function figureProblems(facts, sev) {
     severity: sev,
     message: `${plural2(count, "figure")} without alt text${placeholder ? " (LaTeX used the file name)" : ""}`,
     location: { page },
-    fix: "Add `alt={...}` to the `\\includegraphics` on this page",
+    fix: `On this page: ${FIGURE_ALT_FIX}`,
     data: { count }
   }));
 }
@@ -111122,7 +111361,8 @@ function accessibilityCheck(facts, opts = {}) {
       data: { title: facts.title }
     });
   }
-  problems.push(...figureProblems(facts, sev));
+  const fromSource = opts.texFiles?.length ? figureAltSourceProblems(opts.texFiles, sev) : [];
+  problems.push(...fromSource.length ? fromSource : figureProblems(facts, sev));
   problems.push(...fontProblems(facts, sev));
   if (facts.pdfua === void 0) {
     problems.push({
@@ -111771,149 +112011,6 @@ async function cached(cache, key, compute, opts) {
   return value;
 }
 
-// ../packages/core/src/venue/tex.ts
-function stripComments(content) {
-  return content.split("\n").map((line) => {
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === "\\") {
-        i++;
-        continue;
-      }
-      if (line[i] === "%") return line.slice(0, i);
-    }
-    return line;
-  }).join("\n");
-}
-function readGroup(s, open) {
-  if (s[open] !== "{") return null;
-  let depth = 0;
-  for (let i = open; i < s.length; i++) {
-    const c = s[i];
-    if (c === "\\") {
-      i++;
-      continue;
-    }
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return { value: s.slice(open + 1, i), end: i + 1 };
-    }
-  }
-  return null;
-}
-function lineCounter(s) {
-  let pos = 0;
-  let line = 1;
-  return (index) => {
-    if (index < pos) {
-      pos = 0;
-      line = 1;
-    }
-    for (; pos < index; pos++) if (s.charCodeAt(pos) === 10) line++;
-    return line;
-  };
-}
-function braceMatches(s) {
-  const close = new Int32Array(s.length).fill(-1);
-  const stack = [];
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c === 92) {
-      i++;
-    } else if (c === 123) {
-      stack.push(i);
-    } else if (c === 125) {
-      const open = stack.pop();
-      if (open !== void 0) close[open] = i;
-    }
-  }
-  return close;
-}
-var MAX_OPTIONAL = 4096;
-function findCommands(files, names) {
-  const out = [];
-  const re = new RegExp(`\\\\(${names.join("|")})\\*?(?![A-Za-z@])`, "g");
-  for (const f of files) {
-    const src = stripComments(f.content);
-    const lineAt = lineCounter(src);
-    let braces;
-    re.lastIndex = 0;
-    for (let m = re.exec(src); m; m = re.exec(src)) {
-      let i = m.index + m[0].length;
-      while (src[i] === " " || src[i] === "\n") i++;
-      let optional;
-      if (src[i] === "[") {
-        let close = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
-        if (close < 0) continue;
-        close += i;
-        optional = src.slice(i + 1, close);
-        i = close + 1;
-        while (src[i] === " " || src[i] === "\n") i++;
-      }
-      if (src[i] !== "{") continue;
-      braces ??= braceMatches(src);
-      const end = braces[i] ?? -1;
-      if (end < 0) continue;
-      const use = {
-        file: f.path,
-        line: lineAt(m.index),
-        name: m[1],
-        arg: src.slice(i + 1, end)
-      };
-      if (optional !== void 0) use.optional = optional;
-      out.push(use);
-    }
-  }
-  return out;
-}
-function grepTex(files, re) {
-  const out = [];
-  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
-  const g = new RegExp(re.source, flags);
-  for (const f of files) {
-    const src = stripComments(f.content);
-    const lineAt = lineCounter(src);
-    g.lastIndex = 0;
-    for (let m = g.exec(src); m; m = g.exec(src)) {
-      out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
-      if (m[0].length === 0) g.lastIndex++;
-    }
-  }
-  return out;
-}
-var CITE_COMMAND = /\\([A-Za-z]{0,12}cite[A-Za-z]{0,8})\*?(?![A-Za-z@])/g;
-function citeLocations(files, keys) {
-  const wanted = keys ? new Set(keys) : void 0;
-  const out = /* @__PURE__ */ new Map();
-  for (const f of files) {
-    const src = stripComments(f.content);
-    const lineAt = lineCounter(src);
-    CITE_COMMAND.lastIndex = 0;
-    for (let m = CITE_COMMAND.exec(src); m; m = CITE_COMMAND.exec(src)) {
-      let i = m.index + m[0].length;
-      for (let opt = 0; opt < 2; opt++) {
-        while (src[i] === " " || src[i] === "\n") i++;
-        if (src[i] !== "[") break;
-        const close2 = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
-        if (close2 < 0) break;
-        i += close2 + 1;
-      }
-      while (src[i] === " " || src[i] === "\n") i++;
-      if (src[i] !== "{") continue;
-      const close = src.slice(i, i + MAX_OPTIONAL).indexOf("}");
-      if (close < 0) continue;
-      const body = src.slice(i + 1, i + close);
-      if (body.includes("{")) continue;
-      for (const raw of body.split(",")) {
-        const key = raw.trim();
-        if (!key || out.has(key) || wanted && !wanted.has(key)) continue;
-        out.set(key, { file: f.path, line: lineAt(m.index) });
-      }
-    }
-  }
-  return out;
-}
-
 // ../packages/core/src/refs/entry.ts
 var PROVENANCE_FIELD = "x-overfull";
 function provenanceOf(entry) {
@@ -112520,6 +112617,9 @@ async function openalexSearch(client, title, apiKey, mailto) {
 }
 
 // ../packages/core/src/refs/search.ts
+function sourceAllowed(opts, source) {
+  return !opts.sources || opts.sources.includes(source);
+}
 function failureReason(err) {
   return err instanceof SourceUnavailableError ? err.message : `unexpected error: ${String(err)}`;
 }
@@ -112553,7 +112653,7 @@ function titleSources(ctx, q) {
   ];
   const key = opts.openalexKey;
   if (key) list3.push(["openalex", () => openalexSearch(client, plain, key, opts.mailto)]);
-  return list3;
+  return list3.filter(([source]) => sourceAllowed(opts, source));
 }
 async function searchOne(ctx, cacheKey, source, run2) {
   const cache = ctx.opts.cache;
@@ -112592,7 +112692,7 @@ async function titleSearch(ctx, q, visit) {
     outcome.searched.push(source);
     if (visit(records, source)) return outcome;
   }
-  if (!ctx.opts.openalexKey && outcome.failures.some((f) => f.source === "dblp")) {
+  if (!ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
     const plain = q.isTex ? texToPlain(q.title) : q.title;
     try {
       const records = await searchOne(
@@ -112751,10 +112851,15 @@ function withBrokenIds(result, ids, ev) {
     reason: `the ${what.join(" and the ")} does not resolve, but a record with this title exists`
   };
 }
-function noMatch(base, entry, kind, ids, ev) {
+function noMatch(ctx, base, entry, kind, ids, ev) {
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
+  const opts = ctx.opts;
   const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
+  const skipped3 = ["crossref", "dblp", "arxiv"].filter(
+    (s) => !sourceAllowed(opts, s)
+  );
+  const skippedNote = skipped3.length ? ` (${sourcesText(skipped3).replace(/ or /, " and ")} ${skipped3.length === 1 ? "was" : "were"} not searched)` : "";
   const titleNote = entry.fields.title ? " and no record has a similar title" : "";
   if (ev.arxivMissing) {
     return {
@@ -112801,7 +112906,7 @@ function noMatch(base, entry, kind, ids, ev) {
   return {
     ...withSearched,
     status: "not-found",
-    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== "doi.org"))}`
+    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== "doi.org"))}${skippedNote}`
   };
 }
 async function verifyEntry(entry, ctx, ignore) {
@@ -112822,13 +112927,13 @@ async function verifyEntry(entry, ctx, ignore) {
     arxivMissing: false,
     queries: []
   };
-  const viaId = (ids.doi ? await checkDoi(ctx, ids.doi, facts, ev) : null) ?? (ids.arxivId ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
+  const viaId = (ids.doi && sourceAllowed(ctx.opts, "doi.org") ? await checkDoi(ctx, ids.doi, facts, ev) : null) ?? (ids.arxivId && sourceAllowed(ctx.opts, "arxiv") ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
   const withQuery = (r) => ({ ...r, query: ev.queries[0] ?? "" });
   if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
   await searchByTitle(ctx, facts, kind, ev);
   const best = bestAssessment(ev.assessments);
   if (best) return withQuery(withBrokenIds(fromAssessment(base, best, ev), ids, ev));
-  return withQuery(noMatch(base, entry, kind, ids, ev));
+  return withQuery(noMatch(ctx, base, entry, kind, ids, ev));
 }
 async function runPool(items, limit, worker) {
   const results = new Array(items.length);
@@ -113090,7 +113195,10 @@ function tallyLine(t) {
   return parts.join(" \xB7 ");
 }
 function oneLine(s) {
-  return s.replace(/[\r\n\u0085\u2028\u2029]+/g, " ").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
+  return s.replace(/[\r\n\u0085\u2028\u2029]+/g, " ").split("").filter((ch2) => {
+    const c = ch2.charCodeAt(0);
+    return c === 9 || c >= 32 && c !== 127;
+  }).join("");
 }
 function safeLines(s) {
   return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
@@ -113348,6 +113456,16 @@ function arxivProblems(ctx) {
     }
   }
   const engine = detectEngine(ctx.log);
+  if (engine === "lualatex") {
+    problems.push({
+      rule: "arxiv-unsupported-engine",
+      check: "venue",
+      severity: "error",
+      message: "This build used LuaLaTeX, but arXiv compiles with pdfLaTeX",
+      fix: "arXiv compiles with pdfLaTeX; build with `make arxiv` / `latexmk -pdf` and check that log with --log",
+      data: { engine }
+    });
+  }
   if (engine === "pdflatex") {
     for (const use of uses.filter(
       (u) => u.name === "includegraphics" && /\.e?ps$/i.test(u.arg.trim())
@@ -113386,16 +113504,19 @@ function arxivProblems(ctx) {
     }
     const usesBib = uses.some((u) => u.name === "addbibresource" || u.name === "bibliography");
     const stem = ctx.main.replace(/\.tex$/i, "");
-    const hasBbl = ctx.files.some(
-      (f) => f.toLowerCase().endsWith(".bbl") && dirname(f) === dirname(ctx.main ?? "")
-    );
+    const expected = `${stem}.bbl`;
+    const hasBbl = ctx.files.some((f) => f.toLowerCase() === expected.toLowerCase());
     if (usesBib && !hasBbl) {
+      const other = ctx.files.find(
+        (f) => f.toLowerCase().endsWith(".bbl") && dirname(f) === dirname(ctx.main ?? "")
+      );
       problems.push({
         rule: "arxiv-missing-bbl",
         check: "venue",
         severity: "info",
-        message: `No ${stem}.bbl next to ${ctx.main}; arXiv does not run biber`,
-        fix: "Build once, then upload the generated .bbl (named like your main file) with your sources"
+        message: other ? `Found ${other}, but arXiv compiles ${ctx.main} and reads ${expected}; rename or copy it to ${expected}` : `No ${expected} next to ${ctx.main}; arXiv does not run biber`,
+        fix: other ? `Copy the .bbl to ${expected} (arXiv runs on the main file, not on your jobname)` : "Build once, then upload the generated .bbl (named like your main file) with your sources",
+        data: { expected, ...other ? { found: other } : {} }
       });
     }
   }
@@ -113598,6 +113719,7 @@ function pageLimitProblems(profile, ctx) {
           data: { pages: page, max, endLabel }
         });
       }
+      problems.push(...floatsAfterEnd(ctx.aux ?? "", page, endLabel));
       return problems;
     }
     problems.push({
@@ -113626,6 +113748,37 @@ function pageLimitProblems(profile, ctx) {
       message: `PDF has ${total} pages, limit is ${max}`,
       fix: endLabel ? `Cut ${total - max} page(s), or fix \`\\label{${endLabel}}\` so only the main text is counted` : `Cut ${total - max} page(s), or set \`venue.pageLimit.endLabel\` if references/appendix do not count`,
       data: { pages: total, max }
+    });
+  }
+  return problems;
+}
+var FLOAT_LABEL = /^(fig|figure|tab|table):/i;
+var APPENDIX_LABEL = /^(?:app|appendix)\b|^app(?:endix)?[:._-]|[:._-]app(?:endix)?(?:[:._-]|$)/i;
+function floatsAfterEnd(aux, endPage, endLabel) {
+  const labels = parseAuxLabels(aux);
+  const pageOf = (p) => /^\d+$/.test(p) ? Number(p) : void 0;
+  let appendixPage = Number.POSITIVE_INFINITY;
+  for (const [name, l] of labels) {
+    const page = pageOf(l.page);
+    if (page !== void 0 && !FLOAT_LABEL.test(name) && APPENDIX_LABEL.test(name)) {
+      appendixPage = Math.min(appendixPage, page);
+    }
+  }
+  const problems = [];
+  for (const [name, l] of labels) {
+    if (!FLOAT_LABEL.test(name) || APPENDIX_LABEL.test(name.replace(FLOAT_LABEL, ""))) continue;
+    if (/^[A-Z](?:\.|$)/.test(l.ref)) continue;
+    const page = pageOf(l.page);
+    if (page === void 0 || page <= endPage || page >= appendixPage) continue;
+    const kind = /^(fig|figure):/i.test(name) ? "Figure" : "Table";
+    problems.push({
+      rule: "float-after-main-end",
+      check: "venue",
+      severity: "warning",
+      message: `${kind} ${name} floated to page ${page}, after the end of the main text (page ${endPage}); it may not count toward the page limit but reviewers will see it outside the main text`,
+      location: { page },
+      fix: `Place the ${kind.toLowerCase()} earlier (\`[t]\` or \`[htbp]\`, or move it closer to where it is first referenced) so it lands before \`\\label{${endLabel}}\`, or move it to the appendix on purpose`,
+      data: { label: name, page, endPage, endLabel }
     });
   }
   return problems;

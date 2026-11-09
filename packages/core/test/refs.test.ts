@@ -824,3 +824,33 @@ describe('provenance guardrail', () => {
     expect(f.calls.some((c) => c.includes('openalex'))).toBe(false);
   });
 });
+
+describe('sources allow-list', () => {
+  const FAKE = `@inproceedings{smith2099fake,
+  author = {Smith, John}, title = {Quantum Consensus for Everyone}, booktitle = {SOSP}, year = {2099},
+  eprint = {2401.99999}}`;
+
+  it('decides not-found from the allowed sources only and says what was skipped', async () => {
+    const f = router({ 'api.crossref.org': () => json(emptyCrossref) });
+    const [r] = await verifyEntries(parseBib(FAKE), {
+      fetch: f.fetch,
+      sources: ['crossref', 'doi.org'],
+      ...fast,
+    });
+    expect(r?.status).toBe('not-found');
+    expect(r?.reason).toBe(
+      'no record with a similar title in CrossRef (dblp and arXiv were not searched)',
+    );
+    expect(f.calls.every((c) => c.includes('api.crossref.org'))).toBe(true);
+  });
+
+  it('still verifies through an allowed source', async () => {
+    const f = router({ 'doi.org': () => json(clocksCsl) });
+    const [r] = await verifyEntries(parseBib(CLOCKS), {
+      fetch: f.fetch,
+      sources: ['crossref', 'doi.org'],
+      ...fast,
+    });
+    expect(r?.status).toBe('verified');
+  });
+});
