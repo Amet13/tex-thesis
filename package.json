@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "build": "pnpm -r --filter ./packages/** run build",
+    "build": "pnpm --filter @overfull/core build && pnpm --filter overfull build && pnpm --filter overfull-action build",
     "test": "vitest run",
     "typecheck": "pnpm -r run typecheck",
     "lint": "biome check . && markdownlint-cli2",
