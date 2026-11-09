@@ -358,7 +358,8 @@ export function initCheck(): void {
           check: 'output',
           status: statusOf(outputProblems),
           problems: outputProblems,
-          summary: prev?.summary ?? `${facts.pageCount} page${facts.pageCount === 1 ? '' : 's'} read`,
+          summary:
+            prev?.summary ?? `${facts.pageCount} page${facts.pageCount === 1 ? '' : 's'} read`,
         });
         results.set(
           'accessibility',
@@ -455,7 +456,9 @@ export function initCheck(): void {
     note([skippedMsg, multiPdf, pdfError].filter(Boolean).join(' '));
     const reasons: Record<CheckId, string> = {
       build: 'No build log supplied',
-      output: pdfError ? 'No build log, and the PDF could not be read' : 'No build log or PDF supplied',
+      output: pdfError
+        ? 'No build log, and the PDF could not be read'
+        : 'No build log or PDF supplied',
       references: 'No .bib or .aux file supplied',
       accessibility: pdfError ? 'The PDF could not be read' : 'No PDF supplied',
       venue: 'No PDF, .tex or .aux file supplied',

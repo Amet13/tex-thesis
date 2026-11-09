@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Overfull social card</title>
+<!-- Rendered to site/public/og.png (1200×630) by site/scripts/og.mjs. -->
+<style>
+  @font-face { font-family: LS; src: url(../node_modules/@fontsource/libertinus-serif/files/libertinus-serif-latin-400-normal.woff2); font-weight: 400; }
+  @font-face { font-family: LS; src: url(../node_modules/@fontsource/libertinus-serif/files/libertinus-serif-latin-600-normal.woff2); font-weight: 600; }
+  @font-face { font-family: LS; src: url(../node_modules/@fontsource/libertinus-serif/files/libertinus-serif-latin-400-italic.woff2); font-style: italic; }
+  @font-face { font-family: LSans; src: url(../node_modules/@fontsource/libertinus-sans/files/libertinus-sans-latin-700-normal.woff2); font-weight: 700; }
+  @font-face { font-family: CM; src: url(../node_modules/@fontsource/commit-mono/files/commit-mono-latin-400-normal.woff2); }
+  :root { --paper: #f5f6f3; --paper-2: #eceeea; --ink: #141a2b; --ink-2: #3c4458; --ink-3: #555d70; --hair: #c3c8cc; --hair-strong: #8d949c; --pencil: #b0122b; --guide: #4f9dc4; --table: #e4e7e5; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { width: 1200px; height: 630px; background: var(--table); font-family: LS, serif; color: var(--ink); font-feature-settings: "kern", "liga", "onum"; }
+  .sheet { position: absolute; inset: 28px 40px; background: var(--paper); box-shadow: 0 0 0 1px var(--hair); display: grid; grid-template-columns: 470px 1fr; gap: 48px; padding: 56px 60px; }
+  .runhead { position: absolute; top: 26px; left: 60px; right: 60px; display: flex; gap: 14px; align-items: baseline; font-variant-caps: all-small-caps; letter-spacing: 0.09em; font-size: 19px; color: var(--ink-3); }
+  .runhead::after { content: ""; flex: 1; border-top: 1px solid var(--hair); transform: translateY(-0.3em); }
+  .left { display: flex; flex-direction: column; justify-content: center; }
+  .wordmark { font-weight: 600; font-size: 96px; letter-spacing: -0.01em; line-height: 1; display: inline-flex; align-items: center; }
+  .wm-margin { width: 0; align-self: stretch; border-left: 2px dashed var(--guide); margin-left: 4px; }
+  .wm-slug { display: inline-block; width: 0.42em; height: 0.78em; background: #0b0f19; margin-left: -6px; }
+  .tag { font-size: 38px; line-height: 1.2; margin: 28px 0 0; font-weight: 600; }
+  .sub { font-size: 25px; line-height: 1.35; margin: 18px 0 0; color: var(--ink-2); }
+  .proof { align-self: center; border: 1px solid var(--hair-strong); background: var(--paper); padding: 26px 28px; font-size: 21px; line-height: 1.45; }
+  .row { display: grid; grid-template-columns: 1fr 150px; gap: 18px; align-items: start; margin-bottom: 16px; }
+  .note { font-family: LS, serif; font-style: italic; color: var(--pencil); border-left: 1.5px solid var(--pencil); padding-left: 9px; font-size: 19px; line-height: 1.25; }
+  .c { display: inline-block; padding: 0 0.2em; border: 2px solid var(--pencil); border-radius: 50%; line-height: 1.05; }
+  .fig { height: 92px; border: 1px dashed var(--hair-strong); background: repeating-linear-gradient(135deg, transparent 0 9px, var(--paper-2) 9px 10px); color: var(--ink-3); display: grid; place-items: end start; padding: 4px 8px; font-size: 17px; }
+  .bib { margin: 0; padding-left: 1.7em; font-size: 18px; }
+  .strike { text-decoration: line-through; text-decoration-color: var(--pencil); text-decoration-thickness: 2px; }
+  .folio { border-top: 1px solid var(--hair); padding-top: 10px; margin-bottom: 0; }
+  .folio p { margin: 0; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="runhead"><span>Preflight for LaTeX papers and theses</span></div>
+    <div class="left">
+      <div class="wordmark"><span>Overfull</span><span class="wm-margin"></span><span class="wm-slug"></span></div>
+      <p class="tag">Check your paper before you submit it.</p>
+      <p class="sub">Build log, PDF, references, accessibility and venue rules, explained in plain language. By hand or with an AI agent.</p>
+    </div>
+    <div class="proof">
+      <div class="row"><div>Retrieval improves proof search, as shown in Figure <span class="c">??</span> and in recent work [<span class="c">?</span>].</div><div class="note">ref?</div></div>
+      <div class="row"><div class="fig">Fig. 3</div><div class="note">no alt text</div></div>
+      <div class="row"><ol class="bib" start="17"><li class="strike">L. Chen and R. Okafor. Scaling laws for retrieval-augmented proof search. ICLR, 2024.</li></ol><div class="note">not in CrossRef, DBLP, arXiv</div></div>
+      <div class="row folio"><p>10</p><div class="note">limit 9 pp.</div></div>
+    </div>
+  </div>
+</body>
+</html>
