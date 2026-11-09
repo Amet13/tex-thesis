@@ -165,3 +165,22 @@ export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry 
   entry.key = generateKey(entry);
   return entry;
 }
+
+/** BibTeX field that records how an entry was added (`overfull cite`). */
+export const PROVENANCE_FIELD = 'x-overfull';
+
+/**
+ * Records where an entry came from: `x-overfull = {cite <source> <yyyy-mm-dd>}`.
+ * BibTeX and biber ignore unknown fields, and `formatBibEntry` keeps them; with
+ * `requireProvenance` the references check accepts unverified entries only with it.
+ */
+export function markCited(entry: BibEntry, source: string, date: Date | string = new Date()): BibEntry {
+  const day = typeof date === 'string' ? date : date.toISOString().slice(0, 10);
+  return { ...entry, fields: { ...entry.fields, [PROVENANCE_FIELD]: `cite ${source} ${day}` } };
+}
+
+/** The `x-overfull = {cite …}` provenance of an entry, if it has one. */
+export function provenanceOf(entry: Pick<BibEntry, 'fields'>): string | undefined {
+  const value = entry.fields[PROVENANCE_FIELD]?.trim();
+  return value && /^cite\b/i.test(value) ? value : undefined;
+}

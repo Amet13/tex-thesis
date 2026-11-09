@@ -50,7 +50,7 @@ export const pdfRules: RuleInfo[] = [
     severity: 'error',
     title: 'Figure without alternative text',
     summary: 'A tagged figure has no alt text, so its content is invisible to screen-reader users.',
-    fix: 'Add `alt={...}` to `\\includegraphics` describing what the figure shows; use `artifact` for purely decorative images.',
+    fix: 'Describe what the figure shows: `\\includegraphics[alt={...}]{file}`, or `\\begin{tikzpicture}[alt={...}]` for TikZ; use `artifact` instead of `alt` for purely decorative images.',
   },
   {
     id: 'font-not-embedded',

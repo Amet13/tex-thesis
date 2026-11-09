@@ -4,12 +4,14 @@
  * OpenAlex works); the recorded real-world set lives in refs-bench.test.ts.
  */
 import { describe, expect, it } from 'vitest';
-import { parseBib } from '../src/bib/index.js';
+import { formatBibEntry, parseBib } from '../src/bib/index.js';
 import {
   arxivCacheKey,
   doiCacheKey,
   generateKey,
   identifiersOf,
+  markCited,
+  provenanceOf,
   missingKeys,
   parseArxivFeed,
   parseArxivId,
@@ -86,6 +88,7 @@ const allEmpty = {
 };
 
 const fast = { arxivIntervalMs: 0, retryDelayMs: 0 };
+const results = (r: RefResult | undefined): RefResult[] => (r ? [r] : []);
 
 describe('identifiers and query parsing', () => {
   it('parses DOIs in the forms people paste', () => {
@@ -343,6 +346,20 @@ describe('verifyEntries', () => {
     const [r] = await verifyEntries(parseBib(bib), { fetch: f.fetch, ...fast });
     expect(r?.status).toBe('mismatch');
     expect(r?.differences?.map((d) => d.field)).toEqual(['doi', 'author']);
+    expect(r?.wrongWork).toEqual({
+      field: 'doi',
+      id: '10.1145/359545.359563',
+      title: 'Time, clocks, and the ordering of events in a distributed system',
+    });
+    const entries = parseBib(bib);
+    const [p] = refsCheck(results(r), { entries }).problems;
+    expect(p).toMatchObject({ rule: 'reference-doi-wrong-work', severity: 'error' });
+    expect(p?.message).toContain('“Time, clocks, and the ordering of events in a distributed system”');
+    expect(p?.fix).not.toContain('overfull cite 10.1145');
+    expect(p?.fix).toContain('overfull cite "Neural Byzantine Consensus"');
+    expect(refsRules.find((x) => x.id === 'reference-doi-wrong-work')?.fix).not.toMatch(
+      /overfull cite <doi>/,
+    );
   });
 
   it('year off by one is verified with a note; off by more is a mismatch', async () => {
@@ -659,5 +676,115 @@ describe('missingKeys', () => {
       ['citation-key-missing', 'error', 'ghost2024'],
       ['citation-key-missing', 'error', 'Ongaro2014search'],
     ]);
+    expect(problems[0]?.fix).toMatch(/remove the `\\cite` if the source is not known/);
+  });
+
+  it('locates the \\cite of a missing key in the .tex files', () => {
+    const texFiles = [
+      { path: 'main.tex', content: '% \\cite{ghost2024} in a comment\nIntro \\citep[see][p.~3]{ongaro2014search, ghost2024}.\n' },
+      { path: 'sections/b.tex', content: 'x\ny\n\\parencite*{other}\n' },
+    ];
+    const problems = missingKeys(['ghost2024', 'other', 'nowhere'], parseBib(RAFT), texFiles);
+    expect(problems.map((p) => [p.data?.key, p.location])).toEqual([
+      ['ghost2024', { file: 'main.tex', line: 2 }],
+      ['other', { file: 'sections/b.tex', line: 3 }],
+      ['nowhere', undefined],
+    ]);
+  });
+});
+
+describe('provenance guardrail', () => {
+  const FAKE = `@inproceedings{smith2099fake,
+  author = {Smith, John}, title = {Quantum Consensus for Everyone}, booktitle = {SOSP}, year = {2099}}`;
+  const dblpWall = {
+    ...allEmpty,
+    'dblp.org': () => new Response('<html>Making sure you’re not a bot!</html>', { status: 202 }),
+  };
+
+  it('markCited adds x-overfull and formatBibEntry keeps it', () => {
+    const [e] = parseBib(RAFT);
+    const marked = markCited(e as NonNullable<typeof e>, 'dblp', '2026-11-09');
+    expect(marked.fields['x-overfull']).toBe('cite dblp 2026-11-09');
+    expect(provenanceOf(marked)).toBe('cite dblp 2026-11-09');
+    const text = formatBibEntry(marked);
+    expect(text).toContain('x-overfull = {cite dblp 2026-11-09}');
+    expect(provenanceOf(parseBib(text)[0] as NonNullable<typeof e>)).toBe('cite dblp 2026-11-09');
+    expect(markCited(e as NonNullable<typeof e>, 'crossref', new Date('2026-01-02T10:00:00Z')).fields['x-overfull']).toBe(
+      'cite crossref 2026-01-02',
+    );
+  });
+
+  it('an unverified hand-written entry is an error with requireProvenance', async () => {
+    const f = router(dblpWall);
+    const entries = parseBib(FAKE);
+    const results = await verifyEntries(entries, { fetch: f.fetch, requireProvenance: true, ...fast });
+    expect(results[0]).toMatchObject({ status: 'error', unproven: true });
+    const check = refsCheck(results, { entries });
+    expect(check.status).toBe('fail');
+    const p = check.problems.find((x) => x.rule === 'reference-unproven');
+    expect(p).toMatchObject({ severity: 'error' });
+    expect(p?.message).toBe('`smith2099fake` was not added with `overfull cite` and could not be verified');
+    expect(p?.fix).toBe(
+      'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
+    );
+    // Without the option the same run is only a warning.
+    const lax = await verifyEntries(entries, { fetch: router(dblpWall).fetch, ...fast });
+    expect(refsCheck(lax, { entries }).status).toBe('warn');
+    // refsCheck can apply the rule itself.
+    expect(refsCheck(lax, { entries, requireProvenance: true }).status).toBe('fail');
+  });
+
+  it('entries with x-overfull, verified entries and websites pass', async () => {
+    const f = router({ ...allEmpty, 'dblp.org': () => json(raftDblp) });
+    const entries = parseBib(
+      `${RAFT}\n${FAKE.replace('year = {2099}', 'year = {2099}, x-overfull = {cite crossref 2026-11-09}')}\n@online{w, title={CTAN}, url={https://ctan.org}}`,
+    );
+    const results = await verifyEntries(entries, { fetch: f.fetch, requireProvenance: true, ...fast });
+    expect(results.map((r) => [r.status, r.unproven ?? false])).toEqual([
+      ['verified', false],
+      ['not-found', false],
+      ['unverifiable', false],
+    ]);
+    expect(refsCheck(results, { entries, requireProvenance: true }).problems.map((p) => p.rule)).not.toContain(
+      'reference-unproven',
+    );
+  });
+
+  it('falls back to keyless OpenAlex when dblp is walled', async () => {
+    const openalex = {
+      results: [
+        {
+          display_name: 'In Search of an Understandable Consensus Algorithm',
+          publication_year: 2014,
+          type: 'article',
+          authorships: [{ author: { display_name: 'Diego Ongaro' } }],
+        },
+      ],
+    };
+    const f = router({ ...dblpWall, 'api.openalex.org': () => json(openalex) });
+    const [r] = await verifyEntries(parseBib(RAFT), { fetch: f.fetch, ...fast });
+    expect(r).toMatchObject({ status: 'verified', source: 'openalex' });
+    const call = f.calls.find((c) => c.includes('openalex')) ?? '';
+    expect(call).not.toContain('api_key');
+  });
+
+  it('a used-up keyless OpenAlex budget (429) is a lookup failure, never not-found', async () => {
+    const f = router({ ...dblpWall, 'api.openalex.org': () => json({}, 429, { 'retry-after': '0' }) });
+    const entries = parseBib(RAFT);
+    const results = await verifyEntries(entries, { fetch: f.fetch, ...fast });
+    expect(results[0]?.status).toBe('error');
+    expect(results[0]?.failed).toEqual(['dblp', 'openalex']);
+    const p = refsCheck(results, { entries }).problems[0];
+    expect(p?.rule).toBe('reference-lookup-failed');
+    expect(p?.fix).toContain('dblp and OpenAlex could not answer');
+    expect(p?.fix).toMatch(/DOI or arXiv id/);
+    expect(p?.fix).not.toMatch(/when online/);
+    expect(refsRules.find((x) => x.id === 'reference-lookup-failed')?.fix).not.toMatch(/when online/);
+  });
+
+  it('does not ask OpenAlex without a key when dblp answered', async () => {
+    const f = router(allEmpty);
+    await verifyEntries(parseBib(RAFT), { fetch: f.fetch, ...fast });
+    expect(f.calls.some((c) => c.includes('openalex'))).toBe(false);
   });
 });

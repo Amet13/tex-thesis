@@ -6,7 +6,7 @@ export {
   refsCheck,
   refsRules,
 } from './check.js';
-export { entryFromRecord, generateKey } from './entry.js';
+export { entryFromRecord, generateKey, markCited, PROVENANCE_FIELD, provenanceOf } from './entry.js';
 export { type EntryKind, entryKind, identifiersOf } from './kind.js';
 export {
   AmbiguousLookupError,

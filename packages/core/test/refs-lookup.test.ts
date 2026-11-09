@@ -78,8 +78,13 @@ describe('lookup', () => {
     expect(
       await lookup('Scalable consensus for distributed machine learning systems', o),
     ).toBeNull();
-    // Indexed only by dblp, which was unreachable while recording.
-    expect(await lookup('In Search of an Understandable Consensus Algorithm', o)).toBeNull();
+    expect(misses).toEqual([]);
+  });
+
+  it('dblp unreachable: the keyless OpenAlex fallback finds the paper', async () => {
+    const { o, misses } = opts();
+    const r = await lookup('In Search of an Understandable Consensus Algorithm', o);
+    expect(r).toMatchObject({ source: 'openalex', entry: { key: 'ongaro2014search' } });
     expect(misses).toEqual([]);
   });
 

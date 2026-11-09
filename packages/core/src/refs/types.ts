@@ -30,8 +30,20 @@ export interface RefResult {
   /** For `mismatch`; for `verified`, minor notes (year off by one). */
   differences?: RefDifference[];
   reason?: string;
+  /**
+   * Set when the entry's own DOI resolves to a different, identified work (rule
+   * `reference-doi-wrong-work`): `title` is that other work's title.
+   */
+  wrongWork?: { field: 'doi'; id: string; title: string };
+  /**
+   * With `requireProvenance`: the entry is not verified and was not added with
+   * `overfull cite` (no `x-overfull` field). Reported as `reference-unproven`.
+   */
+  unproven?: boolean;
   /** What was looked up, e.g. `doi:10.1145/359545.359563` or `title:in search of…|2014`. */
   query?: string;
+  /** Sources that could not answer (network error, bot wall, rate limit), for `error`. */
+  failed?: RefSource[];
   /** Sources that answered definitively (searched and found / did not find). */
   searched?: RefSource[];
   location?: Location;
@@ -48,7 +60,10 @@ export interface RefsOptions {
   fetch?: typeof fetch;
   /** Contact address for CrossRef's polite pool. */
   mailto?: string;
-  /** Enables OpenAlex as a last-resort title search. */
+  /**
+   * Enables OpenAlex as a last-resort title search. Without a key OpenAlex is still
+   * asked (keyless, per-IP daily budget) when dblp could not answer.
+   */
   openalexKey?: string;
   cache?: RefCache;
   /**
@@ -61,6 +76,13 @@ export interface RefsOptions {
   /** Per-request timeout in ms (default 10000). */
   timeoutMs?: number;
   offline?: boolean;
+  /**
+   * Guardrail against hand-written entries (config `references.requireCite`): an entry
+   * that is not `verified` must carry `x-overfull = {cite …}` from `overfull cite`, or it
+   * is reported as `reference-unproven` (error). Websites, software and standards, which
+   * `overfull cite` cannot add, are exempt.
+   */
+  requireProvenance?: boolean;
   /** Citation keys not to check. */
   ignore?: string[];
   signal?: AbortSignal;

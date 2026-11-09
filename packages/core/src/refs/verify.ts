@@ -1,5 +1,6 @@
 import type { BibEntry } from '../bib/parse.js';
 import { arxivCacheKey, doiCacheKey, titleCacheKey } from './cache.js';
+import { provenanceOf } from './entry.js';
 import { HttpClient } from './http.js';
 import {
   type EntryKind,
@@ -72,6 +73,10 @@ function fromAssessment(base: RefResult, a: Assessment, ev: Evidence): RefResult
     searched: [...ev.searched],
   };
   if (a.differences.length) result.differences = a.differences;
+  const doiDiff = a.differences[0];
+  if (a.differentWork && doiDiff?.field === 'doi' && a.record.source === 'doi.org') {
+    result.wrongWork = { field: 'doi', id: doiDiff.bib, title: toMatched(a.record).title };
+  }
   if (a.verdict === 'verified' && a.yearDiff === 1) {
     result.reason = 'year differs by one (common between preprint, online and print versions)';
   }
@@ -251,8 +256,10 @@ function noMatch(
     };
   }
   if (failedRequired.length || !searched.length) {
+    const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
+      ...(failed.length ? { failed } : {}),
       status: 'error',
       reason: `lookup incomplete: ${failuresText(ev.failures) || 'no source answered'}`,
     };
@@ -337,5 +344,14 @@ export async function verifyEntries(
   }
   const ctx: Ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
-  return runPool(entries, opts.concurrency ?? 4, (e) => verifyEntry(e, ctx, ignore));
+  return runPool(entries, opts.concurrency ?? 4, async (e) => {
+    const result = await verifyEntry(e, ctx, ignore);
+    return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
+  });
+}
+
+/** Not verified, not added with `overfull cite`, and of a kind `overfull cite` can add. */
+export function isUnproven(entry: BibEntry, result: RefResult): boolean {
+  if (result.status === 'verified' || provenanceOf(entry)) return false;
+  return entryKind(entry, identifiersOf(entry)) !== 'not-indexed';
 }

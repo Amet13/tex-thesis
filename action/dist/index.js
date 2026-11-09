@@ -110608,7 +110608,7 @@ function undefinedCitations(list3, notInBib) {
       message: `Citation ${code2(key)} is undefined${items.length > 1 ? ` (cited ${items.length} times)` : ""}`,
       location: location(first2.file, first2.line, first2.page),
       detail: missing ? `The key ${code2(key)} is not in any loaded .bib file, so the PDF shows it in bold or as [?].` : `No bibliography entry has the key ${code2(key)}, so the PDF shows it in bold or as [?].`,
-      fix: `Check the spelling of ${code2(key)} against the .bib file, or add the entry (\`overfull cite <doi>\` can fetch it), then rebuild.`,
+      fix: `Check the spelling of ${code2(key)} against the .bib file, or add the entry (\`overfull cite <doi>\` can fetch it), then rebuild; or remove the \`\\cite\` if the source is not known.`,
       evidence: evidence(items.map((w) => w.raw)),
       data: { key, count: items.length, occurrences: occurrences(items) }
     });
@@ -110865,10 +110865,8 @@ function warningProblems(parsed, buildFailed, thresholdPt) {
   let references2 = w.get("undefined-reference");
   if (state.references) {
     const raw = [...w.get("labels-changed"), ...w.get("rerun-latex")].map((x) => x.raw);
-    if (!buildFailed) {
-      problems.push(rerunProblem(references2, raw));
-      references2 = [];
-    }
+    if (!buildFailed) problems.push(rerunProblem(references2, raw));
+    references2 = [];
   }
   problems.push(...undefinedReferences(references2));
   const anyUndefined = w.get("undefined-citation").length + w.get("undefined-reference").length > 0;
@@ -111773,6 +111771,156 @@ async function cached(cache, key, compute, opts) {
   return value;
 }
 
+// ../packages/core/src/venue/tex.ts
+function stripComments(content) {
+  return content.split("\n").map((line) => {
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === "\\") {
+        i++;
+        continue;
+      }
+      if (line[i] === "%") return line.slice(0, i);
+    }
+    return line;
+  }).join("\n");
+}
+function readGroup(s, open) {
+  if (s[open] !== "{") return null;
+  let depth = 0;
+  for (let i = open; i < s.length; i++) {
+    const c = s[i];
+    if (c === "\\") {
+      i++;
+      continue;
+    }
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return { value: s.slice(open + 1, i), end: i + 1 };
+    }
+  }
+  return null;
+}
+function lineCounter(s) {
+  let pos = 0;
+  let line = 1;
+  return (index) => {
+    if (index < pos) {
+      pos = 0;
+      line = 1;
+    }
+    for (; pos < index; pos++) if (s.charCodeAt(pos) === 10) line++;
+    return line;
+  };
+}
+function braceMatches(s) {
+  const close = new Int32Array(s.length).fill(-1);
+  const stack = [];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 92) {
+      i++;
+    } else if (c === 123) {
+      stack.push(i);
+    } else if (c === 125) {
+      const open = stack.pop();
+      if (open !== void 0) close[open] = i;
+    }
+  }
+  return close;
+}
+var MAX_OPTIONAL = 4096;
+function findCommands(files, names) {
+  const out = [];
+  const re = new RegExp(`\\\\(${names.join("|")})\\*?(?![A-Za-z@])`, "g");
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    let braces;
+    re.lastIndex = 0;
+    for (let m = re.exec(src); m; m = re.exec(src)) {
+      let i = m.index + m[0].length;
+      while (src[i] === " " || src[i] === "\n") i++;
+      let optional;
+      if (src[i] === "[") {
+        let close = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
+        if (close < 0) continue;
+        close += i;
+        optional = src.slice(i + 1, close);
+        i = close + 1;
+        while (src[i] === " " || src[i] === "\n") i++;
+      }
+      if (src[i] !== "{") continue;
+      braces ??= braceMatches(src);
+      const end = braces[i] ?? -1;
+      if (end < 0) continue;
+      const use = {
+        file: f.path,
+        line: lineAt(m.index),
+        name: m[1],
+        arg: src.slice(i + 1, end)
+      };
+      if (optional !== void 0) use.optional = optional;
+      out.push(use);
+    }
+  }
+  return out;
+}
+function grepTex(files, re) {
+  const out = [];
+  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
+  const g = new RegExp(re.source, flags);
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    g.lastIndex = 0;
+    for (let m = g.exec(src); m; m = g.exec(src)) {
+      out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
+      if (m[0].length === 0) g.lastIndex++;
+    }
+  }
+  return out;
+}
+var CITE_COMMAND = /\\([A-Za-z]{0,12}cite[A-Za-z]{0,8})\*?(?![A-Za-z@])/g;
+function citeLocations(files, keys) {
+  const wanted = keys ? new Set(keys) : void 0;
+  const out = /* @__PURE__ */ new Map();
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    CITE_COMMAND.lastIndex = 0;
+    for (let m = CITE_COMMAND.exec(src); m; m = CITE_COMMAND.exec(src)) {
+      let i = m.index + m[0].length;
+      for (let opt = 0; opt < 2; opt++) {
+        while (src[i] === " " || src[i] === "\n") i++;
+        if (src[i] !== "[") break;
+        const close2 = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
+        if (close2 < 0) break;
+        i += close2 + 1;
+      }
+      while (src[i] === " " || src[i] === "\n") i++;
+      if (src[i] !== "{") continue;
+      const close = src.slice(i, i + MAX_OPTIONAL).indexOf("}");
+      if (close < 0) continue;
+      const body = src.slice(i + 1, i + close);
+      if (body.includes("{")) continue;
+      for (const raw of body.split(",")) {
+        const key = raw.trim();
+        if (!key || out.has(key) || wanted && !wanted.has(key)) continue;
+        out.set(key, { file: f.path, line: lineAt(m.index) });
+      }
+    }
+  }
+  return out;
+}
+
+// ../packages/core/src/refs/entry.ts
+var PROVENANCE_FIELD = "x-overfull";
+function provenanceOf(entry) {
+  const value = entry.fields[PROVENANCE_FIELD]?.trim();
+  return value && /^cite\b/i.test(value) ? value : void 0;
+}
+
 // ../packages/core/src/refs/http.ts
 var SourceUnavailableError = class extends Error {
   host;
@@ -112339,7 +112487,8 @@ async function dblpSearch(client, title) {
 
 // ../packages/core/src/refs/sources/openalex.ts
 function openalexSearchUrl(title, apiKey, mailto) {
-  const params = new URLSearchParams({ search: title, "per-page": "5", api_key: apiKey });
+  const params = new URLSearchParams({ search: title, "per-page": "5" });
+  if (apiKey) params.set("api_key", apiKey);
   if (mailto) params.set("mailto", mailto);
   return `https://api.openalex.org/works?${params}`;
 }
@@ -112441,7 +112590,23 @@ async function titleSearch(ctx, q, visit) {
       continue;
     }
     outcome.searched.push(source);
-    if (visit(records, source)) break;
+    if (visit(records, source)) return outcome;
+  }
+  if (!ctx.opts.openalexKey && outcome.failures.some((f) => f.source === "dblp")) {
+    const plain = q.isTex ? texToPlain(q.title) : q.title;
+    try {
+      const records = await searchOne(
+        ctx,
+        cacheKey,
+        "openalex",
+        () => openalexSearch(ctx.client, plain, void 0, ctx.opts.mailto)
+      );
+      outcome.searched.push("openalex");
+      visit(records, "openalex");
+    } catch (err) {
+      if (ctx.opts.signal?.aborted) throw err;
+      outcome.failures.push({ source: "openalex", reason: failureReason(err) });
+    }
   }
   return outcome;
 }
@@ -112484,6 +112649,10 @@ function fromAssessment(base, a, ev) {
     searched: [...ev.searched]
   };
   if (a.differences.length) result.differences = a.differences;
+  const doiDiff = a.differences[0];
+  if (a.differentWork && doiDiff?.field === "doi" && a.record.source === "doi.org") {
+    result.wrongWork = { field: "doi", id: doiDiff.bib, title: toMatched(a.record).title };
+  }
   if (a.verdict === "verified" && a.yearDiff === 1) {
     result.reason = "year differs by one (common between preprint, online and print versions)";
   }
@@ -112621,8 +112790,10 @@ function noMatch(base, entry, kind, ids, ev) {
     };
   }
   if (failedRequired.length || !searched.length) {
+    const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
+      ...failed.length ? { failed } : {},
       status: "error",
       reason: `lookup incomplete: ${failuresText(ev.failures) || "no source answered"}`
     };
@@ -112682,14 +112853,26 @@ async function verifyEntries(entries, opts = {}) {
   }
   const ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
-  return runPool(entries, opts.concurrency ?? 4, (e) => verifyEntry(e, ctx, ignore));
+  return runPool(entries, opts.concurrency ?? 4, async (e) => {
+    const result = await verifyEntry(e, ctx, ignore);
+    return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
+  });
+}
+function isUnproven(entry, result) {
+  if (result.status === "verified" || provenanceOf(entry)) return false;
+  return entryKind(entry, identifiersOf(entry)) !== "not-indexed";
 }
 
 // ../packages/core/src/refs/check.ts
 function fieldList(r) {
   return (r.differences ?? []).map((d) => d.field === "author" ? "authors" : d.field).join(", ");
 }
+function titleHint(r, entry) {
+  const title = entry?.fields.title ?? (r.wrongWork ? void 0 : r.matched?.title);
+  return title ? `overfull cite "${title.replace(/[{}]/g, "").replace(/"/g, "'")}"` : void 0;
+}
 function citeHint(r, entry) {
+  if (r.wrongWork) return titleHint(r, entry) ?? 'overfull cite "<title>"';
   if (r.matched?.doi) return `overfull cite ${r.matched.doi}`;
   const title = entry?.fields.title ?? r.matched?.title;
   return title ? `overfull cite "${title.replace(/[{}]/g, "").replace(/"/g, "'")}"` : "overfull cite <doi>";
@@ -112698,6 +112881,25 @@ function searchedText(r) {
   const names = (r.searched ?? []).map(sourceName);
   if (!names.length) return "the indexes";
   return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} or ${names.at(-1)}`;
+}
+function failedText(r) {
+  const names = (r.failed ?? []).map(sourceName);
+  if (!names.length) return "A source";
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+function unprovenProblem(r, entry) {
+  const location2 = r.location ?? (entry?.line ? { line: entry.line, ...entry.file ? { file: entry.file } : {} } : void 0);
+  return {
+    rule: "reference-unproven",
+    check: "references",
+    severity: "error",
+    message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
+    ...location2 ? { location: location2 } : {},
+    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ""}. The entry has no \`x-overfull = {cite \u2026}\` field, so nothing shows it came from real metadata.`,
+    fix: "Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite",
+    ...entry?.raw ? { evidence: entry.raw } : {},
+    data: { key: r.key, status: r.status }
+  };
 }
 function problemFor(r, entry) {
   const location2 = r.location ?? (entry?.line ? { line: entry.line, ...entry.file ? { file: entry.file } : {} } : void 0);
@@ -112722,6 +112924,21 @@ function problemFor(r, entry) {
         fix: `Check the DOI and title against the publisher page, or re-add it from real metadata with \`${citeHint(r, entry)}\`. If it is real but unindexed, add \`note = {overfull: skip}\`.`
       };
     case "mismatch": {
+      if (r.wrongWork) {
+        const others = (r.differences ?? []).filter((d) => d.field !== "doi").map((d) => `${d.field}: bib \u201C${d.bib}\u201D, record \u201C${d.record}\u201D`);
+        return {
+          ...common,
+          ...evidence2,
+          rule: "reference-doi-wrong-work",
+          severity: "error",
+          message: `\`${r.key}\`: the DOI ${r.wrongWork.id} points to a different paper, \u201C${r.wrongWork.title}\u201D`,
+          detail: [
+            `doi.org resolves ${r.wrongWork.id} to \u201C${r.wrongWork.title}\u201D, not to the cited work`,
+            ...others
+          ].join("; "),
+          fix: `Find the correct DOI for the cited title on the publisher page, or re-add the entry with \`${citeHint(r, entry)}\`. Do not re-add it from this DOI: that would cite the unrelated paper.`
+        };
+      }
       const diffs = (r.differences ?? []).map(
         (d) => `${d.field}: bib \u201C${d.bib}\u201D, record \u201C${d.record}\u201D`
       );
@@ -112750,7 +112967,7 @@ function problemFor(r, entry) {
         severity: "warning",
         message: `\`${r.key}\` could not be checked: ${r.reason ?? "lookup failed"}`,
         detail: "A network problem is not evidence against the reference; it was neither confirmed nor ruled out.",
-        fix: "Re-run the check when online."
+        fix: `${failedText(r)} could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with \`overfull cite <doi | arXiv:id>\`.`
       };
   }
 }
@@ -112764,16 +112981,22 @@ function bibIssueProblems(issues, file) {
     ...i.key ? { data: { key: i.key } } : {}
   }));
 }
-function missingKeys(cited, entries) {
+function missingKeys(cited, entries, texFiles) {
   const defined = new Set(entries.map((e) => e.key));
-  return cited.filter((k) => !defined.has(k)).map((key) => ({
-    rule: "citation-key-missing",
-    check: "references",
-    severity: "error",
-    message: `\`${key}\` is cited but not defined in any .bib file`,
-    fix: `Add it with \`overfull cite <doi | arXiv:id | "title">\` (then use the key it prints), or fix the key in \`\\cite{${key}}\`.`,
-    data: { key }
-  }));
+  const missing = cited.filter((k) => !defined.has(k));
+  const where = texFiles?.length ? citeLocations(texFiles, missing) : void 0;
+  return missing.map((key) => {
+    const location2 = where?.get(key);
+    return {
+      rule: "citation-key-missing",
+      check: "references",
+      severity: "error",
+      message: `\`${key}\` is cited but not defined in any .bib file`,
+      ...location2 ? { location: location2 } : {},
+      fix: `Add it with \`overfull cite <doi | arXiv:id | "title">\` (then use the key it prints), fix the key in \`\\cite{${key}}\`, or remove the \`\\cite\` if the source is not known.`,
+      data: { key }
+    };
+  });
 }
 function summaryOf(results, stats) {
   const parts = [];
@@ -112797,8 +113020,17 @@ function refsCheck(results, opts = {}) {
   const problems = [
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...opts.extra ?? [],
-    ...results.map((r) => problemFor(r, byKey.get(r.key))).filter((p) => p !== null)
+    ...results.map((r) => problemFor(r, byKey.get(r.key))).filter((p) => p !== null),
+    ...results.filter((r) => {
+      if (r.reason === "offline") return false;
+      if (r.unproven) return true;
+      const entry = byKey.get(r.key);
+      return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
+    }).map((r) => unprovenProblem(r, byKey.get(r.key)))
   ];
+  if (problems.some((p) => p.rule === "reference-unproven")) {
+    stats.unproven = problems.filter((p) => p.rule === "reference-unproven").length;
+  }
   if (results.length > 0 && results.every((r) => r.reason === "offline")) {
     const blocking = problems.filter((p) => p.rule !== "reference-unverifiable");
     return {
@@ -113061,117 +113293,6 @@ function formatMarkdown(report) {
 `;
 }
 
-// ../packages/core/src/venue/tex.ts
-function stripComments(content) {
-  return content.split("\n").map((line) => {
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === "\\") {
-        i++;
-        continue;
-      }
-      if (line[i] === "%") return line.slice(0, i);
-    }
-    return line;
-  }).join("\n");
-}
-function readGroup(s, open) {
-  if (s[open] !== "{") return null;
-  let depth = 0;
-  for (let i = open; i < s.length; i++) {
-    const c = s[i];
-    if (c === "\\") {
-      i++;
-      continue;
-    }
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return { value: s.slice(open + 1, i), end: i + 1 };
-    }
-  }
-  return null;
-}
-function lineCounter(s) {
-  let pos = 0;
-  let line = 1;
-  return (index) => {
-    if (index < pos) {
-      pos = 0;
-      line = 1;
-    }
-    for (; pos < index; pos++) if (s.charCodeAt(pos) === 10) line++;
-    return line;
-  };
-}
-function braceMatches(s) {
-  const close = new Int32Array(s.length).fill(-1);
-  const stack = [];
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c === 92) {
-      i++;
-    } else if (c === 123) {
-      stack.push(i);
-    } else if (c === 125) {
-      const open = stack.pop();
-      if (open !== void 0) close[open] = i;
-    }
-  }
-  return close;
-}
-var MAX_OPTIONAL = 4096;
-function findCommands(files, names) {
-  const out = [];
-  const re = new RegExp(`\\\\(${names.join("|")})\\*?(?![A-Za-z@])`, "g");
-  for (const f of files) {
-    const src = stripComments(f.content);
-    const lineAt = lineCounter(src);
-    let braces;
-    re.lastIndex = 0;
-    for (let m = re.exec(src); m; m = re.exec(src)) {
-      let i = m.index + m[0].length;
-      while (src[i] === " " || src[i] === "\n") i++;
-      let optional;
-      if (src[i] === "[") {
-        let close = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
-        if (close < 0) continue;
-        close += i;
-        optional = src.slice(i + 1, close);
-        i = close + 1;
-        while (src[i] === " " || src[i] === "\n") i++;
-      }
-      if (src[i] !== "{") continue;
-      braces ??= braceMatches(src);
-      const end = braces[i] ?? -1;
-      if (end < 0) continue;
-      const use = {
-        file: f.path,
-        line: lineAt(m.index),
-        name: m[1],
-        arg: src.slice(i + 1, end)
-      };
-      if (optional !== void 0) use.optional = optional;
-      out.push(use);
-    }
-  }
-  return out;
-}
-function grepTex(files, re) {
-  const out = [];
-  const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`;
-  const g = new RegExp(re.source, flags);
-  for (const f of files) {
-    const src = stripComments(f.content);
-    const lineAt = lineCounter(src);
-    g.lastIndex = 0;
-    for (let m = g.exec(src); m; m = g.exec(src)) {
-      out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
-      if (m[0].length === 0) g.lastIndex++;
-    }
-  }
-  return out;
-}
-
 // ../packages/core/src/venue/arxiv.ts
 var PATH_COMMANDS = [
   "includegraphics",
@@ -113430,7 +113551,7 @@ function disclosureProblems(level, ctx) {
         check: "venue",
         severity: level === "required" ? "error" : "info",
         message: level === "required" ? "No AI-use disclosure statement found (required by this venue)" : "No AI-use disclosure statement found (many venues now ask for one)",
-        fix: "Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}` stating which tools were used and how"
+        fix: "Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}`. The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used."
       }
     ];
   }
@@ -113445,7 +113566,7 @@ function disclosureProblems(level, ctx) {
       message: "The AI-use disclosure is still a placeholder or nearly empty",
       location: { file: found.file, line: found.line },
       detail: `The section reads: "${found.body.slice(0, 120)}${found.body.length > 120 ? "\u2026" : ""}"`,
-      fix: "The author writes the statement: which AI tools were used, for what, and that the authors checked the output. If none were used, say so"
+      fix: "The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used."
     }
   ];
 }
@@ -114143,9 +114264,13 @@ async function readPdfFacts(path, opts = {}) {
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   } else if (opts.docker) {
     const rel2 = `./${relative3(opts.docker.root, path).split("\\").join("/")}`;
-    const r = await run("docker", dockerRunArgs(opts.docker.image, opts.docker.root, ["pdffonts", rel2]), {
-      timeoutMs: 6e4
-    });
+    const r = await run(
+      "docker",
+      dockerRunArgs(opts.docker.image, opts.docker.root, ["pdffonts", rel2]),
+      {
+        timeoutMs: 6e4
+      }
+    );
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   }
   return facts;
@@ -114311,10 +114436,7 @@ async function gather(opts, config, needPdf) {
     if (opts.verapdf !== false && (opts.checks ?? config.checks).includes("accessibility"))
       inputs.docker = await dockerTools(opts, config);
     try {
-      inputs.facts = await readPdfFacts(
-        pdfAbs,
-        inputs.docker ? { docker: inputs.docker } : {}
-      );
+      inputs.facts = await readPdfFacts(pdfAbs, inputs.docker ? { docker: inputs.docker } : {});
     } catch (err) {
       inputs.factsError = err instanceof Error ? err.message : String(err);
     }
@@ -114601,7 +114723,9 @@ async function main2() {
     }
   }
   const report = await runCheck(inputs.check);
-  process.stdout.write(neutralizeWorkflowCommands2(formatHuman(report, { color: true, verbose: true })));
+  process.stdout.write(
+    neutralizeWorkflowCommands2(formatHuman(report, { color: true, verbose: true }))
+  );
   if (inputs.annotations) {
     const root = relative8(workspace, resolve4(inputs.check.cwd ?? workspace)) || ".";
     for (const line of githubAnnotations(report, { root, limit: 50 }))

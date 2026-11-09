@@ -18,6 +18,7 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
     const entry = ctx.aux ? parseAuxLabels(ctx.aux).get(endLabel) : undefined;
     if (entry && /^\d+$/.test(entry.page)) {
       const page = Number(entry.page);
+      problems.push(...floatsAfterEnd(ctx.aux ?? '', page, endLabel));
       if (page > max) {
         problems.push({
           rule: 'page-limit-exceeded',
@@ -62,6 +63,42 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
         ? `Cut ${total - max} page(s), or fix \`\\label{${endLabel}}\` so only the main text is counted`
         : `Cut ${total - max} page(s), or set \`venue.pageLimit.endLabel\` if references/appendix do not count`,
       data: { pages: total, max },
+    });
+  }
+  return problems;
+}
+
+const FLOAT_LABEL = /^(fig|figure|tab|table):/i;
+const APPENDIX_LABEL = /^(?:app|appendix)\b|^app(?:endix)?[:._-]|[:._-]app(?:endix)?(?:[:._-]|$)/i;
+
+/**
+ * Figures and tables of the main text that LaTeX floated past the end label. Appendix
+ * floats are skipped: labels named `app…`/`appendix…`, numbered like `A.1`, or on or
+ * after the page of the first appendix label.
+ */
+function floatsAfterEnd(aux: string, endPage: number, endLabel: string): Problem[] {
+  const labels = parseAuxLabels(aux);
+  const pageOf = (p: string) => (/^\d+$/.test(p) ? Number(p) : undefined);
+  let appendixPage = Number.POSITIVE_INFINITY;
+  for (const [name, l] of labels) {
+    const page = pageOf(l.page);
+    if (page !== undefined && APPENDIX_LABEL.test(name)) appendixPage = Math.min(appendixPage, page);
+  }
+  const problems: Problem[] = [];
+  for (const [name, l] of labels) {
+    if (!FLOAT_LABEL.test(name) || APPENDIX_LABEL.test(name.replace(FLOAT_LABEL, ''))) continue;
+    if (/^[A-Z](?:\.|$)/.test(l.ref)) continue;
+    const page = pageOf(l.page);
+    if (page === undefined || page <= endPage || page >= appendixPage) continue;
+    const kind = /^(fig|figure):/i.test(name) ? 'Figure' : 'Table';
+    problems.push({
+      rule: 'float-after-main-end',
+      check: 'venue',
+      severity: 'warning',
+      message: `${kind} ${name} floated to page ${page}, after the end of the main text (page ${endPage}); it may not count toward the page limit but reviewers will see it outside the main text`,
+      location: { page },
+      fix: `Place the ${kind.toLowerCase()} earlier (\`[t]\` or \`[htbp]\`, or move it closer to where it is first referenced) so it lands before \`\\label{${endLabel}}\`, or move it to the appendix on purpose`,
+      data: { label: name, page, endPage, endLabel },
     });
   }
   return problems;

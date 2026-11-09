@@ -245,7 +245,7 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
-  const refsOptions: Parameters<typeof verifyEntries>[1] & { requireProvenance?: boolean } = {
+  const refsOptions: Parameters<typeof verifyEntries>[1] = {
     ...(opts.fetch ? { fetch: opts.fetch } : {}),
     ...(mailto ? { mailto } : {}),
     ...(openalexKey ? { openalexKey } : {}),

@@ -134,7 +134,22 @@ export async function titleSearch(
       continue;
     }
     outcome.searched.push(source);
-    if (visit(records, source)) break;
+    if (visit(records, source)) return outcome;
+  }
+  // Keyless fallback: when dblp could not answer (bot wall, 429, 5xx) and no OpenAlex key
+  // is configured, ask OpenAlex without a key (it has a free per-IP daily budget).
+  if (!ctx.opts.openalexKey && outcome.failures.some((f) => f.source === 'dblp')) {
+    const plain = q.isTex ? texToPlain(q.title) : q.title;
+    try {
+      const records = await searchOne(ctx, cacheKey, 'openalex', () =>
+        openalexSearch(ctx.client, plain, undefined, ctx.opts.mailto),
+      );
+      outcome.searched.push('openalex');
+      visit(records, 'openalex');
+    } catch (err) {
+      if (ctx.opts.signal?.aborted) throw err;
+      outcome.failures.push({ source: 'openalex', reason: failureReason(err) });
+    }
   }
   return outcome;
 }

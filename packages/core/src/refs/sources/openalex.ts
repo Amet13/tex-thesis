@@ -13,8 +13,9 @@ interface OpenAlexWork {
   primary_location?: { source?: { display_name?: string } | null; landing_page_url?: string };
 }
 
-export function openalexSearchUrl(title: string, apiKey: string, mailto?: string): string {
-  const params = new URLSearchParams({ search: title, 'per-page': '5', api_key: apiKey });
+export function openalexSearchUrl(title: string, apiKey?: string, mailto?: string): string {
+  const params = new URLSearchParams({ search: title, 'per-page': '5' });
+  if (apiKey) params.set('api_key', apiKey);
   if (mailto) params.set('mailto', mailto);
   return `https://api.openalex.org/works?${params}`;
 }
@@ -42,11 +43,14 @@ function fromOpenAlex(w: OpenAlexWork): WorkRecord | null {
   return record;
 }
 
-/** OpenAlex search (needs an API key); up to 5 candidates. */
+/**
+ * OpenAlex search; up to 5 candidates. Without an API key OpenAlex serves a small
+ * per-IP daily budget; a 429 once it is used up is a lookup failure.
+ */
 export async function openalexSearch(
   client: HttpClient,
   title: string,
-  apiKey: string,
+  apiKey: string | undefined,
   mailto?: string,
 ): Promise<WorkRecord[]> {
   const { data } = await getJson<{ results?: OpenAlexWork[] }>(

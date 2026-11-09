@@ -1,10 +1,71 @@
 import { type CheckResult, type Problem, type Severity, statusOf } from '../types.js';
+import { findCommands, lineCounter, stripComments } from '../venue/tex.js';
+import type { TexFile } from '../venue/types.js';
 import type { CheckLevel, PdfFacts, VeraPdfResult } from './types.js';
 
 export interface AccessibilityOptions {
   /** Parsed veraPDF result; `null` means veraPDF is not available (adds an info). */
   verapdf?: VeraPdfResult | null;
   level?: CheckLevel;
+  /**
+   * LaTeX sources: `\includegraphics` and `tikzpicture` without `alt=` are reported
+   * with file and line (rule `figure-missing-alt`).
+   */
+  texFiles?: TexFile[];
+}
+
+const FIGURE_ALT_FIX =
+  'Describe what the figure shows: `\\includegraphics[alt={...}]{file}`, or `\\begin{tikzpicture}[alt={...}]` for TikZ; use `artifact` instead of `alt` for purely decorative images';
+
+/** True when a key list such as `width=3cm, alt={A bar chart}` sets `alt` or `artifact`. */
+function hasAltKey(options: string | undefined): boolean {
+  return options !== undefined && /(?:^|[,\s])(?:alt\s*=|artifact\b)/.test(options);
+}
+
+/**
+ * Source scan: `\includegraphics` and `tikzpicture` environments without `alt=` (or
+ * `artifact`), with file and line. Comments are ignored.
+ */
+export function figureAltSourceProblems(texFiles: TexFile[], severity: Severity): Problem[] {
+  const problems: Problem[] = [];
+  for (const use of findCommands(texFiles, ['includegraphics'])) {
+    if (hasAltKey(use.optional)) continue;
+    problems.push({
+      rule: 'figure-missing-alt',
+      check: 'accessibility',
+      severity,
+      message: `\`\\includegraphics{${use.arg.trim()}}\` has no alt text`,
+      location: { file: use.file, line: use.line },
+      fix: FIGURE_ALT_FIX,
+      data: { kind: 'includegraphics', file: use.arg.trim() },
+    });
+  }
+  const begin = /\\begin\s*\{tikzpicture\}/g;
+  for (const f of texFiles) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    begin.lastIndex = 0;
+    for (let m = begin.exec(src); m; m = begin.exec(src)) {
+      let i = m.index + m[0].length;
+      while (src[i] === ' ' || src[i] === '\n') i++;
+      let options: string | undefined;
+      if (src[i] === '[') {
+        const close = src.slice(i, i + 4096).indexOf(']');
+        if (close > 0) options = src.slice(i + 1, i + close);
+      }
+      if (hasAltKey(options)) continue;
+      problems.push({
+        rule: 'figure-missing-alt',
+        check: 'accessibility',
+        severity,
+        message: '`tikzpicture` has no alt text',
+        location: { file: f.path, line: lineAt(m.index) },
+        fix: FIGURE_ALT_FIX,
+        data: { kind: 'tikzpicture' },
+      });
+    }
+  }
+  return problems;
 }
 
 /** Rule id for a veraPDF clause: `8.2.5.26` → `verapdf-8-2-5-26`. */
@@ -44,7 +105,7 @@ function figureProblems(facts: PdfFacts, sev: Severity): Problem[] {
     severity: sev,
     message: `${plural(count, 'figure')} without alt text${placeholder ? ' (LaTeX used the file name)' : ''}`,
     location: { page },
-    fix: 'Add `alt={...}` to the `\\includegraphics` on this page',
+    fix: `On this page: ${FIGURE_ALT_FIX}`,
     data: { count },
   }));
 }
@@ -173,7 +234,10 @@ export function accessibilityCheck(facts: PdfFacts, opts: AccessibilityOptions =
       data: { title: facts.title },
     });
   }
-  problems.push(...figureProblems(facts, sev));
+  // The source scan names file and line; it replaces the per-page PDF count when it
+  // finds anything.
+  const fromSource = opts.texFiles?.length ? figureAltSourceProblems(opts.texFiles, sev) : [];
+  problems.push(...(fromSource.length ? fromSource : figureProblems(facts, sev)));
   problems.push(...fontProblems(facts, sev));
   if (facts.pdfua === undefined) {
     problems.push({

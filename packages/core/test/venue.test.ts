@@ -231,7 +231,7 @@ describe('arXiv rules', () => {
   it('is quiet for a clean project with a .bbl', () => {
     const r = venueCheck(profile, {
       texFiles: [tex('\\addbibresource{refs.bib}\n\\includegraphics{fig/a.pdf}')],
-      log: 'This is LuaHBTeX',
+      log: pdflatexLog,
       main: 'main.tex',
       files: ['main.tex', 'main.bbl', 'fig/a.pdf'],
     });
@@ -254,6 +254,38 @@ describe('venueCheck', () => {
     ]) {
       expect(ids.has(id)).toBe(true);
     }
+  });
+});
+
+describe('arXiv engine and .bbl name', () => {
+  const profile = resolveProfile('arxiv');
+  const texFiles = [tex('\\addbibresource{refs.bib}')];
+  it('flags a LuaLaTeX log as an error', () => {
+    const r = venueCheck(profile, {
+      texFiles,
+      log: 'This is LuaHBTeX, Version 1.24.0 (TeX Live 2026)',
+      main: 'main.tex',
+      files: ['main.tex', 'main.bbl'],
+    });
+    const p = r.problems.find((x) => x.rule === 'arxiv-unsupported-engine');
+    expect(p).toMatchObject({ severity: 'error' });
+    expect(p?.fix).toContain('`latexmk -pdf`');
+    expect(r.status).toBe('fail');
+    expect(venueRules.some((x) => x.id === 'arxiv-unsupported-engine')).toBe(true);
+  });
+
+  it('requires <main>.bbl; a <jobname>.bbl must be renamed', () => {
+    const run = (files: string[]) =>
+      venueCheck(profile, { texFiles, log: 'This is pdfTeX, Version 3', main: 'main.tex', files }).problems.filter(
+        (p) => p.rule === 'arxiv-missing-bbl',
+      );
+    expect(run(['main.tex', 'main.bbl'])).toEqual([]);
+    const [renamed] = run(['main.tex', 'thesis.bbl']);
+    expect(renamed?.message).toBe(
+      'Found thesis.bbl, but arXiv compiles main.tex and reads main.bbl; rename or copy it to main.bbl',
+    );
+    const [missing] = run(['main.tex']);
+    expect(missing?.message).toMatch(/^No main\.bbl next to main\.tex/);
   });
 });
 

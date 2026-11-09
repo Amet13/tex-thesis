@@ -3,7 +3,7 @@ import { type CheckResult, type Problem, type RuleInfo, statusOf } from '../type
 import { citeLocations } from '../venue/tex.js';
 import type { TexFile } from '../venue/types.js';
 import type { RefResult } from './types.js';
-import { sourceName } from './verify.js';
+import { isUnproven, sourceName } from './verify.js';
 
 export const refsRules: RuleInfo[] = [
   {
@@ -21,8 +21,17 @@ export const refsRules: RuleInfo[] = [
     severity: 'warning',
     title: 'Reference metadata differs from the index record',
     summary:
-      'A matching record was found, but its year, authors or title differ meaningfully from the .bib entry, or the entry’s DOI points to a different work.',
+      'A matching record was found, but its year, authors or title differ meaningfully from the .bib entry.',
     fix: 'Compare the entry with the record shown and correct it, or replace it with `overfull cite <doi>`.',
+  },
+  {
+    id: 'reference-doi-wrong-work',
+    check: 'references',
+    severity: 'error',
+    title: 'DOI points to a different work',
+    summary:
+      'The entry’s DOI resolves at doi.org, but to a paper with a different title or authors. Readers who follow the DOI land on an unrelated work.',
+    fix: 'Find the correct DOI for the cited title on the publisher page, or re-add the entry with `overfull cite "<title>"`. Do not re-add it from this DOI: that would cite the unrelated paper.',
   },
   {
     id: 'reference-unverifiable',
@@ -40,7 +49,16 @@ export const refsRules: RuleInfo[] = [
     title: 'Reference lookup failed',
     summary:
       'An index could not be reached (network error, timeout, rate limit), so the reference was neither confirmed nor ruled out.',
-    fix: 'Re-run the check when online. Results are cached, so a second run only retries what failed.',
+    fix: 'The message names the index that could not answer. Add the DOI or arXiv id to the entry: doi.org and arXiv can confirm it even when the title search fails. Or re-add the entry with `overfull cite <doi | arXiv:id>`.',
+  },
+  {
+    id: 'reference-unproven',
+    check: 'references',
+    severity: 'error',
+    title: 'Reference neither verified nor added with overfull cite',
+    summary:
+      'With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite` (it carries `x-overfull = {cite …}`). A hand-written entry that no index confirms may not exist.',
+    fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
   },
   {
     id: 'bib-parse-error',
@@ -65,7 +83,14 @@ function fieldList(r: RefResult): string {
   return (r.differences ?? []).map((d) => (d.field === 'author' ? 'authors' : d.field)).join(', ');
 }
 
+function titleHint(r: RefResult, entry?: BibEntry): string | undefined {
+  const title = entry?.fields.title ?? (r.wrongWork ? undefined : r.matched?.title);
+  return title ? `overfull cite "${title.replace(/[{}]/g, '').replace(/"/g, "'")}"` : undefined;
+}
+
 function citeHint(r: RefResult, entry?: BibEntry): string {
+  // A DOI that points to another work must never be suggested: it would cite that work.
+  if (r.wrongWork) return titleHint(r, entry) ?? 'overfull cite "<title>"';
   if (r.matched?.doi) return `overfull cite ${r.matched.doi}`;
   const title = entry?.fields.title ?? r.matched?.title;
   return title
@@ -79,6 +104,31 @@ function searchedText(r: RefResult): string {
   return names.length === 1
     ? (names[0] as string)
     : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`;
+}
+
+function failedText(r: RefResult): string {
+  const names = (r.failed ?? []).map(sourceName);
+  if (!names.length) return 'A source';
+  return names.length === 1
+    ? (names[0] as string)
+    : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+}
+
+function unprovenProblem(r: RefResult, entry?: BibEntry): Problem {
+  const location =
+    r.location ??
+    (entry?.line ? { line: entry.line, ...(entry.file ? { file: entry.file } : {}) } : undefined);
+  return {
+    rule: 'reference-unproven',
+    check: 'references',
+    severity: 'error',
+    message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
+    ...(location ? { location } : {}),
+    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ''}. The entry has no \`x-overfull = {cite …}\` field, so nothing shows it came from real metadata.`,
+    fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
+    ...(entry?.raw ? { evidence: entry.raw } : {}),
+    data: { key: r.key, status: r.status },
+  };
 }
 
 function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
@@ -106,6 +156,23 @@ function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
         fix: `Check the DOI and title against the publisher page, or re-add it from real metadata with \`${citeHint(r, entry)}\`. If it is real but unindexed, add \`note = {overfull: skip}\`.`,
       };
     case 'mismatch': {
+      if (r.wrongWork) {
+        const others = (r.differences ?? [])
+          .filter((d) => d.field !== 'doi')
+          .map((d) => `${d.field}: bib “${d.bib}”, record “${d.record}”`);
+        return {
+          ...common,
+          ...evidence,
+          rule: 'reference-doi-wrong-work',
+          severity: 'error',
+          message: `\`${r.key}\`: the DOI ${r.wrongWork.id} points to a different paper, “${r.wrongWork.title}”`,
+          detail: [
+            `doi.org resolves ${r.wrongWork.id} to “${r.wrongWork.title}”, not to the cited work`,
+            ...others,
+          ].join('; '),
+          fix: `Find the correct DOI for the cited title on the publisher page, or re-add the entry with \`${citeHint(r, entry)}\`. Do not re-add it from this DOI: that would cite the unrelated paper.`,
+        };
+      }
       const diffs = (r.differences ?? []).map(
         (d) => `${d.field}: bib “${d.bib}”, record “${d.record}”`,
       );
@@ -135,7 +202,7 @@ function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
         message: `\`${r.key}\` could not be checked: ${r.reason ?? 'lookup failed'}`,
         detail:
           'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
-        fix: 'Re-run the check when online.',
+        fix: `${failedText(r)} could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with \`overfull cite <doi | arXiv:id>\`.`,
       };
   }
 }
@@ -180,6 +247,11 @@ export interface RefsCheckOptions {
   bibFile?: string;
   /** Extra problems, e.g. from `missingKeys`. */
   extra?: Problem[];
+  /**
+   * Report unverified entries without `x-overfull` provenance as `reference-unproven`
+   * (needs `entries`). Results marked `unproven` by `verifyEntries` are always reported.
+   */
+  requireProvenance?: boolean;
 }
 
 function summaryOf(results: RefResult[], stats: Record<string, number>): string {
@@ -207,7 +279,18 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...(opts.extra ?? []),
     ...results.map((r) => problemFor(r, byKey.get(r.key))).filter((p): p is Problem => p !== null),
+    ...results
+      .filter((r) => {
+        if (r.reason === 'offline') return false;
+        if (r.unproven) return true;
+        const entry = byKey.get(r.key);
+        return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
+      })
+      .map((r) => unprovenProblem(r, byKey.get(r.key))),
   ];
+  if (problems.some((p) => p.rule === 'reference-unproven')) {
+    stats.unproven = problems.filter((p) => p.rule === 'reference-unproven').length;
+  }
   if (results.length > 0 && results.every((r) => r.reason === 'offline')) {
     const blocking = problems.filter((p) => p.rule !== 'reference-unverifiable');
     return {

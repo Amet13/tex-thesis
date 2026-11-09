@@ -15,6 +15,7 @@ import {
   type PdfjsLike,
   parsePdffonts,
   parseVeraPdfReport,
+  pdfRules,
   pdfOutputProblems,
 } from '../src/pdf/index.js';
 
@@ -230,6 +231,40 @@ describe('accessibilityCheck', () => {
     ]);
     const ok = accessibilityCheck(facts(), { verapdf: { compliant: true, failures: [] } });
     expect(ok.summary).toBe('Tagged, PDF/UA valid (veraPDF)');
+  });
+
+  it('scans sources for \\includegraphics and tikzpicture without alt', () => {
+    const texFiles = [
+      {
+        path: 'sections/results.tex',
+        content: [
+          '\\includegraphics[width=3cm]{figs/a.pdf}',
+          '\\includegraphics[width=3cm, alt={Bar chart of latency}]{figs/b.pdf}',
+          '% \\includegraphics{figs/commented.pdf}',
+          '\\includegraphics[artifact]{figs/logo.pdf}',
+          '\\begin{tikzpicture}',
+          '\\end{tikzpicture}',
+          '\\begin{tikzpicture}[alt={Two nodes joined by an arrow}]',
+          '\\end{tikzpicture}',
+          '\\includegraphics{figs/c.png}',
+        ].join('\n'),
+      },
+    ];
+    const required = accessibilityCheck(facts(), { level: 'required', texFiles });
+    const alt = required.problems.filter((p) => p.rule === 'figure-missing-alt');
+    expect(alt.map((p) => [p.location?.file, p.location?.line, p.severity, p.data?.kind])).toEqual([
+      ['sections/results.tex', 1, 'error', 'includegraphics'],
+      ['sections/results.tex', 9, 'error', 'includegraphics'],
+      ['sections/results.tex', 5, 'error', 'tikzpicture'],
+    ]);
+    expect(alt[0]?.fix).toContain('\\includegraphics[alt={...}]');
+    expect(alt[0]?.fix).toContain('\\begin{tikzpicture}[alt={...}]');
+    const recommended = accessibilityCheck(facts(), { level: 'recommended', texFiles });
+    expect(
+      recommended.problems.filter((p) => p.rule === 'figure-missing-alt').every((p) => p.severity === 'warning'),
+    ).toBe(true);
+    const rule = pdfRules.find((r) => r.id === 'figure-missing-alt');
+    expect(rule?.fix).toContain('\\begin{tikzpicture}[alt={...}]');
   });
 
   it('groups veraPDF failures by clause', () => {

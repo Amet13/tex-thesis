@@ -1,6 +1,7 @@
 export {
   type AccessibilityOptions,
   accessibilityCheck,
+  figureAltSourceProblems,
   isMissingAlt,
   veraPdfRuleId,
 } from './accessibility.js';

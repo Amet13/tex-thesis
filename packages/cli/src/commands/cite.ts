@@ -5,6 +5,7 @@ import {
   lookup as coreLookup,
   formatBibEntry,
   type LookupResult,
+  markCited,
   parseBib,
   parseDoi,
   type RefsOptions,
@@ -125,15 +126,6 @@ export class SourceTracker {
 
 const list = (xs: string[]) =>
   xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
-
-/**
- * Records where an entry came from: `x-overfull = {cite <source> <yyyy-mm-dd>}`.
- * BibTeX and biber ignore unknown fields; `overfull check` can require it.
- */
-export function markCited(entry: BibEntry, source: string, date: Date = new Date()): BibEntry {
-  const day = date.toISOString().slice(0, 10);
-  return { ...entry, fields: { ...entry.fields, 'x-overfull': `cite ${source} ${day}` } };
-}
 
 function uniqueKey(base: string, taken: Set<string>): string {
   if (!taken.has(base)) return base;

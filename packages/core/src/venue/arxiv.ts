@@ -63,6 +63,16 @@ export function arxivProblems(ctx: VenueContext): Problem[] {
     }
   }
   const engine = detectEngine(ctx.log);
+  if (engine === 'lualatex') {
+    problems.push({
+      rule: 'arxiv-unsupported-engine',
+      check: 'venue',
+      severity: 'error',
+      message: 'This build used LuaLaTeX, but arXiv compiles with pdfLaTeX',
+      fix: 'arXiv compiles with pdfLaTeX; build with `make arxiv` / `latexmk -pdf` and check that log with --log',
+      data: { engine },
+    });
+  }
   if (engine === 'pdflatex') {
     for (const use of uses.filter(
       (u) => u.name === 'includegraphics' && /\.e?ps$/i.test(u.arg.trim()),
@@ -101,17 +111,26 @@ export function arxivProblems(ctx: VenueContext): Problem[] {
       });
     }
     const usesBib = uses.some((u) => u.name === 'addbibresource' || u.name === 'bibliography');
+    // arXiv compiles the main file, so it reads `<main basename>.bbl`; a `<jobname>.bbl`
+    // from a build with another jobname is only usable when the names agree.
     const stem = ctx.main.replace(/\.tex$/i, '');
-    const hasBbl = ctx.files.some(
-      (f) => f.toLowerCase().endsWith('.bbl') && dirname(f) === dirname(ctx.main ?? ''),
-    );
+    const expected = `${stem}.bbl`;
+    const hasBbl = ctx.files.some((f) => f.toLowerCase() === expected.toLowerCase());
     if (usesBib && !hasBbl) {
+      const other = ctx.files.find(
+        (f) => f.toLowerCase().endsWith('.bbl') && dirname(f) === dirname(ctx.main ?? ''),
+      );
       problems.push({
         rule: 'arxiv-missing-bbl',
         check: 'venue',
         severity: 'info',
-        message: `No ${stem}.bbl next to ${ctx.main}; arXiv does not run biber`,
-        fix: 'Build once, then upload the generated .bbl (named like your main file) with your sources',
+        message: other
+          ? `Found ${other}, but arXiv compiles ${ctx.main} and reads ${expected}; rename or copy it to ${expected}`
+          : `No ${expected} next to ${ctx.main}; arXiv does not run biber`,
+        fix: other
+          ? `Copy the .bbl to ${expected} (arXiv runs on the main file, not on your jobname)`
+          : 'Build once, then upload the generated .bbl (named like your main file) with your sources',
+        data: { expected, ...(other ? { found: other } : {}) },
       });
     }
   }

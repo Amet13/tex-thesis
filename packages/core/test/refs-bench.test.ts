@@ -3,7 +3,8 @@
  * recorded with record.mjs on 2026-11-08). During recording dblp.org answered
  * every request with a bot challenge, so these numbers are for "dblp
  * unavailable": entries only dblp could confirm come out as `error`
- * (lookup incomplete), never as `not-found`.
+ * (lookup incomplete), never as `not-found`, unless the keyless OpenAlex
+ * fallback (responses topped up on 2026-11-09) confirms them.
  */
 import { describe, expect, it } from 'vitest';
 import { parseBib } from '../src/bib/index.js';
@@ -36,10 +37,14 @@ describe('real references (51 entries)', () => {
     const s = byStatus(results);
     expect(s['not-found']).toEqual([]);
     expect(s['not-found']?.length ?? 0).toBeLessThan(results.length * 0.02);
-    // Only dblp indexes these (no DOI, not on arXiv) and dblp was unreachable.
-    expect(s.error).toEqual(['lamport2001paxos', 'ongaro2014search', 'goodfellow2014generative']);
-    // CrossRef has only the 2017 CACM reprint; with dblp reachable the NIPS 2012 version verifies.
-    expect(s.mismatch).toEqual(['krizhevsky2012imagenet']);
+    // dblp was unreachable; the keyless OpenAlex fallback confirms these instead.
+    const get = (k: string) => results.find((r) => r.key === k);
+    for (const k of ['lamport2001paxos', 'ongaro2014search', 'krizhevsky2012imagenet']) {
+      expect(get(k), k).toMatchObject({ status: 'verified', source: 'openalex' });
+    }
+    // Only dblp indexes this one (no DOI, not on arXiv, not found by OpenAlex either).
+    expect(s.error).toEqual(['goodfellow2014generative']);
+    expect(s.mismatch).toEqual([]);
     expect(s.unverifiable).toEqual([
       'knuth1997art',
       'ongaro2014consensus',
@@ -48,7 +53,7 @@ describe('real references (51 entries)', () => {
       'ctan',
       'nakamoto2008bitcoin',
     ]);
-    expect(s.verified).toHaveLength(41);
+    expect(s.verified).toHaveLength(44);
   });
 
   it('verifies the hard cases', async () => {
@@ -82,7 +87,7 @@ describe('real references (51 entries)', () => {
     const { results } = await run('real.bib');
     const check = refsCheck(results);
     expect(check.status).toBe('warn');
-    expect(check.summary).toMatch(/^41 of 51 references verified/);
+    expect(check.summary).toMatch(/^44 of 51 references verified/);
     expect(check.problems.some((p) => p.severity === 'error')).toBe(false);
   });
 });
