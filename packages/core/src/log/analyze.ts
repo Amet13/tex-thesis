@@ -536,12 +536,14 @@ function warningProblems(parsed: ParsedLog, buildFailed: boolean, thresholdPt: n
   let references = w.get('undefined-reference');
   if (state.references) {
     const raw = [...w.get('labels-changed'), ...w.get('rerun-latex')].map((x) => x.raw);
-    // The rerun problem covers the undefined references; without it (failed build) they
-    // must still be reported, or they would vanish from the output check.
-    if (!buildFailed) {
-      problems.push(rerunProblem(references, raw));
-      references = [];
-    }
+    if (!buildFailed) problems.push(rerunProblem(references, raw));
+    // Intentional: with a failed build these undefined references are dropped, not
+    // reported. latexmk stopped early, so they are usually forward references that resolve
+    // on the next successful run; reporting them would push the author (or an agent) to
+    // "fix" things that are not broken instead of fixing the first error first. A label
+    // that is really missing still surfaces once the build error is fixed (the next log,
+    // and the PDF "??" check).
+    references = [];
   }
   problems.push(...undefinedReferences(references));
 

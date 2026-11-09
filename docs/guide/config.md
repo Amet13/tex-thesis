@@ -46,6 +46,8 @@ build:
 | --- | --- | --- | --- |
 | `mailto` | email | `$OVERFULL_MAILTO`, else none | Contact address sent to CrossRef (and OpenAlex) for their polite pool. `--mailto` overrides it. |
 | `ignore` | string or list of keys | `[]` | Entries not to verify. |
+| `cache` | `user` \| `project` | `user` | Where lookups are cached. `user`: your cache folder, outside the project (see [Cache](#cache)). `project`: `.overfull/cache/refs.json`, the old location. |
+| `requireCite` | boolean | `false` | Require every entry to carry the `x-overfull = {cite …}` field that `overfull cite` writes. The templates turn it on. |
 
 `mailto` does not turn OpenAlex on. OpenAlex title search is used only when the
 `OPENALEX_API_KEY` environment variable is set. There is no config key for the
@@ -79,12 +81,28 @@ as a mapping.
 | --- | --- | --- | --- |
 | `engine` | `auto` \| `local` \| `docker` | `auto` | How `overfull build` and `overfull diff` run their tools. `auto` uses a local `latexmk` if found, else Docker. |
 | `image` | string | `ghcr.io/amet13/overfull:0.1` | Docker image. Pin it to keep builds reproducible. The `OVERFULL_IMAGE` environment variable overrides it, and `overfull build --image` overrides both. |
+| `outDir` | path | the `$out_dir` of a `.latexmkrc`, else `.` | Where latexmk writes the PDF, log and aux files. `overfull build` passes it as `-outdir`/`-auxdir`, and `overfull check` reads from it. |
+
+`main`, `jobname` and `outDir` may contain only letters, digits, `.`, `_`, `-`
+(and `/` except in `jobname`), and no `..`: latexmk passes them to a shell.
+Paths (`bib`, `--pdf`, `--log`, `--aux`) must stay inside the project folder.
 
 ## Cache
 
-Reference lookups are cached in `.overfull/cache/refs.json`. `overfull pages`
-writes images to `.overfull/pages`. The templates add `.overfull/cache/` to
-`.gitignore`. Delete the cache folder to force fresh lookups.
+Reference lookups are cached outside the project, in your user cache folder:
+`$XDG_CACHE_HOME/overfull` (else `~/.cache/overfull`), or
+`%LOCALAPPDATA%\overfull` on Windows, one subfolder per project. A cache inside
+the repository could be committed, and a committed cache would let a pull
+request mark a made-up reference as verified. Delete the folder to force fresh
+lookups.
+
+`references.cache: project` keeps the cache in `.overfull/cache/refs.json`
+instead. When that file is tracked by git and the check runs in CI (`CI` or
+`GITHUB_ACTIONS` is `true`), Overfull ignores it and says so
+(`refs-cache-ignored`).
+
+`overfull pages` writes images to `.overfull/pages`, and `overfull diff` builds
+in `.overfull/diff`. The templates add `.overfull/` to `.gitignore`.
 
 ## Environment variables
 

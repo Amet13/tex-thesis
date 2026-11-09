@@ -8,7 +8,7 @@ section: Checks
 `overfull check` runs five checks. Each reads files a build already produced
 (the `.log`, the `.aux` or `.bcf`, the PDF, the `.bib`, the `.tex` sources).
 None of them change your files. The references check only writes its lookup
-cache to `.overfull/cache/refs.json`.
+cache, in your user cache folder (see [Configuration](./config.md#cache)).
 
 | Check | Reads | Answers |
 | --- | --- | --- |

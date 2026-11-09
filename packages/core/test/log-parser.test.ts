@@ -364,22 +364,23 @@ describe('warnings and output', () => {
     expect(analyzeLog(text).output.problems[0]?.rule).toBe('rerun-needed');
   });
 
-  it('keeps undefined references when the build failed and labels may have changed', () => {
+  it('intentionally drops undefined references when the build failed and labels changed', () => {
+    // Usually forward references after latexmk stopped early: fix the first error first.
     const text = log(
       '(./main.tex',
-      ...undefinedCs('foo', 3),
-      "LaTeX Warning: Reference `fig:missing' on page 1 undefined on input line 7.",
+      "LaTeX Warning: Reference `chap:methods' on page 2 undefined on input line 7.",
+      '',
+      ...undefinedCs('foo', 7),
+      ')',
+      'LaTeX Warning: There were undefined references.',
       '',
       'LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.',
       '',
-      ')',
     );
     const { build, output } = analyzeLog(text);
     expect(build.status).toBe('fail');
-    expect(output.problems.map((p) => p.rule)).toContain('undefined-reference');
-    expect(output.problems.find((p) => p.rule === 'undefined-reference')?.data).toMatchObject({
-      label: 'fig:missing',
-    });
+    expect(output.problems.map((p) => p.rule)).not.toContain('undefined-reference');
+    expect(output.problems.map((p) => p.rule)).not.toContain('rerun-needed');
   });
 
   it('collects biblatex continuation lines', () => {

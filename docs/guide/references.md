@@ -25,8 +25,10 @@ neither exists, every entry is checked):
 Entries that are websites, software, datasets, standards or manuals are not
 looked up. An entry with a DOI or arXiv id is judged by that identifier alone.
 
-Results are cached in `.overfull/cache/refs.json`, so repeat runs are fast and
-make few network requests. The templates git-ignore that folder.
+Results are cached in your user cache folder (`~/.cache/overfull`, see
+[Configuration](./config.md#cache)), so repeat runs are fast and make few
+network requests. The cache is kept outside the project so it cannot be
+committed: a committed cache could make a made-up reference look verified.
 
 ## The outcomes
 

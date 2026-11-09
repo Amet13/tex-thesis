@@ -281,6 +281,22 @@ describe('disclosure placeholder', () => {
       'warning',
     ]);
   });
+  it('fix texts leave the "none were used" statement to the author', () => {
+    const missing = venueCheck(resolveProfile({ disclosure: 'required' }), {
+      texFiles: [tex('\\section{Results}')],
+    }).problems[0];
+    const placeholder = venueCheck(resolveProfile({ extends: 'paper', disclosure: 'required' }), {
+      texFiles: [file('\\section*{Use of AI tools}\nTBD.\n')],
+    }).problems.find((p) => p.rule === 'disclosure-placeholder');
+    const rules = venueRules.filter((r) => r.id.startsWith('disclosure'));
+    const texts = [missing?.fix, placeholder?.fix, ...rules.map((r) => r.fix)];
+    expect(texts).toHaveLength(4);
+    for (const t of texts) {
+      expect(t).toContain('Only the author can say whether none were used.');
+      expect(t).not.toMatch(/say so|state that no/i);
+    }
+  });
+
   it('accepts a written statement', () => {
     const r = venueCheck(resolveProfile({ extends: 'paper', disclosure: 'required' }), {
       texFiles: [
