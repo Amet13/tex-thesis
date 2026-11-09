@@ -154,86 +154,8 @@ const DROP_FIELDS = new Set([
 ]);
 
 /**
- * TeX primitives and macros that read or write files, run code, or change how
- * TeX reads input. A .bib value is typeset by LaTeX, so a registration agency's
- * metadata (DataCite titles are free text) must not carry them into the paper.
- */
-const DANGEROUS_MACROS = new Set(
-  [
-    'input',
-    'include',
-    'includeonly',
-    'inputiffileexists',
-    'iffileexists',
-    'endinput',
-    'write',
-    'immediate',
-    'openout',
-    'openin',
-    'read',
-    'readline',
-    'closeout',
-    'closein',
-    'catcode',
-    'def',
-    'edef',
-    'gdef',
-    'xdef',
-    'let',
-    'futurelet',
-    'newcommand',
-    'renewcommand',
-    'providecommand',
-    'declarerobustcommand',
-    'csname',
-    'endcsname',
-    'expandafter',
-    'scantokens',
-    'everyeof',
-    'everypar',
-    'everyjob',
-    'output',
-    'shipout',
-    'special',
-    'directlua',
-    'latelua',
-    'luaexec',
-    'luadirect',
-    'usepackage',
-    'requirepackage',
-    'documentclass',
-    'shellescape',
-    'pdfshellescape',
-    'outer',
-    'uppercase',
-    'lowercase',
-    'detokenize',
-    'unexpanded',
-    'begingroup',
-    'aftergroup',
-    'afterassignment',
-    'globaldefs',
-  ].map((m) => m.toLowerCase()),
-);
-
-/**
- * Makes a publisher-supplied BibTeX value safe to typeset: dangerous control
- * sequences lose their backslash (`\input{x}` → `\textbackslash{}input{x}`) and
- * `^^` (TeX's way of writing any character, such as `^^5c` for a backslash) is
- * escaped. Accents and formatting (`\"o`, `\textit{…}`, `$x^2$`) are kept.
- */
-export function sanitizeTexValue(value: string): string {
-  return value
-    .replace(/\^\^/g, '\\textasciicircum{}\\textasciicircum{}')
-    .replace(/\\([A-Za-z@]+)/g, (whole, name: string) =>
-      DANGEROUS_MACROS.has(name.toLowerCase()) ? `\\textbackslash{}${name}` : whole,
-    );
-}
-
-/**
  * Normalizes BibTeX served by doi.org: one entry, cleaned fields (`–` → `--`
- * in pages, publisher URL kept, noise like ISSN dropped, dangerous TeX
- * neutralized by `sanitizeTexValue`), generated key.
+ * in pages, publisher URL kept, noise like ISSN dropped), generated key.
  */
 export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry | null {
   const [parsed] = parseBib(bibtex);
@@ -241,8 +163,7 @@ export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry 
   const fields: Record<string, string> = {};
   for (const [name, value] of Object.entries(parsed.fields)) {
     if (DROP_FIELDS.has(name)) continue;
-    const clean = sanitizeTexValue(value);
-    fields[name] = name === 'pages' ? clean.replace(/\s*[–—-]+\s*/g, '--') : clean;
+    fields[name] = name === 'pages' ? value.replace(/\s*[–—-]+\s*/g, '--') : value;
   }
   fields.doi = doi;
   if (fields.url && /doi\.org\//i.test(fields.url)) delete fields.url;

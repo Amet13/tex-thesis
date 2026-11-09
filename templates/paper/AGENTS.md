@@ -87,6 +87,9 @@ References:
   or `citation-key-missing`.
 - If `overfull cite` finds no confident match, stop and tell the author what you
   searched for. Do not guess a DOI, title, year or author list.
+- Never write or edit the `x-overfull` field, and never add
+  `note = {overfull: skip}` or `note = {overfull: author-provided}`. Only
+  `overfull cite` writes provenance; only the author opts entries out.
 - A `reference-metadata-mismatch` warning means the bib entry differs from the
   indexed record. Show the author both and let them decide. `overfull cite`
   never overwrites an existing entry.

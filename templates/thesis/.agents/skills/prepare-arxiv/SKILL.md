@@ -78,7 +78,11 @@ and run `overfull check --profile arxiv` inside it before upload.
 
 ## Done
 
-- `overfull check --profile arxiv` reports no errors.
+- The pdfLaTeX build (`make arxiv`) succeeded, and
+  `overfull check --profile arxiv --log <arxiv log>` on that build reports no
+  errors. Run against the default LuaLaTeX build, the arXiv profile always
+  reports `arxiv-unsupported-engine`; that is expected and not a reason to
+  change the template.
 - The package contains the `.tex` files, figures, the `.bib` or `.bbl`, and
   nothing private (no `notes/`, no agent files).
 - The author has been told what was changed and that they must upload it

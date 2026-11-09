@@ -42,19 +42,6 @@ function cleanRoot(root: string): string {
   return r;
 }
 
-/** True when `p` lies under `root`; Windows drive letters compare case-insensitively. */
-function underRoot(p: string, root: string): boolean {
-  if (p.startsWith(`${root}/`)) return true;
-  const drive = /^[A-Za-z]:\//;
-  return (
-    drive.test(root) &&
-    drive.test(p) &&
-    p.length > root.length &&
-    p[root.length] === '/' &&
-    p.slice(0, root.length).toLowerCase() === root.toLowerCase()
-  );
-}
-
 /**
  * Makes a path as printed in a log project-relative with forward slashes:
  * strips `./`, strips `root` when the path lies under it, and reduces files of
@@ -64,7 +51,7 @@ export function normalizePath(path: string, root?: string): string {
   let p = path.trim().replace(/\\/g, '/');
   if (p.startsWith('"') && p.endsWith('"') && p.length >= 2) p = p.slice(1, -1);
   const r = root ? cleanRoot(root) : '';
-  if (r && underRoot(p, r)) p = p.slice(r.length + 1);
+  if (r && p.startsWith(`${r}/`)) p = p.slice(r.length + 1);
   else if (DISTRIBUTION_DIR.test(p)) return basename(p);
   p = p.replace(/\/{2,}/g, '/').replace(/\/(?:\.\/)+/g, '/');
   while (p.startsWith('./')) p = p.slice(2);

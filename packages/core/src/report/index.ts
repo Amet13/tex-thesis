@@ -7,11 +7,4 @@ export {
 export { formatHuman, type HumanOptions } from './human.js';
 export { formatJson } from './json.js';
 export { escapeMarkdown, formatMarkdown } from './markdown.js';
-export {
-  formatLocation,
-  neutralizeWorkflowCommands,
-  oneLine,
-  RUNNER_WHITESPACE,
-  safeLines,
-  sortedProblems,
-} from './shared.js';
+export { formatLocation, sortedProblems } from './shared.js';

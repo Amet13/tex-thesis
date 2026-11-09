@@ -52,24 +52,6 @@ export const refsRules: RuleInfo[] = [
     fix: 'Find the correct DOI for the cited title on the publisher page, or re-add the entry with `overfull cite "<title>"`. Do not re-add it from this DOI: that would cite the unrelated paper.',
   },
   {
-    id: 'reference-arxiv-wrong-work',
-    check: 'references',
-    severity: 'error',
-    title: 'arXiv id points to a different work',
-    summary:
-      'The entry’s arXiv id exists, but arXiv has a paper with a different title or authors under it. Readers who follow the id land on an unrelated work.',
-    fix: 'Find the correct arXiv id for the cited title on arxiv.org, or re-add the entry with `overfull cite "<title>"`. Do not re-add it from this id: that would cite the unrelated paper.',
-  },
-  {
-    id: 'bib-outside-project',
-    check: 'references',
-    severity: 'warning',
-    title: 'Bibliography outside the project not checked',
-    summary:
-      'The document names a .bib file outside the project directory (for example `\\bibliography{../shared/refs}`). Overfull only reads files inside the project, so the references in it were not checked.',
-    fix: 'Pass the file explicitly with `--bib` (or `bib:` in overfull.yml) from a project that contains it, or move it into the project.',
-  },
-  {
     id: 'reference-unverifiable',
     check: 'references',
     severity: 'info',
@@ -93,7 +75,7 @@ export const refsRules: RuleInfo[] = [
     severity: 'error',
     title: 'Reference neither verified nor added with overfull cite',
     summary:
-      'With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite`: it carries `x-overfull = {cite …}` and a DOI, eprint or URL. The marker is a convenience, not proof; a hand-written entry that no index confirms may not exist.',
+      'With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite` (it carries `x-overfull = {cite …}`). A hand-written entry that no index confirms may not exist.',
     fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
   },
   {
@@ -160,7 +142,7 @@ function unprovenProblem(r: RefResult, entry?: BibEntry): Problem {
     severity: 'error',
     message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
     ...(location ? { location } : {}),
-    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ''}. The entry has no \`x-overfull = {cite …}\` field with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
+    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ''}. The entry has no \`x-overfull = {cite …}\` field, so nothing shows it came from real metadata.`,
     fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
     ...(entry?.raw ? { evidence: entry.raw } : {}),
     data: { key: r.key, status: r.status },
@@ -192,20 +174,6 @@ function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
         fix: `Check the DOI and title against the publisher page, or re-add it from real metadata with \`${citeHint(r, entry)}\`. If it is real but unindexed, add \`note = {overfull: skip}\`.`,
       };
     case 'mismatch': {
-      if (r.wrongWork?.field === 'eprint') {
-        const others = (r.differences ?? [])
-          .filter((d) => d.field !== 'eprint')
-          .map((d) => `${d.field}: bib “${d.bib}”, record “${d.record}”`);
-        return {
-          ...common,
-          ...evidence,
-          rule: 'reference-arxiv-wrong-work',
-          severity: 'error',
-          message: `\`${r.key}\`: the arXiv id ${r.wrongWork.id} points to a different paper, “${r.wrongWork.title}”`,
-          detail: [`arXiv has “${r.wrongWork.title}” as ${r.wrongWork.id}, not the cited work`, ...others].join('; '),
-          fix: `Find the correct arXiv id for the cited title, or re-add the entry with \`${citeHint(r, entry)}\`. Do not re-add it from this id: that would cite the unrelated paper.`,
-        };
-      }
       if (r.wrongWork) {
         const others = (r.differences ?? [])
           .filter((d) => d.field !== 'doi')

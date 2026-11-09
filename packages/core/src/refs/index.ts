@@ -12,7 +12,6 @@ export {
   markCited,
   PROVENANCE_FIELD,
   provenanceOf,
-  sanitizeTexValue,
 } from './entry.js';
 export { type EntryKind, entryKind, identifiersOf } from './kind.js';
 export {

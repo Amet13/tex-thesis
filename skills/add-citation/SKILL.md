@@ -84,7 +84,8 @@ author can add those entries by hand. Check reports them as
 
 ## Pitfalls
 
-- Do not add `note = {overfull: skip}` or `references.ignore` to silence a
-  failing entry. Only the author decides to opt an entry out.
+- Do not add `note = {overfull: skip}`, `note = {overfull: author-provided}`,
+  `references.ignore`, or an `x-overfull` field by hand. Only the author opts an
+  entry out or marks it as provided; only `overfull cite` writes `x-overfull`.
 - Do not cite a paper to support a claim you have not seen in `notes/` or from
   the author. A real reference attached to the wrong claim is still wrong.

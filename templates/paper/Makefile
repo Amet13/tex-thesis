@@ -7,7 +7,7 @@
 # Run `make help` for all targets.
 
 JOB    ?= $(shell sed -n 's/^jobname: *\([^ #]*\).*/\1/p' overfull.yml)
-IMAGE  ?= ghcr.io/amet13/overfull:0.1
+IMAGE  ?= $(or $(OVERFULL_IMAGE),ghcr.io/amet13/overfull:3)
 BASE   ?= origin/main
 PAGES  ?= 1-3
 
