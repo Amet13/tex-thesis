@@ -48,7 +48,7 @@ const templates: Tpl[] = [
       'Same `Makefile`, agent instructions and reference workflow as the other templates',
     ],
     checks:
-      'Build, output and references checks run in CI. Tagged Beamer output is still experimental in TeX Live 2026.',
+      'Build, output and references checks run in CI. Beamer slides cannot be tagged yet, so the accessibility check is left out; share the tagged thesis or paper PDF alongside.',
   },
 ];
 const previews = Object.fromEntries(
@@ -68,20 +68,24 @@ const md = (s: string) =>
     .replace(/</g, '&lt;')
     .replace(/`([^`]+)`/g, '<code>$1</code>');
 ---
-<Base title="Templates" description="Thesis, paper and slides templates for LaTeX: accessible by default, ready for coding agents, checked by Overfull in CI." section="templates">
+<Base title="LaTeX thesis, paper and slides templates" description="Free MIT-0 LaTeX templates for a thesis, a paper and Beamer slides. Thesis and paper produce tagged PDF/UA-2; all three ship agent instructions, a Makefile and a CI workflow." section="templates">
   <div class="tpl-page">
     <p class="runhead"><span>Templates</span></p>
     <div class="galley">
       <aside class="marginal"><p>Licensed MIT-0. Copy a template, change anything, owe nothing, no attribution needed.</p></aside>
       <h1>Templates</h1>
-      <p class="lede">Three starting points that already pass the preflight. All use LuaLaTeX, biblatex and TeX Live 2026, keep figures reproducible from data in <code>figures/data/</code>, and build in Docker if you have no TeX installed.</p>
+      <p class="lede">Three starting points that build without errors. All use LuaLaTeX, biblatex and TeX Live 2026, keep figures reproducible from data in <code>figures/data/</code>, and build in Docker if you have no TeX installed. The thesis and paper are tagged PDF/UA-2; Beamer slides cannot be tagged yet. A fresh paper warns until you write its AI-use statement.</p>
+      <p class="tpl-pre"><span class="mark">Pre-release.</span> Until v3.0.0, run <code>init</code> from a clone: <code>node packages/cli/dist/bin.js init &lt;template&gt; &lt;dir&gt;</code>. See <a href={url('docs/install/')}>Install</a>.</p>
     </div>
 
     {templates.map((t) => (
       <section class="tpl" id={t.id} aria-labelledby={`t-${t.id}`}>
         <div class="tpl-preview">
           {previews[t.id] ? (
-            <img class="page-preview" src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF`} width="425" height={t.id === 'slides' ? 239 : 601} loading="lazy" />
+            <a class="preview-link" href={url(`previews/${t.id}-full.png`)} aria-label={`First page of the ${t.name.toLowerCase()} template, full size`}>
+              <img class="page-preview" src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF`} width="640" height={t.id === 'slides' ? 361 : 906} loading="lazy" decoding="async" />
+              <span class="preview-hint" aria-hidden="true">Open full page</span>
+            </a>
           ) : (
             <div class={`mock mock-${t.id}`} role="img" aria-label={`Sketch of the first page of the ${t.name.toLowerCase()} template`}>
               {t.id === 'slides' ? (
@@ -124,7 +128,7 @@ const md = (s: string) =>
           </ul>
           <p class="tpl-checks">{t.checks}</p>
           <h3>Start</h3>
-          <div class="cmd" tabindex="0"><span class="p">$ </span>npx overfull init {t.id} my-{t.id}</div>
+          <div class="cmd" tabindex="0"><span class="p">$ </span>overfull init {t.id} my-{t.id}</div>
           <p class="tpl-links">
             <a class="caret-link" href={`${REPO_URL}/tree/main/templates/${t.id}`}>Browse the files on GitHub</a>
             {!present[t.id] && <span class="soon">(publishing soon)</span>}
@@ -152,7 +156,7 @@ const md = (s: string) =>
   }
   @media (min-width: 820px) {
     .tpl {
-      grid-template-columns: minmax(0, 17rem) minmax(0, var(--measure));
+      grid-template-columns: minmax(0, 22rem) minmax(0, var(--measure));
     }
   }
   .tpl h2 {
@@ -193,10 +197,37 @@ const md = (s: string) =>
     margin-left: 0.5rem;
   }
   .tpl-preview img {
+    display: block;
     width: 100%;
     height: auto;
     border: 1px solid var(--hair-strong);
     background: white;
+    box-shadow: 6px 6px 0 -1px var(--paper-2), 6px 6px 0 0 var(--hair);
+  }
+  .preview-link {
+    display: block;
+    text-decoration: none;
+    max-width: 26rem;
+  }
+  .preview-link:hover img {
+    border-color: var(--ink);
+  }
+  .preview-hint {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-size: var(--s-1);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--pencil);
+  }
+  .tpl-pre {
+    font-size: var(--s-1);
+    color: var(--ink-2);
+  }
+  .tpl-pre .mark {
+    color: var(--pencil);
+    font-weight: 600;
   }
   /* A typeset-looking first page, drawn in CSS */
   .mock {
