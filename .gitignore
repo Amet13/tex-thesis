@@ -40,3 +40,6 @@ dist/
 coverage/
 .overfull/cache/
 *.tsbuildinfo
+
+# Standalone CLI build output
+dist-standalone/

@@ -172,6 +172,9 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.2
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       markdownlint-cli2:
         specifier: 0.24.0
         version: 0.24.0

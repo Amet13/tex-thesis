@@ -15,7 +15,8 @@
       "!**/test/fixtures/**/*.json",
       "!**/*.yml",
       "!**/*.yaml",
-      "!corpus/**/*.svg"
+      "!corpus/**/*.svg",
+      "!dist-standalone"
     ]
   },
   "formatter": {
