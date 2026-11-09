@@ -74,7 +74,7 @@ export const venueRules: RuleInfo[] = [
     title: 'AI-use disclosure missing',
     summary:
       'The venue asks authors to state whether and how generative AI tools were used; no such statement was found.',
-    fix: 'Add a short section, e.g. `\\section*{Use of Generative AI}\\label{overfull:disclosure}`, saying which tools were used and for what.',
+    fix: 'Add a short section, e.g. `\\section*{Use of Generative AI}\\label{overfull:disclosure}`. The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used.',
   },
   {
     id: 'disclosure-placeholder',
@@ -83,7 +83,7 @@ export const venueRules: RuleInfo[] = [
     title: 'AI-use disclosure is a placeholder',
     summary:
       'The disclosure section exists but still holds placeholder text or almost nothing. Submitting it as is misstates how the paper was written.',
-    fix: 'The author writes the statement: which tools, for what, and that the authors checked the output. If no AI tools were used, say so.',
+    fix: 'The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used.',
   },
   {
     id: 'arxiv-absolute-path',

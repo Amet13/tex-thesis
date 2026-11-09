@@ -89,7 +89,7 @@ export function disclosureProblems(level: Level | undefined, ctx: VenueContext):
           level === 'required'
             ? 'No AI-use disclosure statement found (required by this venue)'
             : 'No AI-use disclosure statement found (many venues now ask for one)',
-        fix: 'Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}` stating which tools were used and how',
+        fix: 'Add a short section such as `\\section*{Use of Generative AI}\\label{overfull:disclosure}`. The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used.',
       },
     ];
   }
@@ -104,7 +104,7 @@ export function disclosureProblems(level: Level | undefined, ctx: VenueContext):
       message: 'The AI-use disclosure is still a placeholder or nearly empty',
       location: { file: found.file, line: found.line },
       detail: `The section reads: "${found.body.slice(0, 120)}${found.body.length > 120 ? '…' : ''}"`,
-      fix: 'The author writes the statement: which AI tools were used, for what, and that the authors checked the output. If none were used, say so',
+      fix: 'The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used.',
     },
   ];
 }

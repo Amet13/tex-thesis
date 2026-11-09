@@ -9,6 +9,8 @@ references:
   # Your e-mail lets CrossRef/OpenAlex put you in their faster "polite pool".
   # mailto: you@example.org
   ignore: []
+  # Every entry must come from `overfull cite` (it adds x-overfull = {cite ...}).
+  requireCite: true
 venue:
   # Page limit for the main matter (up to \label{overfull:main-end}).
   # pageLimit: { max: 80, endLabel: overfull:main-end }

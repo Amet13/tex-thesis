@@ -23,8 +23,9 @@
 # Build outputs (CI uploads them as artifacts)
 *.pdf
 
-# Overfull cache (reference lookups)
+# Overfull working files (diff builds, rendered pages); latexdiff output
 .overfull/
+*-diff[0-9a-f]*.tex
 
 # Editors / OS
 .DS_Store
