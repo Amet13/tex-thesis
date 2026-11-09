@@ -73,9 +73,22 @@ your local image.
 
 The release adds two ways in that need no clone:
 
-- the Docker image `ghcr.io/amet13/overfull:3`, which contains TeX Live, veraPDF
-  and the `overfull` command, so Docker is all you install;
-- a single-file `overfull` download from GitHub Releases.
+- the Docker image `ghcr.io/amet13/overfull:3` (linux/amd64 and linux/arm64),
+  which contains TeX Live, veraPDF and the `overfull` command, so Docker is all
+  you install;
+- a single-file `overfull` download from
+  [GitHub Releases](https://github.com/amet13/overfull/releases): native
+  executables `overfull-linux-x64`, `overfull-linux-arm64`,
+  `overfull-darwin-arm64`, `overfull-win-x64.exe`, or `overfull.cjs` for any OS
+  with Node.js 22.12+. There is no npm package.
+
+```bash
+curl -fLo overfull https://github.com/amet13/overfull/releases/latest/download/overfull-linux-x64
+chmod +x overfull && sudo mv overfull /usr/local/bin/
+gh attestation verify /usr/local/bin/overfull --repo amet13/overfull   # optional: check provenance
+```
+
+Each release also lists `SHA256SUMS` and the template PDFs.
 
 ```bash
 overfull init paper my-paper     # or click "Use this template" on a template repo
