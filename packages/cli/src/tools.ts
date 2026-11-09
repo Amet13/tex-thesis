@@ -37,6 +37,11 @@ export interface RunOptions {
   timeoutMs?: number;
   /** Called with each output line (stdout and stderr) as it arrives. */
   onLine?: (line: string) => void;
+  /**
+   * Run through the platform shell. Only for known Windows batch wrappers
+   * (`verapdf.bat`) with fixed, quoted arguments; never for user input.
+   */
+  shell?: boolean;
 }
 
 /** Runs a command without a shell, capturing output. Never throws. */
@@ -49,6 +54,7 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): Promise
       cwd: opts.cwd,
       env: opts.env as NodeJS.ProcessEnv | undefined,
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: opts.shell === true,
     });
     const timer = opts.timeoutMs
       ? setTimeout(() => child.kill('SIGTERM'), opts.timeoutMs)
@@ -85,6 +91,38 @@ export async function dockerAvailable(env?: Record<string, string | undefined>):
   if (!which('docker', env)) return false;
   const r = await run('docker', ['info', '--format', '{{.ServerVersion}}'], { timeoutMs: 8000 });
   return r.code === 0;
+}
+
+/** Quotes an argument for cmd.exe (used only with `shell: true` on Windows). */
+export function quoteWindowsArg(arg: string): string {
+  if (/["%!^&|<>\r\n]/.test(arg)) throw new Error(`Unsupported character in argument: ${arg}`);
+  return /[\s]/.test(arg) || arg === '' ? `"${arg}"` : arg;
+}
+
+/** True when docker's stderr says the image cannot be pulled (not published, no access). */
+export function imageUnavailable(stderr: string): boolean {
+  return /manifest unknown|not found|denied|pull access|repository does not exist|unauthorized/i.test(
+    stderr,
+  );
+}
+
+export function imageUnavailableMessage(image: string): string {
+  return (
+    `The image ${image} is not available. Build it locally with ` +
+    '`docker build -f docker/Dockerfile -t overfull:dev .` from the Overfull repo and set ' +
+    'OVERFULL_IMAGE=overfull:dev, or pass --image.'
+  );
+}
+
+/** Whether an image is present locally, pullable (registry answers), or unavailable. */
+export async function dockerImageStatus(
+  image: string,
+): Promise<'local' | 'remote' | 'unavailable' | 'unknown'> {
+  if (await dockerImagePresent(image)) return 'local';
+  const r = await run('docker', ['manifest', 'inspect', image], { timeoutMs: 5000 });
+  if (r.code === 0) return 'remote';
+  if (r.code === 124 || r.error) return 'unknown';
+  return imageUnavailable(r.stderr) ? 'unavailable' : 'unknown';
 }
 
 export async function dockerImagePresent(image: string): Promise<boolean> {
