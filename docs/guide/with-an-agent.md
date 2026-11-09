@@ -16,6 +16,9 @@ agent tools for those facts and a clear definition of done.
 | --- | --- |
 | `AGENTS.md` | The rules: layout, build command, the check loop, hard rules on references and content. |
 | `CLAUDE.md` | One line, `@AGENTS.md`, so Claude Code reads the same rules. |
+| `GEMINI.md` | `@AGENTS.md` for Gemini CLI. |
+| `.github/copilot-instructions.md` | A short pointer to `AGENTS.md` for GitHub Copilot. |
+| `.cursor/rules/overfull.mdc` | An always-on Cursor rule pointing to `AGENTS.md`. |
 | `.agents/skills/` | Task instructions in the [Agent Skills](https://agentskills.io) format, one folder per task. |
 | `.claude/skills/` | A symlink to `.agents/skills/` for Claude Code. |
 | `overfull.yml` | Project facts: main file, bibliography, profile, venue rules. |
@@ -37,18 +40,17 @@ from `.claude/skills/`. Start it in the project folder with `claude`.
 
 **Codex** (CLI, IDE extension and cloud) reads `AGENTS.md` at the repository root.
 
-**Cursor** reads `AGENTS.md` as project rules.
+**Cursor** reads `AGENTS.md` and the always-on rule in `.cursor/rules/overfull.mdc`.
 
-**GitHub Copilot** coding agent and Copilot in VS Code read `AGENTS.md`. For the
+**GitHub Copilot** coding agent and Copilot in VS Code read `AGENTS.md` and
+`.github/copilot-instructions.md`. For the
 cloud coding agent, make sure the environment can run Docker or install the
 CLI; see GitHub's documentation on customizing the agent environment.
 
-**Gemini CLI** reads `GEMINI.md` by default. Point it at `AGENTS.md` in
-`.gemini/settings.json`:
+**Gemini CLI** reads `GEMINI.md`, which imports `AGENTS.md`.
 
-```json
-{ "context": { "fileName": ["AGENTS.md", "GEMINI.md"] } }
-```
+Other agents (Windsurf, Cline, Zed, Aider and more) read `AGENTS.md` or can be
+told to; every instruction they need is in that file and in plain-Markdown skills.
 
 Agents that support Agent Skills find them in `.agents/skills/` or
 `.claude/skills/`, depending on the tool. Agents that do not can still follow

@@ -1,5 +1,12 @@
 name: release
 
+# Tag vX.Y.Z → GitHub release with:
+#   - overfull.cjs                      single-file CLI, runs with Node ≥ 22 on any OS
+#   - overfull-<os>-<arch>[.exe]        native executables (Node single executable)
+#   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
+#   - SHA256SUMS                        checksums, plus build provenance attestations
+# The Docker image is published by image.yml on the same tag.
+
 on:
   push:
     tags: ["v*"]
@@ -25,13 +32,62 @@ jobs:
           tags: overfull:release
           cache-from: type=gha
       - run: bash scripts/e2e-templates.sh overfull:release out
+      - name: Collect PDFs
+        run: |
+          mkdir -p assets
+          cp out/thesis/thesis.pdf out/paper/paper.pdf out/slides/slides.pdf assets/
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: template-pdfs
-          path: out/*/*.pdf
+          name: assets-pdfs
+          path: assets/*
+
+  cli:
+    name: CLI (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, target: linux-x64 }
+          - { os: ubuntu-24.04-arm, target: linux-arm64 }
+          - { os: macos-15, target: darwin-arm64 }
+          - { os: windows-2025, target: win-x64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/build-standalone.mjs --sea
+      - name: Smoke test
+        shell: bash
+        run: |
+          exe=dist-standalone/overfull; [ -f "$exe.exe" ] && exe="$exe.exe"
+          "$exe" --version
+          "$exe" explain undefined-control-sequence > /dev/null
+          node dist-standalone/overfull.cjs --version
+      - name: Name assets
+        shell: bash
+        run: |
+          mkdir -p assets
+          if [ -f dist-standalone/overfull.exe ]; then
+            cp dist-standalone/overfull.exe "assets/overfull-${{ matrix.target }}.exe"
+          else
+            cp dist-standalone/overfull "assets/overfull-${{ matrix.target }}"
+          fi
+          if [ "${{ matrix.target }}" = linux-x64 ]; then cp dist-standalone/overfull.cjs assets/; fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: assets-cli-${{ matrix.target }}
+          path: assets/*
 
   github-release:
-    needs: pdfs
+    needs: [pdfs, cli]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -39,14 +95,18 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: template-pdfs
-          path: out
+          pattern: assets-*
+          merge-multiple: true
+          path: assets
+      - name: Checksums
+        working-directory: assets
+        run: sha256sum * > SHA256SUMS
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: out/*/*.pdf
+          subject-path: assets/*
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           generate_release_notes: true
-          files: out/*/*.pdf
+          files: assets/*

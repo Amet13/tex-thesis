@@ -2,8 +2,9 @@
 // Sync agent files into every template (no dependencies).
 //
 //   skills/<name>/            -> templates/<t>/.agents/skills/<name>/
-//   shared/agents/AGENTS.md   -> templates/<t>/AGENTS.md
-//   shared/agents/CLAUDE.md   -> templates/<t>/CLAUDE.md
+//   shared/agents/**          -> templates/<t>/** (AGENTS.md plus the small pointer files
+//                                each harness reads: CLAUDE.md, GEMINI.md,
+//                                .github/copilot-instructions.md, .cursor/rules/overfull.mdc)
 //   templates/<t>/.claude/skills -> ../.agents/skills   (relative symlink)
 //
 // Usage:
@@ -108,11 +109,8 @@ const skills = isDir(skillsDir)
   : [];
 if (skills.length === 0) warn('no skills found in skills/*/SKILL.md; skipping skills');
 
-const agentFiles = ['AGENTS.md', 'CLAUDE.md'].filter((f) => {
-  const ok = existsSync(join(agentsDir, f));
-  if (!ok) warn(`shared/agents/${f} not found; skipping it`);
-  return ok;
-});
+const agentFiles = listFiles(agentsDir);
+if (!agentFiles.includes('AGENTS.md')) warn('shared/agents/AGENTS.md not found');
 
 for (const t of templates) {
   const tdir = join(templatesDir, t);

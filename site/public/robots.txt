@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://amet13.github.io/overfull/sitemap-index.xml
