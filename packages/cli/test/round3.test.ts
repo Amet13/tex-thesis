@@ -22,6 +22,9 @@ import { insideRootForWrite, isCI, neutralizingWriter, stopCommands } from '../s
 import { bindMount, dockerToolArgs, which } from '../src/tools.js';
 import { memIo, tempCopy, tempDir } from './helpers.js';
 
+/** Shell-script fakes on PATH and FIFOs do not exist on Windows; these tests run on Linux and macOS. */
+const POSIX_ONLY = process.platform === 'win32';
+
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1' } });
 
@@ -165,36 +168,39 @@ describe('R13: one CI detector', () => {
 // --- R2: check never runs a project-chosen image ---------------------------------
 
 describe('R2: check ignores build.image and runs tools locked down', () => {
-  it('picks --image, then $OVERFULL_IMAGE, then the default; never overfull.yml', async () => {
-    expect(checkImage({ env: {} })).toBe(DEFAULT_IMAGE);
-    expect(checkImage({ env: { OVERFULL_IMAGE: 'overfull:dev' } })).toBe('overfull:dev');
-    expect(checkImage({ env: { OVERFULL_IMAGE: 'overfull:dev' }, image: 'x/y:1' })).toBe('x/y:1');
-    expect(() => checkImage({ env: {}, image: '--privileged' })).toThrow(/Invalid Docker image/);
+  it.skipIf(POSIX_ONLY)(
+    'picks --image, then $OVERFULL_IMAGE, then the default; never overfull.yml',
+    async () => {
+      expect(checkImage({ env: {} })).toBe(DEFAULT_IMAGE);
+      expect(checkImage({ env: { OVERFULL_IMAGE: 'overfull:dev' } })).toBe('overfull:dev');
+      expect(checkImage({ env: { OVERFULL_IMAGE: 'overfull:dev' }, image: 'x/y:1' })).toBe('x/y:1');
+      expect(() => checkImage({ env: {}, image: '--privileged' })).toThrow(/Invalid Docker image/);
 
-    const log = join(tempDir(), 'docker-args');
-    const bin = fakeBin({
-      docker: `echo "$@" >> ${log}\nif [ "$1" = info ]; then echo 27.0; fi\necho '{}'`,
-    });
-    process.env.PATH = `${bin}:${savedPath}`;
-    const dir = tempCopy('project');
-    writeFileSync(
-      join(dir, 'overfull.yml'),
-      `${readFileSync(join(dir, 'overfull.yml'), 'utf8')}build:\n  image: evil.example/pwn:latest\n`,
-    );
-    await runCheck({
-      cwd: dir,
-      checks: ['accessibility'],
-      engine: 'docker',
-      env: { PATH: bin },
-    });
-    const calls = readFileSync(log, 'utf8');
-    expect(calls).not.toContain('evil.example');
-    const verapdf = calls.split('\n').find((l) => l.includes('--entrypoint verapdf')) ?? '';
-    expect(verapdf).toContain(DEFAULT_IMAGE);
-    expect(verapdf).toContain('--network none');
-    expect(verapdf).toMatch(/--mount type=bind,source=[^ ]+,target=\/work,readonly/);
-    expect(verapdf).toMatch(/--user \d+:\d+/);
-  });
+      const log = join(tempDir(), 'docker-args');
+      const bin = fakeBin({
+        docker: `echo "$@" >> ${log}\nif [ "$1" = info ]; then echo 27.0; fi\necho '{}'`,
+      });
+      process.env.PATH = `${bin}:${savedPath}`;
+      const dir = tempCopy('project');
+      writeFileSync(
+        join(dir, 'overfull.yml'),
+        `${readFileSync(join(dir, 'overfull.yml'), 'utf8')}build:\n  image: evil.example/pwn:latest\n`,
+      );
+      await runCheck({
+        cwd: dir,
+        checks: ['accessibility'],
+        engine: 'docker',
+        env: { PATH: bin },
+      });
+      const calls = readFileSync(log, 'utf8');
+      expect(calls).not.toContain('evil.example');
+      const verapdf = calls.split('\n').find((l) => l.includes('--entrypoint verapdf')) ?? '';
+      expect(verapdf).toContain(DEFAULT_IMAGE);
+      expect(verapdf).toContain('--network none');
+      expect(verapdf).toMatch(/--mount type=bind,source=[^ ]+,target=\/work,readonly/);
+      expect(verapdf).toMatch(/--user \d+:\d+/);
+    },
+  );
 
   it('dockerToolArgs puts the entrypoint before the image', () => {
     const args = dockerToolArgs('img:1', '/p', 'pdffonts', ['./a.pdf']);
@@ -332,7 +338,7 @@ describe('R5: write paths through symlinks', () => {
     expect(existsSync(join(outside, 'x'))).toBe(false);
   });
 
-  it('diff --out refuses a symlinked directory', async () => {
+  it.skipIf(POSIX_ONLY)('diff --out refuses a symlinked directory', async () => {
     const { dir } = project();
     expect(() => insideRootForWrite(dir, 'link/diff.pdf', 'Output PDF')).toThrow(/symlink/);
   });
@@ -462,7 +468,7 @@ describe('R12: Windows batch wrappers and paths', () => {
 // --- R14: odd files ---------------------------------------------------------------
 
 describe('R14: non-regular and huge files', () => {
-  it('skips FIFOs and files over 20 MB when reading sources', () => {
+  it.skipIf(POSIX_ONLY)('skips FIFOs and files over 20 MB when reading sources', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'main.tex'), 'x');
     execFileSync('mkfifo', [join(dir, 'pipe.tex')]);
@@ -474,17 +480,20 @@ describe('R14: non-regular and huge files', () => {
     expect(skipped.map((s) => s.path)).toEqual(['big.tex', 'pipe.tex']);
   });
 
-  it('check reports skipped sources as info and does not hang on a FIFO', async () => {
-    const dir = tempCopy('project');
-    execFileSync('mkfifo', [join(dir, 'pipe.tex')]);
-    const report = await runCheck({
-      cwd: dir,
-      checks: ['venue'],
-      verapdf: false,
-      env: { PATH: process.env.PATH },
-    });
-    expect(rules(report)).toContain('tex-file-skipped');
-  });
+  it.skipIf(POSIX_ONLY)(
+    'check reports skipped sources as info and does not hang on a FIFO',
+    async () => {
+      const dir = tempCopy('project');
+      execFileSync('mkfifo', [join(dir, 'pipe.tex')]);
+      const report = await runCheck({
+        cwd: dir,
+        checks: ['venue'],
+        verapdf: false,
+        env: { PATH: process.env.PATH },
+      });
+      expect(rules(report)).toContain('tex-file-skipped');
+    },
+  );
 
   it('a directory named like the log or PDF is a clean usage error', async () => {
     for (const name of ['thesis.log', 'thesis.pdf']) {

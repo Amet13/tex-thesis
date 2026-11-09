@@ -7,7 +7,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { Report } from '@overfull/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { readInputs } from '../../../action/src/inputs.js';
@@ -30,6 +30,9 @@ import {
 import { imageUnavailable, quoteWindowsArg } from '../src/tools.js';
 import { runVeraPdf, verapdfFlavour } from '../src/verapdf.js';
 import { memIo, tempCopy, tempDir } from './helpers.js';
+
+/** Shell-script fakes on PATH and FIFOs do not exist on Windows; these tests run on Linux and macOS. */
+const POSIX_ONLY = process.platform === 'win32';
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, {
@@ -150,9 +153,9 @@ describe('S2: workflow commands in printed text', () => {
 
   it('C8: the Action resolves working-directory with path.isAbsolute', () => {
     const rel = readInputs({ 'INPUT_WORKING-DIRECTORY': 'paper' }, '/ws');
-    expect(rel.check.cwd).toBe('/ws/paper');
+    expect(rel.check.cwd).toBe(resolve('/ws', 'paper'));
     const abs = readInputs({ 'INPUT_WORKING-DIRECTORY': '/abs/dir' }, '/ws');
-    expect(abs.check.cwd).toBe('/abs/dir');
+    expect(abs.check.cwd).toBe(resolve('/abs/dir'));
     expect(abs.check.engine).toBe('local');
   });
 });
@@ -162,11 +165,11 @@ describe('S3: reference cache location', () => {
     const env = { XDG_CACHE_HOME: '/xdg' };
     const a = refsCachePath('/p/one', 'user', env);
     const b = refsCachePath('/p/two', 'user', env);
-    expect(a.startsWith('/xdg/overfull/')).toBe(true);
+    expect(a.startsWith(join('/xdg', 'overfull'))).toBe(true);
     expect(a).not.toBe(b);
-    expect(userCacheDir({ HOME: '/home/u' }, 'linux')).toBe('/home/u/.cache/overfull');
+    expect(userCacheDir({ HOME: '/home/u' }, 'linux')).toBe(join('/home/u', '.cache', 'overfull'));
     expect(userCacheDir({ LOCALAPPDATA: 'C:\\L' }, 'win32')).toContain('overfull');
-    expect(refsCachePath('/p', 'project', env)).toBe('/p/.overfull/cache/refs.json');
+    expect(refsCachePath('/p', 'project', env)).toBe(join('/p', '.overfull', 'cache', 'refs.json'));
   });
 
   it('ignores a git-tracked project cache in CI', async () => {
@@ -239,7 +242,7 @@ describe('C1: veraPDF flavour follows the PDF/UA claim', () => {
     expect(verapdfFlavour(undefined)).toBe('ua2');
   });
 
-  it('runs ua1 for a PDF/UA-1 file, without a ua2 attempt', async () => {
+  it.skipIf(POSIX_ONLY)('runs ua1 for a PDF/UA-1 file, without a ua2 attempt', async () => {
     const log = join(tempDir(), 'args');
     const bin = fakeBin({
       verapdf: `echo "$@" >> ${log}\necho '{"report":{"jobs":[{"validationResult":[{"compliant":true,"details":{"ruleSummaries":[]}}]}]}}'`,
@@ -297,23 +300,26 @@ describe('C3: diff', () => {
     expect(isDiffArtifact('my-diffusion.tex')).toBe(false);
   });
 
-  it('reports a Docker failure (exit 125) instead of retrying latexdiff', async () => {
-    const bin = fakeBin({
-      docker: `if [ "$1" = info ]; then echo 27.0; exit 0; fi\necho "Unable to find image: manifest unknown" >&2\nexit 125`,
-    });
-    process.env.PATH = `${bin}:${savedPath}`;
-    const dir = tempDir();
-    git(dir, 'init', '-q', '-b', 'main');
-    writeFileSync(join(dir, 'main.tex'), '1');
-    git(dir, 'add', '-A');
-    git(dir, 'commit', '-qm', 'one');
-    writeFileSync(join(dir, 'main.tex'), '2');
-    git(dir, 'commit', '-qam', 'two');
-    const io = memIo(dir, { PATH: process.env.PATH });
-    expect(await main(['diff', '--engine', 'docker'], io)).toBe(2);
-    expect(io.stderrText()).toContain('is not available');
-    expect(io.stderrText()).not.toContain('retrying');
-  });
+  it.skipIf(POSIX_ONLY)(
+    'reports a Docker failure (exit 125) instead of retrying latexdiff',
+    async () => {
+      const bin = fakeBin({
+        docker: `if [ "$1" = info ]; then echo 27.0; exit 0; fi\necho "Unable to find image: manifest unknown" >&2\nexit 125`,
+      });
+      process.env.PATH = `${bin}:${savedPath}`;
+      const dir = tempDir();
+      git(dir, 'init', '-q', '-b', 'main');
+      writeFileSync(join(dir, 'main.tex'), '1');
+      git(dir, 'add', '-A');
+      git(dir, 'commit', '-qm', 'one');
+      writeFileSync(join(dir, 'main.tex'), '2');
+      git(dir, 'commit', '-qam', 'two');
+      const io = memIo(dir, { PATH: process.env.PATH });
+      expect(await main(['diff', '--engine', 'docker'], io)).toBe(2);
+      expect(io.stderrText()).toContain('is not available');
+      expect(io.stderrText()).not.toContain('retrying');
+    },
+  );
 });
 
 describe('C4: latexmk output directory', () => {
@@ -375,16 +381,19 @@ describe('C8 / H4 helpers', () => {
     expect(imageUnavailable('no space left on device')).toBe(false);
   });
 
-  it('doctor does not say "Ready to build" when the image is unavailable', async () => {
-    const bin = fakeBin({
-      docker: `case "$1" in info) echo 27.0; exit 0;; image) exit 1;; manifest) echo "manifest unknown" >&2; exit 1;; esac\nexit 1`,
-    });
-    process.env.PATH = `${bin}:/usr/bin:/bin`;
-    const io = memIo(tempDir(), { PATH: process.env.PATH });
-    await main(['doctor'], io);
-    expect(io.stdoutText()).toContain('is not available');
-    expect(io.stdoutText()).not.toContain('Ready to build');
-  });
+  it.skipIf(POSIX_ONLY)(
+    'doctor does not say "Ready to build" when the image is unavailable',
+    async () => {
+      const bin = fakeBin({
+        docker: `case "$1" in info) echo 27.0; exit 0;; image) exit 1;; manifest) echo "manifest unknown" >&2; exit 1;; esac\nexit 1`,
+      });
+      process.env.PATH = `${bin}:/usr/bin:/bin`;
+      const io = memIo(tempDir(), { PATH: process.env.PATH });
+      await main(['doctor'], io);
+      expect(io.stdoutText()).toContain('is not available');
+      expect(io.stdoutText()).not.toContain('Ready to build');
+    },
+  );
 });
 
 describe('H5: check --engine', () => {
@@ -393,7 +402,7 @@ describe('H5: check --engine', () => {
     expect(await main(['check', '--engine', 'podman'], io)).toBe(2);
   });
 
-  it('runs veraPDF in the image when it is not installed', async () => {
+  it.skipIf(POSIX_ONLY)('runs veraPDF in the image when it is not installed', async () => {
     const log = join(tempDir(), 'args');
     const bin = fakeBin({ docker: `echo "$@" >> ${log}\necho '{}'` });
     process.env.PATH = `${bin}:${savedPath}`;

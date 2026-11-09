@@ -10,6 +10,9 @@ import { loadConfig } from '../src/config.js';
 import { main } from '../src/main.js';
 import { memIo, tempCopy, tempDir } from './helpers.js';
 
+/** Shell-script fakes on PATH and FIFOs do not exist on Windows; these tests run on Linux and macOS. */
+const POSIX_ONLY = process.platform === 'win32';
+
 const savedPath = process.env.PATH;
 afterEach(() => {
   process.env.PATH = savedPath;
@@ -222,7 +225,7 @@ function upToDateProject(): string {
 }
 
 describe('A12: a no-change build does not run LaTeX', () => {
-  it('skips latexmk when the PDF is newer than every input', async () => {
+  it.skipIf(POSIX_ONLY)('skips latexmk when the PDF is newer than every input', async () => {
     const dir = upToDateProject();
     expect(upToDate(loadConfig(dir), 'main.tex')).toBe(true);
     const log = join(tempDir(), 'calls');
@@ -249,7 +252,7 @@ describe('A12: a no-change build does not run LaTeX', () => {
 });
 
 describe('A13: doctor exit code and veraPDF advice', () => {
-  it('doctor exits 1 and says so first when nothing can build', async () => {
+  it.skipIf(POSIX_ONLY)('doctor exits 1 and says so first when nothing can build', async () => {
     const bin = fakeBin({
       docker: `case "$1" in info) echo 27.0; exit 0;; image) exit 1;; manifest) echo "manifest unknown" >&2; exit 1;; esac\nexit 1`,
     });
