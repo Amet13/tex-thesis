@@ -6,8 +6,9 @@ description: Add a verified reference to the bibliography with `overfull cite` a
 # Add a citation
 
 References are the one place where a model's memory is most often wrong. Overfull
-looks the work up in CrossRef, doi.org, arXiv, DBLP and OpenAlex and writes the
-entry from the indexed record. You only choose where to cite it.
+looks the work up in CrossRef, doi.org, arXiv and DBLP (and OpenAlex when the
+`OPENALEX_API_KEY` environment variable is set) and writes the entry from the
+indexed record. You only choose where to cite it.
 
 ## Steps
 
@@ -58,18 +59,22 @@ details and do not write an entry yourself. Tell the author:
 - what you need: a DOI, an arXiv id, or the exact title.
 
 Books, websites, software, standards and datasets are often not indexed. The
-author can add those entries by hand. Check reports them as `unverifiable`
-(info), which is fine.
+author can add those entries by hand. Check reports them as
+`reference-unverifiable` (info), which is fine.
 
 ## Fixing problems check reports
 
-- `not-found` (error) on a scholarly entry: remove the `\cite` and tell the
-  author. Do not swap in a similar-sounding paper.
-- `mismatch` (warning): the entry differs from the record in year, authors or
-  title. Show the author both versions. If the author agrees, replace the
-  entry by running `overfull cite <doi> --key <same key>`.
-- Undefined citation in output: the key is not in the bib. Add it with
-  `overfull cite` or remove the `\cite`.
+- `reference-not-found` (error): remove the `\cite` and tell the author. Do not
+  swap in a similar-sounding paper.
+- `reference-metadata-mismatch` (warning): the entry differs from the record in
+  year, authors or title. Show the author both versions. `overfull cite` never
+  overwrites an entry (it prints the existing key and adds nothing). If the
+  author agrees to replace it, they remove the old entry (or you do, at their
+  request), then run `overfull cite <doi> --key <same key>`.
+- `reference-lookup-failed` (warning): a network problem, not evidence against the
+  entry. Rerun the check when online.
+- `citation-key-missing` (error) and `undefined-citation` (output error): the key
+  is not in the bib. Add it with `overfull cite` or remove the `\cite`.
 
 ## Done
 

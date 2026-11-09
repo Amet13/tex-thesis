@@ -35,7 +35,7 @@ checks exactly those things:
 | ------- | --------- |
 | **build** | TeX errors, grouped by root cause, explained in plain language |
 | **output** | `??` references, `[?]` citations, stale bibliography, text in the margin |
-| **references** | citations that don't exist (CrossRef, doi.org, DBLP, arXiv) or have wrong metadata |
+| **references** | citations that don't exist (CrossRef, doi.org, DBLP, arXiv; OpenAlex with `OPENALEX_API_KEY`) or have wrong metadata |
 | **accessibility** | untagged PDFs, missing alt text, language, title, fonts; veraPDF PDF/UA |
 | **venue** | page limits, paper size, double-blind anonymity, AI-use disclosure, arXiv rules |
 
@@ -95,7 +95,8 @@ PDF to every pull request.
 | [`paper`](templates/paper) | research papers and preprints | yes, tagged PDF/UA-2 |
 | [`slides`](templates/slides) | defense and conference talks (Beamer) | see template README |
 
-All templates use LuaLaTeX, biblatex and TeX Live 2026, keep figures
+All templates use LuaLaTeX, biblatex and TeX Live 2026 (the paper template also
+builds with pdfLaTeX for arXiv, with `make arxiv`), keep figures
 reproducible from data in `figures/data/`, and are licensed MIT-0: copy them,
 owe nothing.
 
@@ -103,13 +104,15 @@ owe nothing.
 
 ```text
 overfull init [thesis|paper|slides] [dir]   start from a template
-overfull build                              compile (local TeX or Docker)
-overfull check [--json|--markdown]          run the preflight
+overfull build [main.tex]                   compile (local TeX or Docker)
+overfull check [--json|--markdown]          run the preflight (also --checks, --profile,
+                                            --offline, --fail-on, --annotations, --no-verapdf)
 overfull cite <doi | arXiv:id | "title">    add a real reference to the .bib
+                                            (--author, --year, --key, --dry-run, --json)
 overfull pages <range>                      render pages to PNG (for you or an agent)
 overfull diff [--base ref]                  PDF with changes highlighted
-overfull explain <rule>                     what a rule means and how to fix it
-overfull doctor                             check your setup
+overfull explain <rule> | --list [--json]    what a rule means and how to fix it
+overfull doctor [--json]                    check your setup
 ```
 
 ## Repository

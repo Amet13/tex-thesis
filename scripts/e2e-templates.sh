@@ -13,6 +13,8 @@ if [ ${#templates[@]} -eq 0 ]; then
 fi
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# Extra `docker run` arguments, e.g. proxy settings: E2E_DOCKER_ARGS="-e HTTPS_PROXY=..."
+read -r -a extra <<< "${E2E_DOCKER_ARGS:-}"
 mkdir -p "$out"
 out="$(cd "$out" && pwd)"
 failed=()
@@ -22,7 +24,7 @@ for t in "${templates[@]}"; do
   rm -rf "$dir"
   cp -R "$root/templates/$t" "$dir"
   echo "::group::$t: build"
-  if ! docker run --rm -v "$dir:/work" -w /work "$image" overfull build; then
+  if ! docker run --rm "${extra[@]}" -v "$dir:/work" -w /work "$image" overfull build; then
     echo "::endgroup::"
     echo "✕ $t: build failed"
     failed+=("$t")
@@ -31,9 +33,9 @@ for t in "${templates[@]}"; do
   echo "::endgroup::"
   echo "::group::$t: check"
   set +e
-  docker run --rm -v "$dir:/work" -w /work "$image" overfull check --json --fail-on error > "$dir/overfull-report.json"
+  docker run --rm "${extra[@]}" -v "$dir:/work" -w /work "$image" overfull check --json --fail-on error > "$dir/overfull-report.json"
   status=$?
-  docker run --rm -v "$dir:/work" -w /work "$image" overfull check --fail-on never
+  docker run --rm "${extra[@]}" -v "$dir:/work" -w /work "$image" overfull check --fail-on never
   set -e
   echo "::endgroup::"
   if [ "$status" -ne 0 ]; then

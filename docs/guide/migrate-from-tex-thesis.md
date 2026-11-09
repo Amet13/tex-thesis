@@ -23,7 +23,7 @@ working. Releases up to v2.4.1 stay available.
 | `images/` | `figures/`, with plot data in `figures/data/` |
 | No PDF tagging | `\DocumentMetadata{… tagging=on}`: tagged, accessible PDF by default |
 | `make check` = `chktex` + `latexindent` check | `make check` = `overfull check` (build, output, references, accessibility, venue) |
-| No reference checking | Every cited entry is looked up in CrossRef, arXiv, DBLP, OpenAlex |
+| No reference checking | Every cited entry is looked up in CrossRef, doi.org, arXiv, DBLP (and OpenAlex with `OPENALEX_API_KEY`) |
 | GPLv3 code, CC BY-SA content | Templates are MIT-0, so your thesis carries no licence obligations |
 | (none) | `overfull.yml` project configuration |
 | (none) | `AGENTS.md`, `CLAUDE.md` and skills for AI agents |

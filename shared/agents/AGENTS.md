@@ -34,8 +34,10 @@ overfull build        # or: make build
   Docker image. Do not pass `--engine` unless the author asks.
 - Never install TeX packages or fonts globally. If a package is missing, use the
   Docker engine (`overfull build --engine docker`) or tell the author.
-- Never change the TeX engine (LuaLaTeX in the templates) or the document class
-  to make an error go away.
+- Do not change the TeX engine (LuaLaTeX in the templates) or the document class
+  to make an error go away, except via the documented arXiv path: the paper
+  template builds with pdfLaTeX for arXiv (`make arxiv` or `latexmk -pdf`),
+  because arXiv does not support LuaLaTeX. See `prepare-arxiv`.
 - `overfull doctor` reports what is installed and what is missing.
 
 ## The loop and the definition of done
@@ -70,7 +72,8 @@ The JSON is a `Report`:
 - `problems[]`: `rule` (stable id), `severity` (`error`, `warning`, `info`),
   `message`, `location` (`file`, `line`, `page`), `fix`, optional `detail`,
   `evidence`, `data`.
-- `overfull explain <rule>` prints what a rule means and how to fix it.
+- `overfull explain <rule>` prints what a rule means and how to fix it;
+  `overfull explain --list` lists every rule id.
 - Run a subset with `overfull check --json --checks build,output`.
 
 ## Hard rules
@@ -80,11 +83,15 @@ References:
 - Add references only with `overfull cite <doi | arXiv:id | "title">`. Never
   write or edit BibTeX from memory.
 - Never cite a key you did not add with `overfull cite` and the author did not
-  provide. Never cite a key that `check` reports as `not-found`.
+  provide. Never cite a key that `check` reports as `reference-not-found`
+  or `citation-key-missing`.
 - If `overfull cite` finds no confident match, stop and tell the author what you
   searched for. Do not guess a DOI, title, year or author list.
-- A `mismatch` warning means the bib entry differs from the indexed record.
-  Show the author both and let them decide.
+- A `reference-metadata-mismatch` warning means the bib entry differs from the
+  indexed record. Show the author both and let them decide. `overfull cite`
+  never overwrites an existing entry.
+- If `overfull cite` lists several candidates for a title, do not pick one. Use a
+  DOI, rerun with `--author` and `--year`, or ask the author.
 
 Content:
 

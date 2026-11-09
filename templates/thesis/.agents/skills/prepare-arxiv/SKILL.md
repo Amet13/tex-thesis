@@ -19,6 +19,15 @@ supported. Its rules change; check the help pages before each submission.
    overfull check --json --profile arxiv
    ```
 
+   In the paper template, also build the way arXiv does and check that build.
+   The `.eps` rule reads the log it is given:
+
+   ```sh
+   make arxiv     # latexmk -pdf -jobname=paper-arxiv
+   overfull check --json --profile arxiv --checks build,output,venue \
+     --log paper-arxiv.log --pdf paper-arxiv.pdf --aux paper-arxiv.aux
+   ```
+
 2. Fix each venue problem as below. Rebuild and recheck.
 3. Ask the author whether to strip comments (see below).
 4. Package the source for the author to upload. The author submits.
@@ -42,10 +51,14 @@ supported. Its rules change; check the help pages before each submission.
   the author agrees, or pre-render the output and include the result.
 - **Engine**: the templates use LuaLaTeX. arXiv's list of supported processors
   (<https://info.arxiv.org/help/faq/texlive.html>) has listed pdfLaTeX, LaTeX
-  and XeLaTeX, but not LuaLaTeX. Check the current list. Do not change the
-  engine yourself. Explain the options to the author: compile with XeLaTeX or
-  pdfLaTeX (fonts and some packages may differ, and tagging support differs),
-  or skip arXiv for this version. arXiv refuses PDFs produced from TeX
+  and XeLaTeX, but not LuaLaTeX. Check the current list. The paper template
+  already has the documented arXiv path: `make arxiv` (or `latexmk -pdf`) builds
+  with pdfLaTeX. Use it, and do not change the engine in any other way. arXiv
+  does not run biber, so upload the generated `.bbl`, renamed to match the main
+  file (`paper-arxiv.bbl` becomes `main.bbl`). The thesis and slides templates
+  have no pdfLaTeX build: explain the options to the author (adapt the
+  source for pdfLaTeX or XeLaTeX, where fonts, packages and tagging support
+  differ, or skip arXiv for this version). arXiv refuses PDFs produced from TeX
   source, so uploading the PDF is not an option.
 - **Extra files**: remove build output and unused files. Do not upload the PDF
   as the source when you have the LaTeX.

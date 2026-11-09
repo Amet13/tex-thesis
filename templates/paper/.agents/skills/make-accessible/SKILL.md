@@ -31,7 +31,8 @@ LuaLaTeX. Most fixes are about content the author must supply, not settings.
 - Language: `lang` in `\DocumentMetadata` must match the text (`en`, `de`, …).
   Mark passages in another language with the document's language package
   (for example babel's `\foreignlanguage`).
-- Do not change the engine or the PDF standard settings.
+- Do not change the engine (except via the arXiv path in `prepare-arxiv`) or the
+  PDF standard settings.
 
 ## Figures
 
@@ -58,13 +59,18 @@ see, and do not write placeholder text such as "image".
 The Docker image and the template workflow run veraPDF. Its failures appear in
 the accessibility check with the rule and, when known, the page. Common fixes:
 
-| Failure about | Likely fix |
+Overfull's own rules cover the basics; veraPDF failures have ids of the form
+`verapdf-<clause>` (run `overfull explain verapdf-<clause>`). With `--no-verapdf`,
+or without veraPDF installed, only the basics run (`verapdf-not-run`, info).
+
+| Failure (rule id) | Likely fix |
 | --- | --- |
-| Figure without alternate text | Add alt text to that figure. |
-| Missing or wrong language | Set `lang` in `\DocumentMetadata`. |
-| Missing title / DisplayDocTitle | Set the title in `metadata.tex`. |
-| Untagged content | A package that does not support tagging yet. Report the package to the author; do not remove tagging. |
-| Fonts not embedded | Usually an included PDF figure. Re-export it with embedded fonts. |
+| Figure without alternate text (`figure-missing-alt`) | Add alt text to that figure. |
+| Missing or wrong language (`pdf-missing-language`) | Set `lang` in `\DocumentMetadata`. |
+| Missing title / DisplayDocTitle (`pdf-missing-title`) | Set the title in `metadata.tex`. |
+| Not tagged (`pdf-not-tagged`), or untagged content (`verapdf-<clause>`) | A package that does not support tagging yet. Report the package to the author; do not remove tagging. |
+| Fonts not embedded (`font-not-embedded`) | Usually an included PDF figure. Re-export it with embedded fonts. |
+| PDF/UA not claimed (`pdfua-not-claimed`, info) | Add `pdfstandard=ua-2` to `\DocumentMetadata`. |
 
 ## Limits
 

@@ -22,6 +22,8 @@ make build    # slides.pdf
 make watch    # rebuild on every save
 make check    # preflight: build log and PDF
 make pages PAGES=1-4   # render slides to PNG
+make diff     # PDF showing changes against origin/main
+make clean    # remove build files (keeps the PDF)
 make help     # all targets
 ```
 

@@ -24,12 +24,13 @@ make watch    # rebuild on every save
 make check    # preflight: log, PDF, references, accessibility (veraPDF)
 make pages PAGES=4-6   # render pages to PNG to look at them
 make diff     # PDF showing changes against origin/main
+make clean    # remove build files (keeps the PDF)
 make help     # all targets
 ```
 
 With the `overfull` CLI installed (`npm i -g overfull`) you can also run
 `overfull check`, `overfull cite 10.1145/2890784` (adds a verified BibTeX
-entry) and `overfull explain <rule>` directly.
+entry) and `overfull explain <rule>` (or `overfull explain --list`) directly.
 
 ## Layout
 

@@ -61,7 +61,8 @@ paragraphs of text, say so.
 
 - A draft statement exists where the venue expects it, with the TODO marker.
 - The author has the policy link and a list of the evidence you used.
-- The venue check reports no missing disclosure.
+- The venue check reports no `disclosure-missing`. While the text is a
+  placeholder, it reports `disclosure-placeholder`; the author finishes it.
 
 ## Never
 

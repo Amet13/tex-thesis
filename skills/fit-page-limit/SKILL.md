@@ -56,7 +56,7 @@ These usually violate venue rules and can lead to desk rejection:
 ## Done
 
 - The venue check reports no page-limit error.
-- `overfull check` shows no new errors or warnings (especially overfull boxes
+- `overfull check` shows no new errors or warnings (especially `overfull-box`
   from resized figures).
 - The PR lists what moved to the appendix and what text changed, with
   `overfull diff --base main` for the author to review.

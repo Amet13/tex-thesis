@@ -24,17 +24,17 @@ description: Diagnose and fix LaTeX build failures and problems that reach the P
 
 ## Common causes
 
-| Symptom | Usual cause | Fix |
+| Symptom (rule id) | Usual cause | Fix |
 | --- | --- | --- |
-| Undefined control sequence | Typo, or package not loaded | Fix the name. Add a package only if the author agrees. |
-| Missing `$` inserted | `_`, `^`, `&`, `%`, `#` in text | Escape: `\_`, `\&`, `\%`, `\#`. Use math mode for math. |
+| Undefined control sequence (`undefined-control-sequence`) | Typo, or package not loaded | Fix the name. Add a package only if the author agrees. |
+| Missing `$` inserted (`missing-dollar`) | `_`, `^`, `&`, `%`, `#` in text | Escape: `\_`, `\&`, `\%`, `\#`. Use math mode for math. |
 | `&amp;` or `&lt;` in source | HTML escaping | Replace with `\&` or `<` in math. |
-| File not found | Wrong path or case | Use the real path; paths are case-sensitive in CI. |
-| Undefined reference `??` | Missing or misspelled `\label` | Fix the label or the `\cref`. |
-| Undefined citation `[?]` | Key not in the bib | See the `add-citation` skill. Never write BibTeX by hand. |
-| Rerun / stale bibliography | Build stopped early | Rebuild with `overfull build`. |
-| Duplicate label | Copied figure or section | Rename one label and its references. |
-| Overfull box > 10pt | Long word, URL, table or formula | Rephrase, allow a break (`\url`, `\allowbreak`), resize the table to `\linewidth`, split the formula. |
+| File not found (`missing-file`, `missing-figure`) | Wrong path or case | Use the real path; paths are case-sensitive in CI. |
+| Undefined reference `??` (`undefined-reference`) | Missing or misspelled `\label` | Fix the label or the `\cref`. |
+| Undefined citation `[?]` (`undefined-citation`) | Key not in the bib | See the `add-citation` skill. Never write BibTeX by hand. |
+| Rerun / stale bibliography (`rerun-needed`, `bibliography-stale`) | Build stopped early | Rebuild with `overfull build`. |
+| Duplicate label (`duplicate-label`) | Copied figure or section | Rename one label and its references. |
+| Overfull box > 10pt (`overfull-box`) | Long word, URL, table or formula | Rephrase, allow a break (`\url`, `\allowbreak`), resize the table to `\linewidth`, split the formula. |
 
 ## Missing packages
 
@@ -44,7 +44,8 @@ If a package is missing locally, build in Docker:
 overfull build --engine docker
 ```
 
-Never install TeX packages or fonts globally, and never switch engines. If the
+Never install TeX packages or fonts globally, and do not switch engines except
+via the documented arXiv path (`prepare-arxiv`). If the
 package is also missing in Docker, tell the author.
 
 ## Done

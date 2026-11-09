@@ -47,8 +47,8 @@ description: Set up a new paper or thesis from a fresh Overfull template, fillin
    overfull check --json
    ```
 
-   Fix errors (see `fix-build`). Placeholder references from the template will
-   be flagged; ask the author before removing them.
+   Fix errors (see `fix-build`). Placeholder references from the template may be
+   flagged (`reference-not-found`); ask the author before removing them.
 9. Commit: "Set up metadata, outline and venue configuration".
 
 ## Done
