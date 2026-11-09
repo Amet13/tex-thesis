@@ -480,10 +480,8 @@ export function initCheck(): void {
     };
     const rulesBase = config.rulesBase ?? '/rules/';
     sheetView.innerHTML = renderSheet(report, {
-      ruleHref: (r) =>
-        /^verapdf-\d/.test(r)
-          ? `${rulesBase}verapdf/#clause-${r.slice('verapdf-'.length)}`
-          : `${rulesBase}${r}/`,
+      // Uncommon veraPDF clause ids have no page; the 404 page forwards them.
+      ruleHref: (r) => `${rulesBase}${r}/`,
       headingLevel: 3,
     });
     jsonOut.textContent = formatJson(report);

@@ -114288,7 +114288,7 @@ function pageLimitProblems(profile, ctx) {
       check: "venue",
       severity: "info",
       message: `Page limit (${max}) not checked: no PDF`,
-      fix: "Build the PDF first (`overfull build`)"
+      fix: "Build the PDF first: `overfull build` locally, or an earlier step of your CI workflow"
     });
   } else if (total > max) {
     problems.push({

@@ -9,7 +9,9 @@ references:
   # Your e-mail lets CrossRef/OpenAlex put you in their faster "polite pool".
   # mailto: you@example.org
   ignore: []
-  # Every entry must come from `overfull cite` (it adds x-overfull = {cite ...}).
+  # A cited entry must verify against the indexes, come from `overfull cite`
+  # (which adds x-overfull = {cite ...}), or carry note = {overfull: author-provided}
+  # written by you. Set to false if you never work with an AI agent.
   requireCite: true
 venue:
   # Page limit for the main matter (up to \label{overfull:main-end}).

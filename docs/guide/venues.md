@@ -73,7 +73,8 @@ page. Without `endLabel`, every page counts. If the label is not in the `.aux`,
 the check reports `page-limit-label-missing` (warning) and counts every page.
 Going over the limit is `page-limit-exceeded` (error). The venue line of the
 report shows the count as "main text N of M pages (T total)": N pages up to the
-label, a limit of M, and T pages in the whole PDF.
+label, a limit of M, and T pages in the whole PDF. Without `endLabel` it reads
+"T of M pages".
 
 If you are over, fix the content. Changing fonts, margins or spacing usually
 breaks the venue's formatting rules and can get a paper desk-rejected. The
