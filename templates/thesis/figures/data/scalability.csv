@@ -1,0 +1,10 @@
+# Sample data for the template — replace with your own
+# records in units of 100000 (0.01 = Small, 1 = Medium, 10 = Large dataset);
+# times in seconds, consistent with figures/data/benchmark.csv
+records,proposed,baselineB
+0.01,0.3,0.5
+1,22.1,38.7
+2.5,55.6,105.3
+5,110.3,224.4
+7.5,166.2,349.4
+10,221.1,478.3

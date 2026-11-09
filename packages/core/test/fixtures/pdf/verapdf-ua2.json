@@ -1,0 +1,125 @@
+{
+  "report": {
+    "buildInformation": {
+      "releaseDetails": [
+        {
+          "id": "core",
+          "version": "1.30.3",
+          "buildDate": 1791367320000
+        },
+        {
+          "id": "validation-model",
+          "version": "1.30.3",
+          "buildDate": 1791380640000
+        },
+        {
+          "id": "apps",
+          "version": "1.30.3",
+          "buildDate": 1791381120000
+        }
+      ]
+    },
+    "jobs": [
+      {
+        "itemDetails": {
+          "name": "/w/noalt.pdf",
+          "size": 51767
+        },
+        "validationResult": [
+          {
+            "details": {
+              "passedRules": 1726,
+              "failedRules": 2,
+              "passedChecks": 1088,
+              "failedChecks": 2,
+              "tags": ["metadata", "syntax"],
+              "ruleSummaries": [
+                {
+                  "ruleStatus": "FAILED",
+                  "specification": "ISO 14289-2:2024",
+                  "clause": "5",
+                  "testNumber": 1,
+                  "status": "failed",
+                  "failedChecks": 1,
+                  "tags": ["metadata"],
+                  "description": "The PDF/UA version of a file shall be specified in the value of the Metadata entry in the document catalog using the PDF/UA identification schema",
+                  "object": "MainXMPPackage",
+                  "test": "containsPDFUAIdentification == true",
+                  "checks": [
+                    {
+                      "status": "failed",
+                      "context": "root/document[0]/metadata[0](48 0 obj PDMetadata)/XMPPackage[0]",
+                      "errorMessage": "The document metadata stream doesn't contain PDF/UA Identification Schema",
+                      "errorArguments": []
+                    }
+                  ]
+                },
+                {
+                  "ruleStatus": "FAILED",
+                  "specification": "ISO 14289-2:2024",
+                  "clause": "8.11.2",
+                  "testNumber": 1,
+                  "status": "failed",
+                  "failedChecks": 1,
+                  "tags": ["syntax"],
+                  "description": "The ViewerPreferences dictionary of the document catalog dictionary shall be present and shall contain at least the DisplayDocTitle key with a value of true, as described in ISO 32000-2:2020, Table 147",
+                  "object": "CosDocument",
+                  "test": "DisplayDocTitle == true",
+                  "checks": [
+                    {
+                      "status": "failed",
+                      "context": "root",
+                      "errorMessage": "ViewerPreferences dictionary is not present in the document Catalog, or DisplayDocTitle key is set to false or is not present in the ViewerPreferences dictionary (ViewerPreferences = null, DisplayDocTitle = null)",
+                      "errorArguments": [null, null]
+                    }
+                  ]
+                }
+              ]
+            },
+            "jobEndStatus": "normal",
+            "profileName": "PDF/UA-2 + Tagged PDF validation profile",
+            "statement": "PDF file is not compliant with Validation Profile requirements.",
+            "compliant": false
+          }
+        ],
+        "processingTime": {
+          "start": 1794156868204,
+          "finish": 1794156868845,
+          "duration": "00:00:00.641",
+          "difference": 641
+        }
+      }
+    ],
+    "batchSummary": {
+      "duration": {
+        "start": 1794156868087,
+        "finish": 1794156868889,
+        "duration": "00:00:00.802",
+        "difference": 802
+      },
+      "totalJobs": 1,
+      "outOfMemory": 0,
+      "veraExceptions": 0,
+      "failedEncryptedJobs": 0,
+      "failedParsingJobs": 0,
+      "validationSummary": {
+        "nonCompliantPdfaCount": 1,
+        "compliantPdfaCount": 0,
+        "failedJobCount": 0,
+        "totalJobCount": 1,
+        "successfulJobCount": 1
+      },
+      "multiJob": false,
+      "featuresSummary": {
+        "failedJobCount": 0,
+        "totalJobCount": 0,
+        "successfulJobCount": 0
+      },
+      "repairSummary": {
+        "failedJobCount": 0,
+        "totalJobCount": 0,
+        "successfulJobCount": 0
+      }
+    }
+  }
+}

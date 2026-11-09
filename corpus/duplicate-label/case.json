@@ -1,0 +1,6 @@
+{
+  "title": "Same label used twice",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["duplicate-label"]
+}

@@ -1,0 +1,24 @@
+\DocumentMetadata{lang=en-US, pdfversion=2.0, pdfstandard=ua-2, tagging=on}
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{pdftitle={Fixture Thesis}, pdfdisplaydoctitle=true}
+\title{Fixture Thesis}
+\author{Test Author}
+\begin{document}
+\maketitle
+\section{Introduction}\label{sec:intro}
+Knuth wrote about literate programming~\cite{knuth1984}.
+A missing reference: Figure~\ref{fig:missing}.
+A missing citation~\cite{ghost2020}.
+\begin{figure}[h]
+\centering
+\includegraphics[width=3cm]{example-image}
+\caption{A figure without alt text.}
+\end{figure}
+\newpage
+\section{Conclusion}
+Done.\label{overfull:main-end}
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

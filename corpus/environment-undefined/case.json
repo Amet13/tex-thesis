@@ -1,0 +1,6 @@
+{
+  "title": "theorem environment used without defining it",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["environment-undefined"]
+}

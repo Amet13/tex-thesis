@@ -1,0 +1,35 @@
+{
+  "name": "overfull",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Preflight for LaTeX papers and theses, for people and AI agents: build, cite, check, pages, diff.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "overfull": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "tsc -p tsconfig.json && node scripts/copy-templates.mjs",
+    "templates": "node scripts/copy-templates.mjs"
+  },
+  "dependencies": {
+    "@overfull/core": "workspace:*",
+    "pdfjs-dist": "6.5.438",
+    "yaml": "2.9.1"
+  }
+}

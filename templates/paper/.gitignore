@@ -1,0 +1,36 @@
+# LaTeX build files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lol
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.nav
+*.snm
+*.vrb
+*.xdv
+*-luamml-mathml.html
+
+# Build outputs (CI uploads them as artifacts)
+*.pdf
+
+# Overfull working files (diff builds, rendered pages); latexdiff output
+.overfull/
+*-diff[0-9a-f]*.tex
+
+# Editors / OS
+.DS_Store
+*.swp
+*~
+
+# Failed biber runs, luamml output
+*-SAVE-ERROR

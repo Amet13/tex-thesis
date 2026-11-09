@@ -1,0 +1,6 @@
+{
+  "title": "Closing brace without opening brace in math",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["extra-brace"]
+}

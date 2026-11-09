@@ -1,0 +1,101 @@
+\section{Design and methodology}\label{sec:design}
+
+This chapter describes the design methodology used to evaluate alternative approaches and select the most suitable one.
+
+\subsection{Evaluation criteria}
+
+The following criteria are used to compare alternatives:
+\begin{itemize}
+  \item performance --- execution speed under typical workloads;
+  \item accuracy --- correctness of produced results;
+  \item scalability --- ability to handle increasing data volumes;
+  \item maintainability --- ease of extending and modifying the system.
+\end{itemize}
+
+% EXAMPLE: Footnote
+The evaluation methodology follows the Analytic Hierarchy Process (AHP), which provides a structured framework for comparing alternatives across multiple criteria~\cite{saaty2008decision}.\footnote{The AHP was introduced by Thomas L. Saaty in the 1970s and is widely used for multi-criteria decision making.}
+
+\subsection{Alternatives}
+
+Three alternative design approaches are considered:
+\begin{enumerate}
+  \item Monolithic architecture --- a single, integrated system;
+  \item Microservices architecture --- distributed, independently deployable services;
+  \item Hybrid architecture --- a combination of monolithic core with modular extensions.
+\end{enumerate}
+
+\subsection{Comparison matrix}
+
+\cref{tab:alternatives} presents a comparison of the three alternatives.
+
+% EXAMPLE: Complex table with booktabs and siunitx
+\begin{table}[htbp]
+  \centering
+  \caption{Comparison of design alternatives (sample data)}\label{tab:alternatives}
+  \begin{tabular}{l S[table-format=1.2] c c c}
+    \toprule
+    Criterion & {Weight} & Monolithic & Microservices & Hybrid \\
+    \midrule
+    Performance             & 0.30              & 8                   & 7                      & 9               \\
+    Accuracy                & 0.25              & 9                   & 8                      & 9               \\
+    Scalability             & 0.25              & 5                   & 9                      & 8               \\
+    Maintainability         & 0.20              & 6                   & 8                      & 7               \\
+    \midrule
+    Weighted score & {---}             & 7.10 & 7.95 & \textbf{8.35}   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Selected approach}
+
+Based on the weighted comparison, the \textbf{hybrid architecture} achieves the highest overall score of 8.35 (weights times scores, \cref{eq:weighted}).
+This approach combines the performance benefits of a monolithic core with the scalability advantages of modular extensions.
+
+The effectiveness $E$ of each alternative is calculated using \cref{eq:basic} from the literature review (\cref{sec:literature}):
+
+% EXAMPLE: Cross-referencing equations from other chapters
+\begin{equation}\label{eq:weighted}
+  E = \sum_{j=1}^{m} w_j \cdot s_j
+\end{equation}
+
+where $w_j$ is the weight of criterion $j$ and $s_j$ is the score assigned to that criterion.
+
+% EXAMPLE: TikZ Gantt-style timeline
+The implementation timeline is shown in \cref{fig:timeline}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={Gantt chart over 12 weeks: analysis in weeks 1 to 3, design
+        3 to 6, implementation 5 to 9, testing 8 to 11, writing 10 to 12.},
+      >=Stealth,
+    ]
+    % Timeline axis
+    \draw[->] (0,0) -- (13,0) node[right] {Weeks};
+    \foreach \x in {1,...,12} {
+        \draw (\x,-0.1) -- (\x,0.1) node[below=3pt] {\small \x};
+      }
+
+    % Task bars: \ganttbar{start}{end}{row}{colour}{label}
+    \newcommand*\ganttbar[5]{%
+      \fill[#4] (#1,#3) rectangle (#2,#3+0.5);
+      \node[font=\small] at ({(#1+#2)/2},#3+0.25) {#5};
+    }
+    \ganttbar{1}{3}{0.5}{blue!30}{Analysis}
+    \ganttbar{3}{6}{1.2}{green!30}{Design}
+    \ganttbar{5}{9}{0.5}{orange!30}{Implementation}
+    \ganttbar{8}{11}{1.2}{red!25}{Testing}
+    \ganttbar{10}{12}{1.9}{violet!25}{Writing}
+  \end{tikzpicture}
+  \caption{Project timeline (Gantt chart)}\label{fig:timeline}
+\end{figure}
+
+% EXAMPLE: Description list
+Advantages of the hybrid approach:
+\begin{description}
+  \item[Performance] The monolithic core avoids network overhead for critical operations.
+  \item[Scalability] Extension modules can be independently scaled based on demand.
+  \item[Maintainability] Clear boundaries between core and extensions simplify updates.
+  \item[Deployment] Docker containers enable consistent deployment across environments.
+\end{description}
+

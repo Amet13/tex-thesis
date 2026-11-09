@@ -1,0 +1,18 @@
+{
+  "name": "overfull-action",
+  "version": "3.0.0",
+  "private": true,
+  "description": "GitHub Action: Overfull preflight on an existing LaTeX build (log, PDF, bib).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "overfull": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

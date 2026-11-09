@@ -1,0 +1,20 @@
+---
+import Docs from '../../layouts/Docs.astro';
+import { docHeadings, docSlug, rewriteDocLinks, sortedDocs } from '../../lib/docs';
+
+export async function getStaticPaths() {
+  const docs = await sortedDocs();
+  return docs
+    .filter((d) => docSlug(d) !== '')
+    .map((d) => ({ params: { slug: docSlug(d) }, props: { id: d.id } }));
+}
+
+const docs = await sortedDocs();
+const current = docs.find((d) => d.id === Astro.props.id);
+if (!current) throw new Error(`Unknown doc ${Astro.props.id}`);
+const html = rewriteDocLinks(current.rendered?.html ?? '', current, import.meta.env.BASE_URL);
+const headings = docHeadings(current);
+---
+<Docs title={current.data.title} description={current.data.description ?? ''} docs={docs} current={current} headings={headings}>
+  <Fragment set:html={html} />
+</Docs>

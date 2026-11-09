@@ -1,0 +1,6 @@
+{
+  "title": "Long unbreakable text sticks into the margin",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["overfull-box"]
+}

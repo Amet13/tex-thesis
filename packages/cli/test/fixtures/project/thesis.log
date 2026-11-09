@@ -1,0 +1,762 @@
+This is LuaHBTeX, Version 1.24.0 (TeX Live 2026)  (format=lualatex 2026.9.13)  8 NOV 2026 21:14
+ restricted system commands enabled.
+ file:line:error style messages enabled.
+**main.tex
+(./main.tex
+LaTeX2e <2026-06-01>
+L3 programming layer <2026-08-10>
+Lua module: luaotfload 2024-12-03 v3.29 Lua based OpenType font support
+Lua module: lualibs 2023-07-13 v2.76 ConTeXt Lua standard libraries.
+Lua module: lualibs-extended 2023-07-13 v2.76 ConTeXt Lua libraries -- extended 
+collection.
+luaotfload | conf : Root cache directory is "/usr/local/texlive/2026/texmf-var/l
+uatex-cache/generic/names".
+luaotfload | init : Loading fontloader "fontloader-2023-12-28.lua" from kpse-res
+olved path "/usr/local/texlive/2026/texmf-dist/tex/luatex/luaotfload/fontloader-
+2023-12-28.lua".
+Lua-only attribute luaotfload@noligature = 1
+luaotfload | init : Context OpenType loader version 3.134
+Inserting `luaotfload.node_processor' in `pre_linebreak_filter'.
+Inserting `luaotfload.node_processor' in `hpack_filter'.
+Inserting `luaotfload.glyph_stream' in `glyph_stream_provider'.
+Inserting `luaotfload.define_font' in `define_font'.
+Lua-only attribute luaotfload_color_attribute = 2
+luaotfload | conf : Root cache directory is "/usr/local/texlive/2026/texmf-var/l
+uatex-cache/generic/names".
+Inserting `luaotfload.harf.strip_prefix' in `find_opentype_file'.
+Inserting `luaotfload.harf.strip_prefix' in `find_truetype_file'.
+Removing  `luaotfload.glyph_stream' from `glyph_stream_provider'.
+Inserting `luaotfload.harf.glyphstream' in `glyph_stream_provider'.
+Inserting `luaotfload.harf.finalize_vlist' in `post_linebreak_filter'.
+Inserting `luaotfload.harf.finalize_hlist' in `hpack_filter'.
+Inserting `luaotfload.cleanup_files' in `wrapup_run'.
+Inserting `luaotfload.harf.finalize_unicode' in `finish_pdffile'.
+Inserting `luaotfload.glyphinfo' in `glyph_info'.
+Lua-only attribute luaotfload.letterspace_done = 3
+Inserting `luaotfload.aux.set_sscale_dimens' in `luaotfload.patch_font'.
+Inserting `luaotfload.aux.set_font_index' in `luaotfload.patch_font'.
+Inserting `luaotfload.aux.patch_cambria_domh' in `luaotfload.patch_font'.
+Inserting `luaotfload.aux.fixup_fontdata' in `luaotfload.patch_font_unsafe'.
+Inserting `luaotfload.aux.set_capheight' in `luaotfload.patch_font'.
+Inserting `luaotfload.aux.set_xheight' in `luaotfload.patch_font'.
+Inserting `luaotfload.rewrite_fontname' in `luaotfload.patch_font'.
+Inserting `tracingstacklevels' in `input_level_string'.
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/documentmetadata-suppor
+t.ltx
+(/usr/local/texlive/2026/texmf-dist/tex/latex/pdfmanagement/pdfmanagement-init.
+sty
+Package: pdfmanagement-init 2026-05-26 v0.97c LaTeX PDF management bundle
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/tagpdf/tagpdf-base.sty
+Package: tagpdf-base 2026-08-21 v1.0e part of tagpdf - provide base, no-op vers
+ions of the user commands 
+\c@g__tag_MCID_abs_int=\count274
+\c@g__tag_struct_abs_int=\count275
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/pdfmanagement/pdfmanagement.ltx
+File: pdfmanagement.ltx 2026-05-26 v0.97c PDF management code
+\g__pdfmanagement_EmbeddedFiles_int=\count276
+\l__pdfmeta_xmp_indent_int=\count277
+\g_pdffile_embed_pdfa_int=\count278
+\g_pdffile_embed_nonpdfa_int=\count279
+\l_pdfoutline_open_int=\count280
+\g__pdfoutline_id_int=\count281
+\g__pdfoutline_current_level_int=\count282
+))) (/usr/local/texlive/2026/texmf-dist/tex/latex/l3kernel/l3backend-luatex.def
+File: l3backend-luatex.def 2026-08-10 L3 backend support: PDF output (LuaTeX)
+\l__color_backend_stack_int=\count283
+Inserting `l3color' in `luaotfload.parse_color'.
+Inserting `l3opacity' in `luaotfload.parse_transparent'.)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/pdfmanagement/l3backend-testphase
+-luatex.def
+File: l3backend-pdf-luatex.def 2026-05-26 v0.97c LaTeX PDF management bundle ba
+ckend support: PDF output (LuaTeX)
+\l__pdf_backend_tmpa_box=\box53
+\l__pdf_backend_tmpb_box=\box54
+\g__pdf_backend_resourceid_int=\count284
+\g__pdf_backend_name_int=\count285
+\g__pdf_backend_page_int=\count286
+Custom whatsit pdf_link_adjust_level = 1
+Inserting `linksplit' in `pre_shipout_filter'.
+Lua function pdflinkadjustlevel = 31)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-lat
+est.sty
+Package: latex-lab-testphase-latest 2026-05-02 v0.1g latex-lab modules
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/tagpdf/tagpdf.sty
+Package: tagpdf 2026-08-21 v1.0e  LaTeX kernel code for PDF tagging 
+\l__tag_tmpa_int=\count287
+\l__tag_tmpa_box=\box55
+\l__tag_tmpb_box=\box56
+\l__tag_loglevel_int=\count288
+\g__tag_unique_cnt_int=\count289
+\l__tag_tag_stop_int=\count290
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/tagpdf/tagpdf-luatex.def
+File: tagpdf-luatex.def 2026-08-21 v1.0e tagpdf driver for luatex
+luaotfload | db : Font names database loaded from /usr/local/texlive/2026/texmf-
+var/luatex-cache/generic/names/luaotfload-names.luc.gz
+Lua module: tagpdf 2026-08-21 v1.0e tagpdf lua code
+Lua-only attribute g__tag_mc_type_attr = 4
+Lua-only attribute g__tag_mc_cnt_attr = 5
+Lua-only attribute g__tag_structnum_attr = 6
+Lua-only attribute g__tag_interwordspaceOff_attr = 7
+Lua-only attribute g__tag_interwordspace_attr = 8
+Lua-only attribute g__tag_interwordfont_attr = 9
+Lua-only attribute l__tag_softhyphen_attr = 10
+Inserting `tagpdf.rewrite-softhyphen' in `pre_shaping_filter'.
+Inserting `tagpdf.rewrite-softhyphen' in `post_shaping_filter'.
+Inserting `tagpdf' in `linksplit'.)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/tagpdf/tagpdf-mc-code-lua.sty
+Package: tagpdf-mc-code-lua 2026-08-21 v1.0e tagpdf - mc code only for the luam
+ode 
+)
+\g__tag_tree_id_pad_int=\count291
+\c@g__tag_parenttree_obj_int=\count292
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-pdf.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-pdf2.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-mathml.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-latex-book.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-latex.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-latex-lab.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-pdf.def
+
+
+Package tagpdf Info: reading namespace definitions tagpdf-ns-pdf2.def
+
+\g__tag_struct_AFobj_int=\count293
+\g__tag_para_begin_int=\count294
+\g__tag_para_end_int=\count295
+\g__tag_para_main_begin_int=\count296
+\g__tag_para_main_end_int=\count297
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-nam
+es.sty
+Package: latex-lab-testphase-names 2026-04-28 v0.8k Code related to the names o
+f tags
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-new
+-or-2.sty
+Package: latex-lab-testphase-new-or-2 2026-01-16 v0.86d Changes to the output r
+outine
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-footnotes.ltx
+File: latex-lab-footnotes.ltx 2026-04-28 v0.8p changes to the footnote interfac
+es
+\footnotemargin=\dimen149
+\g_fnote_id_int=\count298
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-blo
+ck.sty
+Package: latex-lab-testphase-block 2026-06-10 v1.0c blockenv implementation
+
+LaTeX template Info: Declaring template type 'blockenv' taking 4 argument(s)
+(template)           on line 195.
+
+
+LaTeX template Info: Declaring template type 'list' taking 4 argument(s) on
+(template)           line 196.
+
+
+LaTeX template Info: Declaring template type 'captionedtext' taking 4
+(template)           argument(s) on line 197.
+
+
+LaTeX template Info: Declaring template type 'thmstyle' taking 4 argument(s)
+(template)           on line 198.
+
+
+LaTeX template Info: Declaring template type 'block' taking 1 argument(s) on
+(template)           line 199.
+
+
+LaTeX template Info: Declaring template type 'item' taking 1 argument(s) on
+(template)           line 200.
+
+
+LaTeX template Info: Declaring template type 'para' taking 1 argument(s) on
+(template)           line 201.
+
+\c@maxblocklevels=\count299
+\l_para_begin_skip=\skip49
+\l__block_unchained_skip=\skip50
+\l__block_botsep_skip=\skip51
+\l__block_parbotsep_skip=\skip52
+\l__block_parindent_dim=\dimen150
+\l__block_counter_start_int=\count300
+\l__block_one_label_box=\box57
+\g__block_labels_box=\box58
+\l__block_tmpa_skip=\skip53
+\l__block_effective_top_skip=\skip54
+\l__block_effective_bot_skip=\skip55
+\l__block_caption_before_skip=\skip56
+\l__block_caption_after_skip=\skip57
+
+LaTeX template Info: Declaring instance 'flushleft' of type blockenv on line
+(template)           1489.
+
+
+LaTeX template Info: Declaring instance 'flushright' of type blockenv on line
+(template)           1493.
+
+\@descriptiondepth=\count301
+
+LaTeX template Info: Declaring instance 'remark' of type thmstyle on line
+(template)           1791.
+
+
+LaTeX template Info: Declaring instance 'definition' of type thmstyle on line
+(template)           1796.
+
+
+LaTeX template Info: Declaring instance 'legacy2e' of type thmstyle on line
+(template)           1798.
+
+LaTeX Info: Redefining \centering on input line 1894.
+LaTeX Info: Redefining \raggedleft on input line 1895.
+LaTeX Info: Redefining \raggedright on input line 1896.
+LaTeX Info: Redefining \qed on input line 2238.
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-enumitem.sty
+Package: latex-lab-enumitem 2026-04-21 v0.80f Emulating enumitem
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-con
+text.sty
+Package: latex-lab-testphase-context 2026-05-26 v0.6a Providing context for ins
+tance, etc.
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-kernel-change
+s.sty
+Package: latex-lab-kernel-changes 2026-04-27 v0.85j General kernel and class ch
+anges
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-sec
+.sty
+Package: latex-lab-testphase-sec 2026-04-28 v0.84o Code related to the tagging 
+of heading commands
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-sec
+-template.sty
+Package: latex-lab-testphase-sec-template 2026-05-25 v0.9g heading implementati
+on
+
+LaTeX template Info: Declaring template type 'heading' taking 9 argument(s) on
+(template)           line 177.
+
+
+LaTeX template Info: Declaring template type 'headformat' taking 6 argument(s)
+(template)           on line 178.
+
+\l__head_level_int=\count302
+\l__head_before_skip=\skip58
+\l__head_penalty_int=\count303
+\l__head_after_penalty_skip=\skip59
+\l__head_after_skip=\skip60
+\l__head_heading_indent_dim=\dimen151
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-toc
+.sty
+Package: latex-lab-testphase-toc 2026-04-28 v0.85k  Code related to the tagging
+ of toc-like lists
+\g__tag_toc_level_int=\count304
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-min
+ipage.sty
+Package: latex-lab-testphase-minipage 2026-04-24 v0.81k Code related to the tag
+ging of minipages and parboxes
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-gra
+phic.sty
+Package: latex-lab-testphase-graphic 2026-04-28 v0.80i Code related to the tagg
+ing of graphics
+\g__tag_graphic_int=\count305
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-flo
+at.sty
+Package: latex-lab-testphase-float 2026-04-24 v0.81n Code related to the taggin
+g of floats
+\g__tag_float_int=\count306
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-bib
+.sty
+Package: latex-lab-testphase-bib 2026-05-28 v0.81f Code related to the tagging 
+of bibliography and cite command
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-tex
+t.sty
+Package: latex-lab-testphase-text 2026-04-27 v0.85g Code related to the tagging
+ of various small text commands
+LaTeX Info: Redefining \mbox on input line 108.
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-mar
+ginpar.sty
+Package: latex-lab-testphase-marginpar 2026-04-24 v0.85i Changes related to the
+ tagging of the margin notes
+\g__kernel_marginpar_int=\count307
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-tit
+le.sty
+Package: latex-lab-testphase-title 2026-05-27 v0.85g Changes related to the tag
+ging of the title
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-tab
+le.sty
+Package: latex-lab-testphase-table 2026-04-28 v0.85t Code related to the taggin
+g of tables
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/tools/array.sty
+Package: array 2026/02/24 v2.7b Tabular extension package (FMi)
+\col@sep=\dimen152
+\ar@mcellbox=\box59
+\extrarowheight=\dimen153
+\NC@list=\toks17
+\extratabsurround=\skip61
+\backup@length=\skip62
+\ar@cellbox=\box60
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-mat
+h.sty
+Package: latex-lab-testphase-math 2025-03-10 v0.8d code related to the math tag
+ging
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-math.ltx
+File: latex-lab-math.ltx 2026-05-27 v0.7e Grab all the math(s) and tag it
+\l__math_tmpa_skip=\skip63
+\g__math_mathml_total_int=\count308
+\g__math_mathml_int=\count309
+\g__math_math_total_int=\count310
+\g__math_mathml_AF_found_int=\count311
+\g__math_mathml_AF_attached_int=\count312
+\l__math_tmpa_box=\box61
+\l__math_mathstyle_int=\count313
+\g__math_mathchoice_int=\count314
+\l__math_grab_env_int=\count315
+\g__math_postdisplaypenalty_int=\count316
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-mathpkg.ltx
+File: latex-lab-mathpkg.ltx 2026-05-11 v0.1e mathpkg adaptions
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-mathintent.lt
+x
+File: latex-lab-mathintent.ltx 2026-01-16 v0.1c MathML intent attributes
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-fir
+staid.sty
+Package: latex-lab-testphase-firstaid 2026-06-08 v0.85x Temporary patches to ex
+ternal packages needed for the tagging project
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-testphase-tik
+z.sty
+Package: latex-lab-testphase-tikz 2026-05-12 v0.80i Code related to the tagging
+ of tikz pictures
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/pdfmanagement/pdfmanagement-first
+aid.sty
+Package: pdfmanagement-firstaid 2026-05-26 v0.97c LaTeX PDF management bundle /
+ firstaid-patches
+
+Package pdfmanagement Info: loading pdfmanagement firstaid code for pgf
+
+)
+Inserting `markspaces' in `pre_linebreak_filter'.
+Inserting `markspaces' in `hpack_filter'. (/usr/local/texlive/2026/texmf-dist/t
+ex/latex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(/usr/local/texlive/2026/texmf-dist/tex/latex/base/size10.clo
+File: size10.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count317
+\c@section=\count318
+\c@subsection=\count319
+\c@subsubsection=\count320
+\c@paragraph=\count321
+\c@subparagraph=\count322
+\c@figure=\count323
+\c@table=\count324
+\abovecaptionskip=\skip64
+\belowcaptionskip=\skip65
+\bibindent=\dimen154
+)
+
+LaTeX template Info: Declaring instance 'part' of type heading on line 3.
+
+
+LaTeX template Info: Declaring instance 'part' of type headformat on line 3.
+
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2026-05-17 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2026-05-17 v1.15 key=value parser (DPC)
+\KV@toks@=\toks18
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2026-05-17 v1.4h Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: luatex.def on input line 106.
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-def/luatex.def
+File: luatex.def 2025/09/29 v1.2f Graphics/color driver for luatex
+))
+\Gin@req@height=\dimen155
+\Gin@req@width=\dimen156
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2026-06-17 v7.01r Hypertext links for LaTeX
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty
+Package: iftex 2024/12/12 v1.0g TeX engine tests
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+\pdftexcmds@toks=\toks19
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+Package: nameref 2026-01-29 v2.58 Cross-referencing by name of section
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.s
+ty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+))
+\c@section@level=\count325
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count326
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
+)
+)
+\@linkdim=\dimen157
+\Hy@linkcounter=\count327
+\Hy@pagecounter=\count328
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2026-06-17 v7.01r Hyperref: PDFDocEncoding definition (HO)
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+\Hy@SavedSpaceFactor=\count329
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def
+File: puenc.def 2026-06-17 v7.01r Hyperref: PDF Unicode definition (HO)
+)
+Package hyperref Info: Hyper figures OFF on input line 4199.
+Package hyperref Info: Link nesting OFF on input line 4204.
+Package hyperref Info: Hyper index ON on input line 4207.
+Package hyperref Info: Plain pages OFF on input line 4214.
+Package hyperref Info: Backreferencing OFF on input line 4219.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4466.
+\c@Hy@tempcnt=\count330
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/url/url.sty
+\Urlmuskip=\muskip17
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 4805.
+\XeTeXLinkMargin=\dimen158
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+
+(/usr/local/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
+)
+))
+\Fld@menulength=\count331
+\Field@Width=\dimen159
+\Fld@charsize=\dimen160
+Package hyperref Info: Hyper figures OFF on input line 6091.
+Package hyperref Info: Link nesting OFF on input line 6096.
+Package hyperref Info: Hyper index ON on input line 6099.
+Package hyperref Info: backreferencing OFF on input line 6106.
+Package hyperref Info: Link coloring OFF on input line 6111.
+Package hyperref Info: Link coloring with OCG OFF on input line 6116.
+Package hyperref Info: PDF/A mode OFF on input line 6121.
+\Hy@abspage=\count332
+\c@Item=\count333
+)
+Package hyperref Info: Driver (custom): hgeneric-testphase.
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/pdfmanagement/hgeneric-testphase.
+def
+File: hgeneric-testphase.def 2026-05-26 v0.97c generic Hyperref driver for the 
+LaTeX PDF management bundle
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/pdfmanagement/hyperref-colorschem
+es.def)
+LaTeX Info: Redefining \href on input line 262.
+LaTeX Info: Redefining \url on input line 348.
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/bookmark/bookmark.sty
+Package: bookmark 2026-05-21 v1.32 PDF bookmarks (HO)
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/bookmark/bkm-luatex.def
+File: bkm-luatex.def 2026-05-21 v1.32 bookmark driver for luaTeX (HO)
+\BKM@id=\count334
+))
+\l__hyp_tmpa_box=\box62
+\l__hyp_tmpa_int=\count335
+\l__hyp_dest_box=\box63
+\g__hyp_linknestlevel_int=\count336
+\HyAnn@Count=\count337
+\Fld@listcount=\count338
+\Hy@SectionHShift=\skip66
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2026/05/19 v2.18d AMS math features
+\@mathmargin=\skip67
+
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
+Package: amstext 2024/11/17 v2.01 AMS text
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks20
+\ex@=\dimen161
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen162
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty
+Package: amsopn 2022/04/08 v2.04 operator names
+)
+\inf@bad=\count339
+LaTeX Info: Redefining \frac on input line 235.
+\uproot@=\count340
+\leftroot@=\count341
+LaTeX Info: Redefining \overline on input line 398.
+LaTeX Info: Redefining \colon on input line 409.
+\classnum@=\count342
+\DOTSCASE@=\count343
+LaTeX Info: Redefining \ldots on input line 495.
+LaTeX Info: Redefining \dots on input line 498.
+LaTeX Info: Redefining \cdots on input line 619.
+\Mathstrutbox@=\box64
+\strutbox@=\box65
+LaTeX Info: Redefining \big on input line 721.
+LaTeX Info: Redefining \Big on input line 722.
+LaTeX Info: Redefining \bigg on input line 723.
+LaTeX Info: Redefining \Bigg on input line 724.
+\big@size=\dimen163
+LaTeX Font Info:    Redeclaring font encoding OML on input line 742.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 743.
+\macc@depth=\count344
+LaTeX Info: Redefining \bmod on input line 904.
+LaTeX Info: Redefining \pmod on input line 909.
+LaTeX Info: Redefining \smash on input line 939.
+LaTeX Info: Redefining \relbar on input line 969.
+LaTeX Info: Redefining \Relbar on input line 970.
+\c@MaxMatrixCols=\count345
+\dotsspace@=\muskip18
+\c@parentequation=\count346
+\dspbrk@lvl=\count347
+\tag@help=\toks21
+\row@=\count348
+\column@=\count349
+\maxfields@=\count350
+\andhelp@=\toks22
+\eqnshift@=\dimen164
+\alignsep@=\dimen165
+\tagshift@=\dimen166
+\tagwidth@=\dimen167
+\totwidth@=\dimen168
+\lineht@=\dimen169
+\@envbody=\toks23
+\multlinegap=\skip68
+\multlinetaggap=\skip69
+\mathdisplay@stack=\toks24
+LaTeX Info: Redefining \[ on input line 2965.
+LaTeX Info: Redefining \] on input line 2966.
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latex-lab/latex-lab-amsmath.ltx
+File: latex-lab-amsmath.ltx 2026-04-25 v0.1j amsmath adaptions
+LaTeX Info: Redefining \eqref on input line 58.
+\l__luamml_struct_tmpa_int=\count351
+)
+
+Package tagpdf Warning: Neither unicode-math nor lua-unicode-math has been
+(tagpdf)                loaded.
+(tagpdf)                luamml will not create a MathML file.
+(tagpdf)                To avoid this warning load unicode-math 
+(tagpdf)                or lua-unicode-math or disable luamml with 
+(tagpdf)                \tagpdfsetup {math/mathml/luamml/load=false}
+(tagpdf)                or force luamml with 
+(tagpdf)                \tagpdfsetup {math/mathml/luamml/load=true}
+
+(./thesis.aux)
+\openout1 = thesis.aux
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 8.
+LaTeX Font Info:    ... okay on input line 8.
+Inserting `tagpdf' in `pre_shipout_filter'.
+Inserting `tagpdf' in `pre_shipout_filter'.
+Info: mathml file thesis-mathml does not exist
+Info: mathml file thesis-luamml-mathml does not exist
+(/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count352
+\scratchdimen=\dimen170
+\scratchbox=\box66
+\nofMPsegments=\count353
+\nofMParguments=\count354
+\everyMPshowfont=\toks25
+\MPscratchCnt=\count355
+\MPscratchDim=\dimen171
+\MPnumerator=\count356
+\makeMPintoPDFobject=\count357
+\everyMPtoPDFconversion=\toks26
+) (/usr/local/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/grfext/grfext.sty
+Package: grfext 2019/12/03 v1.3 Manage graphics extensions (HO)
+)
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+85.
+Package grfext Info: Graphics extension search list:
+(grfext)             [.pdf,.png,.jpg,.mps,.jpeg,.jbig2,.jb2,.PDF,.PNG,.JPG,.JPE
+G,.JBIG2,.JB2,.eps]
+(grfext)             \AppendGraphicsExtensions on input line 504.
+
+(/usr/local/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
+Package hyperref Info: Link coloring OFF on input line 8.
+
+
+LaTeX Warning: Reference `fig:missing' on page 1 undefined on input line 12.
+
+
+LaTeX Warning: Citation `ghost2020' on page 1 undefined on input line 13.
+
+Floatstructure:18
+<example-image.pdf, id=42, 321.2pt x 240.9pt>
+
+Package tagpdf Warning: Alternative text for graphic is missing.
+(tagpdf)                Using 'example-image.pdf' instead.
+
+File: example-image.pdf Graphic file (type pdf)
+<use example-image.pdf>
+Package luatex.def Info: example-image.pdf  used on input line 16.
+(luatex.def)             Requested size: 85.35826pt x 64.0183pt.
+[1
+
+{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}</usr/loca
+l/texlive/2026/texmf-dist/tex/latex/mwe/example-image.pdf>] (./thesis.bbl)
+[2]<<latex-list-css.html>><<latex-align-css.html>> (./thesis.aux)
+ ***********
+LaTeX2e <2026-06-01>
+L3 programming layer <2026-08-10>
+ ***********
+
+
+LaTeX Warning: There were undefined references.
+
+
+Package tagpdf Info: Finalizing the tagging structure:
+(tagpdf)             Writing out ~38 structure objects
+(tagpdf)             with ~26 'MC' leaf nodes.
+(tagpdf)             Be patient if there are lots of objects!
+
+Package tagpdf Info: writing ParentTree
+Package tagpdf Info: writing IDTree
+Package tagpdf Info: writing RoleMap
+Package tagpdf Info: writing ClassMap
+Package tagpdf Info: writing NameSpaces
+Package tagpdf Info: writing StructElems
+Package tagpdf Info: writing Root
+)
+
+Here is how much of LuaTeX's memory you used:
+ 16622 strings out of 475635
+ 125049,1373583 words of node,token memory allocated
+ 546 words of node memory still in use:
+   6 hlist, 2 vlist, 2 rule, 2 glue, 4 kern, 2 glyph, 10 attribute, 61 glue_spec
+, 7 attribute_list, 1 write nodes
+   avail lists: 1:1,2:664,3:193,4:3,5:75,6:19,7:938,8:2,9:169,10:2,11:63
+ 39159 multiletter control sequences out of 65536+600000
+ 21 fonts using 1513559 bytes
+ 71i,7n,76p,463b,524s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman10-italic.ot
+f></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman10-bold.ot
+f></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman10-regular
+.otf></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman12-bold
+.otf></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman12-regu
+lar.otf></usr/local/texlive/2026/texmf-dist/fonts/opentype/public/lm/lmroman17-r
+egular.otf>
+Output written on thesis.pdf (2 pages, 59265 bytes).
+
+PDF statistics: 154 PDF objects out of 1000 (max. 8388607)
+ 127 compressed objects within 2 object streams
+ 8 named destinations out of 1000 (max. 1048576)
+ 347 words of extra memory for PDF output out of 10000 (max. 100000000)
+

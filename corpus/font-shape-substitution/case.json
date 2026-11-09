@@ -1,0 +1,6 @@
+{
+  "title": "Bold small caps not available in the font",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["font-substitution"]
+}

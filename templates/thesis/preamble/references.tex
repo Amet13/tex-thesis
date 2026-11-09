@@ -1,0 +1,23 @@
+% preamble/references.tex — hyperlinks, cross-references, bibliography.
+
+% Links stay black for printing but are clickable and tagged as links.
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, allcolors=black}
+\usepackage{bookmark}
+
+% \cref{fig:x} -> "Figure 3.1". Load after hyperref and amsmath.
+\usepackage[noabbrev,capitalize]{cleveref}
+\crefname{codelisting}{Listing}{Listings}
+
+% Bibliography: biblatex + biber, IEEE numeric style, in citation order.
+% Every entry in references.bib should carry a DOI (or arXiv id / URL) so
+% `overfull check` can verify that the reference really exists.
+\usepackage{csquotes}
+\usepackage[backend=biber, style=ieee, sorting=none]{biblatex}
+\addbibresource{references.bib}
+% DOIs and URLs in the text font, and allowed to break after any character,
+% so long DOIs do not force letter-spaced, stretched lines.
+\urlstyle{same}
+\setcounter{biburlnumpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburllcpenalty}{100}

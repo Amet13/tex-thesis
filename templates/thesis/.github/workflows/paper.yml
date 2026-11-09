@@ -1,0 +1,61 @@
+# Build the PDF in the Overfull image, run the preflight and publish results.
+# Push: PDF artifact + job summary. Pull request: also a PDF of the changes.
+# Uses the image ghcr.io/amet13/overfull:3, published with Overfull v3.0.0.
+name: paper
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: ghcr.io/amet13/overfull:3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history for `overfull diff`
+          persist-credentials: false
+
+      # The job runs as root in the image while the checkout belongs to the
+      # runner user: let git (used by `overfull diff`) trust this one directory.
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build
+        run: latexmk
+
+      # The first two runs only report (summary + inline annotations);
+      # the last one sets the job status. Reference lookups are cached.
+      - name: Preflight
+        run: |
+          overfull check --markdown >> "$GITHUB_STEP_SUMMARY" || true
+          overfull check --annotations || true
+          overfull check
+
+      - name: Diff against base branch
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: overfull diff --base "origin/$BASE_REF"
+
+      - name: Upload PDF
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pdf
+          path: |
+            *.pdf
+            *.log
+          if-no-files-found: warn

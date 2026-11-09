@@ -1,0 +1,11 @@
+# Sample data for the template — replace with your own
+# validation accuracy per epoch: mean and standard deviation over 5 runs
+epoch,baseline,baseline_sd,ours,ours_sd
+1,0.412,0.011,0.455,0.012
+2,0.538,0.010,0.592,0.011
+3,0.611,0.009,0.668,0.009
+4,0.657,0.008,0.713,0.008
+5,0.688,0.007,0.742,0.007
+6,0.706,0.007,0.761,0.006
+7,0.718,0.006,0.773,0.006
+8,0.724,0.006,0.781,0.005

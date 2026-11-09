@@ -1,0 +1,100 @@
+---
+import { type Doc, docPath, docSlug, groupDocs } from '../lib/docs';
+import { url } from '../lib/paths';
+
+interface Props {
+  docs: Doc[];
+  current?: string;
+}
+const { docs, current } = Astro.props;
+const groups = groupDocs(docs);
+---
+<nav class="docs-nav" aria-label="Guide">
+  <details class="docs-nav-details" id="docs-nav-details">
+    <summary>Contents</summary>
+    {groups.map((g) => (
+      <div class="docs-nav-group">
+        <p class="docs-nav-section">{g.section}</p>
+        <ul>
+          {g.docs.map((d) => (
+            <li>
+              <a href={url(docPath(d))} aria-current={docSlug(d) === current ? 'page' : undefined}>{d.data.title}</a>
+            </li>
+          ))}
+          {g.section === 'Start' && (
+            <li><a href={url('check/')}>Browser check</a></li>
+          )}
+        </ul>
+      </div>
+    ))}
+  </details>
+</nav>
+<script>
+  // Wide screens show the contents through CSS (::details-content) with no
+  // layout shift; this keeps browsers without that selector in step.
+  const d = document.querySelector<HTMLDetailsElement>('#docs-nav-details');
+  const mq = window.matchMedia('(min-width: 1000px)');
+  const apply = () => {
+    if (d) d.open = mq.matches;
+  };
+  apply();
+  mq.addEventListener('change', apply);
+</script>
+<style>
+  .docs-nav {
+    font-size: var(--s-1);
+    line-height: 1.35;
+  }
+  @media (min-width: 1000px) {
+    .docs-nav-details::details-content {
+      content-visibility: visible;
+      block-size: auto;
+    }
+    summary {
+      pointer-events: none;
+      list-style: none;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+  }
+  summary {
+    cursor: pointer;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--hair);
+    color: var(--ink-2);
+  }
+  .docs-nav-group {
+    margin-top: 1rem;
+  }
+  .docs-nav-section {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    margin: 0 0 0.3rem;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li a {
+    display: block;
+    padding: 0.22rem 0 0.22rem 0.7rem;
+    text-decoration: none;
+    border-left: 1px solid var(--hair);
+    color: var(--ink-2);
+  }
+  li a:hover {
+    color: var(--ink);
+    border-left-color: var(--ink);
+  }
+  li a[aria-current='page'] {
+    color: var(--ink);
+    border-left: 3px solid var(--pencil);
+    padding-left: calc(0.7rem - 2px);
+    font-weight: 600;
+  }
+</style>

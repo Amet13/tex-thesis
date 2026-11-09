@@ -1,0 +1,7 @@
+{
+  "title": "Cross-references need another LaTeX run",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["rerun-needed"],
+  "run": "once"
+}

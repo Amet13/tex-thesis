@@ -1,0 +1,6 @@
+{
+  "title": "One root error followed by follow-on errors",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["missing-dollar"]
+}

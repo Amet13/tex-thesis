@@ -1,0 +1,39 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!**/dist",
+      "!**/node_modules",
+      "!site/.astro",
+      "!action/dist",
+      "!corpus/**/*.log",
+      "!templates",
+      "!**/*.tex",
+      "!**/*.md",
+      "!site/dist",
+      "!**/test/fixtures/**/*.json",
+      "!**/*.yml",
+      "!**/*.yaml",
+      "!corpus/**/*.svg",
+      "!dist-standalone"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  }
+}

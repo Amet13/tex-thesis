@@ -1,0 +1,6 @@
+{
+  "title": "Citation key missing from the .bib file (natbib + BibTeX)",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["undefined-citation"]
+}

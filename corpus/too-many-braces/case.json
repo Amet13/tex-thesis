@@ -1,0 +1,6 @@
+{
+  "title": "One closing brace too many",
+  "engine": "lualatex",
+  "check": "build",
+  "expect": ["extra-brace"]
+}

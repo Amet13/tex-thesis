@@ -1,0 +1,172 @@
+\section{System analysis}\label{sec:analysis}
+
+This chapter presents a systematic analysis of the problem domain, following established system analysis principles.
+
+\subsection{System representation}
+
+The system under study can be represented as a \enquote{black box} with clearly defined inputs and outputs.
+The inputs include raw data, configuration parameters, and user requirements.
+The outputs include processed results, performance metrics, and generated reports.
+
+% EXAMPLE: TikZ black-box diagram with labeled I/O
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={Black-box diagram: raw data, configuration and user requirements flow into the System box; processed results and performance metrics flow out.},
+      box/.style={rectangle, draw, thick, minimum width=4cm, minimum height=2.5cm, align=center, fill=gray!10},
+      io/.style={->, >=Stealth, thick},
+      lbl/.style={font=\small}
+    ]
+    \node[box] (sys) {\textbf{System}};
+
+    % Inputs
+    \node[lbl, left=2cm of sys, yshift=0.7cm] (in1) {Raw data};
+    \node[lbl, left=2cm of sys] (in2) {Configuration};
+    \node[lbl, left=2cm of sys, yshift=-0.7cm] (in3) {User requirements};
+
+    % Outputs
+    \node[lbl, right=2cm of sys, yshift=0.5cm] (out1) {Processed results};
+    \node[lbl, right=2cm of sys, yshift=-0.5cm] (out2) {Performance metrics};
+
+    \draw[io] (in1) -- (sys.west |- in1);
+    \draw[io] (in2) -- (sys.west |- in2);
+    \draw[io] (in3) -- (sys.west |- in3);
+    \draw[io] (sys.east |- out1) -- (out1);
+    \draw[io] (sys.east |- out2) -- (out2);
+  \end{tikzpicture}
+  \caption{System \enquote{black box} representation}\label{fig:blackbox}
+\end{figure}
+
+\subsection{System functions}
+
+The system performs the following primary functions:
+\begin{itemize}
+  \item data ingestion and preprocessing;
+  \item analysis and transformation;
+  \item result generation and visualization;
+  \item logging and monitoring;
+  \item reporting and export.
+\end{itemize}
+
+\subsection{System decomposition}
+
+The system is decomposed into four subsystems:
+\begin{itemize}
+  \item data processing subsystem;
+  \item analysis engine subsystem;
+  \item user interface subsystem;
+  \item monitoring and logging subsystem.
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={Tree diagram: System splits into Data Processing, Analysis Engine and User Interface; Analysis Engine feeds Monitoring and Logging.},
+      box/.style={rectangle, draw, minimum width=3cm, minimum height=0.8cm, align=center},
+      >=Stealth
+    ]
+    \node[box] (sys) {System};
+    \node[box, below left=1cm and 0.5cm of sys] (dp) {Data Processing};
+    \node[box, below=1cm of sys] (ae) {Analysis Engine};
+    \node[box, below right=1cm and 0.5cm of sys] (ui) {User Interface};
+    \node[box, below=1cm of ae] (ml) {Monitoring \& Logging};
+    \draw[->] (sys) -- (dp);
+    \draw[->] (sys) -- (ae);
+    \draw[->] (sys) -- (ui);
+    \draw[->] (ae) -- (ml);
+  \end{tikzpicture}
+  \caption{System decomposition diagram}\label{fig:decomposition}
+\end{figure}
+
+\subsection{Hierarchical structure}
+
+The hierarchical organization follows the principle of separation of concerns.
+At the top level, the orchestrator manages the overall workflow.
+The middle layer contains domain-specific processing modules.
+The bottom layer handles infrastructure concerns such as data storage and network communication.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={Hierarchy diagram: Orchestrator controls Processing and Reporting; Processing uses Storage and Network.},
+      box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.7cm, align=center},
+      >=Stealth
+    ]
+    \node[box] (orch) {Orchestrator};
+    \node[box, below left=0.8cm and 1cm of orch] (proc) {Processing};
+    \node[box, below right=0.8cm and 1cm of orch] (report) {Reporting};
+    \node[box, below left=0.8cm and 0cm of proc] (store) {Storage};
+    \node[box, below right=0.8cm and 0cm of proc] (net) {Network};
+    \draw[->] (orch) -- (proc);
+    \draw[->] (orch) -- (report);
+    \draw[->] (proc) -- (store);
+    \draw[->] (proc) -- (net);
+  \end{tikzpicture}
+  \caption{System hierarchy diagram}\label{fig:hierarchy}
+\end{figure}
+
+\subsection{State machine}
+
+% EXAMPLE: TikZ state machine / automaton
+\cref{fig:state-machine} shows the state transitions of the data processing pipeline.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={State machine: Idle goes to Loading on start, Loading to Processing when data is ready, Processing to Done on completion. Loading or Processing go to Error on failure; Error returns to Idle on retry, Done returns to Idle on reset.},
+      state/.style={circle, draw, minimum size=1.9cm, align=center, font=\small},
+      accept/.style={state, double},
+      every node/.append style={font=\small},
+      >=Stealth,
+    ]
+    \node[state] (idle) {Idle};
+    \node[state, right=2cm of idle] (load) {Loading};
+    \node[state, right=2cm of load] (proc) {Processing};
+    \node[accept, right=2cm of proc] (done) {Done};
+    % Error sits below the middle of Loading and Processing.
+    \node[state] (err) at ($(load)!0.5!(proc) + (0,-3.2cm)$) {Error};
+
+    \draw[->] (idle) -- node[above] {start} (load);
+    \draw[->] (load) -- node[above] {data ready} (proc);
+    \draw[->] (proc) -- node[above] {complete} (done);
+    \draw[->] (load) -- node[left] {fail} (err);
+    \draw[->] (proc) -- node[right] {fail} (err);
+    % Return arrows leave and enter at fixed angles, clear of the other states.
+    \draw[->] (err) to[out=180, in=-90] node[below left] {retry} (idle);
+    \draw[->] (done) to[out=110, in=70] node[above] {reset} (idle);
+  \end{tikzpicture}
+  \caption{Processing pipeline state machine}\label{fig:state-machine}
+\end{figure}
+
+\subsection{Resource allocation}
+
+% EXAMPLE: data-driven plot. The numbers live in figures/data/allocation.csv;
+% edit the CSV and rebuild, never the picture.
+The share of compute resources allocated to each subsystem is shown in \cref{fig:allocation}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[alt={Horizontal bar chart of resource allocation:
+      Processing 40 percent, Analysis 30 percent, User interface 20 percent,
+      Monitoring 10 percent.}]
+    \begin{axis}[
+        xbar,
+        width=0.85\linewidth, height=6cm,
+        xmin=0, xmax=50,
+        xlabel={Share of resources (\%)},
+        symbolic y coords={Monitoring, User interface, Analysis, Processing},
+        ytick=data,
+        nodes near coords,
+        nodes near coords style={font=\small},
+        bar width=14pt,
+      ]
+      \addplot[fill=blue!40] table[col sep=comma, x=share, y=subsystem] {figures/data/allocation.csv};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Resource allocation across subsystems (sample data)}\label{fig:allocation}
+\end{figure}
+
+\subsection{Summary}
+
+The system analysis reveals that a modular architecture with clear boundaries between subsystems provides the best foundation for achieving the research objectives.
+

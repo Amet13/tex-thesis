@@ -1,0 +1,6 @@
+{
+  "title": "Font not installed (fontspec)",
+  "engine": "lualatex",
+  "check": "build",
+  "expect": ["font-not-found"]
+}

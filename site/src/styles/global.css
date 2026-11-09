@@ -1,0 +1,945 @@
+/*
+ * Overfull — galley proof.
+ * The page is a typesetter's proof: a measured text block, notes in the
+ * margin, corrections in red pencil, guides in non-photo blue.
+ */
+
+/* ---------- Tokens ---------- */
+:root {
+  color-scheme: light;
+  /* Paper and ink */
+  --table: #e4e7e5; /* the light table the sheet lies on */
+  --paper: #f5f6f3; /* proof paper, neutral with a cool tint */
+  --paper-2: #eceeea; /* shaded boxes on the sheet */
+  --ink: #141a2b; /* blue-black */
+  --ink-2: #3c4458;
+  --ink-3: #555d70;
+  --hair: #c3c8cc;
+  --hair-strong: #8d949c;
+  /* Marks */
+  --pencil: #b0122b; /* editor's red pencil */
+  --pencil-soft: #b0122b1f;
+  --guide: #4f9dc4; /* non-photo blue: decorative only */
+  --guide-soft: #4f9dc455;
+  --error: #b0122b;
+  --warn: #8a5000;
+  --warn-soft: #e9b54a40;
+  --ok: #24653a;
+  --info: #2b5591;
+  --slug: #0b0f19; /* the overfull rule */
+  --focus: #0b57d0;
+  /* Code */
+  --code-paper: #ebede8;
+  --code-ink: #1d2436;
+  --code-comment: #5c6475;
+  --code-keyword: #8c1023;
+  --code-string: #1f5c37;
+  --code-constant: #29508c;
+  --code-punct: #4a5266;
+  --code-error: #b0122b;
+  --scroll-shade: #141a2b33;
+
+  /* Type */
+  --serif: "Libertinus Serif", "Linux Libertine O", "STIX Two Text", Georgia, serif;
+  --sans: "Libertinus Sans", "Linux Biolinum O", "Gill Sans", sans-serif;
+  --mono: "Commit Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Modular scale, ratio 1.25 on a 19px base */
+  --s-2: 0.768rem;
+  --s-1: 0.95rem;
+  --s0: 1.1875rem;
+  --s1: 1.484rem;
+  --s2: 1.855rem;
+  --s3: 2.319rem;
+  --s4: 2.899rem;
+  --s5: 3.624rem;
+  --lh: 1.5;
+  --measure: 40rem; /* ≈ 66 characters of Libertinus at --s0 */
+  --margin-w: 14rem;
+  --gap: 2.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --table: #090c0d;
+    --paper: #111617;
+    --paper-2: #182021;
+    --ink: #e3e8e2;
+    --ink-2: #bfc8c3;
+    --ink-3: #9aa59f;
+    --hair: #2c3638;
+    --hair-strong: #4f5c5e;
+    --pencil: #ff8a78;
+    --pencil-soft: #ff8a7824;
+    --guide: #46b4e0;
+    --guide-soft: #46b4e04d;
+    --error: #ff8a78;
+    --warn: #f0c35e;
+    --warn-soft: #f0c35e26;
+    --ok: #86d39a;
+    --info: #92bdf5;
+    --slug: #e9efe8;
+    --focus: #8cc8ff;
+    --code-paper: #0c1112;
+    --code-ink: #dce3dd;
+    --code-comment: #8f9a95;
+    --code-keyword: #ff9e8e;
+    --code-string: #98d6a8;
+    --code-constant: #9fc4f6;
+    --code-punct: #a9b4ae;
+    --code-error: #ff8a78;
+    --scroll-shade: #e3e8e238;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --table: #090c0d;
+  --paper: #111617;
+  --paper-2: #182021;
+  --ink: #e3e8e2;
+  --ink-2: #bfc8c3;
+  --ink-3: #9aa59f;
+  --hair: #2c3638;
+  --hair-strong: #4f5c5e;
+  --pencil: #ff8a78;
+  --pencil-soft: #ff8a7824;
+  --guide: #46b4e0;
+  --guide-soft: #46b4e04d;
+  --error: #ff8a78;
+  --warn: #f0c35e;
+  --warn-soft: #f0c35e26;
+  --ok: #86d39a;
+  --info: #92bdf5;
+  --slug: #e9efe8;
+  --focus: #8cc8ff;
+  --code-paper: #0c1112;
+  --code-ink: #dce3dd;
+  --code-comment: #8f9a95;
+  --code-keyword: #ff9e8e;
+  --code-string: #98d6a8;
+  --code-constant: #9fc4f6;
+  --code-punct: #a9b4ae;
+  --code-error: #ff8a78;
+  --scroll-shade: #e3e8e238;
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  hanging-punctuation: first allow-end last;
+  scroll-padding-top: 1.5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--table);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: var(--s0);
+  line-height: var(--lh);
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  font-kerning: normal;
+  font-feature-settings: "kern", "liga", "onum";
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
+}
+
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.06em;
+  text-decoration-color: var(--pencil);
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  text-decoration-thickness: 0.14em;
+}
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  line-height: 1.15;
+  font-feature-settings: "kern", "liga", "lnum";
+  font-variant-numeric: lining-nums;
+  text-wrap: balance;
+  margin: 0;
+}
+h1 {
+  font-size: var(--s4);
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: var(--s2);
+}
+h3 {
+  font-size: var(--s1);
+}
+h4 {
+  font-size: var(--s0);
+}
+
+p {
+  margin: 0 0 1em;
+  text-wrap: pretty;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--mono);
+  font-variant-numeric: normal;
+  font-feature-settings: normal;
+}
+:not(pre) > code {
+  font-size: 0.8em;
+  padding: 0.05em 0.25em;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--hair);
+  white-space: break-spaces;
+}
+
+pre {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  margin: 0 0 1.5em;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  background-color: var(--code-paper);
+  color: var(--code-ink);
+  border-left: 2px solid var(--guide);
+  tab-size: 2;
+}
+/*
+ * Scroll hint for code that is wider than its box: a soft shadow appears at
+ * the edge that has more to scroll to. The "local" layers cover the shadows
+ * when the content is scrolled to that end, so short code shows nothing.
+ */
+pre,
+.cmd {
+  background-image:
+    linear-gradient(to right, var(--code-paper) 40%, transparent),
+    linear-gradient(to left, var(--code-paper) 40%, transparent),
+    linear-gradient(to right, var(--scroll-shade), transparent),
+    linear-gradient(to left, var(--scroll-shade), transparent);
+  background-position:
+    left center,
+    right center,
+    left center,
+    right center;
+  background-repeat: no-repeat;
+  background-size:
+    2.5rem 100%,
+    2.5rem 100%,
+    1.1rem 100%,
+    1.1rem 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+pre code {
+  background: none;
+  padding: 0;
+  border: 0;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--hair);
+  margin: 2.5rem 0;
+}
+
+::selection {
+  background: var(--guide-soft);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -10rem;
+  z-index: 10;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.6rem 1rem;
+  font-family: var(--sans);
+  text-decoration: none;
+}
+.skip:focus {
+  top: 1rem;
+}
+
+.sc {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.06em;
+  font-variant-numeric: lining-nums;
+}
+
+[hidden] {
+  /* biome-ignore lint/complexity/noImportantStyles: the hidden attribute must win over component display rules */
+  display: none !important;
+}
+
+/* ---------- The sheet ---------- */
+.sheet-paper {
+  background: var(--paper);
+  max-width: 78rem;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  box-shadow: 0 0 0 1px var(--hair);
+}
+/* In lightbox mode the sheet glows faintly, like film on a light table */
+:root[data-theme="dark"] .sheet-paper {
+  box-shadow:
+    0 0 0 1px var(--hair),
+    0 0 60px -30px var(--guide-soft);
+}
+
+.frame {
+  padding-inline: clamp(1rem, 4.5vw, 4rem);
+}
+
+/* Masthead */
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 2rem;
+  padding-block: 1.25rem 1rem;
+  border-bottom: 1px solid var(--hair);
+}
+.wordmark {
+  font-size: var(--s1);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: -0.005em;
+  margin-right: auto;
+}
+.wordmark .wm-margin {
+  display: inline-block;
+  width: 0;
+  align-self: stretch;
+  border-left: 1px dashed var(--guide);
+  margin-inline: 0.06em 0;
+}
+.wordmark .wm-slug {
+  display: inline-block;
+  width: 0.42em;
+  height: 0.78em;
+  background: var(--slug);
+  margin-left: -0.08em;
+}
+.masthead nav {
+  order: 3;
+  width: 100%;
+}
+@media (min-width: 900px) {
+  .masthead nav {
+    order: 2;
+    width: auto;
+  }
+  .theme-toggle {
+    order: 3;
+  }
+}
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.4rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.07em;
+  font-size: var(--s0);
+}
+.nav a {
+  text-decoration: none;
+  padding-block: 0.3rem;
+  border-bottom: 1px solid transparent;
+}
+.nav a:hover {
+  border-bottom-color: var(--pencil);
+}
+.nav a[aria-current="page"] {
+  border-bottom: 2px solid var(--pencil);
+}
+.theme-toggle {
+  order: 2;
+  font: inherit;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.07em;
+  background: none;
+  color: var(--ink);
+  border: 1px solid var(--hair-strong);
+  padding: 0.05rem 0.6rem 0.2rem;
+  cursor: pointer;
+  min-height: 2rem;
+}
+.theme-toggle:hover {
+  border-color: var(--ink);
+}
+
+/* Running head: small caps label with a hairline, like a book's header */
+.runhead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.09em;
+  font-size: var(--s-1);
+  color: var(--ink-3);
+  margin: 0 0 1.5rem;
+  font-variant-numeric: lining-nums;
+}
+.runhead::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--hair);
+  transform: translateY(-0.3em);
+}
+.runhead .folio {
+  order: 2;
+}
+
+/* Galley: the measured text block with a margin for notes */
+.galley {
+  max-width: var(--measure);
+  display: flow-root;
+}
+.wide {
+  max-width: calc(var(--measure) + var(--gap) + var(--margin-w));
+}
+
+.marginal {
+  font-size: var(--s-1);
+  line-height: 1.4;
+  color: var(--ink-2);
+  margin: 0 0 1.25rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--guide);
+}
+.marginal p {
+  margin: 0 0 0.5em;
+}
+.marginal .mark {
+  color: var(--pencil);
+  font-weight: 600;
+}
+
+/* Narrow screens: margin notes follow the text they annotate */
+@media (max-width: 1099.98px) {
+  div.galley {
+    display: flex;
+    flex-direction: column;
+  }
+  div.galley > * {
+    min-width: 0;
+  }
+  div.galley > .marginal {
+    order: 99;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .galley {
+    margin-right: calc(var(--margin-w) + var(--gap));
+  }
+  .marginal {
+    float: right;
+    clear: right;
+    width: var(--margin-w);
+    margin-right: calc(-1 * (var(--margin-w) + var(--gap)));
+    margin-top: 0.25rem;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .marginal::before {
+    content: "";
+    display: block;
+    width: 1.5rem;
+    border-top: 1px solid var(--guide);
+    margin-bottom: 0.4rem;
+  }
+}
+
+section.block {
+  padding-block: 3.5rem 1rem;
+  clear: both;
+}
+section.block::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.lede {
+  font-size: var(--s1);
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+/* Proofreader's caret: marks an insertion, used for "go here" links */
+.caret-link {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.07em;
+  text-decoration: none;
+  white-space: nowrap;
+  display: inline-block;
+  padding-block: 0.2rem;
+  border-bottom: 1px solid var(--pencil);
+}
+.caret-link::before {
+  content: "‸";
+  color: var(--pencil);
+  font-variant-caps: normal;
+  margin-right: 0.3em;
+  font-weight: 700;
+}
+.caret-link:hover {
+  border-bottom-width: 2px;
+}
+
+/* Command line strip */
+.cmd {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background-color: var(--code-paper);
+  padding: 0.75rem 1rem;
+  border-left: 2px solid var(--guide);
+  margin: 0 0 1rem;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.7;
+}
+.cmd .p {
+  color: var(--ink-3);
+  user-select: none;
+}
+.cmd .c {
+  color: var(--code-comment);
+}
+
+/* Footer: a colophon */
+.colophon {
+  margin-top: 5rem;
+  padding-block: 2rem 3rem;
+  border-top: 1px solid var(--hair);
+  font-size: var(--s-1);
+  color: var(--ink-2);
+  display: grid;
+  gap: 1.5rem 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.colophon h2 {
+  font-size: var(--s-1);
+  font-weight: 400;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.09em;
+  color: var(--ink-3);
+  margin-bottom: 0.4rem;
+}
+.colophon ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.colophon li {
+  margin-bottom: 0.25rem;
+}
+
+/* ---------- Severity / status marks ---------- */
+.sev-tag,
+.sheet-status {
+  font-family: var(--sans);
+  font-size: var(--s-2);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sev-error .sev-tag,
+.sev-tag.sev-error {
+  color: var(--error);
+}
+.sev-warning .sev-tag,
+.sev-tag.sev-warning {
+  color: var(--warn);
+}
+.sev-info .sev-tag,
+.sev-tag.sev-info {
+  color: var(--info);
+}
+
+/* ---------- Preflight sheet ---------- */
+.sheet {
+  border: 1px solid var(--hair-strong);
+  background: var(--paper);
+  font-size: var(--s-1);
+  line-height: 1.45;
+  position: relative;
+}
+.sheet-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 1rem 1.1rem 0.9rem;
+  border-bottom: 2px solid var(--ink);
+}
+.sheet-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sheet-kicker {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+.sheet-target {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.sheet-tool {
+  grid-column: 1 / -1;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+}
+.sheet-stamp {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: var(--s-2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.6rem;
+  border: 2px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+  transform: rotate(-2.5deg);
+  text-align: center;
+  max-width: 11rem;
+  line-height: 1.2;
+}
+.stamp-pass {
+  color: var(--ok);
+}
+.stamp-warn {
+  color: var(--warn);
+}
+.stamp-fail {
+  color: var(--error);
+}
+.sheet-check {
+  border-bottom: 1px solid var(--hair);
+  padding: 0.8rem 1.1rem 0.6rem;
+}
+.sheet-check:last-child {
+  border-bottom: 0;
+}
+.sheet-check-head {
+  display: grid;
+  grid-template-columns: 1.5rem auto 1fr;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+}
+.sheet-num {
+  font-variant-numeric: lining-nums;
+  color: var(--ink-3);
+  font-size: var(--s-1);
+}
+.sheet-check-name {
+  font-size: var(--s0);
+  font-weight: 600;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.03em;
+}
+.sheet-status {
+  justify-self: end;
+}
+.st-pass .sheet-status {
+  color: var(--ok);
+}
+.st-warn .sheet-status {
+  color: var(--warn);
+}
+.st-fail .sheet-status {
+  color: var(--error);
+}
+.st-skipped .sheet-status {
+  color: var(--ink-3);
+}
+.st-skipped .sheet-check-name {
+  color: var(--ink-3);
+}
+.sheet-summary {
+  grid-column: 2 / -1;
+  color: var(--ink-2);
+}
+.sheet-problems {
+  list-style: none;
+  margin: 0.6rem 0 0.2rem;
+  padding: 0 0 0 2.1rem;
+}
+.sheet-problem {
+  padding: 0.55rem 0 0.55rem 0.75rem;
+  border-left: 2px solid var(--hair);
+  margin-bottom: 0.35rem;
+}
+.sheet-problem.sev-error {
+  border-left-color: var(--error);
+}
+.sheet-problem.sev-warning {
+  border-left-color: var(--warn);
+}
+.sheet-problem.sev-info {
+  border-left-color: var(--info);
+  border-left-style: dotted;
+}
+.sheet-problem-head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+.sheet-msg {
+  font-weight: 600;
+  color: var(--ink);
+}
+.sheet-related {
+  font-weight: 400;
+  color: var(--ink-3);
+  font-size: var(--s-2);
+}
+.sheet-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  margin-top: 0.15rem;
+}
+.sheet-rule a {
+  color: var(--ink-2);
+}
+.sheet-detail {
+  margin: 0.35rem 0 0;
+  color: var(--ink-2);
+}
+.sheet-fix {
+  margin: 0.35rem 0 0;
+  color: var(--ink);
+}
+.sheet-fix .caret {
+  color: var(--pencil);
+  font-weight: 700;
+  margin-right: 0.35em;
+}
+.sheet-evidence summary {
+  cursor: pointer;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-top: 0.3rem;
+  width: max-content;
+}
+.sheet-evidence pre {
+  margin: 0.4rem 0 0;
+  font-size: 0.7rem;
+  max-height: 16rem;
+}
+.sheet-more {
+  margin: 0.2rem 0 0 2.1rem;
+  color: var(--ink-3);
+}
+
+@media (min-width: 640px) {
+  .sheet-head {
+    grid-template-columns: 1fr auto auto;
+  }
+  .sheet-tool {
+    grid-column: auto;
+    text-align: right;
+    align-self: start;
+  }
+}
+
+/* ---------- Docs ---------- */
+.prose h2 {
+  margin: 2.75rem 0 0.75rem;
+}
+.prose h3 {
+  margin: 2rem 0 0.5rem;
+}
+.prose h4 {
+  margin: 1.5rem 0 0.4rem;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+  margin: 0 0 1em;
+}
+.prose li {
+  margin-bottom: 0.3em;
+}
+.prose li::marker {
+  color: var(--ink-3);
+}
+.prose blockquote {
+  margin: 1.5em 0;
+  padding: 0.2em 0 0.2em 1.1em;
+  border-left: 2px solid var(--pencil);
+  color: var(--ink-2);
+  font-style: italic;
+}
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--s-1);
+  margin: 0 0 1.5em;
+  font-variant-numeric: lining-nums tabular-nums;
+  display: block;
+  overflow-x: auto;
+}
+.prose th,
+.prose td {
+  text-align: left;
+  padding: 0.4rem 0.8rem 0.4rem 0;
+  border-bottom: 1px solid var(--hair);
+  vertical-align: top;
+}
+.prose th {
+  font-weight: 400;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.07em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--ink);
+}
+.prose img {
+  height: auto;
+}
+.prose a code {
+  text-decoration: inherit;
+}
+
+/* Heading anchors */
+.prose :is(h2, h3) {
+  scroll-margin-top: 1.5rem;
+}
+
+/* ---------- Motion ---------- */
+/* biome-ignore-start lint/complexity/noImportantStyles: reduced motion must win over component animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: reduced motion */
+
+/* ---------- Forms ---------- */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+.field {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--hair-strong);
+  padding: 0.5rem 0.7rem;
+  border-radius: 0;
+}
+.field:focus-visible {
+  border-color: var(--focus);
+}
+.btn {
+  font-family: var(--serif);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 0.25rem 0.9rem 0.4rem;
+  cursor: pointer;
+  min-height: 2.25rem;
+}
+.btn:hover {
+  background: var(--ink-2);
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--hair-strong);
+}
+.btn.ghost:hover {
+  border-color: var(--ink);
+}
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media print {
+  body {
+    background: none;
+  }
+  .masthead nav,
+  .theme-toggle,
+  .colophon {
+    display: none;
+  }
+}
+
+:root[data-theme="dark"] img.page-preview {
+  filter: brightness(0.82) contrast(1.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) img.page-preview {
+    filter: brightness(0.82) contrast(1.05);
+  }
+}

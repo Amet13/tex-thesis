@@ -1,0 +1,4 @@
+dist/
+.astro/
+test-screenshots/
+node_modules/

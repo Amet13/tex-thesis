@@ -1,0 +1,13 @@
+\begin{thebibliography}{1}
+
+\bibitem{good}
+Jane Doe.
+\newblock A good title.
+\newblock {\em J}, 2020.
+
+\bibitem{bad}
+Rick Roe.
+\newblock Speedups in r&d with snake_case names.
+\newblock {\em J}, 2021.
+
+\end{thebibliography}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="t">
+  <title id="t">Overfull</title>
+  <style>
+    .p{fill:#f5f6f3}.t{fill:#8d949c}.r{fill:#0b0f19}.m{stroke:#4f9dc4}
+    @media (prefers-color-scheme: dark){.p{fill:#111617}.t{fill:#5d6a70}.r{fill:#e9efe8}.m{stroke:#46b4e0}}
+  </style>
+  <rect class="p" width="32" height="32" rx="2"/>
+  <rect class="t" x="4" y="6" width="17" height="2.6"/>
+  <rect class="t" x="4" y="11.5" width="17" height="2.6"/>
+  <rect class="t" x="4" y="17" width="17" height="2.6"/>
+  <rect class="t" x="4" y="22.5" width="10" height="2.6"/>
+  <line class="m" x1="21.6" y1="2" x2="21.6" y2="30" stroke-width="1.2" stroke-dasharray="2 1.6"/>
+  <rect class="r" x="21" y="14.6" width="8" height="7.4"/>
+</svg>

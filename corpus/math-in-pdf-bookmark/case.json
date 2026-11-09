@@ -1,0 +1,6 @@
+{
+  "title": "Math in a section title with hyperref",
+  "engine": "pdflatex",
+  "check": "output",
+  "expect": ["pdf-string-token"]
+}

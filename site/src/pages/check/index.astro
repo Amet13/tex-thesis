@@ -1,0 +1,406 @@
+---
+import Base from '../../layouts/Base.astro';
+import { url } from '../../lib/paths';
+import { readText } from '../../lib/repo';
+import sampleAux from '../../samples/sample.aux?raw';
+import sampleBib from '../../samples/sample.bib?raw';
+
+function corpusLog(id: string, fallback: string): string {
+  return readText(`corpus/${id}/main.log`) ?? fallback;
+}
+const samples = [
+  {
+    id: 'log-undefined',
+    label: 'A build log with an undefined reference',
+    files: [{ name: 'main.log', text: corpusLog('undefined-reference', '') }],
+  },
+  {
+    id: 'log-cascade',
+    label: 'A build log where one mistake causes many errors',
+    files: [
+      { name: 'main.log', text: corpusLog('cascade-underscores', corpusLog('unclosed-brace', '')) },
+    ],
+  },
+  {
+    id: 'bib',
+    label: 'A bibliography with one invented entry',
+    files: [
+      { name: 'references.bib', text: sampleBib },
+      { name: 'main.aux', text: sampleAux },
+    ],
+  },
+].filter((s) => s.files.every((f) => f.text));
+---
+<Base title="Check a LaTeX log, .bib or PDF in your browser" description="Drop a LaTeX build log, bibliography or PDF and get a plain-language report: TeX errors, undefined references, unverifiable citations, PDF accessibility. Files never leave your computer." section="check">
+  <div class="check-page">
+    <p class="runhead"><span>Browser check</span></p>
+    <div class="galley">
+      <aside class="marginal">
+        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded. Online verification is on by default: each reference’s DOI or title is sent to CrossRef and doi.org, and nothing else. Untick “Verify references online” to keep everything on your computer.</p>
+        <p>The full check, with veraPDF, arXiv and DBLP lookups and the venue rules from <code>overfull.yml</code>, runs from the command line: <code>overfull check</code>.</p>
+      </aside>
+      <h1>Check your files</h1>
+      <p class="lede">Drop a build log, a bibliography or a PDF. This page runs the same checks as the <code>overfull</code> command, with two differences: arXiv and DBLP cannot be searched from a browser, so entries only they could confirm show as “could not be checked here”; and veraPDF’s full PDF/UA validation runs only in <code>overfull check</code>.</p>
+    </div>
+
+    <div class="bench">
+      <form class="intake" id="intake" aria-labelledby="intake-title" novalidate>
+        <h2 id="intake-title" class="intake-title">Input</h2>
+        <div class="drop" id="drop" data-active="false">
+          <p class="drop-main">Drop files here</p>
+          <p class="drop-types"><code>.log</code> <code>.bib</code> <code>.aux</code> <code>.bcf</code> <code>.pdf</code> <code>.tex</code>, several at once (one PDF)</p>
+          <input id="file-input" type="file" multiple aria-label="Choose files to check" tabindex="-1" accept=".log,.bib,.aux,.bcf,.pdf,.tex,.blg,text/plain,application/pdf" class="sr-only" />
+          <button type="button" class="btn" id="choose">Choose files</button>
+        </div>
+        <p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
+
+        <details class="paste">
+          <summary>Paste a build log instead</summary>
+          <label for="paste-text" class="sr-only">Build log text</label>
+          <textarea id="paste-text" class="field" rows="8" spellcheck="false" placeholder="This is LuaHBTeX, Version 1.22.0 (TeX Live 2026) …"></textarea>
+          <button type="button" class="btn ghost" id="paste-add">Use pasted log</button>
+        </details>
+
+        <fieldset class="samples">
+          <legend>Or try a sample</legend>
+          {samples.map((s) => (
+            <button type="button" class="sample" data-sample={s.id}>{s.label}</button>
+          ))}
+        </fieldset>
+
+        <div class="files" id="files-wrap" hidden>
+          <h3 class="files-title">Files</h3>
+          <ul id="files" class="files-list"></ul>
+          <button type="button" class="link-btn" id="clear">Remove all</button>
+        </div>
+
+        <fieldset class="opts">
+          <legend>Options</legend>
+          <label class="opt">
+            <input type="checkbox" id="online" checked />
+            <span>Verify references online <span class="opt-note">CrossRef and doi.org are checked from your browser. arXiv and DBLP block browser requests, so only <code>overfull check</code> asks them.</span></span>
+          </label>
+          <label class="opt-select" for="profile">
+            <span>Venue profile</span>
+            <select id="profile" class="field">
+              <option value="generic">Generic</option>
+              <option value="thesis">Thesis</option>
+              <option value="paper">Paper</option>
+              <option value="arxiv">arXiv</option>
+              <option value="double-blind">Double-blind review</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <div class="run-row">
+          <button type="submit" class="btn" id="run" disabled>Run check</button>
+          <button type="button" class="btn ghost" id="stop" hidden>Stop</button>
+        </div>
+      </form>
+
+      <section class="result" aria-labelledby="result-title">
+        <h2 id="result-title" class="sr-only">Result</h2>
+        <p id="progress" class="progress" role="status" aria-live="polite" aria-atomic="true">Add files or pick a sample to see a report.</p>
+        <div class="progress-bar" id="progress-bar" hidden><span></span></div>
+        <div class="result-tools" id="result-tools" hidden>
+          <button type="button" class="btn ghost" id="agent-toggle" aria-pressed="false" aria-controls="agent-view sheet-view">For an AI agent</button>
+          <button type="button" class="btn ghost" id="copy-json">Copy JSON</button>
+          <button type="button" class="btn ghost" id="copy-md">Copy Markdown</button>
+          <span id="copy-status" class="copy-status" aria-live="polite"></span>
+        </div>
+        <div id="sheet-view" class="sheet-view">
+          <div class="placeholder" aria-hidden="true">
+            <div class="ph-head"><span>Report</span><span class="ph-stamp">awaiting proof</span></div>
+            {['Build', 'Output', 'References', 'Accessibility', 'Venue'].map((c, i) => (
+              <div class="ph-row"><span class="ph-n">{i + 1}</span><span class="ph-name">{c}</span><span class="ph-line" /></div>
+            ))}
+          </div>
+        </div>
+        <div id="agent-view" class="agent-view" hidden>
+          <p class="agent-note">This is the <code>Report</code> JSON that <code>overfull check --json</code> prints. Paste it into your agent’s chat, or let the agent run the command itself.</p>
+          <pre tabindex="0" aria-label="Report JSON"><code id="json-out"></code></pre>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script type="application/json" id="samples-data" set:html={JSON.stringify(samples).replace(/</g, '\\u003c')} />
+  <script type="application/json" id="check-config" set:html={JSON.stringify({ rulesBase: url('rules/') })} />
+</Base>
+
+<script>
+  import { initCheck } from '../../scripts/check';
+  initCheck();
+</script>
+
+<style>
+  .check-page {
+    padding-top: 1.5rem;
+  }
+  h1 {
+    margin-bottom: 0.75rem;
+  }
+  .bench {
+    clear: both;
+    display: grid;
+    gap: 2rem 3rem;
+    margin-top: 2.5rem;
+  }
+  @media (min-width: 980px) {
+    .bench {
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .intake {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .intake-title,
+  .files-title {
+    font-size: var(--s-1);
+    font-weight: 400;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 0.3rem;
+  }
+  .drop {
+    border: 1.5px dashed var(--hair-strong);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    background: var(--paper);
+    position: relative;
+    transition: border-color 120ms, background 120ms;
+  }
+  .drop[data-active='true'] {
+    border-color: var(--pencil);
+    background: var(--pencil-soft);
+  }
+  .drop-main {
+    font-size: var(--s1);
+    margin: 0 0 0.25rem;
+  }
+  .drop-types {
+    font-size: var(--s-1);
+    color: var(--ink-3);
+    margin-bottom: 0.9rem;
+  }
+  .drop-types code {
+    font-size: 0.72rem;
+  }
+  .paste summary {
+    cursor: pointer;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    color: var(--ink-2);
+    padding-block: 0.2rem;
+  }
+  .paste textarea {
+    margin: 0.5rem 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    resize: vertical;
+  }
+  fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  legend {
+    font-size: var(--s-1);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    padding: 0;
+    margin-bottom: 0.4rem;
+    width: 100%;
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 0.3rem;
+  }
+  .sample {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--hair);
+    padding: 0.5rem 0 0.5rem 1.2rem;
+    cursor: pointer;
+    font-size: var(--s-1);
+    position: relative;
+    min-height: 2.25rem;
+  }
+  .sample::before {
+    content: '‸';
+    color: var(--pencil);
+    font-weight: 700;
+    position: absolute;
+    left: 0.1rem;
+  }
+  .sample:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .sample[aria-pressed='true'] {
+    font-weight: 600;
+  }
+  .files-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.4rem 0;
+    font-size: var(--s-1);
+  }
+  .files-list :global(li) {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.25rem 0;
+  }
+  .files-list :global(.kind) {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: var(--s-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .files-list :global(.name) {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .link-btn,
+  .files-list :global(button) {
+    background: none;
+    border: 0;
+    padding: 0.2rem 0;
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+    cursor: pointer;
+    font-size: var(--s-1);
+    min-height: 1.75rem;
+  }
+  .opt {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    cursor: pointer;
+    padding: 0.2rem 0;
+  }
+  .opt input {
+    margin-top: 0.35rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--ink);
+    flex: none;
+  }
+  .opt-note {
+    display: block;
+    font-size: var(--s-1);
+    color: var(--ink-3);
+  }
+  .opt-select {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    font-size: var(--s-1);
+  }
+  .run-row {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .result {
+    min-width: 0;
+  }
+  .progress {
+    margin: 0 0 0.75rem;
+    font-size: var(--s-1);
+    color: var(--ink-2);
+    min-height: 1.5em;
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--hair);
+    margin-bottom: 1rem;
+  }
+  .progress-bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--pencil);
+    transition: width 200ms;
+  }
+  .notice {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-left: 2px solid var(--warn);
+    background: var(--warn-soft);
+    font-size: var(--s-1);
+    color: var(--ink);
+  }
+  .result-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .result-tools [aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .copy-status {
+    font-size: var(--s-1);
+    color: var(--ok);
+  }
+  .agent-view pre {
+    max-height: 40rem;
+    font-size: 0.72rem;
+  }
+  .agent-note {
+    font-size: var(--s-1);
+    color: var(--ink-2);
+  }
+  .placeholder {
+    border: 1px dashed var(--hair-strong);
+    padding: 1rem 1.1rem;
+    color: var(--ink-3);
+  }
+  .ph-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--hair-strong);
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.4rem;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.1em;
+  }
+  .ph-stamp {
+    border: 1.5px dashed var(--hair-strong);
+    padding: 0.1rem 0.5rem;
+    transform: rotate(-2deg);
+  }
+  .ph-row {
+    display: grid;
+    grid-template-columns: 1.5rem 8rem 1fr;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .ph-row:last-child {
+    border-bottom: 0;
+  }
+  .ph-name {
+    font-variant-caps: small-caps;
+  }
+  .ph-line {
+    height: 0.3rem;
+    background: var(--paper-2);
+  }
+</style>

@@ -1,0 +1,1 @@
+{ "title": "Unknown TikZ option", "engine": "pdflatex", "check": "build", "expect": ["tikz-error"] }

@@ -1,0 +1,69 @@
+% !TEX TS-program = lualatex
+%
+% Defense slides template (Beamer) — Overfull (https://github.com/amet13/overfull)
+% Build: make build (or latexmk) -> slides.pdf
+%
+% ACCESSIBILITY NOTE: Beamer cannot produce a tagged PDF. The LaTeX Tagging
+% Project lists the beamer class as "no support" (it re-boxes material in a
+% way no tagging can follow) and beamer refuses \DocumentMetadata. So this
+% deck is NOT PDF/UA. We still set the document language, the title and
+% alt text on images. For a tagged deck, try the new ltx-talk class (in
+% TeX Live 2026) and share the thesis PDF, which is PDF/UA-2.
+% aspectratio=169 for 16:9 screens; remove it for 4:3. [t] = top-aligned.
+% usepdftitle=false: the PDF title comes from metadata.tex, set below.
+% 12pt: larger type, readable from the back of the room.
+\documentclass[aspectratio=169,t,12pt,usepdftitle=false]{beamer}
+
+\input{metadata}
+
+\usetheme{ThesisSlides}           % local theme: beamerthemeThesisSlides.sty
+% professionalfonts: beamer leaves the math fonts alone, so the
+% unicode-math font below is used for formulas.
+\usefonttheme{professionalfonts}
+
+% ---- Fonts (LuaLaTeX) ------------------------------------------------------
+% Beamer sets all text in the sans-serif font. Fira Sans with the matching
+% Fira Math (both in TeX Live) give one coherent look for text and formulas;
+% the fallbacks are TeX Gyre Heros and Latin Modern Math.
+\usepackage{fontspec}
+\IfFontExistsTF{Fira Sans}
+  {\setsansfont{Fira Sans}}
+  {\setsansfont{TeX Gyre Heros}}
+\IfFontExistsTF{Inconsolatazi4}
+  {\setmonofont{Inconsolatazi4}[Scale=MatchLowercase]}
+  {\setmonofont{Latin Modern Mono}}
+\usepackage{mathtools}
+\usepackage[warnings-off={mathtools-overbracket,mathtools-colon}]{unicode-math}
+\IfFontExistsTF{Fira Math}
+  {\setmathfont{Fira Math}}
+  {\setmathfont{Latin Modern Math}}
+
+% ---- Tables, plots ---------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{mode=match}  % numbers and units in the slide's sans font
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18, compat/show suggested version=false}
+\graphicspath{{figures/}}
+
+% ---- Title slide and PDF metadata --------------------------------------------
+\title{\TalkTitle}
+\subtitle{\TalkSubtitle}
+\author{\texorpdfstring{Author: \TalkAuthor\\Advisor: \TalkAdvisor}{\TalkAuthor}}
+\institute{\texorpdfstring{\TalkInstitution\\\TalkDepartment}{\TalkInstitution}}
+\date{\TalkDate}
+
+\hypersetup{
+  pdflang={en},
+  pdftitle={\TalkTitle},
+  pdfauthor={\TalkAuthor},
+  pdfsubject={\TalkSubtitle},
+  pdfkeywords={\TalkKeywords},
+  pdfdisplaydoctitle=true,
+}
+
+\begin{document}
+\input{sections/slides}
+\end{document}

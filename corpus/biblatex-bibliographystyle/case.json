@@ -1,0 +1,7 @@
+{
+  "title": "BibTeX commands used with biblatex",
+  "engine": "lualatex",
+  "check": "build",
+  "expect": ["biblatex-error"],
+  "run": "once"
+}

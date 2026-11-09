@@ -1,0 +1,276 @@
+% Slide content. One frame per idea; keep text short, put details in the thesis.
+
+\frame[plain]{\titlepage} % Title slide
+
+%-------------------------------------------------------------------------------
+
+\section{Goals and objectives}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \textbf{Goal:} improve the effectiveness of the proposed approach in the target domain
+
+  \vspace{\baselineskip}
+
+  \textbf{Objectives:}
+  \begin{itemize}
+    \item review existing approaches and identify limitations
+    \item analyze requirements and constraints
+    \item design and implement a prototype system
+    \item evaluate through experimental research
+    \item compare results with existing alternatives
+  \end{itemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Input and output data}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \textbf{Input data:}
+  \begin{itemize}
+    \item dataset of sample measurements
+    \item configuration parameters
+    \item baseline metrics from existing solutions
+  \end{itemize}
+
+  \vspace{\baselineskip}
+
+  \textbf{Output data:}
+  \begin{itemize}
+    \item prototype implementation
+    \item experimental results
+    \item comparative analysis report
+  \end{itemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{System analysis results}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \textbf{Functions:}
+  \begin{itemize}
+    \item data ingestion and preprocessing
+    \item analysis and transformation
+    \item result generation and visualization
+    \item logging and monitoring
+    \item reporting and export
+  \end{itemize}
+
+  \vspace{\baselineskip}
+
+  \textbf{Subsystems:}
+  \begin{itemize}
+    \item data processing subsystem
+    \item analysis engine subsystem
+    \item user interface subsystem
+    \item monitoring and logging subsystem
+  \end{itemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Design evaluation}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \textbf{Goal:} select the optimal architecture
+
+  Criteria: performance, accuracy, scalability, maintainability
+  (weighted scores, sample data)
+
+  \vspace{\baselineskip}
+
+  \begin{tabular}{l S[table-format=1.2]}
+    \toprule
+    Alternative          & {Score} \\
+    \midrule
+    Monolithic           & 7.10             \\
+    Microservices        & 7.95             \\
+    \textbf{Hybrid}      & \bfseries 8.35   \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{\baselineskip}
+
+  Selected approach: \textbf{Hybrid architecture}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{System architecture}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        alt={Client connects to a load balancer that feeds App 1 and App 2; both use the database},
+        box/.style={rectangle, draw, minimum width=2.2cm, minimum height=0.8cm, align=center},
+        >=Stealth
+      ]
+      \node[box] (client) {Client};
+      \node[box, right=1cm of client] (lb) {Load Balancer};
+      \node[box, above right=0.4cm and 1cm of lb] (app1) {App 1};
+      \node[box, below right=0.4cm and 1cm of lb] (app2) {App 2};
+      \node[box, right=4.4cm of lb] (db) {Database};
+      \draw[->] (client) -- (lb);
+      \draw[->] (lb) -- (app1);
+      \draw[->] (lb) -- (app2);
+      \draw[->] (app1) -- (db);
+      \draw[->] (app2) -- (db);
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Experimental results}
+
+\begin{frame}
+  \frametitle{\insertsection}
+  \framesubtitle{Performance comparison (sample data)}
+
+  \begin{table}
+    \centering
+    \begin{tabular}{l S[table-format=1.1] S[table-format=2.1] S[table-format=3.1]}
+      \toprule
+      Method            & {Small (s)} & {Medium (s)} & {Large (s)} \\
+      \midrule
+      Baseline A        & 0.8                  & 45.2                  & 512.0                \\
+      Baseline B        & 0.5                  & 38.7                  & 478.3                \\
+      \textbf{Proposed} & \bfseries 0.3        & \bfseries 22.1        & \bfseries 221.1      \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{\baselineskip}
+
+  \textbf{40--63\% less processing time} than the baselines
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Experimental results}
+  \framesubtitle{Processing time by dataset size (sample data)}
+
+  \centering
+  % Log axis: the times span three orders of magnitude.
+  \begin{tikzpicture}[alt={Grouped bar chart of processing time in seconds, logarithmic axis. Small: Baseline A 0.8, Baseline B 0.5, Proposed 0.3. Medium: 45.2, 38.7, 22.1. Large: 512.0, 478.3, 221.1. The proposed approach is fastest for every dataset size.}]
+    \begin{axis}[
+        ybar, bar width=12pt, width=0.8\linewidth, height=5cm,
+        enlarge x limits=0.25, ylabel={Time (s, log scale)},
+        ymode=log, log origin=infty, ymin=0.1, ymax=50000,
+        nodes near coords={\pgfmathprintnumber[fixed, fixed zerofill, precision=1]{\pgfplotspointmeta}},
+        point meta=rawy,
+        nodes near coords style={font=\scriptsize, rotate=90, anchor=west},
+        symbolic x coords={Small, Medium, Large}, xtick=data,
+        legend style={font=\footnotesize, at={(1.03,0.5)}, anchor=west},
+      ]
+      \addplot[fill=red!60]   table[col sep=comma, x=dataset, y=baselineA] {figures/data/benchmark.csv};
+      \addplot[fill=blue!60]  table[col sep=comma, x=dataset, y=baselineB] {figures/data/benchmark.csv};
+      \addplot[fill=green!60] table[col sep=comma, x=dataset, y=proposed]  {figures/data/benchmark.csv};
+      \legend{Baseline A, Baseline B, Proposed}
+    \end{axis}
+  \end{tikzpicture}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Key formulas}
+
+\begin{frame}
+  \frametitle{\insertsection}
+  \framesubtitle{Mathematical foundations}
+
+  \textbf{Weighted effectiveness:}
+  \[E = \sum_{i=1}^{n} w_i \cdot f(x_i)\]
+
+  \vspace{0.5\baselineskip}
+
+  \textbf{Classification accuracy:}
+  \[\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \times 100\%\]
+
+  \vspace{0.5\baselineskip}
+
+  \textbf{Scalability model:}
+  \[T(n) = a \cdot n + b, \quad a = \qty{2.21e-4}{\second}, \; b = \qty{0.12}{\second}\]
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Processing pipeline}
+
+\begin{frame}
+  \frametitle{\insertsection}
+  \framesubtitle{State machine of the processing pipeline}
+
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[
+        alt={State machine: Idle goes to Loading on start, Loading to Processing when data is ready, Processing to Done on completion. Loading or Processing go to Error on failure; Error returns to Idle on retry, Done returns to Idle on reset.},
+        state/.style={circle, draw, minimum size=1.7cm, inner sep=1pt, align=center, font=\footnotesize},
+        accept/.style={state, double},
+        every node/.append style={font=\footnotesize},
+        >=Stealth
+      ]
+      \node[state] (idle) {Idle};
+      \node[state, right=1.3cm of idle] (load) {Loading};
+      \node[state, right=1.3cm of load] (proc) {Processing};
+      \node[accept, right=1.3cm of proc] (done) {Done};
+      \node[state] (err) at ($(load)!0.5!(proc) + (0,-2.0cm)$) {Error};
+
+      \draw[->] (idle) -- node[above] {start} (load);
+      \draw[->] (load) -- node[above] {ready} (proc);
+      \draw[->] (proc) -- node[above] {done} (done);
+      \draw[->] (load) -- node[left] {fail} (err);
+      \draw[->] (proc) -- node[right] {fail} (err);
+      \draw[->] (err) to[out=180, in=-90] node[below left] {retry} (idle);
+      \draw[->] (done) to[out=115, in=65, looseness=0.7] node[above] {reset} (idle);
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Results}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \begin{itemize}
+    \item comprehensive literature review completed
+    \item system analysis with 5 functions and 4 subsystems
+    \item comparative design evaluation (hybrid approach selected)
+    \item prototype implemented in Python + PostgreSQL + Docker
+    \item 40--63\% shorter processing time demonstrated
+    \item 94.2\% accuracy achieved
+  \end{itemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\section{Conclusion}
+
+\begin{frame}
+  \frametitle{\insertsection}
+
+  \begin{itemize}
+    \item analyzed existing approaches and identified key limitations
+    \item designed modular architecture with clear subsystem boundaries
+    \item implemented a working prototype (Python, PostgreSQL, Docker)
+    \item demonstrated significant improvements in performance and accuracy
+    \item proposed directions for future work
+  \end{itemize}
+\end{frame}
+
+%-------------------------------------------------------------------------------

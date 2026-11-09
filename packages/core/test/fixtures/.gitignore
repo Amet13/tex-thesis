@@ -1,0 +1,4 @@
+# Real TeX logs used as test fixtures
+!*.log
+!*.aux
+!*.pdf

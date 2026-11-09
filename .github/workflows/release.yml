@@ -1,0 +1,140 @@
+name: release
+
+# Tag vX.Y.Z → GitHub release with:
+#   - overfull.cjs                      single-file CLI, runs with Node ≥ 22 on any OS
+#   - overfull-<os>-<arch>[.exe]        native executables (Node single executable):
+#                                       linux-x64, linux-arm64, darwin-arm64, win-x64
+#   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
+#   - SHA256SUMS                        checksums, plus build provenance attestations
+# The Docker image is published by image.yml on the same tag.
+
+on:
+  push:
+    # Release tags only: moving the major tag (v3) for the Action triggers nothing.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  # Dry run from any branch: builds and uploads every asset as a workflow
+  # artifact, publishes nothing. Do this before tagging a release.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Tag matches the package version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          want="${GITHUB_REF_NAME#v}"
+          for f in packages/cli/package.json packages/core/package.json action/package.json; do
+            got="$(jq -r .version "$f")"
+            [ "$got" = "$want" ] || { echo "::error file=$f::version $got, tag $GITHUB_REF_NAME (run scripts/bump-version.mjs)"; exit 1; }
+          done
+
+  pdfs:
+    needs: version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: overfull
+          load: true
+          tags: overfull:release
+          cache-from: type=gha,scope=overfull-linux-amd64
+      - run: bash scripts/e2e-templates.sh overfull:release out
+      - name: Collect PDFs
+        run: |
+          mkdir -p assets
+          cp out/thesis/thesis.pdf out/paper/paper.pdf out/slides/slides.pdf assets/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: assets-pdfs
+          path: assets/*
+
+  cli:
+    name: CLI (${{ matrix.target }})
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, target: linux-x64 }
+          - { os: ubuntu-24.04-arm, target: linux-arm64 }
+          - { os: macos-15, target: darwin-arm64 }
+          - { os: windows-2025, target: win-x64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      # The executables embed this Node.js. Node 26 (LTS) builds them in one step
+      # with `--build-sea`; older Node would need postject from the npm registry.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/build-standalone.mjs --sea
+      - name: Smoke test
+        shell: bash
+        run: |
+          exe=dist-standalone/overfull; [ -f "$exe.exe" ] && exe="$exe.exe"
+          "$exe" --version
+          "$exe" explain undefined-control-sequence > /dev/null
+          "$exe" init paper "$RUNNER_TEMP/sea-paper" --no-git > /dev/null
+          test -f "$RUNNER_TEMP/sea-paper/main.tex"
+          node dist-standalone/overfull.cjs --version
+      - name: Name assets
+        shell: bash
+        run: |
+          mkdir -p assets
+          if [ -f dist-standalone/overfull.exe ]; then
+            cp dist-standalone/overfull.exe "assets/overfull-${{ matrix.target }}.exe"
+          else
+            cp dist-standalone/overfull "assets/overfull-${{ matrix.target }}"
+          fi
+          if [ "${{ matrix.target }}" = linux-x64 ]; then cp dist-standalone/overfull.cjs assets/; fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: assets-cli-${{ matrix.target }}
+          path: assets/*
+
+  github-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [pdfs, cli]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: assets-*
+          merge-multiple: true
+          path: assets
+      - name: Checksums
+        working-directory: assets
+        run: sha256sum -- * > SHA256SUMS
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: assets/*
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          generate_release_notes: true
+          files: assets/*

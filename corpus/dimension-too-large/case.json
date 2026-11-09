@@ -1,0 +1,6 @@
+{
+  "title": "Length larger than TeX allows",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["dimension-too-large"]
+}

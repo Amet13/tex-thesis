@@ -1,0 +1,27 @@
+# overfull.yml — configuration for the `overfull` CLI (build, check, diff ...).
+# Docs: https://github.com/amet13/overfull
+#
+# Default build: LuaLaTeX (`latexmk`). For arXiv, build with pdfLaTeX:
+# `latexmk -pdf` (arXiv does not support LuaLaTeX).
+main: main.tex
+jobname: paper             # output: paper.pdf / paper.log
+bib: [references.bib]
+profile: paper
+checks: [build, output, references, accessibility, venue]
+references:
+  # Your e-mail lets CrossRef/OpenAlex put you in their faster "polite pool".
+  # mailto: you@example.org
+  ignore: []
+  # A cited entry must verify against the indexes, come from `overfull cite`
+  # (which adds x-overfull = {cite ...}), or carry note = {overfull: author-provided}
+  # written by you. Set to false if you never work with an AI agent.
+  requireCite: true
+venue:
+  # Main text (up to \label{overfull:main-end}) must fit in 8 pages.
+  # Set max to your venue's limit.
+  pageLimit: { max: 8, endLabel: overfull:main-end }
+  anonymous: false         # true for double-blind review
+  disclosure: recommended  # set to required if your venue asks for an AI-use statement
+build:
+  engine: auto             # local latexmk if installed, otherwise Docker
+  image: ghcr.io/amet13/overfull:3

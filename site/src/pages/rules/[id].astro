@@ -1,0 +1,272 @@
+---
+import { Code } from 'astro:components';
+import type { RuleInfo } from '@overfull/core';
+import Base from '../../layouts/Base.astro';
+import { type CorpusCase, caseForRule, texMessage } from '../../lib/corpus';
+import { CHECK_LABELS, REPO_URL, url } from '../../lib/paths';
+import { rules } from '../../lib/rules';
+import { inline } from '../../lib/sheet';
+import { galleyTheme } from '../../lib/shiki-theme.mjs';
+import { clauseRules } from '../../lib/verapdf-clauses';
+
+export function getStaticPaths() {
+  const all = rules();
+  const ids = new Set(all.map((r) => r.id));
+  const generic = all.find((r) => r.id === 'verapdf');
+  // veraPDF clause ids (`verapdf-8-2-2`): a page per clause core explains.
+  const clauses = clauseRules().filter((r) => !ids.has(r.id));
+  return [
+    ...all.map((rule, i) => ({
+      params: { id: rule.id },
+      props: {
+        rule,
+        kase: caseForRule(rule.id, rule.corpus),
+        related: all.filter((r) => r.check === rule.check && r.id !== rule.id).slice(0, 8),
+        clauses: rule.id === 'verapdf' ? clauses : [],
+        index: i,
+      },
+    })),
+    ...clauses.map((rule) => ({
+      params: { id: rule.id },
+      props: {
+        rule,
+        related: [...(generic ? [generic] : []), ...clauses.filter((r) => r.id !== rule.id)],
+        clauses: [],
+      },
+    })),
+  ];
+}
+
+interface Props {
+  rule: RuleInfo;
+  kase?: CorpusCase;
+  related: RuleInfo[];
+  /** On the `verapdf` page: the clause pages. */
+  clauses: RuleInfo[];
+}
+const { rule, kase, related, clauses } = Astro.props;
+const sevWord = rule.severity === 'info' ? 'note' : rule.severity;
+const engine = kase?.engine ?? 'lualatex';
+const msg = texMessage(kase, rule.id);
+const plain = (t: string) => t.replace(/`([^`]+)`/g, '$1');
+const pageTitle = msg ? `${msg} — ${rule.title}` : rule.title;
+const description = `${plain(rule.summary)} Fix: ${plain(rule.fix)}`;
+---
+<Base title={pageTitle} description={description} section="rules">
+  <article class="rule">
+    <p class="runhead"><span><a href={url('rules/')}>Rules</a> / <a href={url(`rules/#${rule.check}`)}>{CHECK_LABELS[rule.check]?.name ?? rule.check}</a></span></p>
+    <div class="galley">
+      <aside class="marginal">
+        <dl class="facts">
+          <dt>Rule id</dt><dd><code>{rule.id}</code></dd>
+          <dt>Check</dt><dd>{CHECK_LABELS[rule.check]?.name ?? rule.check}</dd>
+          <dt>Severity</dt><dd><span class={`sev-tag sev-${rule.severity}`}>{sevWord}</span></dd>
+        </dl>
+        <p>In a terminal: <code>overfull explain {rule.id}</code></p>
+      </aside>
+      {msg ? (
+        <h1><code class="tex-msg">{msg}</code><span class="sr-only"> — </span><span class="h1-title">{rule.title}</span></h1>
+      ) : (
+        <h1>{rule.title}</h1>
+      )}
+      <p class="lede" set:html={inline(rule.summary)} />
+      <h2>Fix</h2>
+      <p class="fix"><span class="caret" aria-hidden="true">‸</span><span set:html={inline(rule.fix)} /></p>
+    </div>
+
+    {clauses.length > 0 && (
+      <section class="related" aria-labelledby="clauses-title">
+        <h2 id="clauses-title">Common clauses</h2>
+        <p>The rule id names the clause: <code>verapdf-7-21-4-1</code> is clause 7.21.4.1 and falls under 7.21. Clauses 7.x are PDF/UA-1, 8.x are PDF/UA-2.</p>
+        <ul>
+          {clauses.map((r) => <li><a href={url(`rules/${r.id}/`)}><code>{r.id}</code></a> {r.title.replace(/ \(veraPDF\)$/, '')}</li>)}
+        </ul>
+      </section>
+    )}
+
+    {kase ? (
+      <section class="case" aria-labelledby="case-title">
+        <div class="case-head">
+          <h2 id="case-title">Example</h2>
+          <p class="repro">Reproduced on TeX Live 2026 by CI · <span class="engine">{engine}</span> · <a href={`${REPO_URL}/tree/main/corpus/${kase.id}`}>corpus/{kase.id}</a></p>
+          {kase.title && kase.title !== rule.title && <p class="case-title">{kase.title}</p>}
+        </div>
+        <div class="case-grid">
+          <figure class="case-tex">
+            <figcaption><span class="mark-x" aria-hidden="true">✗</span> Fails: <code>main.tex</code></figcaption>
+            <Code code={kase.tex.trimEnd()} lang="latex" theme={galleyTheme} />
+          </figure>
+          {kase.fixed && (
+            <figure class="case-fixed">
+              <figcaption><span class="mark-ok" aria-hidden="true">✓</span> Fixed</figcaption>
+              <Code code={kase.fixed.trimEnd()} lang="latex" theme={galleyTheme} />
+            </figure>
+          )}
+          <figure class="case-log">
+            <figcaption>What TeX prints in <code>main.log</code></figcaption>
+            <pre class="log" tabindex="0" aria-label="Log excerpt"><code>{kase.excerpt}</code></pre>
+          </figure>
+        </div>
+      </section>
+    ) : null}
+
+    {related.length > 0 && (
+      <section class="related" aria-labelledby="related-title">
+        <h2 id="related-title">Other {CHECK_LABELS[rule.check]?.name.toLowerCase()} rules</h2>
+        <ul>
+          {related.map((r) => <li><a href={url(`rules/${r.id}/`)}>{r.title}</a></li>)}
+        </ul>
+      </section>
+    )}
+  </article>
+</Base>
+<style>
+  .rule {
+    padding-top: 1.5rem;
+  }
+  .runhead a {
+    text-decoration: none;
+  }
+  .runhead a:hover {
+    text-decoration: underline;
+  }
+  h1 {
+    margin-bottom: 0.75rem;
+  }
+  .tex-msg {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    font-size: clamp(0.85rem, 0.7rem + 0.6vw, 1.05rem);
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--pencil);
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    overflow-wrap: anywhere;
+  }
+  .tex-msg::before {
+    content: '! ';
+    color: var(--ink-3);
+  }
+  .h1-title {
+    display: block;
+  }
+  .rule h2 {
+    font-size: var(--s1);
+    margin: 2rem 0 0.5rem;
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+  }
+  .fix .caret {
+    color: var(--pencil);
+    font-weight: 700;
+    margin-right: 0.4em;
+  }
+  .facts {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.2rem 0.75rem;
+    margin: 0 0 0.75rem;
+  }
+  .facts dt {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
+  }
+  .facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .case {
+    clear: both;
+    margin-top: 3rem;
+    padding-top: 0.5rem;
+    border-top: 2px solid var(--ink);
+  }
+  .case-head h2 {
+    margin-top: 0.5rem !important;
+  }
+  .repro {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.07em;
+    color: var(--ok);
+    margin: 0;
+  }
+  .repro a {
+    color: var(--ink-2);
+  }
+  .repro .engine {
+    font-family: var(--mono);
+    font-variant-caps: normal;
+    letter-spacing: 0;
+    font-size: 0.8em;
+  }
+  .case-title {
+    color: var(--ink-2);
+    margin: 0.3rem 0 0;
+  }
+  .case-grid {
+    display: grid;
+    gap: 1.5rem 2rem;
+    margin-top: 1.25rem;
+  }
+  figure {
+    margin: 0;
+    min-width: 0;
+  }
+  figcaption {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.08em;
+    color: var(--ink-2);
+    margin-bottom: 0.35rem;
+  }
+  figcaption code {
+    font-variant-caps: normal;
+    letter-spacing: 0;
+  }
+  .mark-x {
+    color: var(--error);
+    font-variant-caps: normal;
+  }
+  .mark-ok {
+    color: var(--ok);
+    font-variant-caps: normal;
+  }
+  figure :global(pre) {
+    margin: 0;
+    max-height: 30rem;
+  }
+  .log {
+    border-left-color: var(--pencil);
+    white-space: pre;
+  }
+  .case-fixed :global(pre) {
+    border-left-color: var(--ok);
+  }
+  .case-grid {
+    max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
+  }
+  @media (min-width: 1000px) {
+    .case-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .case-log,
+    .case-grid:not(:has(.case-fixed)) .case-tex {
+      grid-column: 1 / -1;
+    }
+  }
+  .related {
+    margin-top: 3rem;
+  }
+  .related ul {
+    columns: 2 16rem;
+    padding-left: 1.1em;
+  }
+  .related li {
+    break-inside: avoid;
+    margin-bottom: 0.3rem;
+  }
+</style>

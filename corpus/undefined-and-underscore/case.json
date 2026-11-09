@@ -1,0 +1,6 @@
+{
+  "title": "Unknown command, then an underscore in text: two root causes; the math-grab runaway is a follow-on",
+  "engine": "lualatex",
+  "check": "build",
+  "expect": ["undefined-control-sequence", "missing-dollar"]
+}

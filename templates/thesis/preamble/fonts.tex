@@ -1,0 +1,26 @@
+% preamble/fonts.tex — text and math fonts (LuaLaTeX + fontspec + unicode-math).
+%
+% Times New Roman is the usual thesis requirement. It ships with the Overfull
+% Docker image (Microsoft core fonts); TeX Gyre Termes is a free metric clone
+% that every TeX Live has, so the build never fails on a missing font.
+
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\setmainfont{TeX Gyre Termes}}
+% Code: Inconsolata (TeX Live package "inconsolata"), a sturdy monospace
+% that stays legible at listing size, scaled to the x-height of the text.
+\IfFontExistsTF{Inconsolatazi4}
+  {\setmonofont{Inconsolatazi4}[Scale=MatchLowercase]}
+  {\setmonofont{Latin Modern Mono}}
+
+% Math: amsmath/mathtools first, unicode-math last. With tagging=on and
+% LuaLaTeX, formulas are tagged as MathML (see main.tex, math/setup).
+\usepackage{mathtools}
+\usepackage[warnings-off={mathtools-overbracket,mathtools-colon}]{unicode-math}
+\IfFontExistsTF{TeX Gyre Termes Math}
+  {\setmathfont{TeX Gyre Termes Math}} % matches Times-like text
+  {\setmathfont{Latin Modern Math}}
+
+% Character protrusion and font expansion: fewer overfull lines, nicer margins.
+\usepackage{microtype}

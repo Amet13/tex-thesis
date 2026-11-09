@@ -1,0 +1,87 @@
+% preamble.tex — packages and style. Works with LuaLaTeX and pdfLaTeX.
+% Every package here is compatible with PDF tagging in TeX Live 2026.
+
+\usepackage{iftex}
+
+% ---- Fonts --------------------------------------------------------------
+% Latin Modern under both engines, so the page count is the same whichever
+% engine builds the paper.
+\ifluatex
+  % LuaLaTeX: OpenType fonts, Unicode math (tagged as MathML).
+  \usepackage{amsmath}
+  \usepackage{fontspec}           % Latin Modern is the default text font
+  \usepackage{unicode-math}
+  \setmathfont{Latin Modern Math}
+\else
+  % pdfLaTeX (arXiv): Type 1 fonts with T1 encoding.
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+  \usepackage{amsmath,amssymb}
+\fi
+\usepackage{microtype}
+
+% ---- Page ---------------------------------------------------------------
+% 1.25in side margins keep lines near 75 characters at 11pt; check your
+% venue's rules, which override this.
+\usepackage[margin=1.25in]{geometry}
+
+% ---- Figures, tables, plots ------------------------------------------------
+% ACCESSIBILITY: every \includegraphics needs alt={...} and every
+% tikzpicture needs [alt={...}]; decorative graphics use [artifact].
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+% Workaround (TeX Live 2026, pdfLaTeX only): mark \toprule, \midrule and
+% \bottomrule as artifacts, as the tagging code already does for \cmidrule
+% and as LuaLaTeX does by itself. Without it veraPDF reports PDF/UA rule
+% 8.2.2 ("content neither artifact nor tagged"). Remove once booktabs or the
+% LaTeX kernel handles it.
+% The patch applies only if booktabs still has the definition it replaces
+% (checked below); otherwise it does nothing and logs a message.
+\ifpdftex
+  \ExplSyntaxOn
+  \makeatletter
+  \def\overfull@BTnormal@orig{%
+    {\CT@arc@\hrule\@height\@thisrulewidth}%
+    \futurenonspacelet\@tempa\@BTendrule}
+  \ifx\@BTnormal\overfull@BTnormal@orig
+    \def\@BTnormal{%
+      {\tag_mc_begin:n{artifact}\CT@arc@\hrule\@height\@thisrulewidth\tag_mc_end:}%
+      \futurenonspacelet\@tempa\@BTendrule}
+  \else
+    \PackageInfo{preamble}{booktabs~changed:~rule~artifact~patch~skipped}
+  \fi
+  \makeatother
+  \ExplSyntaxOff
+\fi
+\usepackage{siunitx}
+% Table header cells: the first row of every table is tagged TH (header).
+% For a table with two header rows put \tagpdfsetup{table/header-rows={1,2}}
+% inside its table environment.
+\tagpdfsetup{table/header-rows={1}}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18, compat/show suggested version=false}
+
+% ---- Links, cross-references, bibliography --------------------------------
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true, linkcolor=blue!50!black, citecolor=blue!50!black,
+  urlcolor=blue!50!black,
+  pdftitle={\PaperTitle},
+  pdfauthor={\PaperAuthors},
+  pdfkeywords={\PaperKeywords},
+  pdfdisplaydoctitle=true,
+}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% Citation style: numeric-comp gives [1,2]; for author-year use
+%   style=authoryear, and \textcite / \parencite in the text.
+\usepackage{csquotes}
+\usepackage[backend=biber, style=numeric-comp, sorting=none]{biblatex}
+\addbibresource{references.bib}
+% DOIs and URLs may break after any character, so long ones do not force
+% stretched, letter-spaced lines.
+\setcounter{biburlnumpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburllcpenalty}{100}

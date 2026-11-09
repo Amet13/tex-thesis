@@ -1,0 +1,6 @@
+{
+  "title": "Characters missing from the font",
+  "engine": "xelatex",
+  "check": "output",
+  "expect": ["missing-glyph"]
+}

@@ -1,0 +1,6 @@
+{
+  "title": "\\printbibliography with no citations",
+  "engine": "lualatex",
+  "check": "output",
+  "expect": ["empty-bibliography"]
+}

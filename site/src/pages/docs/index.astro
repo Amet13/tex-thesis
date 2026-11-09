@@ -1,0 +1,73 @@
+---
+import Docs from '../../layouts/Docs.astro';
+import {
+  docHeadings,
+  docPath,
+  docSlug,
+  groupDocs,
+  rewriteDocLinks,
+  sortedDocs,
+} from '../../lib/docs';
+import { url } from '../../lib/paths';
+
+const docs = await sortedDocs();
+const groups = groupDocs(docs);
+const intro = docs.find((d) => docSlug(d) === '');
+const introHtml = intro
+  ? rewriteDocLinks(intro.rendered?.html ?? '', intro, import.meta.env.BASE_URL)
+  : '';
+---
+<Docs title="Guide" description={intro?.data.description ?? 'How to start a paper or thesis with Overfull, work with a coding agent or by hand, and read every check.'} docs={docs} current={intro} headings={docHeadings(intro)}>
+  {introHtml && <div set:html={introHtml} />}
+  {introHtml && <h2 id="contents">All pages</h2>}
+  {groups.length === 0 && <p>The guide is being written. Meanwhile, the <a href="https://github.com/amet13/overfull#readme">README</a> covers installation and commands.</p>}
+  <div class="contents">
+    {groups.map((g) => (
+      <section aria-labelledby={`sec-${g.section.replace(/\W+/g, '-').toLowerCase()}`}>
+        <h3 id={`sec-${g.section.replace(/\W+/g, '-').toLowerCase()}`}>{g.section}</h3>
+        <ol>
+          {g.docs.map((d) => (
+            <li>
+              <a href={url(docPath(d))}>{d.data.title}</a>
+              {d.data.description && <span class="desc">{d.data.description}</span>}
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))}
+  </div>
+</Docs>
+<style>
+  .contents h3 {
+    font-size: var(--s0);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.09em;
+    color: var(--ink-3);
+    font-weight: 400;
+    margin: 2rem 0 0.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--hair);
+  }
+  .contents ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .contents li {
+    padding: 0.45rem 0;
+    display: grid;
+    gap: 0.1rem;
+  }
+  .contents li a {
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .contents li a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--pencil);
+  }
+  .desc {
+    color: var(--ink-2);
+    font-size: var(--s-1);
+  }
+</style>

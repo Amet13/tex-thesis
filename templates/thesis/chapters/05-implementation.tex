@@ -1,0 +1,199 @@
+\section{Implementation}\label{sec:implementation}
+
+This chapter describes the implementation of the proposed system design.
+
+\subsection{Technology stack}
+
+The system is implemented using the following technologies:
+\begin{itemize}
+  \item Python 3.13 with NumPy~\cite{harris2020array} for the core processing logic;
+  \item PostgreSQL 17 for data storage;
+  \item Docker for containerized deployment;
+  \item GitHub Actions for continuous integration.
+\end{itemize}
+
+\subsection{Architecture overview}
+
+The implemented system follows the hybrid architecture selected in \cref{sec:design}.
+The core module handles data processing and analysis, while extension modules provide specialized functionality.
+
+% EXAMPLE: TikZ deployment diagram with several node shapes.
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={Deployment diagram: a client connects to a load balancer, which
+           distributes requests to App Server 1 and App Server 2. Both
+           servers use a shared cache in front of the database.},
+      box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
+      client/.style={ellipse, draw, minimum width=2cm, minimum height=0.7cm, align=center},
+      >=Stealth,
+    ]
+    \node[client] (client) {Client};
+    \node[box, right=1cm of client] (lb) {Load Balancer};
+    \node[box, above right=0.5cm and 1cm of lb] (app1) {App Server 1};
+    \node[box, below right=0.5cm and 1cm of lb] (app2) {App Server 2};
+    \node[box, right=4.5cm of lb] (cache) {Cache};
+    \node[box, below=1.8cm of cache] (db) {Database};
+    \draw[->] (client) -- (lb);
+    \draw[->] (lb) -- (app1);
+    \draw[->] (lb) -- (app2);
+    \draw[->] (app1) -- (cache);
+    \draw[->] (app2) -- (cache);
+    \draw[->] (cache) -- (db);
+  \end{tikzpicture}
+  \caption{Implemented system architecture}\label{fig:impl-arch}
+\end{figure}
+
+% EXAMPLE: an external image from figures/. The alt text says what the
+% image shows; the caption says why it is there.
+\Cref{fig:sample-photo} demonstrates including an external image from the \path{figures/} directory.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.4\linewidth, alt={Placeholder photograph used
+    to demonstrate image inclusion}]{sample-photo}
+  \caption{Sample image included from a file}\label{fig:sample-photo}
+\end{figure}
+
+% EXAMPLE: two images side by side in one figure, each with its own alt text.
+\Cref{fig:two-images} shows two images placed side by side.
+This is useful for comparing visual results or showing before and after states.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.4\linewidth, alt={Placeholder photograph, state
+    before processing}]{sample-photo}%
+  \hfill
+  \includegraphics[width=0.4\linewidth, alt={Placeholder photograph, state
+    after processing}]{sample-photo}
+  \caption{Two images side by side: before (left) and after (right)}\label{fig:two-images}
+\end{figure}
+
+\subsection{Key components}
+
+The main processing module is responsible for data ingestion and transformation.
+\Cref{lst:processor} shows a simplified version of the data processor.
+
+% EXAMPLE: code listing. A "codelisting" float gives it a number and a
+% caption; the code itself goes into a verbatim environment.
+\begin{codelisting}[htbp]
+  \caption{Data processor module (processor.py)}\label{lst:processor}
+\begin{verbatim}
+import json
+import logging
+from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class DataPoint:
+    """A single data measurement."""
+    timestamp: str
+    value: float
+    label: str | None = None
+
+
+class DataProcessor:
+    """Processes and transforms input data."""
+
+    def __init__(self, config: dict):
+        self.scale = config.get("scale", 1.0)
+        self.results: list[dict] = []
+
+    def load(self, path: str) -> list[DataPoint]:
+        with open(path) as f:
+            return [DataPoint(**item) for item in json.load(f)]
+
+    def process(self, data: list[DataPoint]) -> list[dict]:
+        for point in data:
+            self.results.append({
+                "timestamp": point.timestamp,
+                "value": point.value * self.scale,
+                "label": point.label or "unlabeled",
+            })
+        logger.info("Processed %d points", len(self.results))
+        return self.results
+\end{verbatim}
+\end{codelisting}
+
+\subsection{Configuration management}
+
+The system uses a configuration file to manage runtime parameters.
+\Cref{lst:config} shows an example configuration.
+
+\begin{codelisting}[htbp]
+  \caption{Example configuration file (config.json)}\label{lst:config}
+\begin{verbatim}
+{
+  "scale": 1.5,
+  "output_dir": "./results",
+  "log_level": "INFO",
+  "database": { "host": "localhost", "port": 5432 },
+  "processing": { "batch_size": 100, "max_retries": 3 }
+}
+\end{verbatim}
+\end{codelisting}
+
+\subsection{Database schema}
+
+\Cref{lst:sql} shows the database schema used for storing experimental results.
+
+\begin{codelisting}[htbp]
+  \caption{Database schema (schema.sql)}\label{lst:sql}
+\begin{verbatim}
+CREATE TABLE experiments (
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status      VARCHAR(50) DEFAULT 'pending'
+);
+
+CREATE TABLE results (
+    id            SERIAL PRIMARY KEY,
+    experiment_id INTEGER REFERENCES experiments(id),
+    metric_name   VARCHAR(100) NOT NULL,
+    metric_value  DOUBLE PRECISION NOT NULL
+);
+\end{verbatim}
+\end{codelisting}
+
+\subsection{Containerized deployment}
+
+\Cref{lst:dockerfile} shows the Dockerfile used for deployment; container orchestration follows the practices described in~\cite{burns2016borg}.
+
+\begin{codelisting}[htbp]
+  \caption{Application Dockerfile}\label{lst:dockerfile}
+\begin{verbatim}
+FROM python:3.13-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src/ src/
+EXPOSE 8080
+CMD ["python", "-m", "src.main"]
+\end{verbatim}
+\end{codelisting}
+
+\subsection{Security architecture}
+
+The system implements the security controls recommended in~\cite{nist2020sp80053}, as shown in \cref{fig:security}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      alt={Security pipeline: requests pass a firewall, then authentication,
+           then encryption; authentication also writes to an audit log.},
+      box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center},
+      >=Stealth,
+    ]
+    \node[box, fill=blue!10] (fw) {Firewall};
+    \node[box, right=1cm of fw, fill=green!10] (auth) {Authentication};
+    \node[box, right=1cm of auth, fill=orange!10] (enc) {Encryption};
+    \node[box, below=0.8cm of auth, fill=yellow!10] (audit) {Audit Logging};
+    \draw[->] (fw) -- (auth);
+    \draw[->] (auth) -- (enc);
+    \draw[->] (auth) -- (audit);
+  \end{tikzpicture}
+  \caption{Security architecture overview}\label{fig:security}
+\end{figure}
