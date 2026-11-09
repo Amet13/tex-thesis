@@ -120,10 +120,7 @@ async function gather(opts: CheckOptions, config: Config, needPdf: boolean): Pro
     if (opts.verapdf !== false && (opts.checks ?? config.checks).includes('accessibility'))
       inputs.docker = await dockerTools(opts, config);
     try {
-      inputs.facts = await readPdfFacts(
-        pdfAbs,
-        inputs.docker ? { docker: inputs.docker } : {},
-      );
+      inputs.facts = await readPdfFacts(pdfAbs, inputs.docker ? { docker: inputs.docker } : {});
     } catch (err) {
       inputs.factsError = err instanceof Error ? err.message : String(err);
     }
@@ -230,7 +227,12 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   if (opts.cache !== false) {
     const path = refsCachePath(root, config.references.cache, env);
     const inCi = env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
-    if (config.references.cache === 'project' && inCi && existsSync(path) && trackedByGit(root, path)) {
+    if (
+      config.references.cache === 'project' &&
+      inCi &&
+      existsSync(path) &&
+      trackedByGit(root, path)
+    ) {
       // A cache committed in a pull request must not make references "verified".
       extra.push({
         rule: 'refs-cache-ignored',

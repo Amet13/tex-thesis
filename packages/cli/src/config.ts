@@ -60,7 +60,11 @@ export function latexmkrcDirs(root: string): { outDir?: string; auxDir?: string 
     const a = /\$aux_dir\s*=\s*['"]([^'"]+)['"]/.exec(text);
     // Only plain relative directories are used; anything else (variables, absolute paths) is ignored.
     const plain = (d: string | undefined) =>
-      d !== undefined && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith('/') && !d.startsWith('-') && !d.split('/').includes('..');
+      d !== undefined &&
+      /^[A-Za-z0-9._/-]+$/.test(d) &&
+      !d.startsWith('/') &&
+      !d.startsWith('-') &&
+      !d.split('/').includes('..');
     if (plain(o?.[1])) out.outDir = o?.[1] as string;
     if (plain(a?.[1])) out.auxDir = a?.[1] as string;
     break;
@@ -306,14 +310,13 @@ export function loadConfig(
   if (build.outDir !== undefined && typeof build.outDir !== 'string')
     throw new ConfigError(f, '`build.outDir` must be a directory name');
   const rc = latexmkrcDirs(root);
-  const norm = (d: string) => (d === '.' || d === './' ? '.' : d.replace(/^\.\//, '').replace(/\/+$/, ''));
+  const norm = (d: string) =>
+    d === '.' || d === './' ? '.' : d.replace(/^\.\//, '').replace(/\/+$/, '');
   const outDir = norm(
     safeRelPath((build.outDir as string | undefined) ?? rc.outDir ?? '.', 'output directory'),
   );
   const auxDir =
-    build.outDir !== undefined
-      ? outDir
-      : norm(safeRelPath(rc.auxDir ?? outDir, 'aux directory'));
+    build.outDir !== undefined ? outDir : norm(safeRelPath(rc.auxDir ?? outDir, 'aux directory'));
 
   const config: Config = {
     root,

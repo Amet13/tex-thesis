@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { insideRootOrUndefined } from './safety.js';
 import type { TexFile } from '@overfull/core';
+import { insideRootOrUndefined } from './safety.js';
 
 const SKIP_DIRS = new Set([
   '.git',

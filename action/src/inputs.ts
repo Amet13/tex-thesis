@@ -1,3 +1,4 @@
+import { isAbsolute, resolve } from 'node:path';
 import type { CheckId, CheckOptions } from 'overfull';
 
 /** Reads an Action input the way the runner passes it (INPUT_<NAME>, spaces → _). */
@@ -47,8 +48,10 @@ export function readInputs(
   const bib = splitList(input(env, 'bib'));
   const opt = (name: string) => input(env, name);
   const check: CheckOptions = {
-    cwd: workingDirectory.startsWith('/') ? workingDirectory : `${workspace}/${workingDirectory}`,
+    cwd: isAbsolute(workingDirectory) ? workingDirectory : resolve(workspace, workingDirectory),
     env,
+    // The Action only checks existing outputs; it never starts containers.
+    engine: 'local',
     offline: boolInput(env, 'offline', false),
     ...(checks?.length ? { checks } : {}),
     ...(bib?.length ? { bib } : {}),

@@ -1,5 +1,5 @@
 import { texToPlain } from '../bib/tex.js';
-import { arxivCacheKey, cached, doiCacheKey, titleCacheKey } from './cache.js';
+import { arxivCacheKey, cached, cacheMaxAge, doiCacheKey, isFresh, titleCacheKey } from './cache.js';
 import { type HttpClient, SourceUnavailableError } from './http.js';
 import { arxivById, arxivSearch } from './sources/arxiv.js';
 import { crossrefSearch } from './sources/crossref.js';
@@ -34,7 +34,10 @@ export interface TitleSearch {
   hinted?: boolean;
 }
 
-type TitleCacheValue = Partial<Record<RefSource, WorkRecord[]>>;
+/** Records per source, with the time each source's answer was stored. */
+type TitleCacheValue = Partial<Record<RefSource, WorkRecord[]>> & {
+  cachedAt?: Partial<Record<RefSource, number>>;
+};
 
 export function failureReason(err: unknown): string {
   return err instanceof SourceUnavailableError ? err.message : `unexpected error: ${String(err)}`;
@@ -42,14 +45,20 @@ export function failureReason(err: unknown): string {
 
 /** Resolves a DOI (cached). Throws SourceUnavailableError when doi.org cannot answer. */
 export function resolveDoiCached(ctx: Ctx, doi: string): Promise<DoiResolution> {
-  return cached(ctx.opts.cache, doiCacheKey(doi), () => resolveDoi(ctx.client, doi));
+  return cached(ctx.opts.cache, doiCacheKey(doi), () => resolveDoi(ctx.client, doi), {
+    isNegative: (v) => v.kind !== 'found',
+    maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+  });
 }
 
 /** arXiv record by id (cached); null when arXiv has no such paper. */
 export async function arxivByIdCached(ctx: Ctx, id: string): Promise<WorkRecord | null> {
-  const value = await cached(ctx.opts.cache, arxivCacheKey(id), async () => ({
-    record: await arxivById(ctx.client, id),
-  }));
+  const value = await cached(
+    ctx.opts.cache,
+    arxivCacheKey(id),
+    async () => ({ record: await arxivById(ctx.client, id) }),
+    { isNegative: (v) => !v.record, maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays) },
+  );
   return value.record;
 }
 
@@ -80,11 +89,24 @@ async function searchOne(
   const cache = ctx.opts.cache;
   const hit = cache ? ((await cache.get(cacheKey)) as TitleCacheValue | undefined) : undefined;
   const cachedRecords = hit?.[source];
-  if (cachedRecords) return cachedRecords;
+  if (
+    Array.isArray(cachedRecords) &&
+    isFresh(
+      hit?.cachedAt?.[source],
+      cachedRecords.length === 0,
+      cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+    )
+  ) {
+    return cachedRecords;
+  }
   const records = await run();
   if (cache) {
     const latest = ((await cache.get(cacheKey)) as TitleCacheValue | undefined) ?? {};
-    await cache.set(cacheKey, { ...latest, [source]: records });
+    await cache.set(cacheKey, {
+      ...latest,
+      [source]: records,
+      cachedAt: { ...(latest.cachedAt ?? {}), [source]: Date.now() },
+    });
   }
   return records;
 }

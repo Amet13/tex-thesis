@@ -8,17 +8,16 @@ import {
   formatJson,
   formatMarkdown,
   githubAnnotations,
+  neutralizeWorkflowCommands,
   runCheck,
 } from 'overfull';
 import { readInputs } from './inputs.js';
-
-const escapeData = (s: string) =>
-  s.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+import { escapeData, outputRecord } from './output.js';
 
 function setOutput(name: string, value: string): void {
   const file = process.env.GITHUB_OUTPUT;
-  if (file) appendFileSync(file, `${name}<<__OVERFULL_EOF__\n${value}\n__OVERFULL_EOF__\n`);
-  else process.stdout.write(`${name}=${value}\n`);
+  if (file) appendFileSync(file, outputRecord(name, value));
+  else process.stdout.write(`${name}=${escapeData(value)}\n`);
 }
 
 async function main(): Promise<number> {
@@ -31,7 +30,10 @@ async function main(): Promise<number> {
     }
   }
   const report = await runCheck(inputs.check);
-  process.stdout.write(formatHuman(report, { color: true, verbose: true }));
+  // Messages carry text from the log, PDF and .bib: never let a line act as a workflow command.
+  process.stdout.write(
+    neutralizeWorkflowCommands(formatHuman(report, { color: true, verbose: true })),
+  );
 
   if (inputs.annotations) {
     const root = relative(workspace, resolve(inputs.check.cwd ?? workspace)) || '.';

@@ -49,9 +49,13 @@ export async function readPdfFacts(
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   } else if (opts.docker) {
     const rel = `./${relative(opts.docker.root, path).split('\\').join('/')}`;
-    const r = await run('docker', dockerRunArgs(opts.docker.image, opts.docker.root, ['pdffonts', rel]), {
-      timeoutMs: 60000,
-    });
+    const r = await run(
+      'docker',
+      dockerRunArgs(opts.docker.image, opts.docker.root, ['pdffonts', rel]),
+      {
+        timeoutMs: 60000,
+      },
+    );
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   }
   return facts;

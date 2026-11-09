@@ -49,7 +49,11 @@ export async function main(argv: string[], ioIn: Io): Promise<number> {
   // escaped by githubAnnotations.
   const io: Io =
     ioIn.env.GITHUB_ACTIONS === 'true' && !rest.includes('--annotations')
-      ? { ...ioIn, stdout: neutralizingWriter(ioIn.stdout), stderr: neutralizingWriter(ioIn.stderr) }
+      ? {
+          ...ioIn,
+          stdout: neutralizingWriter(ioIn.stdout),
+          stderr: neutralizingWriter(ioIn.stderr),
+        }
       : ioIn;
   if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') {
     if (cmd === 'help' && rest[0] && COMMANDS[rest[0]]) return main([rest[0], '--help'], ioIn);

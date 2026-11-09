@@ -98,7 +98,8 @@ export class SourceTracker {
         else this.ok.add(name);
         return res;
       } catch (err) {
-        const cause = err instanceof Error && err.cause instanceof Error ? `: ${err.cause.message}` : '';
+        const cause =
+          err instanceof Error && err.cause instanceof Error ? `: ${err.cause.message}` : '';
         this.fail(name, `${err instanceof Error ? err.message : String(err)}${cause}`);
         throw err;
       }
@@ -301,13 +302,7 @@ export async function citeCommand(
     return 0;
   }
   const sep =
-    text === ''
-      ? ''
-      : /(\r?\n){2}$/.test(text)
-        ? ''
-        : /\r?\n$/.test(text)
-          ? eol
-          : eol + eol;
+    text === '' ? '' : /(\r?\n){2}$/.test(text) ? '' : /\r?\n$/.test(text) ? eol : eol + eol;
   writeFileSync(bibPath, `${text}${sep}${formatted}`);
   emit(
     entry.key,

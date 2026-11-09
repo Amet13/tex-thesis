@@ -57,7 +57,10 @@ export function latexmkArgs(config: Config, main: string): string[] {
   const { outDir, auxDir, outDirFromConfig } = config.build;
   const dirs =
     outDirFromConfig || !rc
-      ? [`-outdir=${safeRelPath(outDir, 'build.outDir')}`, `-auxdir=${safeRelPath(auxDir, 'build.outDir')}`]
+      ? [
+          `-outdir=${safeRelPath(outDir, 'build.outDir')}`,
+          `-auxdir=${safeRelPath(auxDir, 'build.outDir')}`,
+        ]
       : [];
   return [
     ...(rc ? [] : ['-lualatex']),

@@ -214,6 +214,24 @@ describe('accessibilityCheck', () => {
     expect(r.problems.map((p) => [p.rule, p.severity])).toEqual([['verapdf-not-run', 'info']]);
   });
 
+  it('does not call a non-compliant veraPDF report with no failures valid', () => {
+    const r = accessibilityCheck(facts(), {
+      verapdf: { compliant: false, failures: [] },
+      level: 'required',
+    });
+    expect(r.status).toBe('warn');
+    expect(r.summary).not.toMatch(/PDF\/UA valid/);
+    expect(r.problems).toEqual([
+      expect.objectContaining({
+        rule: 'verapdf',
+        severity: 'warning',
+        message: 'veraPDF reported the file non-compliant but listed no failed rules',
+      }),
+    ]);
+    const ok = accessibilityCheck(facts(), { verapdf: { compliant: true, failures: [] } });
+    expect(ok.summary).toBe('Tagged, PDF/UA valid (veraPDF)');
+  });
+
   it('groups veraPDF failures by clause', () => {
     const verapdf = parseVeraPdfReport(readText('verapdf-ua1.xml'));
     const r = accessibilityCheck(facts(), { verapdf, level: 'recommended' });

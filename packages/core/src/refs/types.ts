@@ -51,6 +51,11 @@ export interface RefsOptions {
   /** Enables OpenAlex as a last-resort title search. */
   openalexKey?: string;
   cache?: RefCache;
+  /**
+   * How long cached answers stay valid, in days. A number sets both; defaults:
+   * negative answers (DOI missing, no arXiv paper, empty search) 30, records 180.
+   */
+  cacheMaxAgeDays?: number | { negative?: number; positive?: number };
   /** Parallel entries (default 4). */
   concurrency?: number;
   /** Per-request timeout in ms (default 10000). */

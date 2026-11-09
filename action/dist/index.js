@@ -4012,10 +4012,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep2, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep2?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4029,7 +4029,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep2) {
+          if (!keyProps.anchor && !keyProps.tag && !sep3) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4053,7 +4053,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4069,7 +4069,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep2, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4160,7 +4160,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep2 = "";
+        let sep3 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -4174,13 +4174,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep2 + cb;
-              sep2 = "";
+                comment += sep3 + cb;
+              sep3 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep2 += source;
+                sep3 += source;
               hasSpace = true;
               break;
             default:
@@ -4223,18 +4223,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep2, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep2?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep2 && !value) {
+          if (!props.anchor && !props.tag && !sep3 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4288,8 +4288,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep2 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
+        if (!isMap && !sep3 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4301,7 +4301,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4312,8 +4312,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep2)
-                for (const st of sep2) {
+              if (sep3)
+                for (const st of sep3) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4330,7 +4330,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep2, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4510,7 +4510,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep2 = "";
+      let sep3 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4527,24 +4527,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep2 + indent.slice(trimIndent) + content;
-          sep2 = "\n";
+          value += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep2 === " ")
-            sep2 = "\n";
-          else if (!prevMoreIndented && sep2 === "\n")
-            sep2 = "\n\n";
-          value += sep2 + indent.slice(trimIndent) + content;
-          sep2 = "\n";
+          if (sep3 === " ")
+            sep3 = "\n";
+          else if (!prevMoreIndented && sep3 === "\n")
+            sep3 = "\n\n";
+          value += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep2 === "\n")
+          if (sep3 === "\n")
             value += "\n";
           else
-            sep2 = "\n";
+            sep3 = "\n";
         } else {
-          value += sep2 + content;
-          sep2 = " ";
+          value += sep3 + content;
+          sep3 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4647,7 +4647,7 @@ var require_resolve_flow_scalar = __commonJS({
       const { offset, type, source, end } = scalar;
       let _type;
       let value;
-      const _onError = (rel, code3, msg) => onError(offset + rel, code3, msg);
+      const _onError = (rel2, code3, msg) => onError(offset + rel2, code3, msg);
       switch (type) {
         case "scalar":
           _type = Scalar.Scalar.PLAIN;
@@ -4727,25 +4727,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep2 = " ";
+      let sep3 = " ";
       let pos = line.lastIndex;
       while (match = line.exec(source)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep2 === "\n")
-            res += sep2;
+          if (sep3 === "\n")
+            res += sep3;
           else
-            sep2 = "\n";
+            sep3 = "\n";
         } else {
-          res += sep2 + lm;
-          sep2 = " ";
+          res += sep3 + lm;
+          sep3 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep2 + (match?.[1] ?? "");
+      return res + sep3 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -5555,14 +5555,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep2, value }) {
+    function stringifyItem({ start, key, sep: sep3, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep2)
-        for (const st of sep2)
+      if (sep3)
+        for (const st of sep3)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6729,18 +6729,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep2;
+          let sep3;
           if (scalar.end) {
-            sep2 = scalar.end;
-            sep2.push(this.sourceToken);
+            sep3 = scalar.end;
+            sep3.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep2 = [this.sourceToken];
+            sep3 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep2 }]
+            items: [{ start, key: scalar, sep: sep3 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6893,15 +6893,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep2 = it.sep;
-                  sep2.push(this.sourceToken);
+                  const sep3 = it.sep;
+                  sep3.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep2 }]
+                    items: [{ start: start2, key, sep: sep3 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7095,13 +7095,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep2 = fc.end.splice(1, fc.end.length);
-            sep2.push(this.sourceToken);
+            const sep3 = fc.end.splice(1, fc.end.length);
+            sep3.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep2 }]
+              items: [{ start, key: fc, sep: sep3 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -7239,30 +7239,30 @@ var require_public_api = __commonJS({
     var errors = require_errors();
     var log = require_log();
     var identity = require_identity();
-    var lineCounter = require_line_counter();
+    var lineCounter2 = require_line_counter();
     var parser = require_parser();
     function parseOptions(options) {
       const prettyErrors = options.prettyErrors !== false;
-      const lineCounter$1 = options.lineCounter || prettyErrors && new lineCounter.LineCounter() || null;
+      const lineCounter$1 = options.lineCounter || prettyErrors && new lineCounter2.LineCounter() || null;
       return { lineCounter: lineCounter$1, prettyErrors };
     }
     function parseAllDocuments(source, options = {}) {
-      const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
-      const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
+      const { lineCounter: lineCounter3, prettyErrors } = parseOptions(options);
+      const parser$1 = new parser.Parser(lineCounter3?.addNewLine);
       const composer$1 = new composer.Composer(options);
       const docs = Array.from(composer$1.compose(parser$1.parse(source)));
-      if (prettyErrors && lineCounter2)
+      if (prettyErrors && lineCounter3)
         for (const doc of docs) {
-          doc.errors.forEach(errors.prettifyError(source, lineCounter2));
-          doc.warnings.forEach(errors.prettifyError(source, lineCounter2));
+          doc.errors.forEach(errors.prettifyError(source, lineCounter3));
+          doc.warnings.forEach(errors.prettifyError(source, lineCounter3));
         }
       if (docs.length > 0)
         return docs;
       return Object.assign([], { empty: true }, composer$1.streamInfo());
     }
     function parseDocument(source, options = {}) {
-      const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
-      const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
+      const { lineCounter: lineCounter3, prettyErrors } = parseOptions(options);
+      const parser$1 = new parser.Parser(lineCounter3?.addNewLine);
       const composer$1 = new composer.Composer(options);
       let doc = null;
       for (const _doc of composer$1.compose(parser$1.parse(source), true, source.length)) {
@@ -7273,9 +7273,9 @@ var require_public_api = __commonJS({
           break;
         }
       }
-      if (prettyErrors && lineCounter2) {
-        doc.errors.forEach(errors.prettifyError(source, lineCounter2));
-        doc.warnings.forEach(errors.prettifyError(source, lineCounter2));
+      if (prettyErrors && lineCounter3) {
+        doc.errors.forEach(errors.prettifyError(source, lineCounter3));
+        doc.warnings.forEach(errors.prettifyError(source, lineCounter3));
       }
       return doc;
     }
@@ -7343,7 +7343,7 @@ var require_dist = __commonJS({
     var YAMLSeq = require_YAMLSeq();
     var cst = require_cst();
     var lexer = require_lexer();
-    var lineCounter = require_line_counter();
+    var lineCounter2 = require_line_counter();
     var parser = require_parser();
     var publicApi = require_public_api();
     var visit = require_visit();
@@ -7368,7 +7368,7 @@ var require_dist = __commonJS({
     exports.YAMLSeq = YAMLSeq.YAMLSeq;
     exports.CST = cst;
     exports.Lexer = lexer.Lexer;
-    exports.LineCounter = lineCounter.LineCounter;
+    exports.LineCounter = lineCounter2.LineCounter;
     exports.Parser = parser.Parser;
     exports.parse = publicApi.parse;
     exports.parseAllDocuments = publicApi.parseAllDocuments;
@@ -9136,8 +9136,8 @@ async function JBig2(moduleArg = {}) {
     }
     var info3 = getWasmImports();
     var instantiateWasm = Module["instantiateWasm"];
-    return new Promise((resolve3) => {
-      instantiateWasm(info3, (inst) => resolve3(receiveInstance(inst)));
+    return new Promise((resolve5) => {
+      instantiateWasm(info3, (inst) => resolve5(receiveInstance(inst)));
     });
   }
   class ExitStatus {
@@ -9310,7 +9310,7 @@ async function JBig2(moduleArg = {}) {
     var setStatus = Module["setStatus"];
     if (setStatus) {
       setStatus("Running...");
-      await new Promise((resolve3) => setTimeout(resolve3, 1));
+      await new Promise((resolve5) => setTimeout(resolve5, 1));
       setTimeout(setStatus, 1, "");
     }
     if (ABORT) return;
@@ -9404,8 +9404,8 @@ async function OpenJPEG(moduleArg = {}) {
     }
     var info3 = getWasmImports();
     var instantiateWasm = Module["instantiateWasm"];
-    return new Promise((resolve3) => {
-      instantiateWasm(info3, (inst) => resolve3(receiveInstance(inst)));
+    return new Promise((resolve5) => {
+      instantiateWasm(info3, (inst) => resolve5(receiveInstance(inst)));
     });
   }
   class ExitStatus {
@@ -9593,7 +9593,7 @@ async function OpenJPEG(moduleArg = {}) {
     var setStatus = Module["setStatus"];
     if (setStatus) {
       setStatus("Running...");
-      await new Promise((resolve3) => setTimeout(resolve3, 1));
+      await new Promise((resolve5) => setTimeout(resolve5, 1));
       setTimeout(setStatus, 1, "");
     }
     if (ABORT) return;
@@ -17010,7 +17010,7 @@ var init_pdf_worker = __esm({
       var defineProperty = Object.defineProperty;
       var stringSlice = uncurryThis("".slice);
       var replace = uncurryThis("".replace);
-      var join6 = uncurryThis([].join);
+      var join8 = uncurryThis([].join);
       var CONFIGURABLE_LENGTH = DESCRIPTORS && !fails(function() {
         return defineProperty(function() {
         }, "length", { value: 8 }).length !== 8;
@@ -17037,7 +17037,7 @@ var init_pdf_worker = __esm({
         }
         var state = enforceInternalState(value);
         if (!hasOwn(state, "source")) {
-          state.source = join6(TEMPLATE, typeof name == "string" ? name : "");
+          state.source = join8(TEMPLATE, typeof name == "string" ? name : "");
         }
         return value;
       };
@@ -17070,13 +17070,13 @@ var init_pdf_worker = __esm({
       var aCallable = a_callable_namespaceFn();
       var $TypeError = TypeError;
       var PromiseCapability = function(C) {
-        var resolve3, reject;
+        var resolve5, reject;
         this.promise = new C(function($$resolve, $$reject) {
-          if (resolve3 !== void 0 || reject !== void 0) throw new $TypeError("Bad Promise constructor");
-          resolve3 = $$resolve;
+          if (resolve5 !== void 0 || reject !== void 0) throw new $TypeError("Bad Promise constructor");
+          resolve5 = $$resolve;
           reject = $$reject;
         });
-        this.resolve = aCallable(resolve3);
+        this.resolve = aCallable(resolve5);
         this.reject = aCallable(reject);
       };
       module.exports.f = function(C) {
@@ -17406,8 +17406,8 @@ var init_pdf_worker = __esm({
         anObject(C);
         if (isObject(x) && x.constructor === C) return x;
         var promiseCapability = newPromiseCapability.f(C);
-        var resolve3 = promiseCapability.resolve;
-        resolve3(x);
+        var resolve5 = promiseCapability.resolve;
+        resolve5(x);
         return promiseCapability.promise;
       };
     });
@@ -19045,7 +19045,7 @@ var init_pdf_worker = __esm({
       var charAt = uncurryThis("".charAt);
       var Uint8Array2 = globalThis2.Uint8Array;
       var $Array = globalThis2.Array;
-      var join6 = uncurryThis([].join);
+      var join8 = uncurryThis([].join);
       var INCORRECT_BEHAVIOR_OR_DOESNT_EXISTS = !Uint8Array2 || !Uint8Array2.prototype.toBase64 || !(function() {
         try {
           var target = new Uint8Array2();
@@ -19091,7 +19091,7 @@ var init_pdf_worker = __esm({
               result[written++] = "=";
             }
           }
-          return join6(result, "");
+          return join8(result, "");
         }
       });
     });
@@ -19102,7 +19102,7 @@ var init_pdf_worker = __esm({
       var anUint8Array = an_uint8_array_namespaceFn();
       var notDetached = array_buffer_not_detached_namespaceFn();
       var numberToString = uncurryThis(1.1.toString);
-      var join6 = uncurryThis([].join);
+      var join8 = uncurryThis([].join);
       var $Array = Array;
       var Uint8Array2 = globalThis2.Uint8Array;
       var INCORRECT_BEHAVIOR_OR_DOESNT_EXISTS = !Uint8Array2 || !Uint8Array2.prototype.toHex || !(function() {
@@ -19122,7 +19122,7 @@ var init_pdf_worker = __esm({
             var hex = numberToString(this[i], 16);
             result[i] = hex.length === 1 ? "0" + hex : hex;
           }
-          return join6(result, "");
+          return join8(result, "");
         }
       });
     });
@@ -25877,11 +25877,11 @@ var init_pdf_worker = __esm({
         if (!this.#modulePromise) {
           const {
             promise,
-            resolve: resolve3
+            resolve: resolve5
           } = Promise.withResolvers();
           this.#modulePromise = Promise.race([promise, ImageDecoder2({
             warn,
-            instantiateWasm: this.#instantiateWasm.bind(this, resolve3)
+            instantiateWasm: this.#instantiateWasm.bind(this, resolve5)
           })]);
         }
         return this.#modulePromise;
@@ -48091,7 +48091,7 @@ var init_pdf_worker = __esm({
         }
         const {
           promise,
-          resolve: resolve3
+          resolve: resolve5
         } = Promise.withResolvers();
         let preEvaluatedFont;
         try {
@@ -48148,10 +48148,10 @@ var init_pdf_worker = __esm({
               throw new Error(`Type3 font load error: ${reason}`);
             }
           }
-          resolve3(translated);
+          resolve5(translated);
         }).catch((reason) => {
           warn(`loadFont - translateFont failed: "${reason}".`);
-          resolve3(new TranslatedFont({
+          resolve5(new TranslatedFont({
             loadedName: font.loadedName,
             font: new ErrorFont(reason?.message),
             dict: font
@@ -48386,11 +48386,11 @@ var init_pdf_worker = __esm({
             operatorList.addOp(OPS.endMarkedContent, []);
           }
         }
-        return new Promise(function promiseBody(resolve3, reject) {
+        return new Promise(function promiseBody(resolve5, reject) {
           const next = function(promise) {
             Promise.all([promise, operatorList.ready]).then(function() {
               try {
-                promiseBody(resolve3, reject);
+                promiseBody(resolve5, reject);
               } catch (ex) {
                 reject(ex);
               }
@@ -48888,7 +48888,7 @@ var init_pdf_worker = __esm({
           }
           closePendingMarkedContentOPS();
           closePendingRestoreOPS();
-          resolve3();
+          resolve5();
         }).catch((reason) => {
           if (reason instanceof AbortException) {
             return;
@@ -49421,12 +49421,12 @@ var init_pdf_worker = __esm({
           textContent.styles = /* @__PURE__ */ Object.create(null);
         }
         const timeSlotManager = new TimeSlotManager();
-        return new Promise(function promiseBody(resolve3, reject) {
+        return new Promise(function promiseBody(resolve5, reject) {
           const next = function(promise) {
             enqueueChunk(true);
             Promise.all([promise, sink.ready]).then(function() {
               try {
-                promiseBody(resolve3, reject);
+                promiseBody(resolve5, reject);
               } catch (ex) {
                 reject(ex);
               }
@@ -49725,7 +49725,7 @@ var init_pdf_worker = __esm({
           flushTextContentItem();
           closePendingMarkedContentItems();
           enqueueChunk();
-          resolve3();
+          resolve5();
         }).catch((reason) => {
           if (reason instanceof AbortException) {
             return;
@@ -50658,7 +50658,7 @@ var init_pdf_worker = __esm({
         util_assert(font.isType3Font, "Must be a Type3 font.");
         const {
           promise,
-          resolve: resolve3
+          resolve: resolve5
         } = Promise.withResolvers();
         this.#type3Loaded = promise;
         const type3Evaluator = evaluator.clone({
@@ -50710,7 +50710,7 @@ var init_pdf_worker = __esm({
           font.isCharBBox = true;
           font.bbox = this._bbox;
         }
-        resolve3();
+        resolve5();
         return this.#type3Loaded;
       }
       #removeType3ColorOperators(operatorList, fontBBoxSize = NaN) {
@@ -63993,12 +63993,12 @@ var init_pdf_worker = __esm({
       }
       _createPagesHelper() {
         const iterator = this.form[$toPages]();
-        return new Promise((resolve3, reject) => {
+        return new Promise((resolve5, reject) => {
           const nextIteration = () => {
             try {
               const value = iterator.next();
               if (value.done) {
-                resolve3(value.value);
+                resolve5(value.value);
               } else {
                 setTimeout(nextIteration, 0);
               }
@@ -74591,7 +74591,7 @@ var init_pdf_worker = __esm({
           }), fullReader = pdfStream.getFullReader();
           const {
             promise,
-            resolve: resolve3,
+            resolve: resolve5,
             reject
           } = Promise.withResolvers();
           let newPdfManager, cachedChunks = [];
@@ -74608,7 +74608,7 @@ var init_pdf_worker = __esm({
               newPdfManager.sendProgressiveData(chunk);
             }
             cachedChunks = null;
-            resolve3(newPdfManager);
+            resolve5(newPdfManager);
             cancelXHRs = null;
           }).catch((reason) => {
             reject(reason);
@@ -74642,7 +74642,7 @@ var init_pdf_worker = __esm({
               pdfManagerArgs.source = arrayBuffersToBytes(cachedChunks);
               cachedChunks = null;
               newPdfManager = new LocalPdfManager(pdfManagerArgs);
-              resolve3(newPdfManager);
+              resolve5(newPdfManager);
             }
             cancelXHRs = null;
           }
@@ -75688,7 +75688,7 @@ async function fetchData(url, type = "text") {
     }
     return response.text();
   }
-  return new Promise((resolve3, reject) => {
+  return new Promise((resolve5, reject) => {
     const request = new XMLHttpRequest();
     request.open("GET", url, true);
     request.responseType = type === "bytes" ? "arraybuffer" : type;
@@ -75699,14 +75699,14 @@ async function fetchData(url, type = "text") {
       if (request.status === 200 || request.status === 0) {
         switch (type) {
           case "bytes":
-            resolve3(new Uint8Array(request.response));
+            resolve5(new Uint8Array(request.response));
             return;
           case "blob":
           case "json":
-            resolve3(request.response);
+            resolve5(request.response);
             return;
         }
-        resolve3(request.responseText);
+        resolve5(request.responseText);
         return;
       }
       reject(new Error(request.statusText));
@@ -78608,7 +78608,7 @@ var init_pdf = __esm({
       var defineProperty = Object.defineProperty;
       var stringSlice = uncurryThis("".slice);
       var replace = uncurryThis("".replace);
-      var join6 = uncurryThis([].join);
+      var join8 = uncurryThis([].join);
       var CONFIGURABLE_LENGTH = DESCRIPTORS && !fails(function() {
         return defineProperty(function() {
         }, "length", { value: 8 }).length !== 8;
@@ -78635,7 +78635,7 @@ var init_pdf = __esm({
         }
         var state = enforceInternalState(value);
         if (!hasOwn(state, "source")) {
-          state.source = join6(TEMPLATE, typeof name == "string" ? name : "");
+          state.source = join8(TEMPLATE, typeof name == "string" ? name : "");
         }
         return value;
       };
@@ -78668,13 +78668,13 @@ var init_pdf = __esm({
       var aCallable = a_callable_namespaceFn2();
       var $TypeError = TypeError;
       var PromiseCapability = function(C) {
-        var resolve3, reject;
+        var resolve5, reject;
         this.promise = new C(function($$resolve, $$reject) {
-          if (resolve3 !== void 0 || reject !== void 0) throw new $TypeError("Bad Promise constructor");
-          resolve3 = $$resolve;
+          if (resolve5 !== void 0 || reject !== void 0) throw new $TypeError("Bad Promise constructor");
+          resolve5 = $$resolve;
           reject = $$reject;
         });
-        this.resolve = aCallable(resolve3);
+        this.resolve = aCallable(resolve5);
         this.reject = aCallable(reject);
       };
       module.exports.f = function(C) {
@@ -79013,8 +79013,8 @@ var init_pdf = __esm({
         anObject(C);
         if (isObject(x) && x.constructor === C) return x;
         var promiseCapability = newPromiseCapability.f(C);
-        var resolve3 = promiseCapability.resolve;
-        resolve3(x);
+        var resolve5 = promiseCapability.resolve;
+        resolve5(x);
         return promiseCapability.promise;
       };
     });
@@ -81016,7 +81016,7 @@ var init_pdf = __esm({
       var charAt = uncurryThis("".charAt);
       var Uint8Array2 = globalThis2.Uint8Array;
       var $Array = globalThis2.Array;
-      var join6 = uncurryThis([].join);
+      var join8 = uncurryThis([].join);
       var INCORRECT_BEHAVIOR_OR_DOESNT_EXISTS = !Uint8Array2 || !Uint8Array2.prototype.toBase64 || !(function() {
         try {
           var target = new Uint8Array2();
@@ -81062,7 +81062,7 @@ var init_pdf = __esm({
               result[written++] = "=";
             }
           }
-          return join6(result, "");
+          return join8(result, "");
         }
       });
     });
@@ -81073,7 +81073,7 @@ var init_pdf = __esm({
       var anUint8Array = an_uint8_array_namespaceFn2();
       var notDetached = array_buffer_not_detached_namespaceFn2();
       var numberToString = uncurryThis(1.1.toString);
-      var join6 = uncurryThis([].join);
+      var join8 = uncurryThis([].join);
       var $Array = Array;
       var Uint8Array2 = globalThis2.Uint8Array;
       var INCORRECT_BEHAVIOR_OR_DOESNT_EXISTS = !Uint8Array2 || !Uint8Array2.prototype.toHex || !(function() {
@@ -81093,7 +81093,7 @@ var init_pdf = __esm({
             var hex = numberToString(this[i], 16);
             result[i] = hex.length === 1 ? "0" + hex : hex;
           }
-          return join6(result, "");
+          return join8(result, "");
         }
       });
     });
@@ -82709,11 +82709,11 @@ var init_pdf = __esm({
             const mustRemoveAspectRatioPromise = _ImageManager._isSVGFittingCanvas;
             const fileReader = new FileReader();
             const imageElement = new Image();
-            const imagePromise = new Promise((resolve3, reject) => {
+            const imagePromise = new Promise((resolve5, reject) => {
               imageElement.onload = () => {
                 data.bitmap = imageElement;
                 data.isSvg = true;
-                resolve3();
+                resolve5();
               };
               fileReader.onload = async () => {
                 const url = data.svgUrl = fileReader.result;
@@ -83391,13 +83391,13 @@ var init_pdf = __esm({
           return;
         }
         const {
-          resolve: resolve3,
+          resolve: resolve5,
           promise
         } = Promise.withResolvers();
         const onEditorsRendered = (evt) => {
           if (evt.pageNumber === pageNumber) {
             this._eventBus.off("editorsrendered", onEditorsRendered);
-            resolve3();
+            resolve5();
           }
         };
         this._eventBus.on("editorsrendered", onEditorsRendered, internalOpt);
@@ -92751,11 +92751,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         } = this;
         const {
           promise,
-          resolve: resolve3
+          resolve: resolve5
         } = Promise.withResolvers();
         const request = {
           done: false,
-          resolve: resolve3
+          resolve: resolve5
         };
         loadingRequests.push(request);
         this._loadTestFont ??= atob("T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQAFQAABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAAALwAAAA2aGhlYQdkA+oAAAD0AAAAJGhtdHgD6AAAAAAEWAAAAAZtYXhwAAJQAAAAARgAAAAGbmFtZVjmdH4AAAGAAAAAsXBvc3T/hgAzAAADeAAAACAAAQAAAAEAALZRFsRfDzz1AAsD6AAAAADOBOTLAAAAAM4KHDwAAAAAA+gDIQAAAAgAAgAAAAAAAAABAAADIQAAAFoD6AAAAAAD6AABAAAAAAAAAAAAAAAAAAAAAQAAUAAAAgAAAAQD6AH0AAUAAAKKArwAAACMAooCvAAAAeAAMQECAAACAAYJAAAAAAAAAAAAAQAAAAAAAAAAAAAAAFBmRWQAwAAuAC4DIP84AFoDIQAAAAAAAQAAAAAAAAAAACAAIAABAAAADgCuAAEAAAAAAAAAAQAAAAEAAAAAAAEAAQAAAAEAAAAAAAIAAQAAAAEAAAAAAAMAAQAAAAEAAAAAAAQAAQAAAAEAAAAAAAUAAQAAAAEAAAAAAAYAAQAAAAMAAQQJAAAAAgABAAMAAQQJAAEAAgABAAMAAQQJAAIAAgABAAMAAQQJAAMAAgABAAMAAQQJAAQAAgABAAMAAQQJAAUAAgABAAMAAQQJAAYAAgABWABYAAAAAAAAAwAAAAMAAAAcAAEAAAAAADwAAwABAAAAHAAEACAAAAAEAAQAAQAAAC7//wAAAC7////TAAEAAAAAAAABBgAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAD/gwAyAAAAAQAAAAAAAAAAAAAAAAAAAAABAAQEAAEBAQJYAAEBASH4DwD4GwHEAvgcA/gXBIwMAYuL+nz5tQXkD5j3CBLnEQACAQEBIVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYAAABAQAADwACAQEEE/t3Dov6fAH6fAT+fPp8+nwHDosMCvm1Cvm1DAz6fBQAAAAAAAABAAAAAMmJbzEAAAAAzgTjFQAAAADOBOQpAAEAAAAAAAAADAAUAAQAAAABAAAAAgABAAAAAAAAAAAD6AAAAAAAAA==");
@@ -95209,11 +95209,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         }
         const {
           promise,
-          resolve: resolve3,
+          resolve: resolve5,
           reject
         } = Promise.withResolvers();
         this.#pendingRequests.add(reject);
-        handler.sendWithPromise(action, data).then(resolve3, reject);
+        handler.sendWithPromise(action, data).then(resolve5, reject);
         return promise.finally(() => {
           this.#pendingRequests.delete(reject);
         });
@@ -106337,7 +106337,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         input2.type = "file";
         input2.accept = SupportedImageMimeTypes.keys().join(",");
         const signal = this._uiManager._signal;
-        this.#bitmapPromise = new Promise((resolve3) => {
+        this.#bitmapPromise = new Promise((resolve5) => {
           input2.addEventListener("change", async () => {
             if (!input2.files || input2.files.length === 0) {
               this.remove();
@@ -106352,13 +106352,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
               });
               this.#getBitmapFetched(data);
             }
-            resolve3();
+            resolve5();
           }, {
             signal
           });
           input2.addEventListener("cancel", () => {
             this.remove();
-            resolve3();
+            resolve5();
           }, {
             signal
           });
@@ -108282,7 +108282,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 // src/index.ts
 import { appendFileSync, writeFileSync as writeFileSync2 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join as join5, relative as relative2, resolve as resolve2 } from "node:path";
+import { join as join7, relative as relative8, resolve as resolve4 } from "node:path";
 
 // ../packages/core/src/bib/cited.ts
 function unescapeXml(s) {
@@ -108308,6 +108308,13 @@ function citedKeys(auxOrBcf) {
     if (key && key !== "*") seen.add(key);
   }
   return [...seen];
+}
+function citesAll(auxOrBcf) {
+  const isBcf = /<bcf:citekey\b/.test(auxOrBcf);
+  for (const raw of isBcf ? bcfKeys(auxOrBcf) : auxKeys(auxOrBcf)) {
+    if (raw.trim() === "*") return true;
+  }
+  return false;
 }
 
 // ../packages/core/src/bib/tex.ts
@@ -108500,7 +108507,9 @@ function texToPlain(s) {
 }
 
 // ../packages/core/src/bib/names.ts
-function splitTopLevel(s, sep2) {
+function splitTopLevel(s, sep3) {
+  const sticky = new RegExp(sep3.source.replace(/^\^/, ""), `${sep3.flags.replace(/[gy]/g, "")}y`);
+  const leadingSpace = /^\^?\\s/.test(sep3.source);
   const parts = [];
   let depth = 0;
   let last = 0;
@@ -108509,9 +108518,10 @@ function splitTopLevel(s, sep2) {
     if (c === "{") depth++;
     else if (c === "}") depth--;
     else if (depth === 0) {
-      sep2.lastIndex = 0;
-      const m = sep2.exec(s.slice(i));
-      if (m && m.index === 0) {
+      if (leadingSpace && i > 0 && /\s/.test(s[i - 1] ?? "") && /\s/.test(c ?? "")) continue;
+      sticky.lastIndex = i;
+      const m = sticky.exec(s);
+      if (m) {
         parts.push(s.slice(last, i));
         i += m[0].length - 1;
         last = i + 1;
@@ -109200,7 +109210,14 @@ function closest(word, candidates) {
 
 // ../packages/core/src/log/paths.ts
 var DISTRIBUTION_DIR = /(?:^|\/)(?:texmf[\w-]*|\.texlive\d*|texlive\/\d{4}|miktex[^/]*)\//i;
-var TEX_EXTENSIONS = /\.(?:tex|ltx|sty|cls|clo|cfg|def|fd|aux|toc|lof|lot|bbl|out|nav|snm|vrb|ldf|dfu|lua|bst|tikz|pgf|code\.tex|mkii|trsl|dict|xmpi|ins|dtx|tikzstyles)$/i;
+var TEX_EXTENSION_GROUP = "(?:tex|ltx|sty|cls|clo|cfg|def|fd|aux|toc|lof|lot|bbl|out|nav|snm|vrb|ldf|dfu|lua|bst|tikz|pgf|mkii|trsl|dict|xmpi|ins|dtx|tikzstyles)";
+var TEX_EXTENSIONS = new RegExp(`\\.${TEX_EXTENSION_GROUP}$`, "i");
+var SPACED_PATH_SOURCE = `(?:\\.{1,2}/|/|~/|[A-Za-z]:[\\\\/])[^:()[\\]{}<>\\n"]{0,1024}?\\.${TEX_EXTENSION_GROUP}`;
+function spacedPathLength(text2, start) {
+  const m = SPACED_PATH_AT.exec(text2.slice(start, start + 1100));
+  return m ? m[0].length : 0;
+}
+var SPACED_PATH_AT = new RegExp(`^${SPACED_PATH_SOURCE}(?=[\\s()[\\]{}<>"]|$)`, "i");
 function basename(path) {
   const parts = path.split("/");
   return parts[parts.length - 1] || path;
@@ -109504,7 +109521,7 @@ var explainExtraBrace = (m, error) => {
 };
 var explainRunaway = (m, error) => {
   const command = m[2] ?? "";
-  const arg = (error.runaway ?? "").replace(/\s*\\par\b.*$/, "").replace(/\\ETC\.$/, "").trim();
+  const arg = (error.runaway ?? "").replace(/\\par\b.*$/, "").trimEnd().replace(/\\ETC\.$/, "").trim();
   const fileEnded = m[1]?.startsWith("File ended");
   const definition = /definition/.test(m[1] ?? "");
   return {
@@ -109879,7 +109896,7 @@ var EXPLAINERS = [
     explainExtraBrace
   ],
   [
-    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/,
+    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)(?:\s+was complete)?(?:\s*\.)?\s*$/,
     explainRunaway
   ],
   [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
@@ -109935,7 +109952,7 @@ var EXPLAINERS = [
     )
   ],
   [
-    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: .*?font "([^"]+)".*not found/,
+    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: [^"]*?font "([^"]+)"[^\n]*?not found/,
     explainFontNotFound
   ],
   [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, explainTfmFont],
@@ -109997,6 +110014,7 @@ function explainError(error, ctx) {
 // ../packages/core/src/log/lines.ts
 var MAX_PRINT_LINE = 79;
 var STARTS_FRESH = /^(?:! |[^\s:()]+\.[A-Za-z0-9]+:\d+: |(?:LaTeX|LaTeX3|Package|Class|Module) .*?(?:Warning|Error|Info)|LaTeX Font |Package: |File: |Document Class: |Overfull \\|Underfull \\|Missing character: |Runaway |\([\w@.-]+\) {2,}|l\.\d+ |No file |Output written on |No pages of output|\\[A-Za-z@]+=\\)/;
+var SPACED_FILE_LINE = new RegExp(`^${SPACED_PATH_SOURCE}:\\d+: `, "i");
 function engineFamily(firstLine) {
   if (/^This is (?:Lua(?:HB|HBJIT|JIT)?TeX)/.test(firstLine)) return "luatex";
   if (/^This is XeTeX/.test(firstLine)) return "xetex";
@@ -110062,7 +110080,7 @@ var LineReader = class {
         this.index++;
         break;
       }
-      if (STARTS_FRESH.test(following)) break;
+      if (STARTS_FRESH.test(following) || SPACED_FILE_LINE.test(following)) break;
       text2 += following;
       segment = following;
       this.index++;
@@ -110073,7 +110091,10 @@ var LineReader = class {
 
 // ../packages/core/src/log/parse.ts
 var ERROR_START = /^! (.*)$/;
-var FILE_LINE_ERROR = /^((?:[A-Za-z]:)?[^\s:()]*\.[A-Za-z0-9]+):(\d+): (.*)$/;
+var FILE_LINE_ERROR = new RegExp(
+  `^(${SPACED_PATH_SOURCE}|(?:[A-Za-z]:)?[^\\s:()]*\\.[A-Za-z0-9]+):(\\d+): (.*)$`,
+  "i"
+);
 var RUNAWAY = /^Runaway (?:argument|definition|preamble|text)\?$/;
 var CONTEXT_BEFORE = /^(?:<[^>]*>|\\\S|\s?\.\.\.)/;
 var SOURCE_LINE = /^l\.(\d+)(?: (.*))?$/;
@@ -110082,9 +110103,11 @@ var ERROR_BOILERPLATE = /^(?:See the .* for explanation\.|Type {1,2}H <return> {
 var BANNER = /^This is (\S+), Version (\S+)\s*\(([^)]*)\)(?:\s+\((?:preloaded )?format=([^\s)]+)[^)]*\))?/;
 var OUTPUT = /^Output written on (.+?) \((\d+) pages?(?:, (\d+) bytes)?\)\.?$/;
 var BOX = /^(Overfull|Underfull) \\([hv]box) \((?:(-?[\d.]+)pt too (?:wide|high)|badness (\d+))\)(.*)$/;
-var MISSING_CHAR = /^Missing character: There is no (.+?) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
+var MISSING_CHAR = /^Missing character: There is no (\S+) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
 var NO_FILE = /^No file (.+?)\.$/;
 var MAX_ERROR_LINES = 60;
+var MAX_MESSAGE_LENGTH = 4096;
+var HAS_TEX_EXTENSION = new RegExp(`\\.${TEX_EXTENSION_GROUP}$`, "i");
 function escapeRegExp(text2) {
   return text2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -110113,7 +110136,7 @@ function messageHeader(text2) {
 }
 var PLAIN_MESSAGE = /^(?:Package: |File: |Document Class: |Language: |Dictionary: |\\[A-Za-z@]+=\\|\\openout\d+ = |\([\w@.-]+\) {2,})/;
 function joinParts(parts) {
-  return parts.join(" ").replace(/\s+/g, " ").trim();
+  return parts.join(" ").replace(/\s+/g, " ").trim().slice(0, MAX_MESSAGE_LENGTH);
 }
 var FileStack = class {
   /** `null` marks a parenthesis that did not open a file. */
@@ -110148,6 +110171,10 @@ var FileStack = class {
       end = close === -1 ? text2.length : close + 1;
     } else {
       while (end < text2.length && !/[\s()[\]{}<>"]/.test(text2[end] ?? "")) end++;
+      if (end < text2.length && /\s/.test(text2[end] ?? "") && !HAS_TEX_EXTENSION.test(text2.slice(start, end))) {
+        const spaced = spacedPathLength(text2, start);
+        if (spaced > end - start) end = start + spaced;
+      }
     }
     const token = text2.slice(start, end);
     const unquoted = token.startsWith('"') ? token.slice(1, -1) : token;
@@ -110252,14 +110279,22 @@ var Parser2 = class {
     }
     return false;
   }
-  /** Reads continuation lines matching `pattern`; returns their captured text. */
+  /**
+   * Reads continuation lines matching `pattern`; returns their captured text. All
+   * continuation lines are consumed, but the text kept is capped at
+   * MAX_MESSAGE_LENGTH characters (and the raw evidence at MAX_ERROR_LINES lines) so a
+   * pathological log cannot make later matching slow.
+   */
   continuation(pattern, raw) {
     const parts = [];
+    let length = raw.reduce((n, r) => n + r.length, 0);
     while (!this.reader.done) {
       const peek = this.reader.peek() ?? "";
       if (!pattern.test(peek)) break;
       const next = this.reader.next().text;
-      raw.push(next);
+      if (length >= MAX_MESSAGE_LENGTH) continue;
+      length += next.length;
+      if (raw.length < MAX_ERROR_LINES) raw.push(next);
       parts.push(pattern.exec(next)?.[1] ?? next);
     }
     return parts;
@@ -110267,7 +110302,7 @@ var Parser2 = class {
   error(first2) {
     const raw = [first2.text];
     const fle = this.fileLineError(first2.text);
-    let message = fle ? fle[3] ?? "" : (ERROR_START.exec(first2.text)?.[1] ?? "").trim();
+    let message = (fle ? fle[3] ?? "" : (ERROR_START.exec(first2.text)?.[1] ?? "").trim()).slice(0, MAX_MESSAGE_LENGTH);
     const pkg = /^(?:Package|Class|Module) (\S+) Error:/.exec(message);
     if (pkg) {
       const pattern = new RegExp(`^\\(${escapeRegExp(pkg[1] ?? "")}\\)\\s*(.*)$`);
@@ -110402,14 +110437,14 @@ var Parser2 = class {
   }
 };
 function classifyWarning(source, message) {
-  let m = /^(Citation|Reference) [`'](.+?)' on page (\d+) undefined/.exec(message);
+  let m = /^(Citation|Reference) [`']([^']+)' on page (\d+) undefined/.exec(message);
   if (m) {
     return m[1] === "Citation" ? { kind: "undefined-citation", data: { key: m[2] } } : { kind: "undefined-reference", data: { label: m[2] } };
   }
   if (/^There were undefined (?:references|citations)/.test(message)) {
     return { kind: "undefined-references-summary", data: {} };
   }
-  m = /^Label [`'](.+?)' multiply defined/.exec(message);
+  m = /^Label [`']([^']+)' multiply defined/.exec(message);
   if (m) return { kind: "duplicate-label", data: { label: m[1] } };
   if (/^Label\(s\) may have changed/.test(message)) return { kind: "labels-changed", data: {} };
   if (/Please \(re\)run Biber/i.test(message)) return { kind: "rerun-biber", data: {} };
@@ -110420,10 +110455,12 @@ function classifyWarning(source, message) {
   if (/Rerun to get|Please rerun LaTeX|Rerun LaTeX|Temporary extra page added/i.test(message)) {
     return { kind: "rerun-latex", data: {} };
   }
-  m = /^Font shape [`'](.+?)' undefined using [`'](.+?)' instead/.exec(message);
+  m = /^Font shape [`']([^']+)' undefined using [`']([^']+)' instead/.exec(message);
   if (m) return { kind: "font-substitution", data: { from: m[1], to: m[2] } };
-  m = /^Token not allowed in a PDF string.*?removing [`'](.+?)'/.exec(message);
-  if (m) return { kind: "pdf-string-token", data: { token: m[1] } };
+  if (message.startsWith("Token not allowed in a PDF string")) {
+    m = /removing [`']([^']+)'/.exec(message);
+    if (m) return { kind: "pdf-string-token", data: { token: m[1] } };
+  }
   if (source === "fontspec" && /does not contain requested|not available|cannot be found/.test(message)) {
     return { kind: "font-feature", data: {} };
   }
@@ -110828,8 +110865,10 @@ function warningProblems(parsed, buildFailed, thresholdPt) {
   let references2 = w.get("undefined-reference");
   if (state.references) {
     const raw = [...w.get("labels-changed"), ...w.get("rerun-latex")].map((x) => x.raw);
-    if (!buildFailed) problems.push(rerunProblem(references2, raw));
-    references2 = [];
+    if (!buildFailed) {
+      problems.push(rerunProblem(references2, raw));
+      references2 = [];
+    }
   }
   problems.push(...undefinedReferences(references2));
   const anyUndefined = w.get("undefined-citation").length + w.get("undefined-reference").length > 0;
@@ -111023,6 +111062,18 @@ function veraPdfProblems(v, sev) {
     if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
     groups.set(rule, problem2);
   }
+  if (!v.compliant && groups.size === 0) {
+    return [
+      {
+        rule: "verapdf",
+        check: "accessibility",
+        severity: "warning",
+        message: "veraPDF reported the file non-compliant but listed no failed rules",
+        fix: "Run `verapdf --flavour ua2 --format text <file.pdf>` by hand to see why validation failed",
+        data: { compliant: false }
+      }
+    ];
+  }
   return [...groups.values()];
 }
 function accessibilityCheck(facts, opts = {}) {
@@ -111103,7 +111154,7 @@ function accessibilityCheck(facts, opts = {}) {
   if (opts.verapdf && !opts.verapdf.error) stats.verapdfFailedRules = opts.verapdf.failures.length;
   let summary;
   if (counted.length === 0) {
-    summary = opts.verapdf && !opts.verapdf.error ? "Tagged, PDF/UA valid (veraPDF)" : "Tagged, language and title set";
+    summary = opts.verapdf && !opts.verapdf.error && opts.verapdf.compliant ? "Tagged, PDF/UA valid (veraPDF)" : "Tagged, language and title set";
   } else {
     summary = `${plural2(counted.length, "accessibility problem")}`;
   }
@@ -111250,10 +111301,10 @@ function parsePdffonts(text2) {
   const lines = text2.split(/\r?\n/);
   const sepIndex = lines.findIndex((l) => /^-{4,}( -+)+\s*$/.test(l));
   if (sepIndex < 0) return [];
-  const sep2 = lines[sepIndex] ?? "";
+  const sep3 = lines[sepIndex] ?? "";
   const starts = [];
   const re = /-+/g;
-  for (let m = re.exec(sep2); m; m = re.exec(sep2)) starts.push(m.index);
+  for (let m = re.exec(sep3); m; m = re.exec(sep3)) starts.push(m.index);
   const typeStart = starts[1] ?? 37;
   const encStart = starts[2] ?? 55;
   const fonts = [];
@@ -111323,6 +111374,23 @@ var CONTEXT_REF = new RegExp(
   "giu"
 );
 var STANDALONE_REF = /(?:\(\?\?\))|(?:(?<=^|[\s ([])\?\?(?=[.,;:)\]]|\s*$))/gm;
+var BARE_QQ = /(?<!\?)\?\?(?!\?)/g;
+var PROSE_BEFORE = /(?:^|[^\p{L}\p{N}_])(?:see|in|of|from|by|and|or|to|cf\.|with|on|under|at|than|like|as|per|also)[\s\u00a0~]{1,3}$/iu;
+var PROSE_AFTER = /^[\s\u00a0]{1,3}(?:and|or|shows?|for|to|in|is|are|was|were|we|that|which|with|of|on|gives?|illustrates?|lists?|summari[sz]es?|presents?|describes?|compares?|reports?|depicts?)(?![\p{L}\p{N}_])/iu;
+function proseHits(text2) {
+  const hits = [];
+  BARE_QQ.lastIndex = 0;
+  for (let m = BARE_QQ.exec(text2); m; m = BARE_QQ.exec(text2)) {
+    const i = m.index;
+    const prev = text2[i - 1] ?? " ";
+    const next = text2[i + 2] ?? " ";
+    if (!/[\s\u00a0~([]/.test(prev) || !/[\s\u00a0.,;:)\]]/.test(next)) continue;
+    const before = text2.slice(Math.max(0, i - 12), i);
+    const after = text2.slice(i + 2, i + 18);
+    if (PROSE_BEFORE.test(before) || PROSE_AFTER.test(after)) hits.push({ index: i, length: 2 });
+  }
+  return hits;
+}
 var UNRESOLVED_CITE = /\[\?(?:\s*[,;]\s*\?)*\]/g;
 function snippet(text2, index, length) {
   const start = Math.max(0, index - 30);
@@ -111342,7 +111410,9 @@ function refHits(text2) {
   const ctx = findAll(text2, CONTEXT_REF);
   const covered = (i) => ctx.some((h) => i >= h.index && i < h.index + h.length);
   const alone = findAll(text2, STANDALONE_REF).filter((h) => !covered(h.index + h.length - 1));
-  return [...ctx, ...alone].sort((a, b) => a.index - b.index);
+  const seen = (i) => covered(i + 1) || alone.some((h) => i >= h.index && i < h.index + h.length);
+  const prose = proseHits(text2).filter((h) => !seen(h.index));
+  return [...ctx, ...alone, ...prose].sort((a, b) => a.index - b.index);
 }
 function pdfOutputProblems(facts) {
   const problems = [];
@@ -111679,13 +111749,27 @@ function arxivCacheKey(id) {
 function titleCacheKey(title, year, isTex = true) {
   return `title:${normalizeTitle(title, isTex)}|${year ?? ""}`;
 }
-async function cached(cache, key, compute) {
+var DAY_MS = 24 * 60 * 60 * 1e3;
+var DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 30, positive: 180 };
+function cacheMaxAge(option) {
+  if (typeof option === "number") return { negative: option, positive: option };
+  return { ...DEFAULT_CACHE_MAX_AGE_DAYS, ...option ?? {} };
+}
+function isFresh(cachedAt, negative, maxAge, now = Date.now()) {
+  if (typeof cachedAt !== "number" || !Number.isFinite(cachedAt)) return !negative;
+  const days = negative ? maxAge.negative : maxAge.positive;
+  return now - cachedAt <= days * DAY_MS;
+}
+async function cached(cache, key, compute, opts) {
   if (cache) {
     const hit = await cache.get(key);
-    if (hit !== void 0 && hit !== null) return hit;
+    if (hit !== void 0 && hit !== null && typeof hit === "object") {
+      const { cachedAt, ...value2 } = hit;
+      if (isFresh(cachedAt, opts.isNegative(value2), opts.maxAge)) return value2;
+    }
   }
   const value = await compute();
-  if (cache) await cache.set(key, value);
+  if (cache) await cache.set(key, { ...value, cachedAt: Date.now() });
   return value;
 }
 
@@ -111701,8 +111785,8 @@ var SourceUnavailableError = class extends Error {
 var MAX_RETRY_AFTER_MS = 3e4;
 function sleep(ms, signal) {
   if (ms <= 0) return Promise.resolve();
-  return new Promise((resolve3, reject) => {
-    const timer = setTimeout(resolve3, ms);
+  return new Promise((resolve5, reject) => {
+    const timer = setTimeout(resolve5, ms);
     signal?.addEventListener(
       "abort",
       () => {
@@ -112291,12 +112375,18 @@ function failureReason(err) {
   return err instanceof SourceUnavailableError ? err.message : `unexpected error: ${String(err)}`;
 }
 function resolveDoiCached(ctx, doi) {
-  return cached(ctx.opts.cache, doiCacheKey(doi), () => resolveDoi(ctx.client, doi));
+  return cached(ctx.opts.cache, doiCacheKey(doi), () => resolveDoi(ctx.client, doi), {
+    isNegative: (v) => v.kind !== "found",
+    maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays)
+  });
 }
 async function arxivByIdCached(ctx, id) {
-  const value = await cached(ctx.opts.cache, arxivCacheKey(id), async () => ({
-    record: await arxivById(ctx.client, id)
-  }));
+  const value = await cached(
+    ctx.opts.cache,
+    arxivCacheKey(id),
+    async () => ({ record: await arxivById(ctx.client, id) }),
+    { isNegative: (v) => !v.record, maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays) }
+  );
   return value.record;
 }
 function titleSources(ctx, q) {
@@ -112320,11 +112410,21 @@ async function searchOne(ctx, cacheKey, source, run2) {
   const cache = ctx.opts.cache;
   const hit = cache ? await cache.get(cacheKey) : void 0;
   const cachedRecords = hit?.[source];
-  if (cachedRecords) return cachedRecords;
+  if (Array.isArray(cachedRecords) && isFresh(
+    hit?.cachedAt?.[source],
+    cachedRecords.length === 0,
+    cacheMaxAge(ctx.opts.cacheMaxAgeDays)
+  )) {
+    return cachedRecords;
+  }
   const records = await run2();
   if (cache) {
     const latest = await cache.get(cacheKey) ?? {};
-    await cache.set(cacheKey, { ...latest, [source]: records });
+    await cache.set(cacheKey, {
+      ...latest,
+      [source]: records,
+      cachedAt: { ...latest.cachedAt ?? {}, [source]: Date.now() }
+    });
   }
   return records;
 }
@@ -112464,6 +112564,24 @@ function sourcesText(sources) {
 function failuresText(failures) {
   return failures.map((f) => f.reason).join("; ");
 }
+function withBrokenIds(result, ids, ev) {
+  const broken = [];
+  if (ev.doiMissing && ids.doi) {
+    broken.push({ field: "doi", bib: ids.doi, record: "does not resolve" });
+  }
+  if (ev.arxivMissing && ids.arxivId) {
+    broken.push({ field: "eprint", bib: ids.arxivId, record: "does not resolve" });
+  }
+  if (!broken.length) return result;
+  const what = broken.map((d) => d.field === "doi" ? `DOI ${d.bib}` : `arXiv id ${d.bib}`);
+  const { reason: _reason, ...rest } = result;
+  return {
+    ...rest,
+    status: "mismatch",
+    differences: [...broken, ...result.differences ?? []],
+    reason: `the ${what.join(" and the ")} does not resolve, but a record with this title exists`
+  };
+}
 function noMatch(base, entry, kind, ids, ev) {
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
@@ -112535,10 +112653,10 @@ async function verifyEntry(entry, ctx, ignore) {
   };
   const viaId = (ids.doi ? await checkDoi(ctx, ids.doi, facts, ev) : null) ?? (ids.arxivId ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
   const withQuery = (r) => ({ ...r, query: ev.queries[0] ?? "" });
-  if (viaId) return withQuery(fromAssessment(base, viaId, ev));
+  if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
   await searchByTitle(ctx, facts, kind, ev);
   const best = bestAssessment(ev.assessments);
-  if (best) return withQuery(fromAssessment(base, best, ev));
+  if (best) return withQuery(withBrokenIds(fromAssessment(base, best, ev), ids, ev));
   return withQuery(noMatch(base, entry, kind, ids, ev));
 }
 async function runPool(items, limit, worker) {
@@ -112739,6 +112857,15 @@ function tallyLine(t) {
   if (t.skipped) parts.push(`${t.skipped} skipped`);
   return parts.join(" \xB7 ");
 }
+function oneLine(s) {
+  return s.replace(/[\r\n\u0085\u2028\u2029]+/g, " ").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
+}
+function safeLines(s) {
+  return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
+}
+function neutralizeWorkflowCommands(text2) {
+  return text2.replace(/^([ \t]*)::/gm, "$1| ::");
+}
 
 // ../packages/core/src/report/annotations.ts
 function escapeData(s) {
@@ -112797,12 +112924,12 @@ function formatHuman(report, opts = {}) {
   const sevPaint = { error: c.red, warning: c.yellow, info: c.cyan };
   const lines = [];
   const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL" }[report.status];
-  const target = report.target ? ` ${report.target}` : "";
+  const target = report.target ? ` ${oneLine(report.target)}` : "";
   lines.push(`${c.bold(`overfull${target}`)}  ${statusPaint[report.status](c.bold(statusWord))}`);
   const nameWidth = Math.max(...report.checks.map((ch2) => ch2.check.length), 5) + 2;
   for (const ch2 of report.checks) {
     const glyph = statusPaint[ch2.status](STATUS_GLYPH[ch2.status]);
-    const text2 = checkLine(ch2);
+    const text2 = oneLine(checkLine(ch2));
     lines.push(
       `  ${glyph} ${pad(ch2.check, nameWidth)}${ch2.status === "skipped" ? c.dim(text2) : text2}`
     );
@@ -112812,7 +112939,7 @@ function formatHuman(report, opts = {}) {
     lines.push("");
     const locWidth = Math.min(
       28,
-      Math.max(...problems.map((p) => formatLocation(p.location).length))
+      Math.max(...problems.map((p) => oneLine(formatLocation(p.location)).length))
     );
     for (const p of problems)
       lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
@@ -112822,22 +112949,22 @@ function formatHuman(report, opts = {}) {
   if (!opts.verbose && problems.some((p) => p.fix || p.detail)) {
     lines.push(c.dim("Run with --verbose for fixes, or `overfull explain <rule>`."));
   }
-  return `${lines.join("\n")}
+  return `${neutralizeWorkflowCommands(lines.join("\n"))}
 `;
 }
 function problemLines(p, locWidth, verbose, c, sevPaint) {
-  const loc = formatLocation(p.location);
+  const loc = oneLine(formatLocation(p.location));
   const locCol = locWidth > 0 ? `${pad(loc, locWidth)}  ` : "";
   const related = p.related ? c.dim(` (+${p.related} follow-on)`) : "";
   const out = [
-    `  ${sevPaint[p.severity](SEVERITY_GLYPH[p.severity])} ${locCol}${p.message}${related}  ${c.dim(p.rule)}`
+    `  ${sevPaint[p.severity](SEVERITY_GLYPH[p.severity])} ${locCol}${oneLine(p.message)}${related}  ${c.dim(oneLine(p.rule))}`
   ];
   if (verbose) {
     const indent = " ".repeat(4 + (locWidth > 0 ? locWidth + 2 : 0));
-    if (p.detail) out.push(`${indent}${c.dim("why:")} ${p.detail}`);
-    if (p.fix) out.push(`${indent}${c.dim("fix:")} ${p.fix}`);
+    if (p.detail) out.push(`${indent}${c.dim("why:")} ${oneLine(p.detail)}`);
+    if (p.fix) out.push(`${indent}${c.dim("fix:")} ${oneLine(p.fix)}`);
     if (p.evidence) {
-      for (const e of p.evidence.split("\n").slice(0, 4)) out.push(`${indent}${c.dim(`| ${e}`)}`);
+      for (const e of safeLines(p.evidence).slice(0, 4)) out.push(`${indent}${c.dim(`| ${e}`)}`);
     }
   }
   return out;
@@ -112894,16 +113021,16 @@ function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 function escapeMarkdown(s) {
-  return escapeHtml(s.replace(/\r?\n/g, " ")).replace(/([\\`*_{}[\]|~#])/g, "\\$1");
+  return escapeHtml(oneLine(s)).replace(/([\\`*_{}[\]|~#])/g, "\\$1");
 }
 function inline(s) {
-  return s.replace(/\r?\n/g, " ").split("`").map(
+  return oneLine(s).split("`").map(
     (part, i) => i % 2 === 1 ? `<code>${escapeHtml(part).replace(/\|/g, "&#124;")}</code>` : escapeMarkdown(part)
   ).join("");
 }
 function problemItem(p) {
   const loc = formatLocation(p.location);
-  const head = `- **${p.severity}**${loc ? ` <code>${escapeHtml(loc)}</code>` : ""} ${escapeMarkdown(p.message)} <sub>${escapeHtml(p.rule)}</sub>`;
+  const head = `- **${p.severity}**${loc ? ` <code>${escapeHtml(oneLine(loc))}</code>` : ""} ${escapeMarkdown(p.message)} <sub>${escapeHtml(oneLine(p.rule))}</sub>`;
   const sub = [];
   if (p.detail) sub.push(`  - Why: ${inline(p.detail)}`);
   if (p.fix) sub.push(`  - Fix: ${inline(p.fix)}`);
@@ -112930,7 +113057,7 @@ function formatMarkdown(report) {
     for (const p of mine) out.push(problemItem(p));
     out.push("", "</details>", "");
   }
-  return `${out.join("\n").trimEnd()}
+  return `${neutralizeWorkflowCommands(out.join("\n").trimEnd())}
 `;
 }
 
@@ -112964,35 +113091,64 @@ function readGroup(s, open) {
   }
   return null;
 }
-function lineAt(s, index) {
+function lineCounter(s) {
+  let pos = 0;
   let line = 1;
-  for (let i = 0; i < index; i++) if (s.charCodeAt(i) === 10) line++;
-  return line;
+  return (index) => {
+    if (index < pos) {
+      pos = 0;
+      line = 1;
+    }
+    for (; pos < index; pos++) if (s.charCodeAt(pos) === 10) line++;
+    return line;
+  };
 }
+function braceMatches(s) {
+  const close = new Int32Array(s.length).fill(-1);
+  const stack = [];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 92) {
+      i++;
+    } else if (c === 123) {
+      stack.push(i);
+    } else if (c === 125) {
+      const open = stack.pop();
+      if (open !== void 0) close[open] = i;
+    }
+  }
+  return close;
+}
+var MAX_OPTIONAL = 4096;
 function findCommands(files, names) {
   const out = [];
   const re = new RegExp(`\\\\(${names.join("|")})\\*?(?![A-Za-z@])`, "g");
   for (const f of files) {
     const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    let braces;
     re.lastIndex = 0;
     for (let m = re.exec(src); m; m = re.exec(src)) {
       let i = m.index + m[0].length;
       while (src[i] === " " || src[i] === "\n") i++;
       let optional;
       if (src[i] === "[") {
-        const close = src.indexOf("]", i);
+        let close = src.slice(i, i + MAX_OPTIONAL).indexOf("]");
         if (close < 0) continue;
+        close += i;
         optional = src.slice(i + 1, close);
         i = close + 1;
         while (src[i] === " " || src[i] === "\n") i++;
       }
-      const g = readGroup(src, i);
-      if (!g) continue;
+      if (src[i] !== "{") continue;
+      braces ??= braceMatches(src);
+      const end = braces[i] ?? -1;
+      if (end < 0) continue;
       const use = {
         file: f.path,
-        line: lineAt(src, m.index),
+        line: lineAt(m.index),
         name: m[1],
-        arg: g.value
+        arg: src.slice(i + 1, end)
       };
       if (optional !== void 0) use.optional = optional;
       out.push(use);
@@ -113006,8 +113162,10 @@ function grepTex(files, re) {
   const g = new RegExp(re.source, flags);
   for (const f of files) {
     const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    g.lastIndex = 0;
     for (let m = g.exec(src); m; m = g.exec(src)) {
-      out.push({ file: f.path, line: lineAt(src, m.index), match: m[0] });
+      out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
       if (m[0].length === 0) g.lastIndex++;
     }
   }
@@ -113486,12 +113644,39 @@ function resolveProfile(nameOrInline) {
 }
 
 // ../packages/cli/src/check.ts
-import { existsSync as existsSync3 } from "node:fs";
-import { join as join4 } from "node:path";
+import { existsSync as existsSync4 } from "node:fs";
+import { join as join5, relative as relative6 } from "node:path";
 
 // ../packages/cli/src/cache.ts
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname as dirname2 } from "node:path";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname as dirname2, join, relative } from "node:path";
+function userCacheDir(env, platform = process.platform) {
+  const home = env.HOME || env.USERPROFILE || homedir();
+  if (platform === "win32")
+    return join(env.LOCALAPPDATA || join(home, "AppData", "Local"), "overfull");
+  return join(env.XDG_CACHE_HOME || join(home, ".cache"), "overfull");
+}
+function refsCachePath(root, mode, env) {
+  if (mode === "project") return join(root, ".overfull", "cache", "refs.json");
+  let real = root;
+  try {
+    real = realpathSync(root);
+  } catch {
+  }
+  const key = createHash("sha256").update(real).digest("hex").slice(0, 16);
+  return join(userCacheDir(env), key, "refs.json");
+}
+function trackedByGit(root, file) {
+  const r = spawnSync("git", ["ls-files", "--error-unmatch", "--", relative(root, file)], {
+    cwd: root,
+    stdio: "ignore",
+    timeout: 1e4
+  });
+  return r.status === 0;
+}
 var FileCache = class {
   constructor(path) {
     this.path = path;
@@ -113526,8 +113711,8 @@ var FileCache = class {
 };
 
 // ../packages/cli/src/config.ts
-import { existsSync, readdirSync, readFileSync as readFileSync2 } from "node:fs";
-import { basename as basename2, dirname as dirname3, isAbsolute as isAbsolute2, join, resolve } from "node:path";
+import { existsSync as existsSync2, readdirSync, readFileSync as readFileSync2 } from "node:fs";
+import { basename as basename2, dirname as dirname3, isAbsolute as isAbsolute3, join as join2, resolve as resolve2 } from "node:path";
 var import_yaml = __toESM(require_dist(), 1);
 
 // ../packages/cli/src/io.ts
@@ -113538,9 +113723,84 @@ var UsageError = class extends Error {
   }
 };
 
+// ../packages/cli/src/safety.ts
+import { existsSync, realpathSync as realpathSync2 } from "node:fs";
+import { isAbsolute as isAbsolute2, relative as relative2, resolve, sep } from "node:path";
+var SAFE_NAME = /^[A-Za-z0-9._/-]+$/;
+function checkName(value, what, allowSlash) {
+  const segments = value.split("/");
+  const ok = SAFE_NAME.test(value) && !value.startsWith("-") && !value.startsWith("/") && (allowSlash || !value.includes("/")) && !segments.includes("..") && !segments.some((s) => s.startsWith("-"));
+  if (!ok) {
+    throw new UsageError(
+      `Unsafe ${what} "${value}": use only letters, digits, ".", "_", "-"${allowSlash ? ' and "/"' : ""}, no leading "-" and no ".." (latexmk passes it to a shell).`
+    );
+  }
+  return value;
+}
+function safeJobname(value) {
+  return checkName(value, "jobname", false);
+}
+function safeRelPath(value, what = "main file") {
+  return checkName(value.split("\\").join("/"), what, true);
+}
+var IMAGE_REF = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?(?::[0-9]+)?\/)?[a-z0-9]+(?:(?:[._]|__|-+)[a-z0-9]+)*(?:\/[a-z0-9]+(?:(?:[._]|__|-+)[a-z0-9]+)*)*(?::[A-Za-z0-9_][A-Za-z0-9_.-]{0,127})?(?:@sha256:[a-f0-9]{64})?$/;
+function safeImage(value, where = "image") {
+  if (value.startsWith("-") || !IMAGE_REF.test(value)) {
+    throw new UsageError(
+      `Invalid Docker image "${value}" (${where}). Use a reference like ghcr.io/owner/name:tag.`
+    );
+  }
+  return value;
+}
+function isInside(root, target) {
+  const rel2 = relative2(root, target);
+  return rel2 === "" || !rel2.startsWith(`..${sep}`) && rel2 !== ".." && !isAbsolute2(rel2);
+}
+function insideRoot(root, path, what) {
+  const abs = resolve(root, path);
+  let ok = isInside(root, abs);
+  if (ok && existsSync(abs)) {
+    try {
+      ok = isInside(realpathSync2(root), realpathSync2(abs));
+    } catch {
+    }
+  }
+  if (!ok) {
+    throw new UsageError(
+      `${what} "${path}" is outside the project directory (${root}). Overfull only reads and writes files inside the project.`
+    );
+  }
+  return abs;
+}
+function insideRootOrUndefined(root, path) {
+  try {
+    return insideRoot(root, path, "path");
+  } catch {
+    return void 0;
+  }
+}
+function neutralizeWorkflowCommands2(text2) {
+  return text2.replace(/^([ \t]*)(::|##\[)/gm, "$1\u200B$2");
+}
+
 // ../packages/cli/src/config.ts
 var DEFAULT_IMAGE = "ghcr.io/amet13/overfull:0.1";
 var CONFIG_FILE = "overfull.yml";
+function latexmkrcDirs(root) {
+  const out = {};
+  for (const name of [".latexmkrc", "latexmkrc"]) {
+    const p = join2(root, name);
+    if (!existsSync2(p)) continue;
+    const text2 = readFileSync2(p, "utf8").replace(/(^|[^\\$])#.*$/gm, "$1");
+    const o = /\$out_dir\s*=\s*['"]([^'"]+)['"]/.exec(text2);
+    const a = /\$aux_dir\s*=\s*['"]([^'"]+)['"]/.exec(text2);
+    const plain = (d) => d !== void 0 && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith("/") && !d.startsWith("-") && !d.split("/").includes("..");
+    if (plain(o?.[1])) out.outDir = o?.[1];
+    if (plain(a?.[1])) out.auxDir = a?.[1];
+    break;
+  }
+  return out;
+}
 var TOP_KEYS = ["main", "jobname", "bib", "profile", "checks", "references", "venue", "build"];
 var VENUE_KEYS = [
   "pageLimit",
@@ -113655,8 +113915,8 @@ function parseChecks(v, file, field = "checks") {
   return list3;
 }
 function discoverBib(root, main3) {
-  const mainPath = join(root, main3);
-  if (existsSync(mainPath)) {
+  const mainPath = join2(root, main3);
+  if (existsSync2(mainPath)) {
     const src = readFileSync2(mainPath, "utf8").replace(/(^|[^\\])%.*$/gm, "$1");
     const found = [];
     for (const m of src.matchAll(/\\addbibresource(?:\[[^\]]*\])?\{([^}]+)\}/g))
@@ -113667,8 +113927,8 @@ function discoverBib(root, main3) {
         if (name) found.push(name.endsWith(".bib") ? name : `${name}.bib`);
       }
     }
-    const rel = dirname3(main3);
-    const resolved = found.map((f) => rel === "." || isAbsolute2(f) ? f : join(rel, f));
+    const rel2 = dirname3(main3);
+    const resolved = found.map((f) => rel2 === "." || isAbsolute3(f) ? f : join2(rel2, f));
     if (resolved.length) return [...new Set(resolved)];
   }
   try {
@@ -113680,12 +113940,12 @@ function discoverBib(root, main3) {
 function loadConfig(cwd, explicit, env = {}) {
   let file;
   if (explicit) {
-    file = resolve(cwd, explicit);
-    if (!existsSync(file)) throw new UsageError(`Config file not found: ${explicit}`);
-  } else if (existsSync(join(cwd, CONFIG_FILE))) {
-    file = join(cwd, CONFIG_FILE);
-  } else if (existsSync(join(cwd, "overfull.yaml"))) {
-    file = join(cwd, "overfull.yaml");
+    file = resolve2(cwd, explicit);
+    if (!existsSync2(file)) throw new UsageError(`Config file not found: ${explicit}`);
+  } else if (existsSync2(join2(cwd, CONFIG_FILE))) {
+    file = join2(cwd, CONFIG_FILE);
+  } else if (existsSync2(join2(cwd, "overfull.yaml"))) {
+    file = join2(cwd, "overfull.yaml");
   }
   const root = file ? dirname3(file) : cwd;
   let raw = {};
@@ -113704,13 +113964,15 @@ function loadConfig(cwd, explicit, env = {}) {
     raw = data ?? {};
     checkKeys(raw, TOP_KEYS, "", file);
   }
-  const f = file ?? join(root, CONFIG_FILE);
+  const f = file ?? join2(root, CONFIG_FILE);
   if (raw.main !== void 0 && typeof raw.main !== "string")
     throw new ConfigError(f, "`main` must be a file name");
-  const main3 = raw.main ?? "main.tex";
+  const main3 = safeRelPath(raw.main ?? "main.tex");
   if (raw.jobname !== void 0 && typeof raw.jobname !== "string")
     throw new ConfigError(f, "`jobname` must be a string");
-  const jobname = raw.jobname ?? basename2(main3).replace(/\.tex$/i, "");
+  const jobname = safeJobname(
+    raw.jobname ?? basename2(main3).replace(/\.tex$/i, "")
+  );
   const bib = raw.bib !== void 0 ? stringList(raw.bib, "bib", f) : discoverBib(root, main3);
   let inline2 = {};
   let profileName = "generic";
@@ -113728,16 +113990,32 @@ function loadConfig(cwd, explicit, env = {}) {
   const checks = raw.checks !== void 0 ? parseChecks(raw.checks, f) : profile.checks ?? [...CHECK_IDS];
   const refs = raw.references ?? {};
   if (!isObj2(refs)) throw new ConfigError(f, "`references` must be a mapping");
-  checkKeys(refs, ["mailto", "ignore"], "references.", f);
+  checkKeys(refs, ["mailto", "ignore", "cache", "requireCite"], "references.", f);
+  const cache = refs.cache ?? "user";
+  if (cache !== "user" && cache !== "project")
+    throw new ConfigError(f, "`references.cache` must be user or project");
+  if (refs.requireCite !== void 0 && typeof refs.requireCite !== "boolean")
+    throw new ConfigError(f, "`references.requireCite` must be true or false");
+  const requireCite = refs.requireCite === true;
   const mailto = (typeof refs.mailto === "string" ? refs.mailto : void 0) ?? env.OVERFULL_MAILTO;
   const ignore = refs.ignore !== void 0 ? stringList(refs.ignore, "references.ignore", f) : [];
   const build2 = raw.build ?? {};
   if (!isObj2(build2)) throw new ConfigError(f, "`build` must be a mapping");
-  checkKeys(build2, ["engine", "image"], "build.", f);
+  checkKeys(build2, ["engine", "image", "outDir"], "build.", f);
   const engine = build2.engine ?? "auto";
   if (!["auto", "local", "docker"].includes(engine))
     throw new ConfigError(f, "`build.engine` must be auto, local or docker");
-  const image = env.OVERFULL_IMAGE || (typeof build2.image === "string" ? build2.image : DEFAULT_IMAGE);
+  if (build2.image !== void 0 && typeof build2.image !== "string")
+    throw new ConfigError(f, "`build.image` must be a Docker image name");
+  const image = env.OVERFULL_IMAGE ? safeImage(env.OVERFULL_IMAGE, "OVERFULL_IMAGE") : build2.image ? safeImage(build2.image, "build.image in overfull.yml") : DEFAULT_IMAGE;
+  if (build2.outDir !== void 0 && typeof build2.outDir !== "string")
+    throw new ConfigError(f, "`build.outDir` must be a directory name");
+  const rc = latexmkrcDirs(root);
+  const norm = (d) => d === "." || d === "./" ? "." : d.replace(/^\.\//, "").replace(/\/+$/, "");
+  const outDir = norm(
+    safeRelPath(build2.outDir ?? rc.outDir ?? ".", "output directory")
+  );
+  const auxDir = build2.outDir !== void 0 ? outDir : norm(safeRelPath(rc.auxDir ?? outDir, "aux directory"));
   const config = {
     root,
     main: main3,
@@ -113746,8 +114024,8 @@ function loadConfig(cwd, explicit, env = {}) {
     profile,
     venue: inline2,
     checks,
-    references: mailto ? { mailto, ignore } : { ignore },
-    build: { engine, image }
+    references: { ...mailto ? { mailto } : {}, ignore, cache, requireCite },
+    build: { engine, image, outDir, auxDir, outDirFromConfig: build2.outDir !== void 0 }
   };
   if (file) config.file = file;
   return config;
@@ -113755,17 +114033,18 @@ function loadConfig(cwd, explicit, env = {}) {
 
 // ../packages/cli/src/pdf.ts
 import { readFileSync as readFileSync3 } from "node:fs";
+import { relative as relative3 } from "node:path";
 
 // ../packages/cli/src/tools.ts
 import { spawn } from "node:child_process";
 import { accessSync, constants } from "node:fs";
-import { delimiter, join as join2 } from "node:path";
+import { delimiter, join as join3 } from "node:path";
 function which(cmd, env = process.env) {
   const exts = process.platform === "win32" ? (env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";") : [""];
   for (const dir of (env.PATH ?? "").split(delimiter)) {
     if (!dir) continue;
     for (const ext of exts) {
-      const p = join2(dir, cmd + ext);
+      const p = join3(dir, cmd + ext);
       try {
         accessSync(p, constants.X_OK);
         return p;
@@ -113783,7 +114062,8 @@ function run(cmd, args, opts = {}) {
     const child = spawn(cmd, args, {
       cwd: opts.cwd,
       env: opts.env,
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: opts.shell === true
     });
     const timer = opts.timeoutMs ? setTimeout(() => child.kill("SIGTERM"), opts.timeoutMs) : void 0;
     const feed = (chunk) => {
@@ -113812,6 +114092,28 @@ function run(cmd, args, opts = {}) {
     });
   });
 }
+async function dockerAvailable(env) {
+  if (!which("docker", env)) return false;
+  const r = await run("docker", ["info", "--format", "{{.ServerVersion}}"], { timeoutMs: 8e3 });
+  return r.code === 0;
+}
+function quoteWindowsArg(arg) {
+  if (/["%!^&|<>\r\n]/.test(arg)) throw new Error(`Unsupported character in argument: ${arg}`);
+  return /[\s]/.test(arg) || arg === "" ? `"${arg}"` : arg;
+}
+async function dockerImagePresent(image) {
+  const r = await run("docker", ["image", "inspect", image], { timeoutMs: 8e3 });
+  return r.code === 0;
+}
+function dockerRunArgs(image, dir, command, opts = {}) {
+  const user = typeof process.getuid === "function" && typeof process.getgid === "function" ? ["--user", `${process.getuid()}:${process.getgid()}`] : [];
+  const env = Object.entries({ HOME: "/tmp", ...opts.env }).flatMap(([k, v]) => [
+    "-e",
+    `${k}=${v}`
+  ]);
+  const workdir = opts.subdir && opts.subdir !== "." ? `/work/${opts.subdir.split("\\").join("/")}` : "/work";
+  return ["run", "--rm", ...user, ...env, "-v", `${dir}:/work`, "-w", workdir, image, ...command];
+}
 
 // ../packages/cli/src/pdf.ts
 var pdfjsPromise;
@@ -113833,19 +114135,25 @@ function loadPdfjs() {
   })();
   return pdfjsPromise;
 }
-async function readPdfFacts(path) {
+async function readPdfFacts(path, opts = {}) {
   const data = new Uint8Array(readFileSync3(path));
   const facts = await extractPdfFacts(data, await loadPdfjs());
   if (which("pdffonts")) {
     const r = await run("pdffonts", [path], { timeoutMs: 3e4 });
+    if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
+  } else if (opts.docker) {
+    const rel2 = `./${relative3(opts.docker.root, path).split("\\").join("/")}`;
+    const r = await run("docker", dockerRunArgs(opts.docker.image, opts.docker.root, ["pdffonts", rel2]), {
+      timeoutMs: 6e4
+    });
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   }
   return facts;
 }
 
 // ../packages/cli/src/project.ts
-import { existsSync as existsSync2, readdirSync as readdirSync2, readFileSync as readFileSync4, statSync } from "node:fs";
-import { join as join3, relative, sep } from "node:path";
+import { existsSync as existsSync3, lstatSync, readdirSync as readdirSync2, readFileSync as readFileSync4, realpathSync as realpathSync3, statSync } from "node:fs";
+import { join as join4, relative as relative4, sep as sep2 } from "node:path";
 var SKIP_DIRS = /* @__PURE__ */ new Set([
   ".git",
   "node_modules",
@@ -113859,6 +114167,11 @@ var SKIP_DIRS = /* @__PURE__ */ new Set([
 var MAX_FILES = 5e3;
 function listFiles(root) {
   const out = [];
+  let realRoot = root;
+  try {
+    realRoot = realpathSync3(root);
+  } catch {
+  }
   const walk = (dir) => {
     let entries;
     try {
@@ -113868,52 +114181,97 @@ function listFiles(root) {
     }
     for (const name of entries.sort()) {
       if (out.length >= MAX_FILES) return;
-      const full = join3(dir, name);
+      const full = join4(dir, name);
       let st;
       try {
-        st = statSync(full);
+        st = lstatSync(full);
+        if (st.isSymbolicLink()) {
+          const target = statSync(full);
+          if (target.isDirectory()) continue;
+          if (!insideRootOrUndefined(realRoot, realpathSync3(full))) continue;
+          st = target;
+        }
       } catch {
         continue;
       }
       if (st.isDirectory()) {
         if (!SKIP_DIRS.has(name)) walk(full);
-      } else out.push(relative(root, full).split(sep).join("/"));
+      } else out.push(relative4(root, full).split(sep2).join("/"));
     }
   };
   walk(root);
   return out;
 }
+function isDiffArtifact(path) {
+  const name = path.split("/").pop() ?? path;
+  return name.startsWith("overfull-diff") || /-diff[0-9a-f]{4,40}\.tex$/i.test(name);
+}
 function readTexFiles(root, files) {
-  return files.filter((f) => /\.(tex|sty|cls)$/i.test(f) && !f.startsWith("overfull-diff")).map((path) => ({ path, content: readFileSync4(join3(root, path), "utf8") }));
+  return files.filter((f) => /\.(tex|sty|cls)$/i.test(f) && !isDiffArtifact(f)).map((path) => ({ path, content: readFileSync4(join4(root, path), "utf8") }));
 }
 function readIfExists(path) {
-  return existsSync2(path) ? readFileSync4(path, "utf8") : void 0;
+  return existsSync3(path) ? readFileSync4(path, "utf8") : void 0;
 }
-function readAux(root, jobname) {
-  const main3 = readIfExists(join3(root, `${jobname}.aux`));
+function readAux(root, jobname, auxDir = ".") {
+  const dir = join4(root, auxDir);
+  const mainPath = insideRootOrUndefined(root, join4(dir, `${jobname}.aux`));
+  const main3 = mainPath ? readIfExists(mainPath) : void 0;
   if (main3 === void 0) return void 0;
   const parts = [main3];
   for (const m of main3.matchAll(/\\@input\{([^}]+\.aux)\}/g)) {
-    const extra = readIfExists(join3(root, m[1]));
+    const p = insideRootOrUndefined(root, join4(dir, m[1]));
+    const extra = p ? readIfExists(p) : void 0;
     if (extra) parts.push(extra);
   }
   return parts.join("\n");
 }
 
 // ../packages/cli/src/verapdf.ts
-async function runVeraPdf(pdf, env) {
-  if (!which("verapdf", env)) return null;
-  const attempt = async (flavour) => {
-    const r = await run("verapdf", ["--flavour", flavour, "--format", "json", pdf], {
-      timeoutMs: 18e4
-    });
+import { relative as relative5 } from "node:path";
+function verapdfFlavour(pdfuaPart) {
+  return pdfuaPart === 1 ? "ua1" : "ua2";
+}
+async function runVeraPdf(pdf, env, opts = {}) {
+  const local = which("verapdf", env);
+  if (!local && !opts.docker) return null;
+  const win = process.platform === "win32";
+  const attempt = async (flavour2) => {
+    const args = ["--flavour", flavour2, "--format", "json"];
+    let r;
+    if (local) {
+      let quoted = [];
+      try {
+        if (win) quoted = [...args, pdf].map(quoteWindowsArg);
+      } catch (err) {
+        return { compliant: false, failures: [], error: String(err) };
+      }
+      r = win ? await run("verapdf", quoted, {
+        timeoutMs: 18e4,
+        shell: true
+      }) : await run("verapdf", [...args, pdf.startsWith("-") ? `./${pdf}` : pdf], {
+        timeoutMs: 18e4
+      });
+    } else {
+      const { image, root } = opts.docker;
+      const rel2 = `./${relative5(root, pdf).split("\\").join("/")}`;
+      r = await run("docker", dockerRunArgs(image, root, ["verapdf", ...args, rel2]), {
+        timeoutMs: 3e5
+      });
+      if (r.code === 125)
+        return {
+          compliant: false,
+          failures: [],
+          error: `docker could not run ${image}: ${r.stderr.trim().split("\n").pop() ?? ""}`
+        };
+    }
     if (r.error) return { compliant: false, failures: [], error: r.error };
     return parseVeraPdfReport(r.stdout || r.stderr);
   };
-  const ua2 = await attempt("ua2");
-  if (!ua2.error) return ua2;
+  const flavour = verapdfFlavour(opts.pdfuaPart);
+  const first2 = await attempt(flavour);
+  if (!first2.error || opts.pdfuaPart !== void 0) return first2;
   const ua1 = await attempt("ua1");
-  return ua1.error ? ua2 : ua1;
+  return ua1.error ? first2 : ua1;
 }
 
 // ../packages/cli/src/version.ts
@@ -113926,18 +114284,37 @@ var skipped2 = (check2, reason) => ({
   problems: [],
   skippedReason: reason
 });
+var rel = (root, abs) => relative6(root, abs).split("\\").join("/") || ".";
+async function dockerTools(opts, config) {
+  const engine = opts.engine ?? "auto";
+  if (engine === "local") return void 0;
+  const env = opts.env ?? process.env;
+  if (which("verapdf", env) && which("pdffonts", env)) return void 0;
+  if (!await dockerAvailable(env)) return void 0;
+  if (engine === "auto" && !await dockerImagePresent(config.build.image)) return void 0;
+  return { image: config.build.image, root: config.root };
+}
 async function gather(opts, config, needPdf) {
   const root = config.root;
-  const logPath = opts.log ?? `${config.jobname}.log`;
-  const pdfPath = opts.pdf ?? `${config.jobname}.pdf`;
-  const inputs = { config, root, logPath, pdfPath };
-  const log = readIfExists(join4(root, logPath));
+  const out = config.build.outDir;
+  const aux = config.build.auxDir;
+  const logAbs = opts.log ? insideRoot(root, opts.log, "Log file") : insideRoot(root, join5(aux, `${config.jobname}.log`), "Log file");
+  const pdfAbs = opts.pdf ? insideRoot(root, opts.pdf, "PDF") : insideRoot(root, join5(out, `${config.jobname}.pdf`), "PDF");
+  const inputs = { config, root, logPath: rel(root, logAbs), pdfPath: rel(root, pdfAbs) };
+  const log = readIfExists(logAbs);
   if (log !== void 0) inputs.log = log;
-  const aux = opts.aux ? readIfExists(join4(root, opts.aux)) : readAux(root, config.jobname);
-  if (aux !== void 0) inputs.aux = aux;
-  if (needPdf && existsSync3(join4(root, pdfPath))) {
+  const auxText = opts.aux ? readIfExists(insideRoot(root, opts.aux, "Aux file")) : readAux(root, config.jobname, aux);
+  if (auxText !== void 0) inputs.aux = auxText;
+  const bcf = readIfExists(insideRoot(root, join5(aux, `${config.jobname}.bcf`), "Bcf file"));
+  if (bcf !== void 0) inputs.bcf = bcf;
+  if (needPdf && existsSync4(pdfAbs)) {
+    if (opts.verapdf !== false && (opts.checks ?? config.checks).includes("accessibility"))
+      inputs.docker = await dockerTools(opts, config);
     try {
-      inputs.facts = await readPdfFacts(join4(root, pdfPath));
+      inputs.facts = await readPdfFacts(
+        pdfAbs,
+        inputs.docker ? { docker: inputs.docker } : {}
+      );
     } catch (err) {
       inputs.factsError = err instanceof Error ? err.message : String(err);
     }
@@ -113990,7 +114367,7 @@ async function references(inp, opts) {
   const parseProblems = [];
   const missingFiles = [];
   for (const file of bibFiles) {
-    const text2 = readIfExists(join4(root, file));
+    const text2 = readIfExists(insideRoot(root, file, "Bibliography file"));
     if (text2 === void 0) {
       missingFiles.push(file);
       continue;
@@ -114011,11 +114388,9 @@ async function references(inp, opts) {
   if (missingFiles.length === bibFiles.length) {
     return skipped2("references", `Bibliography not found: ${missingFiles.join(", ")}`);
   }
-  const bcf = readIfExists(join4(root, `${config.jobname}.bcf`));
-  const citeSource = [inp.aux, bcf].filter(Boolean).join("\n");
-  const cited = citeSource ? citedKeys(citeSource) : void 0;
-  const citeAll = cited?.includes("*") ?? false;
-  const keys = cited?.filter((k) => k !== "*");
+  const sources = [inp.aux, inp.bcf].filter((x) => Boolean(x));
+  const keys = sources.length ? [...new Set(sources.flatMap((t) => citedKeys(t)))] : void 0;
+  const citeAll = sources.some((t) => citesAll(t));
   const toVerify = !keys || citeAll ? entries : entries.filter((e) => keys.includes(e.key));
   const extra = [...parseProblems, ...keys ? missingKeys(keys, entries) : []];
   for (const f of missingFiles) {
@@ -114028,17 +114403,32 @@ async function references(inp, opts) {
     });
   }
   const env = opts.env ?? process.env;
-  const cache = opts.cache === false ? void 0 : new FileCache(join4(root, ".overfull", "cache", "refs.json"));
+  let cache;
+  if (opts.cache !== false) {
+    const path = refsCachePath(root, config.references.cache, env);
+    const inCi = env.CI === "true" || env.GITHUB_ACTIONS === "true";
+    if (config.references.cache === "project" && inCi && existsSync4(path) && trackedByGit(root, path)) {
+      extra.push({
+        rule: "refs-cache-ignored",
+        check: "references",
+        severity: "info",
+        message: `Ignored ${rel(root, path)}: it is tracked by git, and in CI a committed cache is not trusted`,
+        fix: "Remove it from git (`git rm --cached .overfull/cache/refs.json`) and ignore `.overfull/`"
+      });
+    } else cache = new FileCache(path);
+  }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
-  const results = await verifyEntries(toVerify, {
+  const refsOptions = {
     ...opts.fetch ? { fetch: opts.fetch } : {},
     ...mailto ? { mailto } : {},
     ...openalexKey ? { openalexKey } : {},
     ...cache ? { cache } : {},
     offline: opts.offline ?? false,
-    ignore: config.references.ignore
-  });
+    ignore: config.references.ignore,
+    ...config.references.requireCite ? { requireProvenance: true } : {}
+  };
+  const results = await verifyEntries(toVerify, refsOptions);
   cache?.save();
   const result = refsCheck(results, { entries: toVerify, extra });
   if (!keys) {
@@ -114055,7 +114445,11 @@ async function accessibility(inp, opts) {
     return skipped2("accessibility", `Accessibility is off for profile ${inp.config.profile.id}`);
   if (!inp.facts) return skipped2("accessibility", missingPdfReason(inp));
   let verapdf;
-  if (opts.verapdf !== false) verapdf = await runVeraPdf(join4(inp.root, inp.pdfPath), opts.env);
+  if (opts.verapdf !== false)
+    verapdf = await runVeraPdf(join5(inp.root, inp.pdfPath), opts.env, {
+      ...inp.facts.pdfua !== void 0 ? { pdfuaPart: inp.facts.pdfua } : {},
+      ...inp.docker ? { docker: inp.docker } : {}
+    });
   return accessibilityCheck(inp.facts, { verapdf, level });
 }
 function venue(inp) {
@@ -114094,7 +114488,7 @@ async function runCheck(opts = {}) {
   if (wanted.has("accessibility")) results.push(await accessibility(inp, { ...opts, env }));
   if (wanted.has("venue")) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
-  const target = existsSync3(join4(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
+  const target = existsSync4(join5(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
   return {
     tool: "overfull",
     version: VERSION,
@@ -114109,6 +114503,10 @@ function exitCodeFor(report, failOn) {
   if (failOn === "warning" && report.status === "warn") return 1;
   return 0;
 }
+
+// ../packages/cli/src/commands/diff.ts
+import { basename as basename3, dirname as dirname4, join as join6, relative as relative7 } from "node:path";
+var DIFF_DIR = join6(".overfull", "diff");
 
 // ../packages/cli/src/main.ts
 var mainHelp = `overfull ${VERSION} \u2014 preflight for LaTeX papers and theses
@@ -114129,6 +114527,7 @@ Run \`overfull <command> --help\` for options. Docs: https://amet13.github.io/ov
 `;
 
 // src/inputs.ts
+import { isAbsolute as isAbsolute4, resolve as resolve3 } from "node:path";
 function input(env, name) {
   const v = env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`];
   const t = v?.trim();
@@ -114152,8 +114551,10 @@ function readInputs(env, workspace) {
   const bib = splitList(input(env, "bib"));
   const opt = (name) => input(env, name);
   const check2 = {
-    cwd: workingDirectory.startsWith("/") ? workingDirectory : `${workspace}/${workingDirectory}`,
+    cwd: isAbsolute4(workingDirectory) ? workingDirectory : resolve3(workspace, workingDirectory),
     env,
+    // The Action only checks existing outputs; it never starts containers.
+    engine: "local",
     offline: boolInput(env, "offline", false),
     ...checks?.length ? { checks } : {},
     ...bib?.length ? { bib } : {},
@@ -114172,15 +114573,22 @@ function readInputs(env, workspace) {
   };
 }
 
-// src/index.ts
+// src/output.ts
+import { randomUUID } from "node:crypto";
 var escapeData2 = (s) => s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+function outputRecord(name, value, delimiter2 = `ghadelimiter_${randomUUID()}`) {
+  if (value.includes(delimiter2)) throw new Error(`Output ${name} contains its delimiter`);
+  return `${name}<<${delimiter2}
+${value}
+${delimiter2}
+`;
+}
+
+// src/index.ts
 function setOutput(name, value) {
   const file = process.env.GITHUB_OUTPUT;
-  if (file) appendFileSync(file, `${name}<<__OVERFULL_EOF__
-${value}
-__OVERFULL_EOF__
-`);
-  else process.stdout.write(`${name}=${value}
+  if (file) appendFileSync(file, outputRecord(name, value));
+  else process.stdout.write(`${name}=${escapeData2(value)}
 `);
 }
 async function main2() {
@@ -114193,9 +114601,9 @@ async function main2() {
     }
   }
   const report = await runCheck(inputs.check);
-  process.stdout.write(formatHuman(report, { color: true, verbose: true }));
+  process.stdout.write(neutralizeWorkflowCommands2(formatHuman(report, { color: true, verbose: true })));
   if (inputs.annotations) {
-    const root = relative2(workspace, resolve2(inputs.check.cwd ?? workspace)) || ".";
+    const root = relative8(workspace, resolve4(inputs.check.cwd ?? workspace)) || ".";
     for (const line of githubAnnotations(report, { root, limit: 50 }))
       process.stdout.write(`${line}
 `);
@@ -114204,7 +114612,7 @@ async function main2() {
     appendFileSync(env.GITHUB_STEP_SUMMARY, `${formatMarkdown(report)}
 `);
   }
-  const reportPath = join5(env.RUNNER_TEMP ?? tmpdir(), "overfull-report.json");
+  const reportPath = join7(env.RUNNER_TEMP ?? tmpdir(), "overfull-report.json");
   writeFileSync2(reportPath, formatJson(report));
   setOutput("status", report.status);
   setOutput("report", reportPath);

@@ -1,7 +1,13 @@
 import { parse, str } from '../args.js';
-import { loadConfig } from '../config.js';
+import { DEFAULT_IMAGE, loadConfig } from '../config.js';
 import type { Io } from '../io.js';
-import { dockerAvailable, dockerImagePresent, run, which } from '../tools.js';
+import {
+  dockerAvailable,
+  dockerImageStatus,
+  imageUnavailableMessage,
+  run,
+  which,
+} from '../tools.js';
 import { VERSION } from '../version.js';
 
 export const doctorHelp = `Usage: overfull doctor [--json]
@@ -78,7 +84,7 @@ export async function doctorCommand(args: string[], io: Io): Promise<number> {
   });
   items.push({ name: 'overfull', ok: true, detail: VERSION });
 
-  let image = 'ghcr.io/amet13/overfull:0.1';
+  let image = DEFAULT_IMAGE;
   let configItem: Item;
   try {
     const config = loadConfig(io.cwd, str(values.config), env);
@@ -155,12 +161,22 @@ export async function doctorCommand(args: string[], io: Io): Promise<number> {
         }
       : { name: 'docker', ok: false, detail: 'not found', needFor: 'builds without TeX Live' },
   );
+  let imageOk = false;
   if (docker) {
-    const present = await dockerImagePresent(image);
+    const status = await dockerImageStatus(image);
+    imageOk = status === 'local' || status === 'remote';
     items.push({
       name: 'image',
-      ok: present,
-      detail: `${image}${present ? '' : ' not pulled yet (first build pulls it)'}`,
+      ok: imageOk,
+      detail:
+        status === 'local'
+          ? image
+          : status === 'remote'
+            ? `${image} not pulled yet (first build pulls it)`
+            : status === 'unavailable'
+              ? imageUnavailableMessage(image)
+              : `${image} not present locally, and the registry did not answer`,
+      needFor: 'Docker builds',
     });
   }
   items.push(await reachable('https://api.crossref.org/works?rows=0', io.fetch ?? fetch));
@@ -175,10 +191,15 @@ export async function doctorCommand(args: string[], io: Io): Promise<number> {
     (i) =>
       `  ${i.ok ? '✓' : '–'} ${i.name.padEnd(w)}${i.detail}${!i.ok && i.needFor ? ` (needed for ${i.needFor})` : ''}`,
   );
-  const canBuild = items.some((i) => i.name === 'latexmk' && i.ok) || docker;
+  const localBuild = items.some((i) => i.name === 'latexmk' && i.ok);
+  const canBuild = localBuild || (docker && imageOk);
   lines.push(
     '',
-    canBuild ? 'Ready to build.' : 'Cannot build yet: install Docker (recommended) or TeX Live.',
+    canBuild
+      ? 'Ready to build.'
+      : docker
+        ? `Cannot build yet: the Docker image is not available. ${imageUnavailableMessage(image)}`
+        : 'Cannot build yet: install Docker (recommended) or TeX Live.',
   );
   io.stdout(`${lines.join('\n')}\n`);
   return 0;

@@ -106,6 +106,18 @@ function veraPdfProblems(v: VeraPdfResult, sev: Severity): Problem[] {
     if (f.contexts.length) problem.evidence = f.contexts.join('\n');
     groups.set(rule, problem);
   }
+  if (!v.compliant && groups.size === 0) {
+    return [
+      {
+        rule: 'verapdf',
+        check: 'accessibility',
+        severity: 'warning',
+        message: 'veraPDF reported the file non-compliant but listed no failed rules',
+        fix: 'Run `verapdf --flavour ua2 --format text <file.pdf>` by hand to see why validation failed',
+        data: { compliant: false },
+      },
+    ];
+  }
   return [...groups.values()];
 }
 
@@ -192,7 +204,7 @@ export function accessibilityCheck(facts: PdfFacts, opts: AccessibilityOptions =
   let summary: string;
   if (counted.length === 0) {
     summary =
-      opts.verapdf && !opts.verapdf.error
+      opts.verapdf && !opts.verapdf.error && opts.verapdf.compliant
         ? 'Tagged, PDF/UA valid (veraPDF)'
         : 'Tagged, language and title set';
   } else {
