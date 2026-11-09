@@ -8,13 +8,17 @@
 %   pdfstandard  ua-2 = PDF/UA-2 (accessible PDF), checked by veraPDF
 %   pdfversion   PDF/UA-2 requires PDF 2.0
 %   tagging      structure tags for headings, lists, tables, figures, links
-%   math/setup   mathml-SE: formulas as MathML structure (LuaLaTeX only;
-%                with pdfLaTeX the formula's LaTeX source becomes its alt text)
+%   tagging-setup  how formulas are made accessible:
+%     LuaLaTeX   math/setup=mathml-SE: each formula carries MathML structure
+%     pdfLaTeX   math/alt/use: each formula gets its LaTeX source as /Alt
+%                text (pdfLaTeX cannot produce MathML). Without this key
+%                pdfLaTeX formulas would have no text alternative at all.
 \ifdefined\directlua
   \DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on,
     tagging-setup={math/setup=mathml-SE}}
 \else
-  \DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on}
+  \DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on,
+    tagging-setup={math/alt/use}}
 \fi
 % Paper size: a4paper or letterpaper. Body size: 10pt, 11pt or 12pt.
 \documentclass[11pt,a4paper]{article}
@@ -27,6 +31,8 @@
   \small\PaperAffiliations\\
   \small\texttt{\PaperEmail}}
 \date{} % no date on submissions
+% \maketitle tags the title as "Title" (PDF 2.0); keep using it rather than
+% hand-made title blocks.
 
 \begin{document}
 \maketitle

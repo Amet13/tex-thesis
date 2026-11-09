@@ -21,7 +21,9 @@
 \usepackage{microtype}
 
 % ---- Page ---------------------------------------------------------------
-\usepackage[margin=1in]{geometry}
+% 1.25in side margins keep lines near 75 characters at 11pt; check your
+% venue's rules, which override this.
+\usepackage[margin=1.25in]{geometry}
 
 % ---- Figures, tables, plots ------------------------------------------------
 % ACCESSIBILITY: every \includegraphics needs alt={...} and every
@@ -34,16 +36,29 @@
 % and as LuaLaTeX does by itself. Without it veraPDF reports PDF/UA rule
 % 8.2.2 ("content neither artifact nor tagged"). Remove once booktabs or the
 % LaTeX kernel handles it.
+% The patch applies only if booktabs still has the definition it replaces
+% (checked below); otherwise it does nothing and logs a message.
 \ifpdftex
   \ExplSyntaxOn
   \makeatletter
-  \def\@BTnormal{%
-    {\tag_mc_begin:n{artifact}\CT@arc@\hrule\@height\@thisrulewidth\tag_mc_end:}%
+  \def\overfull@BTnormal@orig{%
+    {\CT@arc@\hrule\@height\@thisrulewidth}%
     \futurenonspacelet\@tempa\@BTendrule}
+  \ifx\@BTnormal\overfull@BTnormal@orig
+    \def\@BTnormal{%
+      {\tag_mc_begin:n{artifact}\CT@arc@\hrule\@height\@thisrulewidth\tag_mc_end:}%
+      \futurenonspacelet\@tempa\@BTendrule}
+  \else
+    \PackageInfo{preamble}{booktabs~changed:~rule~artifact~patch~skipped}
+  \fi
   \makeatother
   \ExplSyntaxOff
 \fi
 \usepackage{siunitx}
+% Table header cells: the first row of every table is tagged TH (header).
+% For a table with two header rows put \tagpdfsetup{table/header-rows={1,2}}
+% inside its table environment.
+\tagpdfsetup{table/header-rows={1}}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18, compat/show suggested version=false}
@@ -65,3 +80,8 @@
 \usepackage{csquotes}
 \usepackage[backend=biber, style=numeric-comp, sorting=none]{biblatex}
 \addbibresource{references.bib}
+% DOIs and URLs may break after any character, so long ones do not force
+% stretched, letter-spaced lines.
+\setcounter{biburlnumpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburllcpenalty}{100}

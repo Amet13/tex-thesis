@@ -80,8 +80,9 @@ The proposed approach reduces processing time by 51--63\% compared to Baseline~A
         ylabel={Time (s, log scale)},
         symbolic x coords={Small, Medium, Large},
         xtick=data,
-        ymode=log, log origin=infty, ymin=0.1, ymax=2000,
-        nodes near coords, nodes near coords style={font=\scriptsize, rotate=90, anchor=west},
+        ymode=log, log origin=infty, ymin=0.1, ymax=10000,
+        nodes near coords={\pgfmathprintnumber[fixed, fixed zerofill, precision=1]{\pgfplotspointmeta}},
+        nodes near coords style={font=\scriptsize, rotate=90, anchor=west},
         point meta=rawy,
         width=0.85\linewidth, height=8cm,
       ]

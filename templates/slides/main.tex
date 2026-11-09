@@ -11,30 +11,39 @@
 % TeX Live 2026) and share the thesis PDF, which is PDF/UA-2.
 % aspectratio=169 for 16:9 screens; remove it for 4:3. [t] = top-aligned.
 % usepdftitle=false: the PDF title comes from metadata.tex, set below.
-\documentclass[aspectratio=169,t,usepdftitle=false]{beamer}
+% 12pt: larger type, readable from the back of the room.
+\documentclass[aspectratio=169,t,12pt,usepdftitle=false]{beamer}
 
 \input{metadata}
 
 \usetheme{ThesisSlides}           % local theme: beamerthemeThesisSlides.sty
-\usefonttheme[onlymath]{serif}
+% professionalfonts: beamer leaves the math fonts alone, so the
+% unicode-math font below is used for formulas.
+\usefonttheme{professionalfonts}
 
 % ---- Fonts (LuaLaTeX) ------------------------------------------------------
+% Beamer sets all text in the sans-serif font. Fira Sans with the matching
+% Fira Math (both in TeX Live) give one coherent look for text and formulas;
+% the fallbacks are TeX Gyre Heros and Latin Modern Math.
 \usepackage{fontspec}
-\IfFontExistsTF{Times New Roman}
-  {\setmainfont{Times New Roman}}
-  {\setmainfont{TeX Gyre Termes}}
-\IfFontExistsTF{FreeMono}
-  {\setmonofont{FreeMono}}
+\IfFontExistsTF{Fira Sans}
+  {\setsansfont{Fira Sans}}
+  {\setsansfont{TeX Gyre Heros}}
+\IfFontExistsTF{Inconsolatazi4}
+  {\setmonofont{Inconsolatazi4}[Scale=MatchLowercase]}
   {\setmonofont{Latin Modern Mono}}
 \usepackage{mathtools}
 \usepackage[warnings-off={mathtools-overbracket,mathtools-colon}]{unicode-math}
-\setmathfont{Latin Modern Math}
+\IfFontExistsTF{Fira Math}
+  {\setmathfont{Fira Math}}
+  {\setmathfont{Latin Modern Math}}
 
 % ---- Tables, plots ---------------------------------------------------------
 \usepackage{booktabs}
 \usepackage{siunitx}
+\sisetup{mode=match}  % numbers and units in the slide's sans font
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta, positioning}
+\usetikzlibrary{arrows.meta, positioning, calc}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18, compat/show suggested version=false}
 \graphicspath{{figures/}}
@@ -44,7 +53,7 @@
 \subtitle{\TalkSubtitle}
 \author{\texorpdfstring{Author: \TalkAuthor\\Advisor: \TalkAdvisor}{\TalkAuthor}}
 \institute{\texorpdfstring{\TalkInstitution\\\TalkDepartment}{\TalkInstitution}}
-\date{\the\year}
+\date{\TalkDate}
 
 \hypersetup{
   pdflang={en},
