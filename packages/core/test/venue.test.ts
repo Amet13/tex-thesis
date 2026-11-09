@@ -98,6 +98,29 @@ describe('page limit', () => {
     expect(venueCheck(p, { facts: facts(14), aux }).status).toBe('pass');
   });
 
+  it('warns about main-text floats that landed after the end label', () => {
+    const floatAux = [
+      '\\newlabel{fig:arch}{{1}{1}{Overview}{figure.1}{}}',
+      '\\newlabel{overfull:main-end}{{5}{2}{Conclusion}{section*.9}{}}',
+      '\\newlabel{fig:latency}{{2}{3}{Latency}{figure.2}{}}',
+      '\\newlabel{tab:results}{{1}{3}{Results}{table.1}{}}',
+      '\\newlabel{app:proofs}{{A}{4}{Proofs}{appendix.A}{}}',
+      '\\newlabel{fig:app-extra}{{3}{3}{Extra}{figure.3}{}}',
+      '\\newlabel{fig:proof}{{A.1}{4}{Proof sketch}{figure.A.1}{}}',
+      '\\newlabel{fig:late}{{4}{5}{After appendix start}{figure.4}{}}',
+    ].join('\n');
+    const p = resolveProfile({ pageLimit: { max: 9, endLabel: 'overfull:main-end' } });
+    const r = venueCheck(p, { facts: facts(5), aux: floatAux });
+    const floats = r.problems.filter((x) => x.rule === 'float-after-main-end');
+    expect(floats.map((x) => x.data?.label)).toEqual(['fig:latency', 'tab:results']);
+    expect(floats[0]).toMatchObject({ severity: 'warning', location: { page: 3 } });
+    expect(floats[0]?.message).toBe(
+      'Figure fig:latency floated to page 3, after the end of the main text (page 2); it may not count toward the page limit but reviewers will see it outside the main text',
+    );
+    expect(r.status).toBe('warn');
+    expect(venueRules.some((x) => x.id === 'float-after-main-end')).toBe(true);
+  });
+
   it('falls back to total pages when the label is missing', () => {
     const r = venueCheck(profile, { facts: facts(12), aux: '\\relax' });
     expect(rules(r)).toEqual(['page-limit-label-missing', 'page-limit-exceeded']);

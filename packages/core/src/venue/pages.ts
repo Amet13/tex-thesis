@@ -18,7 +18,6 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
     const entry = ctx.aux ? parseAuxLabels(ctx.aux).get(endLabel) : undefined;
     if (entry && /^\d+$/.test(entry.page)) {
       const page = Number(entry.page);
-      problems.push(...floatsAfterEnd(ctx.aux ?? '', page, endLabel));
       if (page > max) {
         problems.push({
           rule: 'page-limit-exceeded',
@@ -31,6 +30,7 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
           data: { pages: page, max, endLabel },
         });
       }
+      problems.push(...floatsAfterEnd(ctx.aux ?? '', page, endLabel));
       return problems;
     }
     problems.push({
@@ -82,7 +82,9 @@ function floatsAfterEnd(aux: string, endPage: number, endLabel: string): Problem
   let appendixPage = Number.POSITIVE_INFINITY;
   for (const [name, l] of labels) {
     const page = pageOf(l.page);
-    if (page !== undefined && APPENDIX_LABEL.test(name)) appendixPage = Math.min(appendixPage, page);
+    if (page !== undefined && !FLOAT_LABEL.test(name) && APPENDIX_LABEL.test(name)) {
+      appendixPage = Math.min(appendixPage, page);
+    }
   }
   const problems: Problem[] = [];
   for (const [name, l] of labels) {

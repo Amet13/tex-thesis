@@ -1,0 +1,6 @@
+{
+  "title": "Undefined command and underscores in text (two independent root causes)",
+  "engine": "pdflatex",
+  "check": "build",
+  "expect": ["undefined-control-sequence", "missing-dollar"]
+}
