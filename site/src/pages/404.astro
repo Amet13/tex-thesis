@@ -17,6 +17,12 @@ import { url } from '../lib/paths';
     </ul>
   </div>
 </Base>
+<script>
+  // veraPDF clause ids (`/rules/verapdf-7-21-4-1/`) are explained on the
+  // `verapdf` rule page; the common ones have redirect pages, the rest land here.
+  const m = /^(.*\/rules\/)verapdf-(\d[\w-]*?)\/?$/.exec(location.pathname);
+  if (m) location.replace(`${m[1]}verapdf/#clause-${m[2]}`);
+</script>
 <style>
   .nf {
     padding-block: 3rem;

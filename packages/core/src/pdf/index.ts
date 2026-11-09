@@ -8,6 +8,6 @@ export {
 export { extractPdfFacts } from './extract.js';
 export { parsePdffonts } from './fonts.js';
 export { pdfOutputProblems } from './output.js';
-export { pdfRules } from './rules.js';
+export { pdfRules, type VeraPdfClauseInfo, veraPdfClauseInfo, veraPdfClauses } from './rules.js';
 export type * from './types.js';
-export { parseVeraPdfReport } from './verapdf.js';
+export { contextPage, parseVeraPdfReport } from './verapdf.js';

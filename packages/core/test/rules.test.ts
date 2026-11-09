@@ -30,7 +30,12 @@ describe('rule registry', () => {
     expect(getRule('pdf-not-tagged')?.check).toBe('accessibility');
     expect(getRule('verapdf-8-2-5-26')).toMatchObject({
       id: 'verapdf-8-2-5-26',
-      title: 'PDF/UA clause 8.2.5.26 failed (veraPDF)',
+      title:
+        'PDF/UA clause 8.2.5.26: Structure element used where the standard does not allow it (veraPDF)',
+    });
+    expect(getRule('verapdf-6-9-9')).toMatchObject({
+      id: 'verapdf-6-9-9',
+      title: 'PDF/UA clause 6.9.9 failed (veraPDF)',
     });
     expect(getRule('no-such-rule')).toBeUndefined();
   });

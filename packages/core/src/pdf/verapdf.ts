@@ -49,6 +49,23 @@ function childText(xml: string, name: string): string {
   return m ? decodeXml(m[1] ?? '') : '';
 }
 
+/** 1-based page of a veraPDF context such as `root/document[0]/pages[31]/contentStream[0]` (→ 32). */
+export function contextPage(context: string): number | undefined {
+  const m = /\bpages\[(\d+)\]/.exec(context);
+  return m ? Number(m[1]) + 1 : undefined;
+}
+
+function pagesOf(contexts: string[]): number[] {
+  const pages = contexts.map(contextPage).filter((p): p is number => p !== undefined);
+  return [...new Set(pages)].sort((a, b) => a - b);
+}
+
+function withPages(f: VeraPdfFailure, all: string[]): VeraPdfFailure {
+  const pages = pagesOf(all);
+  if (pages.length) f.pages = pages;
+  return f;
+}
+
 /** Merges failures of the same clause (several test numbers) into one entry. */
 function mergeByClause(failures: VeraPdfFailure[]): VeraPdfFailure[] {
   const byKey = new Map<string, VeraPdfFailure>();
@@ -58,6 +75,8 @@ function mergeByClause(failures: VeraPdfFailure[]): VeraPdfFailure[] {
     if (prev) {
       prev.failedChecks += f.failedChecks;
       prev.contexts = [...prev.contexts, ...f.contexts].slice(0, MAX_CONTEXTS);
+      const pages = [...new Set([...(prev.pages ?? []), ...(f.pages ?? [])])].sort((a, b) => a - b);
+      if (pages.length) prev.pages = pages;
     } else byKey.set(key, { ...f });
   }
   return [...byKey.values()];
@@ -83,23 +102,23 @@ function parseXml(xml: string): VeraPdfResult {
     const a = attrs(m[1] ?? '');
     if (a.status && a.status !== 'failed') continue;
     const inner = m[2] ?? '';
-    const contexts: string[] = [];
+    const all: string[] = [];
     const checkRe = /<check\b[^>]*status="failed"[^>]*>([\s\S]*?)<\/check>/g;
-    for (
-      let c = checkRe.exec(inner);
-      c && contexts.length < MAX_CONTEXTS;
-      c = checkRe.exec(inner)
-    ) {
+    for (let c = checkRe.exec(inner); c; c = checkRe.exec(inner)) {
       const ctx = childText(c[1] ?? '', 'context');
-      if (ctx) contexts.push(ctx);
+      if (ctx) all.push(ctx);
     }
-    const failure: VeraPdfFailure = {
-      specification: a.specification ?? '',
-      clause: a.clause ?? '',
-      description: childText(inner, 'description'),
-      failedChecks: num(a.failedChecks) ?? Math.max(1, contexts.length),
-      contexts,
-    };
+    const contexts = all.slice(0, MAX_CONTEXTS);
+    const failure: VeraPdfFailure = withPages(
+      {
+        specification: a.specification ?? '',
+        clause: a.clause ?? '',
+        description: childText(inner, 'description'),
+        failedChecks: num(a.failedChecks) ?? Math.max(1, all.length),
+        contexts,
+      },
+      all,
+    );
     const tn = num(a.testNumber);
     if (tn !== undefined) failure.testNumber = tn;
     failures.push(failure);
@@ -149,19 +168,22 @@ function parseJson(data: unknown): VeraPdfResult {
     if (!isObj(r)) continue;
     const status = text(r.ruleStatus || r.status).toLowerCase();
     if (status && status !== 'failed') continue;
-    const contexts = asArray(r.checks)
+    const all = asArray(r.checks)
       .filter(isObj)
       .filter((c) => text(c.status).toLowerCase() !== 'passed')
       .map((c) => text(c.context))
-      .filter(Boolean)
-      .slice(0, MAX_CONTEXTS);
-    const failure: VeraPdfFailure = {
-      specification: text(r.specification),
-      clause: text(r.clause),
-      description: text(r.description),
-      failedChecks: num(r.failedChecks) ?? Math.max(1, contexts.length),
-      contexts,
-    };
+      .filter(Boolean);
+    const contexts = all.slice(0, MAX_CONTEXTS);
+    const failure: VeraPdfFailure = withPages(
+      {
+        specification: text(r.specification),
+        clause: text(r.clause),
+        description: text(r.description),
+        failedChecks: num(r.failedChecks) ?? Math.max(1, all.length),
+        contexts,
+      },
+      all,
+    );
     const tn = num(r.testNumber);
     if (tn !== undefined) failure.testNumber = tn;
     failures.push(failure);

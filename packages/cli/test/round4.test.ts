@@ -262,7 +262,7 @@ describe('A13: doctor exit code and veraPDF advice', () => {
     expect(io.stdoutText()).toMatch(/^Cannot build/);
   });
 
-  it('check: veraPDF not run is a warning when accessibility is required', async () => {
+  it('check: veraPDF not run is only a note when it could not have run (no Docker)', async () => {
     const report = await runCheck({
       cwd: tempCopy('project'),
       checks: ['accessibility'],
@@ -270,7 +270,7 @@ describe('A13: doctor exit code and veraPDF advice', () => {
       env: { PATH: '/nonexistent' },
     });
     const v = problems(report).find((p) => p.rule === 'verapdf-not-run');
-    expect(v?.severity).toBe('warning');
+    expect(v?.severity).toBe('info');
   });
 });
 

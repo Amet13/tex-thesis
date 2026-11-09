@@ -88,14 +88,16 @@ describe('page limit', () => {
     expect(r.status).toBe('fail');
     expect(r.problems[0]).toMatchObject({
       rule: 'page-limit-exceeded',
-      message: 'Main text ends on page 10, limit is 9',
+      message: 'Main text 10 of 9 pages (14 total): the main text ends on page 10',
       data: { pages: 10, max: 9 },
     });
   });
 
   it('passes when the label is within the limit', () => {
     const p = resolveProfile({ pageLimit: { max: 10, endLabel: 'overfull:main-end' } });
-    expect(venueCheck(p, { facts: facts(14), aux }).status).toBe('pass');
+    const r = venueCheck(p, { facts: facts(14), aux });
+    expect(r.status).toBe('pass');
+    expect(r.summary).toContain('main text 10 of 10 pages (14 total)');
   });
 
   it('warns about main-text floats that landed after the end label', () => {
@@ -124,7 +126,8 @@ describe('page limit', () => {
   it('falls back to total pages when the label is missing', () => {
     const r = venueCheck(profile, { facts: facts(12), aux: '\\relax' });
     expect(rules(r)).toEqual(['page-limit-label-missing', 'page-limit-exceeded']);
-    expect(r.problems[1]?.message).toBe('PDF has 12 pages, limit is 9');
+    expect(r.problems[1]?.message).toBe('12 of 9 pages (all pages counted)');
+    expect(r.summary).toContain('12 of 9 pages');
   });
 
   it('counts total pages without an end label', () => {

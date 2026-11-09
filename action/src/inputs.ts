@@ -52,6 +52,7 @@ export function readInputs(
     env,
     // The Action only checks existing outputs; it never starts containers.
     engine: 'local',
+    runner: 'action',
     offline: boolInput(env, 'offline', false),
     ...(checks?.length ? { checks } : {}),
     ...(bib?.length ? { bib } : {}),

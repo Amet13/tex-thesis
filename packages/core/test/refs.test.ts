@@ -753,7 +753,7 @@ describe('provenance guardrail', () => {
       '`smith2099fake` was not added with `overfull cite` and could not be verified',
     );
     expect(p?.fix).toBe(
-      'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
+      'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite. If you wrote this entry yourself, add `note = {overfull: author-provided}` to it.',
     );
     // Without the option the same run is only a warning.
     const lax = await verifyEntries(entries, { fetch: router(dblpWall).fetch, ...fast });

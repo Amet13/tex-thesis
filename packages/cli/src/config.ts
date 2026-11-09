@@ -56,7 +56,11 @@ export interface Config {
 }
 
 /** `$out_dir` / `$aux_dir` / `$jobname` set in the project's .latexmkrc (a simple assignment only). */
-export function latexmkrcDirs(root: string): { outDir?: string; auxDir?: string; jobname?: string } {
+export function latexmkrcDirs(root: string): {
+  outDir?: string;
+  auxDir?: string;
+  jobname?: string;
+} {
   const out: { outDir?: string; auxDir?: string; jobname?: string } = {};
   for (const name of ['.latexmkrc', 'latexmkrc']) {
     const p = join(root, name);

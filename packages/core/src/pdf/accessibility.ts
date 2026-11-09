@@ -1,6 +1,7 @@
 import { type CheckResult, type Problem, type Severity, statusOf } from '../types.js';
 import { findCommands, lineCounter, stripComments } from '../venue/tex.js';
 import type { TexFile } from '../venue/types.js';
+import { veraPdfClauseInfo } from './rules.js';
 import type { CheckLevel, PdfFacts, VeraPdfResult } from './types.js';
 
 export interface AccessibilityOptions {
@@ -12,7 +13,23 @@ export interface AccessibilityOptions {
    * with file and line (rule `figure-missing-alt`).
    */
   texFiles?: TexFile[];
+  /**
+   * The build check failed: veraPDF findings are then demoted to info (a broken build
+   * produces them; fix the build first).
+   */
+  buildFailed?: boolean;
+  /**
+   * With `verapdf: null`: whether veraPDF could have been run here (the CLI with
+   * Docker available), and the advice to show. `verapdf-not-run` is a warning only
+   * when the level is `required` and `couldRun` is true; otherwise (browser, the
+   * GitHub Action, no Docker) it is info.
+   */
+  verapdfNotRun?: { couldRun?: boolean; message?: string; fix?: string };
 }
+
+/** First line of main.tex that makes LaTeX produce a tagged PDF/UA-2 file. */
+export const DOCUMENT_METADATA_LINE =
+  '\\DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on}';
 
 const FIGURE_ALT_FIX =
   'Describe what the figure shows: `\\includegraphics[alt={...}]{file}`, or `\\begin{tikzpicture}[alt={...}]` for TikZ; use `artifact` instead of `alt` for purely decorative images';
@@ -126,6 +143,12 @@ function fontProblems(facts: PdfFacts, sev: Severity): Problem[] {
   ];
 }
 
+function pagesText(pages: number[]): string {
+  if (!pages.length) return '';
+  const shown = pages.slice(0, 8).join(', ');
+  return ` on ${pages.length === 1 ? 'page' : 'pages'} ${shown}${pages.length > 8 ? ', …' : ''}`;
+}
+
 function veraPdfProblems(v: VeraPdfResult, sev: Severity): Problem[] {
   if (v.error) {
     return [
@@ -138,34 +161,49 @@ function veraPdfProblems(v: VeraPdfResult, sev: Severity): Problem[] {
       },
     ];
   }
-  const groups = new Map<string, Problem>();
+  interface Group {
+    problem: Problem;
+    spec: string;
+    clause: string;
+    desc: string;
+    count: number;
+    tests: number[];
+    pages: Set<number>;
+  }
+  const groups = new Map<string, Group>();
   for (const f of v.failures) {
     const rule = veraPdfRuleId(f.clause);
     const prev = groups.get(rule);
     if (prev) {
-      const data = prev.data as { count: number; tests: number[] };
-      data.count += f.failedChecks;
-      if (f.testNumber !== undefined) data.tests.push(f.testNumber);
-      prev.message = `${f.specification} §${f.clause}: ${prev.detail ?? ''} (${plural(data.count, 'failed check')})`;
+      prev.count += f.failedChecks;
+      if (f.testNumber !== undefined) prev.tests.push(f.testNumber);
+      for (const p of f.pages ?? []) prev.pages.add(p);
+      if (f.contexts.length && !prev.problem.evidence)
+        prev.problem.evidence = f.contexts.join('\n');
       continue;
     }
     const desc = f.description.replace(/\s+/g, ' ').trim();
+    const info = veraPdfClauseInfo(f.clause);
     const problem: Problem = {
       rule,
       check: 'accessibility',
       severity: sev,
-      message: `${f.specification} §${f.clause}: ${desc} (${plural(f.failedChecks, 'failed check')})`,
-      detail: desc,
-      fix: 'See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed',
-      data: {
-        specification: f.specification,
-        clause: f.clause,
-        count: f.failedChecks,
-        tests: f.testNumber === undefined ? [] : [f.testNumber],
-      },
+      message: '',
+      detail: info ? `${desc}. ${info.summary}` : desc,
+      fix: info
+        ? `${info.fix} (\`overfull explain ${rule}\`)`
+        : 'See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed',
     };
     if (f.contexts.length) problem.evidence = f.contexts.join('\n');
-    groups.set(rule, problem);
+    groups.set(rule, {
+      problem,
+      spec: f.specification,
+      clause: f.clause,
+      desc,
+      count: f.failedChecks,
+      tests: f.testNumber === undefined ? [] : [f.testNumber],
+      pages: new Set(f.pages ?? []),
+    });
   }
   if (!v.compliant && groups.size === 0) {
     return [
@@ -179,7 +217,54 @@ function veraPdfProblems(v: VeraPdfResult, sev: Severity): Problem[] {
       },
     ];
   }
-  return [...groups.values()];
+  return [...groups.values()].map((g) => {
+    const pages = [...g.pages].sort((a, b) => a - b);
+    const p = g.problem;
+    p.message = `${g.spec} §${g.clause}: ${g.desc} (${plural(g.count, 'failed check')}${pagesText(pages)})`;
+    if (pages.length) p.location = { page: pages[0] as number };
+    p.data = {
+      specification: g.spec,
+      clause: g.clause,
+      count: g.count,
+      tests: g.tests,
+      ...(pages.length ? { pages } : {}),
+    };
+    return p;
+  });
+}
+
+/**
+ * Root-cause grouping: an untagged PDF fails most veraPDF clauses for that one reason,
+ * so the clause failures are folded into `pdf-not-tagged` (counted in `related`,
+ * listed in evidence). A failed build demotes them to info instead.
+ */
+function groupVeraPdf(problems: Problem[], vera: Problem[], buildFailed: boolean): Problem[] {
+  const clauses = vera.filter((p) => p.rule.startsWith('verapdf-') && p.rule !== 'verapdf-error');
+  const untagged = problems.find((p) => p.rule === 'pdf-not-tagged');
+  if (untagged && clauses.length) {
+    const failedChecks = clauses.reduce((n, p) => n + Number(p.data?.count ?? 1), 0);
+    untagged.related = (untagged.related ?? 0) + clauses.length;
+    untagged.message = `${untagged.message}; this also causes ${plural(clauses.length, 'veraPDF failure')} (${plural(failedChecks, 'failed check')})`;
+    untagged.evidence = clauses.map((p) => p.message).join('\n');
+    untagged.data = {
+      ...(untagged.data ?? {}),
+      verapdf: clauses.map((p) => ({ rule: p.rule, ...(p.data ?? {}) })),
+    };
+    return vera.filter((p) => !clauses.includes(p));
+  }
+  if (buildFailed) {
+    return vera.map((p) =>
+      clauses.includes(p)
+        ? {
+            ...p,
+            severity: 'info' as const,
+            message: `${p.message} — fix build errors first; a broken build produces these`,
+            fix: `Fix build errors first; a broken build produces these. ${p.fix ?? ''}`.trim(),
+          }
+        : p,
+    );
+  }
+  return vera;
 }
 
 /**
@@ -204,7 +289,7 @@ export function accessibilityCheck(facts: PdfFacts, opts: AccessibilityOptions =
       check: 'accessibility',
       severity: sev,
       message: 'PDF is not tagged (no structure for screen readers)',
-      fix: 'Add `\\DocumentMetadata{lang=en-US, pdfstandard=ua-2, tagging=on}` before `\\documentclass` and build with LuaLaTeX',
+      fix: `Add \`${DOCUMENT_METADATA_LINE}\` as the first line of main.tex and build with LuaLaTeX`,
     });
   }
   if (!facts.language) {
@@ -249,16 +334,22 @@ export function accessibilityCheck(facts: PdfFacts, opts: AccessibilityOptions =
     });
   }
   if (opts.verapdf === null) {
-    // When the profile requires an accessible PDF, a skipped validation is worth a look.
+    // A warning only where it could have run (the CLI with Docker) and the profile
+    // requires an accessible PDF; in the browser or the Action it is a note.
+    const nr = opts.verapdfNotRun ?? {};
     problems.push({
       rule: 'verapdf-not-run',
       check: 'accessibility',
-      severity: level === 'required' ? 'warning' : 'info',
-      message: 'veraPDF not found, full PDF/UA validation skipped',
-      fix: 'Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, or run `overfull check --engine docker` (uses the Overfull image), or run the check inside the Overfull Docker image',
+      severity: level === 'required' && nr.couldRun ? 'warning' : 'info',
+      message: nr.message ?? 'veraPDF not found, full PDF/UA validation skipped',
+      fix:
+        nr.fix ??
+        'Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, or run `overfull check --engine docker` (uses the Overfull image), or run the check inside the Overfull Docker image',
     });
   } else if (opts.verapdf) {
-    problems.push(...veraPdfProblems(opts.verapdf, sev));
+    problems.push(
+      ...groupVeraPdf(problems, veraPdfProblems(opts.verapdf, sev), opts.buildFailed === true),
+    );
   }
   const counted = problems.filter((p) => p.severity !== 'info');
   const stats: Record<string, number> = {

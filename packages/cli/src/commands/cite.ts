@@ -28,7 +28,7 @@ Options:
   --author name   Disambiguate a title: an author's surname
   --year yyyy     Disambiguate a title: the publication year
   --dry-run       Print the entry without writing it
-  --json          Print {key, entry, source, confidence, added}
+  --json          Print the result as JSON (shapes below)
   --mailto addr   Contact address for CrossRef's polite pool
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
@@ -41,6 +41,13 @@ Examples:
 
 Short or shared titles are ambiguous: cite lists the candidates with their DOIs
 and adds nothing. Pick one by DOI, or rerun with --author/--year.
+
+JSON (--json):
+  found (exit 0)    {key, entry, source, confidence, added, bib}
+                    added is false for --dry-run and when the work is already in bib
+  ambiguous (1)     {ambiguous: true, message, candidates: [{title, authors, year,
+                    venue, doi, arxivId, source}]}
+  not found (1)     {found: false, query, searched, failures: [{source, reason}], message}
 `;
 
 export type LookupFn = (query: string, opts: RefsOptions) => Promise<LookupResult | null>;

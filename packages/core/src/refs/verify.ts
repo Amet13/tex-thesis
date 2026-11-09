@@ -280,7 +280,11 @@ function noMatch(
   // Indexes that a not-found verdict relies on were left out (the browser cannot reach
   // arXiv or dblp): absence here proves nothing, so the entry is unverifiable, not missing.
   if (skipped.length) {
-    return { ...withSearched, status: 'unverifiable', reason: `could not be checked here ${skippedNote}` };
+    return {
+      ...withSearched,
+      status: 'unverifiable',
+      reason: `could not be checked here ${skippedNote}`,
+    };
   }
   return {
     ...withSearched,

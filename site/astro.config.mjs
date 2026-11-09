@@ -14,7 +14,7 @@ export default defineConfig({
   trailingSlash: 'always',
   // Inline the (small) stylesheets so no CSS request blocks the first paint.
   build: { format: 'directory', inlineStylesheets: 'always' },
-  integrations: [sitemap({ filter: (page) => !/\/404\/?$/.test(page) })],
+  integrations: [sitemap({ filter: (page) => !/\/404\/?$|\/rules\/verapdf-\d/.test(page) })],
   devToolbar: { enabled: false },
   // Strict Content-Security-Policy, emitted by Astro as a <meta> tag on every
   // page with hashes for its own inline scripts and styles (no 'unsafe-inline'

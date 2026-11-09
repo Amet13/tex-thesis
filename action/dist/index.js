@@ -110920,7 +110920,7 @@ function missingIncludes(w) {
     })
   );
 }
-function warningProblems(parsed, buildFailed, thresholdPt) {
+function warningProblems(parsed, buildFailed2, thresholdPt) {
   const w = indexWarnings(parsed.warnings);
   const state = staleState(parsed, w);
   const problems = [];
@@ -110928,14 +110928,14 @@ function warningProblems(parsed, buildFailed, thresholdPt) {
   let citations = w.get("undefined-citation");
   if (state.bibliography) {
     const raw = [...w.get("no-file"), ...w.get("rerun-biber"), ...w.get("rerun-bibtex")].filter((x) => x.kind !== "no-file" || extension(String(x.data.file)) === "bbl").map((x) => x.raw);
-    if (!buildFailed) problems.push(bibliographyProblem(state, citations, raw));
+    if (!buildFailed2) problems.push(bibliographyProblem(state, citations, raw));
     citations = citations.filter((c) => notInBib.has(String(c.data.key)));
   }
   problems.push(...undefinedCitations(citations, notInBib));
   let references2 = w.get("undefined-reference");
   if (state.references) {
     const raw = [...w.get("labels-changed"), ...w.get("rerun-latex")].map((x) => x.raw);
-    if (!buildFailed) problems.push(rerunProblem(references2, raw));
+    if (!buildFailed2) problems.push(rerunProblem(references2, raw));
     references2 = [];
   }
   problems.push(...undefinedReferences(references2));
@@ -110971,7 +110971,7 @@ function warningProblems(parsed, buildFailed, thresholdPt) {
   problems.push(...duplicateLabels(w.get("duplicate-label")));
   problems.push(...overfullBoxes(w.get("overfull"), thresholdPt, parsed.errors));
   problems.push(...fontSubstitutions(w.get("font-substitution")));
-  const glyphs = w.get("missing-glyph").filter((x) => !(buildFailed && x.data.font === "nullfont"));
+  const glyphs = w.get("missing-glyph").filter((x) => !(buildFailed2 && x.data.font === "nullfont"));
   problems.push(...missingGlyphs(glyphs));
   problems.push(...pdfStringTokens(w.get("pdf-string-token")));
   problems.push(...simpleWarnings(w));
@@ -111013,10 +111013,10 @@ function analyzeLog(text2, opts = {}) {
     ...fromErrors.filter((p) => p.check === "build"),
     ...fatalWithoutError(parsed, fromErrors)
   ];
-  const buildFailed = buildProblems.length > 0;
+  const buildFailed2 = buildProblems.length > 0;
   const outputProblems = [
     ...fromErrors.filter((p) => p.check === "output"),
-    ...warningProblems(parsed, buildFailed, threshold)
+    ...warningProblems(parsed, buildFailed2, threshold)
   ];
   const build2 = {
     check: "build",
@@ -111241,7 +111241,52 @@ function citeLocations(files, keys) {
   return out;
 }
 
+// ../packages/core/src/pdf/rules.ts
+var veraPdfClauses = [
+  {
+    clause: "8.2.2",
+    title: "Content is neither tagged nor marked as an artifact",
+    summary: "Every piece of page content must belong to the structure tree or be marked as an artifact (page numbers, running headers, decorative rules). Untagged content is invisible or confusing to screen readers. Usually caused by packages or drawing code that tagging does not yet support, or by a PDF built without tagging.",
+    fix: "Build with `\\DocumentMetadata{\u2026 tagging=on}` and LuaLaTeX; update TeX Live (tagging support improves every year). Wrap decorative material in `\\tagmcbegin{artifact}`\u2026`\\tagmcend` or use the package\u2019s `artifact` option; include images with `alt=` or `artifact`."
+  },
+  {
+    clause: "8.2.5",
+    title: "Structure element used where the standard does not allow it",
+    summary: "The structure tree breaks a nesting rule of the PDF 2.0 namespace (for example a `Caption` outside a `Figure`/`Table`, or a list item outside `L`). Usually caused by a package or class that tags its output in its own way.",
+    fix: "Update TeX Live and the class; remove manual `\\tagstructbegin` code or packages known to break tagging (check https://latex3.github.io/tagging-project/tagging-status/). The evidence lists the offending structure elements."
+  },
+  {
+    clause: "7.1",
+    title: "Tagging and general PDF/UA requirements",
+    summary: "The PDF is not tagged, marks content inconsistently, or lacks basic PDF/UA properties (MarkInfo, DisplayDocTitle, the PDF/UA identification in XMP).",
+    fix: "Add `\\DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on}` as the first line of main.tex, set `\\hypersetup{pdftitle={\u2026}, pdfdisplaydoctitle=true}`, and build with LuaLaTeX."
+  },
+  {
+    clause: "7.18",
+    title: "Annotation or link not accessible",
+    summary: "Links and other annotations must be tagged (inside a `Link` structure element) and carry a text description (`Contents`). hyperref links from an untagged or partly tagged build fail this.",
+    fix: "Build with tagging on (`\\DocumentMetadata{\u2026 tagging=on}`) so hyperref tags its links; avoid packages that draw their own link annotations."
+  },
+  {
+    clause: "7.21",
+    title: "Font problem (embedding, encoding or Unicode mapping)",
+    summary: "A font is not embedded, has no Unicode mapping (ToUnicode), or its widths disagree with the embedded program. Screen readers then cannot extract the text. Common with Type 3 bitmap fonts and figures exported with non-embedded fonts.",
+    fix: "Compile with LuaLaTeX and OpenType fonts (fontspec); re-export PDF/EPS figures with fonts embedded (or as outlines). Avoid bitmap (Type 3) fonts."
+  },
+  {
+    clause: "7.3",
+    title: "Figure without alternative text",
+    summary: "A `Figure` structure element has no `Alt` (or `ActualText`) description.",
+    fix: "Give every figure alt text: `\\includegraphics[alt={\u2026}]{file}`, `\\begin{tikzpicture}[alt={\u2026}]`; use `artifact` for purely decorative images."
+  }
+];
+function veraPdfClauseInfo(clause) {
+  const c = clause.trim();
+  return veraPdfClauses.filter((i) => c === i.clause || c.startsWith(`${i.clause}.`)).sort((a, b) => b.clause.length - a.clause.length)[0];
+}
+
 // ../packages/core/src/pdf/accessibility.ts
+var DOCUMENT_METADATA_LINE = "\\DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on}";
 var FIGURE_ALT_FIX = "Describe what the figure shows: `\\includegraphics[alt={...}]{file}`, or `\\begin{tikzpicture}[alt={...}]` for TikZ; use `artifact` instead of `alt` for purely decorative images";
 function hasAltKey(options) {
   return options !== void 0 && /(?:^|[,\s])(?:alt\s*=|artifact\b)/.test(options);
@@ -111332,6 +111377,11 @@ function fontProblems(facts, sev) {
     }
   ];
 }
+function pagesText(pages) {
+  if (!pages.length) return "";
+  const shown = pages.slice(0, 8).join(", ");
+  return ` on ${pages.length === 1 ? "page" : "pages"} ${shown}${pages.length > 8 ? ", \u2026" : ""}`;
+}
 function veraPdfProblems(v, sev) {
   if (v.error) {
     return [
@@ -111349,29 +111399,33 @@ function veraPdfProblems(v, sev) {
     const rule = veraPdfRuleId(f.clause);
     const prev = groups.get(rule);
     if (prev) {
-      const data = prev.data;
-      data.count += f.failedChecks;
-      if (f.testNumber !== void 0) data.tests.push(f.testNumber);
-      prev.message = `${f.specification} \xA7${f.clause}: ${prev.detail ?? ""} (${plural2(data.count, "failed check")})`;
+      prev.count += f.failedChecks;
+      if (f.testNumber !== void 0) prev.tests.push(f.testNumber);
+      for (const p of f.pages ?? []) prev.pages.add(p);
+      if (f.contexts.length && !prev.problem.evidence)
+        prev.problem.evidence = f.contexts.join("\n");
       continue;
     }
     const desc = f.description.replace(/\s+/g, " ").trim();
+    const info3 = veraPdfClauseInfo(f.clause);
     const problem2 = {
       rule,
       check: "accessibility",
       severity: sev,
-      message: `${f.specification} \xA7${f.clause}: ${desc} (${plural2(f.failedChecks, "failed check")})`,
-      detail: desc,
-      fix: "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed",
-      data: {
-        specification: f.specification,
-        clause: f.clause,
-        count: f.failedChecks,
-        tests: f.testNumber === void 0 ? [] : [f.testNumber]
-      }
+      message: "",
+      detail: info3 ? `${desc}. ${info3.summary}` : desc,
+      fix: info3 ? `${info3.fix} (\`overfull explain ${rule}\`)` : "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed"
     };
     if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
-    groups.set(rule, problem2);
+    groups.set(rule, {
+      problem: problem2,
+      spec: f.specification,
+      clause: f.clause,
+      desc,
+      count: f.failedChecks,
+      tests: f.testNumber === void 0 ? [] : [f.testNumber],
+      pages: new Set(f.pages ?? [])
+    });
   }
   if (!v.compliant && groups.size === 0) {
     return [
@@ -111385,7 +111439,46 @@ function veraPdfProblems(v, sev) {
       }
     ];
   }
-  return [...groups.values()];
+  return [...groups.values()].map((g) => {
+    const pages = [...g.pages].sort((a, b) => a - b);
+    const p = g.problem;
+    p.message = `${g.spec} \xA7${g.clause}: ${g.desc} (${plural2(g.count, "failed check")}${pagesText(pages)})`;
+    if (pages.length) p.location = { page: pages[0] };
+    p.data = {
+      specification: g.spec,
+      clause: g.clause,
+      count: g.count,
+      tests: g.tests,
+      ...pages.length ? { pages } : {}
+    };
+    return p;
+  });
+}
+function groupVeraPdf(problems, vera, buildFailed2) {
+  const clauses = vera.filter((p) => p.rule.startsWith("verapdf-") && p.rule !== "verapdf-error");
+  const untagged = problems.find((p) => p.rule === "pdf-not-tagged");
+  if (untagged && clauses.length) {
+    const failedChecks = clauses.reduce((n, p) => n + Number(p.data?.count ?? 1), 0);
+    untagged.related = (untagged.related ?? 0) + clauses.length;
+    untagged.message = `${untagged.message}; this also causes ${plural2(clauses.length, "veraPDF failure")} (${plural2(failedChecks, "failed check")})`;
+    untagged.evidence = clauses.map((p) => p.message).join("\n");
+    untagged.data = {
+      ...untagged.data ?? {},
+      verapdf: clauses.map((p) => ({ rule: p.rule, ...p.data ?? {} }))
+    };
+    return vera.filter((p) => !clauses.includes(p));
+  }
+  if (buildFailed2) {
+    return vera.map(
+      (p) => clauses.includes(p) ? {
+        ...p,
+        severity: "info",
+        message: `${p.message} \u2014 fix build errors first; a broken build produces these`,
+        fix: `Fix build errors first; a broken build produces these. ${p.fix ?? ""}`.trim()
+      } : p
+    );
+  }
+  return vera;
 }
 function accessibilityCheck(facts, opts = {}) {
   const level = opts.level ?? "required";
@@ -111405,7 +111498,7 @@ function accessibilityCheck(facts, opts = {}) {
       check: "accessibility",
       severity: sev,
       message: "PDF is not tagged (no structure for screen readers)",
-      fix: "Add `\\DocumentMetadata{lang=en-US, pdfstandard=ua-2, tagging=on}` before `\\documentclass` and build with LuaLaTeX"
+      fix: `Add \`${DOCUMENT_METADATA_LINE}\` as the first line of main.tex and build with LuaLaTeX`
     });
   }
   if (!facts.language) {
@@ -111448,15 +111541,18 @@ function accessibilityCheck(facts, opts = {}) {
     });
   }
   if (opts.verapdf === null) {
+    const nr = opts.verapdfNotRun ?? {};
     problems.push({
       rule: "verapdf-not-run",
       check: "accessibility",
-      severity: level === "required" ? "warning" : "info",
-      message: "veraPDF not found, full PDF/UA validation skipped",
-      fix: "Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, or run `overfull check --engine docker` (uses the Overfull image), or run the check inside the Overfull Docker image"
+      severity: level === "required" && nr.couldRun ? "warning" : "info",
+      message: nr.message ?? "veraPDF not found, full PDF/UA validation skipped",
+      fix: nr.fix ?? "Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, or run `overfull check --engine docker` (uses the Overfull image), or run the check inside the Overfull Docker image"
     });
   } else if (opts.verapdf) {
-    problems.push(...veraPdfProblems(opts.verapdf, sev));
+    problems.push(
+      ...groupVeraPdf(problems, veraPdfProblems(opts.verapdf, sev), opts.buildFailed === true)
+    );
   }
   const counted = problems.filter((p) => p.severity !== "info");
   const stats = {
@@ -111792,6 +111888,19 @@ function childText(xml, name) {
   const m = new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`).exec(xml);
   return m ? decodeXml(m[1] ?? "") : "";
 }
+function contextPage(context) {
+  const m = /\bpages\[(\d+)\]/.exec(context);
+  return m ? Number(m[1]) + 1 : void 0;
+}
+function pagesOf(contexts) {
+  const pages = contexts.map(contextPage).filter((p) => p !== void 0);
+  return [...new Set(pages)].sort((a, b) => a - b);
+}
+function withPages(f, all) {
+  const pages = pagesOf(all);
+  if (pages.length) f.pages = pages;
+  return f;
+}
 function mergeByClause(failures) {
   const byKey = /* @__PURE__ */ new Map();
   for (const f of failures) {
@@ -111800,6 +111909,8 @@ function mergeByClause(failures) {
     if (prev) {
       prev.failedChecks += f.failedChecks;
       prev.contexts = [...prev.contexts, ...f.contexts].slice(0, MAX_CONTEXTS);
+      const pages = [.../* @__PURE__ */ new Set([...prev.pages ?? [], ...f.pages ?? []])].sort((a, b) => a - b);
+      if (pages.length) prev.pages = pages;
     } else byKey.set(key, { ...f });
   }
   return [...byKey.values()];
@@ -111824,19 +111935,23 @@ function parseXml(xml) {
     const a = attrs(m[1] ?? "");
     if (a.status && a.status !== "failed") continue;
     const inner = m[2] ?? "";
-    const contexts = [];
+    const all = [];
     const checkRe = /<check\b[^>]*status="failed"[^>]*>([\s\S]*?)<\/check>/g;
-    for (let c = checkRe.exec(inner); c && contexts.length < MAX_CONTEXTS; c = checkRe.exec(inner)) {
+    for (let c = checkRe.exec(inner); c; c = checkRe.exec(inner)) {
       const ctx = childText(c[1] ?? "", "context");
-      if (ctx) contexts.push(ctx);
+      if (ctx) all.push(ctx);
     }
-    const failure = {
-      specification: a.specification ?? "",
-      clause: a.clause ?? "",
-      description: childText(inner, "description"),
-      failedChecks: num(a.failedChecks) ?? Math.max(1, contexts.length),
-      contexts
-    };
+    const contexts = all.slice(0, MAX_CONTEXTS);
+    const failure = withPages(
+      {
+        specification: a.specification ?? "",
+        clause: a.clause ?? "",
+        description: childText(inner, "description"),
+        failedChecks: num(a.failedChecks) ?? Math.max(1, all.length),
+        contexts
+      },
+      all
+    );
     const tn = num(a.testNumber);
     if (tn !== void 0) failure.testNumber = tn;
     failures.push(failure);
@@ -111883,14 +111998,18 @@ function parseJson(data) {
     if (!isObj(r)) continue;
     const status = text(r.ruleStatus || r.status).toLowerCase();
     if (status && status !== "failed") continue;
-    const contexts = asArray(r.checks).filter(isObj).filter((c) => text(c.status).toLowerCase() !== "passed").map((c) => text(c.context)).filter(Boolean).slice(0, MAX_CONTEXTS);
-    const failure = {
-      specification: text(r.specification),
-      clause: text(r.clause),
-      description: text(r.description),
-      failedChecks: num(r.failedChecks) ?? Math.max(1, contexts.length),
-      contexts
-    };
+    const all = asArray(r.checks).filter(isObj).filter((c) => text(c.status).toLowerCase() !== "passed").map((c) => text(c.context)).filter(Boolean);
+    const contexts = all.slice(0, MAX_CONTEXTS);
+    const failure = withPages(
+      {
+        specification: text(r.specification),
+        clause: text(r.clause),
+        description: text(r.description),
+        failedChecks: num(r.failedChecks) ?? Math.max(1, all.length),
+        contexts
+      },
+      all
+    );
     const tn = num(r.testNumber);
     if (tn !== void 0) failure.testNumber = tn;
     failures.push(failure);
@@ -113160,10 +113279,10 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
   const withSearched = { ...base, searched };
   const opts = ctx.opts;
   const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
-  const skipped3 = ["crossref", "dblp", "arxiv"].filter(
+  const skipped3 = ["crossref", "arxiv", "dblp"].filter(
     (s) => !sourceAllowed(opts, s)
   );
-  const skippedNote = skipped3.length ? ` (${sourcesText(skipped3).replace(/ or /, " and ")} ${skipped3.length === 1 ? "was" : "were"} not searched)` : "";
+  const skippedNote = skipped3.length ? `(${sourcesText(skipped3).replace(/ or /, " and ")} ${skipped3.length === 1 ? "was" : "were"} not searched)` : "";
   const titleNote = entry.fields.title ? " and no record has a similar title" : "";
   if (ev.arxivMissing) {
     return {
@@ -113207,10 +113326,17 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
       reason: `lookup incomplete: ${failuresText(ev.failures) || "no source answered"}`
     };
   }
+  if (skipped3.length) {
+    return {
+      ...withSearched,
+      status: "unverifiable",
+      reason: `could not be checked here ${skippedNote}`
+    };
+  }
   return {
     ...withSearched,
     status: "not-found",
-    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== "doi.org"))}${skippedNote}`
+    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== "doi.org"))}`
   };
 }
 async function verifyEntry(entry, ctx, ignore) {
@@ -113283,6 +113409,7 @@ function hasValidProvenance(entry) {
 }
 
 // ../packages/core/src/refs/check.ts
+var UNPROVEN_FIX = "Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite. If you wrote this entry yourself, add `note = {overfull: author-provided}` to it.";
 function fieldList(r) {
   return (r.differences ?? []).map((d) => d.field === "author" ? "authors" : d.field).join(", ");
 }
@@ -113315,7 +113442,7 @@ function unprovenProblem(r, entry) {
     message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
     ...location2 ? { location: location2 } : {},
     detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ""}. The entry has no intact \`x-overfull = {cite \u2026 <hash>}\` marker (missing, hand-written, or the entry was edited after \`overfull cite\`) with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
-    fix: "Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite",
+    fix: UNPROVEN_FIX,
     ...entry?.raw ? { evidence: entry.raw } : {},
     data: { key: r.key, status: r.status }
   };
@@ -113469,6 +113596,45 @@ function summaryOf(results, stats) {
   const head = `${stats.verified} of ${results.length} references verified`;
   return parts.length ? `${head} (${parts.join(", ")})` : head;
 }
+var COLLAPSE_AT = 3;
+function unreachableHosts(reason) {
+  const hosts = [];
+  for (const part of (reason ?? "").replace(/^lookup incomplete: /, "").split("; ")) {
+    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,}): (?:network error|timed out)/.exec(part);
+    if (m?.[1]) hosts.push(m[1]);
+  }
+  return hosts;
+}
+function collapseNetworkFailures(problems, results) {
+  const byKey = new Map(results.map((r) => [r.key, r]));
+  const network = problems.filter((p) => {
+    if (p.rule !== "reference-lookup-failed" && p.rule !== "reference-not-reverified") return false;
+    const r = byKey.get(String(p.data?.key));
+    return r?.status === "error" && unreachableHosts(r.reason).length > 0;
+  });
+  if (network.length < COLLAPSE_AT) return;
+  const entries = network.map((p) => {
+    const r = byKey.get(String(p.data?.key));
+    return { key: r.key, reason: r.reason ?? "", ...p.location ? { location: p.location } : {} };
+  });
+  const hosts = [...new Set(entries.flatMap((e) => unreachableHosts(e.reason)))];
+  const hostText = hosts.length === 1 ? hosts[0] : `${hosts.slice(0, -1).join(", ")} and ${hosts.at(-1)}`;
+  const summary = {
+    rule: "reference-lookup-failed",
+    check: "references",
+    severity: "warning",
+    message: `Could not reach ${hostText}; ${entries.length} entries were not re-verified. Run again when online.`,
+    detail: "A network problem is not evidence against the references; they were neither confirmed nor ruled out.",
+    fix: "Run `overfull check` again with network access. Entries with a DOI or arXiv id can be confirmed by doi.org or arXiv even when a title search index is unreachable.",
+    evidence: entries.map((e) => `${e.key}: ${e.reason}`).join("\n"),
+    data: { keys: entries.map((e) => e.key), hosts, entries }
+  };
+  const drop = new Set(network);
+  const at = problems.findIndex((p) => drop.has(p));
+  const kept = problems.filter((p) => !drop.has(p));
+  kept.splice(at, 0, summary);
+  problems.splice(0, problems.length, ...kept);
+}
 function refsCheck(results, opts = {}) {
   const byKey = new Map((opts.entries ?? []).map((e) => [e.key, e]));
   const stats = {
@@ -113489,6 +113655,7 @@ function refsCheck(results, opts = {}) {
       return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
     }).map((r) => unprovenProblem(r, byKey.get(r.key)))
   ];
+  collapseNetworkFailures(problems, results);
   if (problems.some((p) => p.rule === "reference-unproven")) {
     stats.unproven = problems.filter((p) => p.rule === "reference-unproven").length;
   }
@@ -114065,6 +114232,22 @@ var PAPER = {
   letter: { w: 215.9, h: 279.4, label: "US Letter (8.5 \xD7 11 in)" }
 };
 var TOLERANCE_MM = 3;
+function mainTextPages(profile, ctx) {
+  const endLabel = profile.pageLimit?.endLabel;
+  if (!endLabel || !ctx.aux) return void 0;
+  const entry = parseAuxLabels(ctx.aux).get(endLabel);
+  return entry && /^\d+$/.test(entry.page) ? Number(entry.page) : void 0;
+}
+function pageLimitText(profile, ctx) {
+  const max = profile.pageLimit?.max;
+  if (max === void 0) return void 0;
+  const total = ctx.facts?.pageCount;
+  const main3 = mainTextPages(profile, ctx);
+  if (main3 !== void 0)
+    return `main text ${main3} of ${max} pages${total !== void 0 ? ` (${total} total)` : ""}`;
+  return total !== void 0 ? `${total} of ${max} pages` : void 0;
+}
+var cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 function pageLimitProblems(profile, ctx) {
   const limit = profile.pageLimit;
   if (!limit) return [];
@@ -114079,7 +114262,7 @@ function pageLimitProblems(profile, ctx) {
           rule: "page-limit-exceeded",
           check: "venue",
           severity: "error",
-          message: `Main text ends on page ${page}, limit is ${max}`,
+          message: `${cap(pageLimitText(profile, ctx))}: the main text ends on page ${page}`,
           location: { page },
           detail: `Counted up to \`\\label{${endLabel}}\`. Partial pages count as full pages.`,
           fix: `Cut ${page - max === 1 ? "about a page" : `about ${page - max} pages`} before \`\\label{${endLabel}}\`, or move material to the appendix`,
@@ -114112,7 +114295,7 @@ function pageLimitProblems(profile, ctx) {
       rule: "page-limit-exceeded",
       check: "venue",
       severity: "error",
-      message: `PDF has ${total} pages, limit is ${max}`,
+      message: `${cap(pageLimitText(profile, ctx))} (all pages counted)`,
       fix: endLabel ? `Cut ${total - max} page(s), or fix \`\\label{${endLabel}}\` so only the main text is counted` : `Cut ${total - max} page(s), or set \`venue.pageLimit.endLabel\` if references/appendix do not count`,
       data: { pages: total, max }
     });
@@ -114198,8 +114381,8 @@ function venueCheck(profile, ctx) {
   const errors = problems.filter((p) => p.severity === "error").length;
   const warnings = problems.filter((p) => p.severity === "warning").length;
   const parts = [`profile ${profile.id}`];
-  if (profile.pageLimit && ctx.facts)
-    parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
+  const limitText = pageLimitText(profile, ctx);
+  if (limitText) parts.push(limitText);
   else if (ctx.facts) parts.push(`${ctx.facts.pageCount} pages`);
   if (errors) parts.push(`${errors} to fix`);
   if (warnings) parts.push(`${warnings} to review`);
@@ -114474,6 +114657,8 @@ function latexmkrcDirs(root) {
     const plain2 = (d) => d !== void 0 && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith("/") && !d.startsWith("-") && !d.split("/").includes("..");
     if (plain2(o?.[1])) out.outDir = o?.[1];
     if (plain2(a?.[1])) out.auxDir = a?.[1];
+    const j = /\$jobname\s*=\s*['"]([^'"]+)['"]/.exec(text2);
+    if (j?.[1] && /^[A-Za-z0-9._-]+$/.test(j[1]) && !j[1].startsWith("-")) out.jobname = j[1];
     break;
   }
   return out;
@@ -114647,8 +114832,10 @@ function loadConfig(cwd, explicit, env = {}) {
   const main3 = safeRelPath(raw.main ?? "main.tex");
   if (raw.jobname !== void 0 && typeof raw.jobname !== "string")
     throw new ConfigError(f, "`jobname` must be a string");
+  const rc = latexmkrcDirs(root);
+  const jobnameSource = raw.jobname !== void 0 ? "overfull.yml" : rc.jobname ? ".latexmkrc" : "main file";
   const jobname = safeJobname(
-    raw.jobname ?? basename2(main3).replace(/\.tex$/i, "")
+    raw.jobname ?? rc.jobname ?? basename2(main3).replace(/\.tex$/i, "")
   );
   const bib = raw.bib !== void 0 ? stringList(raw.bib, "bib", f) : discoverBib(root, main3);
   let inline2 = {};
@@ -114687,7 +114874,6 @@ function loadConfig(cwd, explicit, env = {}) {
   const image = env.OVERFULL_IMAGE ? safeImage(env.OVERFULL_IMAGE, "OVERFULL_IMAGE") : build2.image ? safeImage(build2.image, "build.image in overfull.yml") : DEFAULT_IMAGE;
   if (build2.outDir !== void 0 && typeof build2.outDir !== "string")
     throw new ConfigError(f, "`build.outDir` must be a directory name");
-  const rc = latexmkrcDirs(root);
   const norm = (d) => d === "." || d === "./" ? "." : d.replace(/^\.\//, "").replace(/\/+$/, "");
   const outDir = norm(
     safeRelPath(build2.outDir ?? rc.outDir ?? ".", "output directory")
@@ -114699,7 +114885,8 @@ function loadConfig(cwd, explicit, env = {}) {
     jobname,
     bib,
     bibDiscovered: raw.bib === void 0,
-    jobnameFromConfig: raw.jobname !== void 0,
+    jobnameFromConfig: jobnameSource !== "main file",
+    jobnameSource,
     profile,
     venue: inline2,
     checks,
@@ -115041,6 +115228,16 @@ function sourcesOf(inp) {
   return inp.sources;
 }
 var rel = (root, abs) => relative6(root, abs).split("\\").join("/") || ".";
+function missingInputError(what, given, config) {
+  const label = { pdf: "PDF", log: "Log file", aux: "Aux file", bib: "Bibliography file" }[what];
+  let hint = "";
+  if (what !== "bib") {
+    const dir = what === "pdf" ? config.build.outDir : config.build.auxDir;
+    const expected = join5(dir, `${config.jobname}.${what}`).split("\\").join("/");
+    hint = ` The jobname is "${config.jobname}" (from ${config.jobnameSource}), so the build writes ${expected}. Check the path and the jobname (\`jobname:\` in overfull.yml, \`$jobname\` in .latexmkrc), or build the document before this step.`;
+  } else hint = " Check the path (relative to the project directory).";
+  return new UsageError(`${label} not found: ${given} (given as \`${what}\`).${hint}`);
+}
 function checkImage(opts) {
   const env = opts.env ?? process.env;
   if (opts.image) return safeImage(opts.image, "--image");
@@ -115063,7 +115260,21 @@ async function gather(opts, config, needPdf) {
   const aux = config.build.auxDir;
   const logAbs = opts.log ? insideRoot(root, opts.log, "Log file") : insideRoot(root, join5(aux, `${config.jobname}.log`), "Log file");
   const pdfAbs = opts.pdf ? insideRoot(root, opts.pdf, "PDF") : insideRoot(root, join5(out, `${config.jobname}.pdf`), "PDF");
-  const inputs = { config, root, logPath: rel(root, logAbs), pdfPath: rel(root, pdfAbs) };
+  if (opts.pdf && needPdf && !existsSync4(pdfAbs)) throw missingInputError("pdf", opts.pdf, config);
+  if (opts.log && !existsSync4(logAbs)) throw missingInputError("log", opts.log, config);
+  if (opts.aux && !existsSync4(insideRoot(root, opts.aux, "Aux file")))
+    throw missingInputError("aux", opts.aux, config);
+  for (const b of opts.bib ?? []) {
+    if (!existsSync4(insideRoot(root, b, "Bibliography file")))
+      throw missingInputError("bib", b, config);
+  }
+  const inputs = {
+    config,
+    root,
+    logPath: rel(root, logAbs),
+    pdfPath: rel(root, pdfAbs),
+    ci: isCI(opts.env ?? process.env)
+  };
   const log = readIfExists(logAbs);
   if (log !== void 0) inputs.log = log;
   const auxText = opts.aux ? readIfExists(insideRoot(root, opts.aux, "Aux file")) : readAux(root, config.jobname, aux);
@@ -115082,9 +115293,14 @@ async function gather(opts, config, needPdf) {
   }
   return inputs;
 }
+function missingReason(inp, path) {
+  if (inp.ci)
+    return `No ${path} \u2014 build the document in an earlier workflow step, or set \`pdf:\`/\`log:\``;
+  return `No ${path} \u2014 run \`overfull build\` first`;
+}
 function missingPdfReason(inp) {
   if (inp.factsError) return `Could not read ${inp.pdfPath}: ${inp.factsError}`;
-  return `No ${inp.pdfPath} \u2014 run \`overfull build\` first`;
+  return missingReason(inp, inp.pdfPath);
 }
 function mergeOutput(output, pdfProblems) {
   const has = (re) => output.problems.some((p) => re.test(p.rule));
@@ -115093,7 +115309,7 @@ function mergeOutput(output, pdfProblems) {
   );
   if (extra.length === 0) return output;
   const problems = [...output.problems, ...extra];
-  return { ...output, status: statusOf(problems), problems };
+  return { ...output, status: statusOf(problems), problems, summary: outputSummary(problems) };
 }
 function bibliographyAttribution(config, bib = config.bib) {
   const root = config.root;
@@ -115121,7 +115337,7 @@ function bibliographyAttribution(config, bib = config.bib) {
 function buildAndOutput(inp, wanted) {
   const out = [];
   if (inp.log === void 0) {
-    const reason = `No ${inp.logPath} \u2014 run \`overfull build\` first`;
+    const reason = missingReason(inp, inp.logPath);
     if (wanted.has("build")) out.push(skipped2("build", reason));
     if (wanted.has("output")) {
       if (inp.facts) {
@@ -115269,7 +115485,23 @@ async function references(inp, opts) {
   }
   return result;
 }
-async function accessibility(inp, opts) {
+function buildFailed(inp, results) {
+  const build2 = results.find((r) => r.check === "build");
+  if (build2) return build2.status === "fail";
+  return inp.log !== void 0 && analyzeLog(inp.log, { root: inp.root }).build.status === "fail";
+}
+async function verapdfNotRun(opts) {
+  if (opts.runner === "action") {
+    return {
+      couldRun: false,
+      message: "veraPDF did not run in this step",
+      fix: "Full PDF/UA validation needs veraPDF; run the template workflow (Docker) or install veraPDF on the runner"
+    };
+  }
+  const couldRun = opts.engine !== "local" && await dockerAvailable(opts.env ?? process.env);
+  return { couldRun };
+}
+async function accessibility(inp, opts, results) {
   const level = inp.config.profile.accessibility ?? "recommended";
   if (level === "off")
     return skipped2("accessibility", `Accessibility is off for profile ${inp.config.profile.id}`);
@@ -115280,7 +115512,13 @@ async function accessibility(inp, opts) {
       ...inp.facts.pdfua !== void 0 ? { pdfuaPart: inp.facts.pdfua } : {},
       ...inp.docker ? { docker: inp.docker } : {}
     });
-  return accessibilityCheck(inp.facts, { verapdf, level, texFiles: sourcesOf(inp).texFiles });
+  return accessibilityCheck(inp.facts, {
+    verapdf,
+    level,
+    texFiles: sourcesOf(inp).texFiles,
+    buildFailed: buildFailed(inp, results),
+    ...verapdf === null ? { verapdfNotRun: await verapdfNotRun(opts) } : {}
+  });
 }
 function venue(inp) {
   const { config } = inp;
@@ -115327,7 +115565,8 @@ async function runCheck(opts = {}) {
   const inp = await gather({ ...opts, env }, config, needPdf);
   const results = [...buildAndOutput(inp, wanted)];
   if (wanted.has("references")) results.push(await references(inp, { ...opts, env }));
-  if (wanted.has("accessibility")) results.push(await accessibility(inp, { ...opts, env }));
+  if (wanted.has("accessibility"))
+    results.push(await accessibility(inp, { ...opts, env }, results));
   if (wanted.has("venue")) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
   for (const r of results) r.problems = sortProblems(r.problems);
@@ -115398,6 +115637,7 @@ function readInputs(env, workspace) {
     env,
     // The Action only checks existing outputs; it never starts containers.
     engine: "local",
+    runner: "action",
     offline: boolInput(env, "offline", false),
     ...checks?.length ? { checks } : {},
     ...bib?.length ? { bib } : {},

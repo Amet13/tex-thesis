@@ -113,6 +113,8 @@ export interface VeraPdfFailure {
   failedChecks: number;
   /** A few failing object contexts, for evidence. */
   contexts: string[];
+  /** 1-based pages named by the failing contexts (`pages[31]` → 32), sorted, unique. */
+  pages?: number[];
 }
 
 export interface VeraPdfResult {

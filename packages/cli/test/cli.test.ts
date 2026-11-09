@@ -73,8 +73,8 @@ describe('overfull check', () => {
     expect(rules).toContain('citation-key-missing');
     expect(rules).toContain('figure-missing-alt');
     expect(rules).toContain('page-limit-exceeded');
-    expect(problems.find((p) => p.rule === 'page-limit-exceeded')?.message).toBe(
-      'Main text ends on page 2, limit is 1',
+    expect(problems.find((p) => p.rule === 'page-limit-exceeded')?.message).toMatch(
+      /^Main text 2 of 1 pages \(\d+ total\): the main text ends on page 2$/,
     );
     for (const p of problems) {
       expect(typeof p.message).toBe('string');

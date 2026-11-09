@@ -210,7 +210,11 @@ describe('accessibilityCheck', () => {
     const r = accessibilityCheck(facts(), { verapdf: null, level: 'recommended' });
     expect(r.status).toBe('pass');
     expect(r.problems.map((p) => [p.rule, p.severity])).toEqual([['verapdf-not-run', 'info']]);
-    const req = accessibilityCheck(facts(), { verapdf: null, level: 'required' });
+    const req = accessibilityCheck(facts(), {
+      verapdf: null,
+      level: 'required',
+      verapdfNotRun: { couldRun: true },
+    });
     expect(req.status).toBe('warn');
     expect(req.problems.map((p) => [p.rule, p.severity])).toEqual([['verapdf-not-run', 'warning']]);
     expect(req.problems[0]?.fix).toMatch(/--engine docker/);
@@ -277,7 +281,9 @@ describe('accessibilityCheck', () => {
     expect(rules).toEqual([...new Set(rules)]);
     expect(rules.every((id) => id.startsWith('verapdf-'))).toBe(true);
     expect(r.problems.every((p) => p.severity === 'warning')).toBe(true);
-    expect(r.problems[0]?.message).toMatch(/^ISO 14289-1:2014 §[\d.]+: .+ \(\d+ failed checks?\)$/);
+    expect(r.problems[0]?.message).toMatch(
+      /^ISO 14289-1:2014 §[\d.]+: .+ \(\d+ failed checks?(?: on pages? [\d, ]+)?\)$/,
+    );
   });
 });
 

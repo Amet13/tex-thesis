@@ -480,7 +480,10 @@ export function initCheck(): void {
     };
     const rulesBase = config.rulesBase ?? '/rules/';
     sheetView.innerHTML = renderSheet(report, {
-      ruleHref: (r) => `${rulesBase}${r.replace(/^verapdf-.*/, 'verapdf')}/`,
+      ruleHref: (r) =>
+        /^verapdf-\d/.test(r)
+          ? `${rulesBase}verapdf/#clause-${r.slice('verapdf-'.length)}`
+          : `${rulesBase}${r}/`,
       headingLevel: 3,
     });
     jsonOut.textContent = formatJson(report);
@@ -522,7 +525,8 @@ function browserAccessibility(result: CheckResult): CheckResult {
       ? {
           ...p,
           severity: 'info' as const,
-          message: 'veraPDF does not run in the browser. Full PDF/UA validation runs in `overfull check`.',
+          message:
+            'veraPDF does not run in the browser. Full PDF/UA validation runs in `overfull check`.',
         }
       : p,
   );

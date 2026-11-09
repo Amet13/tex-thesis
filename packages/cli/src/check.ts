@@ -12,9 +12,9 @@ import {
   citedKeys,
   citesAll,
   missingKeys,
+  outputSummary,
   type PdfFacts,
   type Problem,
-  outputSummary,
   parseBibWithIssues,
   pdfOutputProblems,
   type Report,
@@ -69,6 +69,8 @@ export interface CheckOptions {
   image?: string;
   fetch?: typeof fetch;
   env?: Record<string, string | undefined>;
+  /** Who runs the check: the GitHub Action never runs veraPDF itself, so its advice differs. */
+  runner?: 'cli' | 'action';
 }
 
 const skipped = (check: CheckId, reason: string): CheckResult => ({
@@ -426,7 +428,33 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   return result;
 }
 
-async function accessibility(inp: Inputs, opts: CheckOptions): Promise<CheckResult> {
+/** True when the build log has errors (veraPDF findings on such a PDF are follow-on noise). */
+function buildFailed(inp: Inputs, results: CheckResult[]): boolean {
+  const build = results.find((r) => r.check === 'build');
+  if (build) return build.status === 'fail';
+  return inp.log !== undefined && analyzeLog(inp.log, { root: inp.root }).build.status === 'fail';
+}
+
+/** How to describe veraPDF not running: only the CLI with Docker could have run it. */
+async function verapdfNotRun(
+  opts: CheckOptions,
+): Promise<NonNullable<Parameters<typeof accessibilityCheck>[1]>['verapdfNotRun']> {
+  if (opts.runner === 'action') {
+    return {
+      couldRun: false,
+      message: 'veraPDF did not run in this step',
+      fix: 'Full PDF/UA validation needs veraPDF; run the template workflow (Docker) or install veraPDF on the runner',
+    };
+  }
+  const couldRun = opts.engine !== 'local' && (await dockerAvailable(opts.env ?? process.env));
+  return { couldRun };
+}
+
+async function accessibility(
+  inp: Inputs,
+  opts: CheckOptions,
+  results: CheckResult[],
+): Promise<CheckResult> {
   const level = inp.config.profile.accessibility ?? 'recommended';
   if (level === 'off')
     return skipped('accessibility', `Accessibility is off for profile ${inp.config.profile.id}`);
@@ -437,7 +465,13 @@ async function accessibility(inp: Inputs, opts: CheckOptions): Promise<CheckResu
       ...(inp.facts.pdfua !== undefined ? { pdfuaPart: inp.facts.pdfua } : {}),
       ...(inp.docker ? { docker: inp.docker } : {}),
     });
-  return accessibilityCheck(inp.facts, { verapdf, level, texFiles: sourcesOf(inp).texFiles });
+  return accessibilityCheck(inp.facts, {
+    verapdf,
+    level,
+    texFiles: sourcesOf(inp).texFiles,
+    buildFailed: buildFailed(inp, results),
+    ...(verapdf === null ? { verapdfNotRun: await verapdfNotRun(opts) } : {}),
+  });
 }
 
 function venue(inp: Inputs): CheckResult {
@@ -487,7 +521,8 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   const inp = await gather({ ...opts, env }, config, needPdf);
   const results: CheckResult[] = [...buildAndOutput(inp, wanted)];
   if (wanted.has('references')) results.push(await references(inp, { ...opts, env }));
-  if (wanted.has('accessibility')) results.push(await accessibility(inp, { ...opts, env }));
+  if (wanted.has('accessibility'))
+    results.push(await accessibility(inp, { ...opts, env }, results));
   if (wanted.has('venue')) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
   for (const r of results) r.problems = sortProblems(r.problems);

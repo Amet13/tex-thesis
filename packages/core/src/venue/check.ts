@@ -2,7 +2,7 @@ import { type CheckResult, statusOf } from '../types.js';
 import { anonymityProblems } from './anonymity.js';
 import { arxivProblems } from './arxiv.js';
 import { disclosureProblems } from './disclosure.js';
-import { pageLimitProblems, paperSizeProblems } from './pages.js';
+import { pageLimitProblems, pageLimitText, paperSizeProblems } from './pages.js';
 import type { VenueContext, VenueProfile } from './types.js';
 
 /** Runs the venue rules a profile enables. */
@@ -28,8 +28,8 @@ export function venueCheck(profile: VenueProfile, ctx: VenueContext): CheckResul
   const errors = problems.filter((p) => p.severity === 'error').length;
   const warnings = problems.filter((p) => p.severity === 'warning').length;
   const parts = [`profile ${profile.id}`];
-  if (profile.pageLimit && ctx.facts)
-    parts.push(`${ctx.facts.pageCount} pages (limit ${profile.pageLimit.max})`);
+  const limitText = pageLimitText(profile, ctx);
+  if (limitText) parts.push(limitText);
   else if (ctx.facts) parts.push(`${ctx.facts.pageCount} pages`);
   if (errors) parts.push(`${errors} to fix`);
   if (warnings) parts.push(`${warnings} to review`);

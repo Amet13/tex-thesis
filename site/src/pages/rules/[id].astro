@@ -7,26 +7,43 @@ import { CHECK_LABELS, REPO_URL, url } from '../../lib/paths';
 import { rules } from '../../lib/rules';
 import { inline } from '../../lib/sheet';
 import { galleyTheme } from '../../lib/shiki-theme.mjs';
+import { clauseSlug, VERAPDF_CLAUSES, VERAPDF_REDIRECTS } from '../../lib/verapdf-clauses';
 
 export function getStaticPaths() {
   const all = rules();
-  return all.map((rule, i) => ({
-    params: { id: rule.id },
-    props: {
-      rule,
-      kase: caseForRule(rule.id, rule.corpus),
-      related: all.filter((r) => r.check === rule.check && r.id !== rule.id).slice(0, 8),
-      index: i,
-    },
-  }));
+  const ids = new Set(all.map((r) => r.id));
+  const verapdf = all.find((r) => r.id === 'verapdf');
+  // veraPDF clause ids (`verapdf-8-2-2`) have no page of their own: send them
+  // to the clause on the `verapdf` page.
+  const redirects = verapdf
+    ? VERAPDF_REDIRECTS.filter((r) => !ids.has(r.id)).map((r) => ({
+        params: { id: r.id },
+        props: { rule: verapdf, related: [], redirectTo: `rules/verapdf/#${r.anchor}` },
+      }))
+    : [];
+  return [
+    ...all.map((rule, i) => ({
+      params: { id: rule.id },
+      props: {
+        rule,
+        kase: caseForRule(rule.id, rule.corpus),
+        related: all.filter((r) => r.check === rule.check && r.id !== rule.id).slice(0, 8),
+        index: i,
+      },
+    })),
+    ...redirects,
+  ];
 }
 
 interface Props {
   rule: RuleInfo;
   kase?: CorpusCase;
   related: RuleInfo[];
+  /** Set for a veraPDF clause id: the page only redirects there. */
+  redirectTo?: string;
 }
-const { rule, kase, related } = Astro.props;
+const { rule, kase, related, redirectTo } = Astro.props;
+const clauses = rule.id === 'verapdf' && !redirectTo ? VERAPDF_CLAUSES : [];
 const sevWord = rule.severity === 'info' ? 'note' : rule.severity;
 const engine = kase?.engine ?? 'lualatex';
 const msg = texMessage(kase, rule.id);
@@ -34,6 +51,16 @@ const plain = (t: string) => t.replace(/`([^`]+)`/g, '$1');
 const pageTitle = msg ? `${msg} — ${rule.title}` : rule.title;
 const description = `${plain(rule.summary)} Fix: ${plain(rule.fix)}`;
 ---
+{redirectTo ? (
+<Base title={`${Astro.params.id} — ${rule.title}`} description={description} section="rules" noindex>
+  <meta slot="head" http-equiv="refresh" content={`0; url=${url(redirectTo)}`} />
+  <div class="galley rule">
+    <p class="runhead"><span><a href={url('rules/')}>Rules</a></span></p>
+    <h1><code>{Astro.params.id}</code></h1>
+    <p>This veraPDF clause is explained on <a href={url(redirectTo)}>{rule.title}</a>.</p>
+  </div>
+</Base>
+) : (
 <Base title={pageTitle} description={description} section="rules">
   <article class="rule">
     <p class="runhead"><span><a href={url('rules/')}>Rules</a> / <a href={url(`rules/#${rule.check}`)}>{CHECK_LABELS[rule.check]?.name ?? rule.check}</a></span></p>
@@ -55,6 +82,21 @@ const description = `${plain(rule.summary)} Fix: ${plain(rule.fix)}`;
       <h2>Fix</h2>
       <p class="fix"><span class="caret" aria-hidden="true">‸</span><span set:html={inline(rule.fix)} /></p>
     </div>
+
+    {clauses.length > 0 && (
+      <section class="clauses galley" aria-labelledby="clauses-title">
+        <h2 id="clauses-title">Common clauses</h2>
+        <p>The rule id names the clause: <code>verapdf-7-21-4-1</code> is clause 7.21.4.1. Clauses 7.x are PDF/UA-1 (ISO 14289-1), 8.x are PDF/UA-2 (ISO 14289-2). Sub-clauses fall under the clause they start with.</p>
+        <dl>
+          {clauses.map((c) => (
+            <div class="clause" id={`clause-${clauseSlug(c.clause)}`}>
+              <dt><code>verapdf-{clauseSlug(c.clause)}</code> · {c.spec} §{c.clause}: {c.title}</dt>
+              <dd><span set:html={inline(c.summary)} /> <span class="clause-fix">Fix: <span set:html={inline(c.fix)} /></span></dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    )}
 
     {kase ? (
       <section class="case" aria-labelledby="case-title">
@@ -92,6 +134,22 @@ const description = `${plain(rule.summary)} Fix: ${plain(rule.fix)}`;
     )}
   </article>
 </Base>
+)}
+<script>
+  // `#clause-7-21-4-1` → the nearest listed clause (`#clause-7-21`).
+  const m = /^#clause-([\w-]+)$/.exec(location.hash);
+  if (m && !document.getElementById(`clause-${m[1]}`)) {
+    const parts = m[1].split('-');
+    while (parts.length > 1) {
+      parts.pop();
+      const el = document.getElementById(`clause-${parts.join('-')}`);
+      if (el) {
+        el.scrollIntoView();
+        break;
+      }
+    }
+  }
+</script>
 <style>
   .rule {
     padding-top: 1.5rem;
@@ -232,6 +290,28 @@ const description = `${plain(rule.summary)} Fix: ${plain(rule.fix)}`;
   }
   .related {
     margin-top: 3rem;
+  }
+  .clauses {
+    margin-top: 2.5rem;
+  }
+  .clauses dl {
+    margin: 0;
+  }
+  .clause {
+    margin-bottom: 1rem;
+    scroll-margin-top: 1rem;
+  }
+  .clause:target dt {
+    color: var(--pencil);
+  }
+  .clause dt {
+    font-weight: 600;
+  }
+  .clause dd {
+    margin: 0.2rem 0 0;
+  }
+  .clause-fix {
+    color: var(--ink-2);
   }
   .related ul {
     columns: 2 16rem;

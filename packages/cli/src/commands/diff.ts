@@ -25,7 +25,9 @@ Options:
   --main file     Main .tex file (default from overfull.yml)
   --out file      Output PDF (default overfull-diff.pdf)
   --engine e      auto (default), local or docker
-  --json          Print {pdf, base, sha} (or {error}) as JSON
+  --json          Print {pdf, base, sha, complete} (or {error}) as JSON. complete is
+                  false when the diff document had LaTeX errors (the PDF may be
+                  incomplete); --json then exits 1
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
 `;
@@ -185,7 +187,8 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
             ? `${JSON.stringify({ pdf: shown, base: baseRef, sha, complete: lmk.code === 0 }, null, 2)}\n`
             : `${shown}\n`,
         );
-        return 0;
+        // For scripts and agents, an incomplete PDF is not a success.
+        return values.json && lmk.code !== 0 ? 1 : 0;
       }
       lastError = `latexmk failed on ${diffTex} (see ${diffDir}/${jobname}.log)`;
       if (extra.length < 2)
