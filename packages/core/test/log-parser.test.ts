@@ -159,6 +159,57 @@ describe('errors', () => {
     });
   });
 
+  it('reads -file-line-error messages and file names with spaces', () => {
+    // Shape of a real TeX Live 2026 log for `\input{sub dir/intro}` with -file-line-error.
+    const parsed = parseLog(
+      log(
+        '(./main.tex',
+        'LaTeX Font Info:    ... okay on input line 2.',
+        ' (./sub dir/intro.tex',
+        'Overfull \\hbox (12.668pt too wide) in paragraph at lines 1--2',
+        '\\OT1/cmr/m/n/10 per-cal-ifrag-ilis-tic-ex-pi-ali-do-ciousxxxxxxxxxxxxxxxxxxxxxx',
+        ' []',
+        '',
+        '',
+        './sub dir/intro.tex:4: Undefined control sequence.',
+        'l.4 Bad \\anotherbad',
+        '                   {} here.',
+        'The control sequence at the end of the top line',
+        "of your error message was never \\def'ed.",
+        '',
+        ')',
+        '(/home/me/my paper/sections/b.tex',
+        'Overfull \\hbox (20.0pt too wide) in paragraph at lines 3--4',
+        '[]\\OT1/cmr/m/n/10 x',
+        '',
+        ')',
+        'C:/Users/Me/My Thesis/c.tex:7: Undefined control sequence.',
+        'l.7 \\bad',
+        '',
+      ),
+      { root: '/home/me/my paper' },
+    );
+    expect(parsed.errors.map((e) => [e.file, e.line, e.message])).toEqual([
+      ['sub dir/intro.tex', 4, 'Undefined control sequence.'],
+      ['C:/Users/Me/My Thesis/c.tex', 7, 'Undefined control sequence.'],
+    ]);
+    expect(parsed.warnings.filter((w) => w.kind === 'overfull').map((w) => w.file)).toEqual([
+      'sub dir/intro.tex',
+      'sections/b.tex',
+    ]);
+    expect(parsed.files).toContain('sub dir/intro.tex');
+    expect(parsed.files).not.toContain('sub');
+  });
+
+  it('does not take text after a spaceless file name as part of it', () => {
+    const parsed = parseLog(
+      log('(./main.tex (./a.tex) (./build note.tex', ...undefinedCs('x', 1), ')', ')'),
+    );
+    expect(parsed.files).toEqual(['main.tex', 'a.tex', 'build note.tex']);
+    const p2 = parseLog(log('(./main.tex [1] (./figs) text with a period.tex', ')'));
+    expect(p2.files).toEqual(['main.tex', 'figs']);
+  });
+
   it('joins package error continuation lines', () => {
     const parsed = parseLog(
       log(
@@ -311,6 +362,24 @@ describe('warnings and output', () => {
     );
     expect(parseLog(text).rerunNeeded.latex).toBe(true);
     expect(analyzeLog(text).output.problems[0]?.rule).toBe('rerun-needed');
+  });
+
+  it('keeps undefined references when the build failed and labels may have changed', () => {
+    const text = log(
+      '(./main.tex',
+      ...undefinedCs('foo', 3),
+      "LaTeX Warning: Reference `fig:missing' on page 1 undefined on input line 7.",
+      '',
+      'LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.',
+      '',
+      ')',
+    );
+    const { build, output } = analyzeLog(text);
+    expect(build.status).toBe('fail');
+    expect(output.problems.map((p) => p.rule)).toContain('undefined-reference');
+    expect(output.problems.find((p) => p.rule === 'undefined-reference')?.data).toMatchObject({
+      label: 'fig:missing',
+    });
   });
 
   it('collects biblatex continuation lines', () => {

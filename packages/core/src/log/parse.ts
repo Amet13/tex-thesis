@@ -8,7 +8,13 @@
  */
 
 import { LineReader, type LogicalLine } from './lines.js';
-import { isFileToken, normalizePath } from './paths.js';
+import {
+  isFileToken,
+  normalizePath,
+  SPACED_PATH_SOURCE,
+  spacedPathLength,
+  TEX_EXTENSION_GROUP,
+} from './paths.js';
 import type { LogError, LogWarning, LogWarningKind, ParsedLog } from './types.js';
 
 export interface ParseOptions {
@@ -17,7 +23,14 @@ export interface ParseOptions {
 }
 
 const ERROR_START = /^! (.*)$/;
-const FILE_LINE_ERROR = /^((?:[A-Za-z]:)?[^\s:()]*\.[A-Za-z0-9]+):(\d+): (.*)$/;
+/**
+ * `-file-line-error` messages: `./file.tex:12: message`. A path that starts like a path
+ * (`./`, `/`, `C:\`) and ends in a known TeX extension may contain spaces.
+ */
+const FILE_LINE_ERROR = new RegExp(
+  `^(${SPACED_PATH_SOURCE}|(?:[A-Za-z]:)?[^\\s:()]*\\.[A-Za-z0-9]+):(\\d+): (.*)$`,
+  'i',
+);
 const RUNAWAY = /^Runaway (?:argument|definition|preamble|text)\?$/;
 const CONTEXT_BEFORE = /^(?:<[^>]*>|\\\S|\s?\.\.\.)/;
 const SOURCE_LINE = /^l\.(\d+)(?: (.*))?$/;
@@ -33,6 +46,9 @@ const MISSING_CHAR =
   /^Missing character: There is no (.+?) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
 const NO_FILE = /^No file (.+?)\.$/;
 const MAX_ERROR_LINES = 60;
+/** Longest warning/error message text kept from continuation lines. */
+const MAX_MESSAGE_LENGTH = 4096;
+const HAS_TEX_EXTENSION = new RegExp(`\\.${TEX_EXTENSION_GROUP}$`, 'i');
 
 interface Header {
   source: string;
@@ -75,7 +91,7 @@ const PLAIN_MESSAGE =
   /^(?:Package: |File: |Document Class: |Language: |Dictionary: |\\[A-Za-z@]+=\\|\\openout\d+ = |\([\w@.-]+\) {2,})/;
 
 function joinParts(parts: string[]): string {
-  return parts.join(' ').replace(/\s+/g, ' ').trim();
+  return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, MAX_MESSAGE_LENGTH);
 }
 
 /** The stack of files TeX has open, as printed with `(` and `)`. */
@@ -117,6 +133,11 @@ class FileStack {
       end = close === -1 ? text.length : close + 1;
     } else {
       while (end < text.length && !/[\s()[\]{}<>"]/.test(text[end] ?? '')) end++;
+      // `(./sub dir/intro.tex`: the path continues past the space up to a known extension.
+      if (end < text.length && /\s/.test(text[end] ?? '') && !HAS_TEX_EXTENSION.test(text.slice(start, end))) {
+        const spaced = spacedPathLength(text, start);
+        if (spaced > end - start) end = start + spaced;
+      }
     }
     const token = text.slice(start, end);
     const unquoted = token.startsWith('"') ? token.slice(1, -1) : token;
@@ -233,14 +254,22 @@ class Parser {
     return false;
   }
 
-  /** Reads continuation lines matching `pattern`; returns their captured text. */
+  /**
+   * Reads continuation lines matching `pattern`; returns their captured text. All
+   * continuation lines are consumed, but the text kept is capped at
+   * MAX_MESSAGE_LENGTH characters (and the raw evidence at MAX_ERROR_LINES lines) so a
+   * pathological log cannot make later matching slow.
+   */
   private continuation(pattern: RegExp, raw: string[]): string[] {
     const parts: string[] = [];
+    let length = raw.reduce((n, r) => n + r.length, 0);
     while (!this.reader.done) {
       const peek = this.reader.peek() ?? '';
       if (!pattern.test(peek)) break;
       const next = this.reader.next().text;
-      raw.push(next);
+      if (length >= MAX_MESSAGE_LENGTH) continue;
+      length += next.length;
+      if (raw.length < MAX_ERROR_LINES) raw.push(next);
       parts.push(pattern.exec(next)?.[1] ?? next);
     }
     return parts;
@@ -408,7 +437,7 @@ export function classifyWarning(
   source: string,
   message: string,
 ): { kind: LogWarningKind; data: Record<string, unknown> } {
-  let m = /^(Citation|Reference) [`'](.+?)' on page (\d+) undefined/.exec(message);
+  let m = /^(Citation|Reference) [`']([^']+)' on page (\d+) undefined/.exec(message);
   if (m) {
     return m[1] === 'Citation'
       ? { kind: 'undefined-citation', data: { key: m[2] } }
@@ -417,7 +446,7 @@ export function classifyWarning(
   if (/^There were undefined (?:references|citations)/.test(message)) {
     return { kind: 'undefined-references-summary', data: {} };
   }
-  m = /^Label [`'](.+?)' multiply defined/.exec(message);
+  m = /^Label [`']([^']+)' multiply defined/.exec(message);
   if (m) return { kind: 'duplicate-label', data: { label: m[1] } };
   if (/^Label\(s\) may have changed/.test(message)) return { kind: 'labels-changed', data: {} };
   if (/Please \(re\)run Biber/i.test(message)) return { kind: 'rerun-biber', data: {} };
@@ -428,10 +457,12 @@ export function classifyWarning(
   if (/Rerun to get|Please rerun LaTeX|Rerun LaTeX|Temporary extra page added/i.test(message)) {
     return { kind: 'rerun-latex', data: {} };
   }
-  m = /^Font shape [`'](.+?)' undefined using [`'](.+?)' instead/.exec(message);
+  m = /^Font shape [`']([^']+)' undefined using [`']([^']+)' instead/.exec(message);
   if (m) return { kind: 'font-substitution', data: { from: m[1], to: m[2] } };
-  m = /^Token not allowed in a PDF string.*?removing [`'](.+?)'/.exec(message);
-  if (m) return { kind: 'pdf-string-token', data: { token: m[1] } };
+  if (message.startsWith('Token not allowed in a PDF string')) {
+    m = /removing [`']([^']+)'/.exec(message);
+    if (m) return { kind: 'pdf-string-token', data: { token: m[1] } };
+  }
   if (
     source === 'fontspec' &&
     /does not contain requested|not available|cannot be found/.test(message)

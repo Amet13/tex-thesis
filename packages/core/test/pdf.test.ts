@@ -148,11 +148,24 @@ describe('pdfOutputProblems on synthetic text', () => {
     'Sections ?? and 3',
     'shown in ??.',
     'see §??',
+    'See ?? and the table',
+    'as shown in ?? we see',
+    'Results in ?? show',
+    'compare ?? with the baseline',
   ])('flags "%s"', (text) => {
     expect(run(text).map((p) => p.rule)).toEqual(['pdf-unresolved-reference']);
   });
 
-  it.each(['const x = a ?? b;', 'regex a??b is lazy', 'what?? really', 'x ?? y'])(
+  it.each([
+    'const x = a ?? b;',
+    'regex a??b is lazy',
+    'what?? really',
+    'x ?? y',
+    'const opts = options ?? defaults;',
+    'really??? and then',
+    'See ??? and more',
+    'pattern a?? and b',
+  ])(
     'ignores "%s"',
     (text) => {
       expect(run(text)).toEqual([]);

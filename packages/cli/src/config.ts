@@ -10,6 +10,7 @@ import {
 } from '@overfull/core';
 import { parse as parseYaml } from 'yaml';
 import { UsageError } from './io.js';
+import { safeImage, safeJobname, safeRelPath } from './safety.js';
 
 export const DEFAULT_IMAGE = 'ghcr.io/amet13/overfull:0.1';
 export const CONFIG_FILE = 'overfull.yml';
@@ -28,8 +29,43 @@ export interface Config {
   /** Inline venue overrides from overfull.yml (re-applied when `--profile` changes the base). */
   venue: InlineProfile;
   checks: CheckId[];
-  references: { mailto?: string; ignore: string[] };
-  build: { engine: Engine; image: string };
+  references: {
+    mailto?: string;
+    ignore: string[];
+    /** Where reference lookups are cached: the user cache dir (default) or `.overfull/cache`. */
+    cache: 'user' | 'project';
+    /** Require every entry to carry `x-overfull = {cite …}` provenance. */
+    requireCite: boolean;
+  };
+  build: {
+    engine: Engine;
+    image: string;
+    /** latexmk output directory, relative to root: build.outDir, else the .latexmkrc $out_dir, else '.'. */
+    outDir: string;
+    /** latexmk aux directory (the .latexmkrc $aux_dir, else outDir). */
+    auxDir: string;
+    /** True when outDir comes from overfull.yml, so `overfull build` passes -outdir/-auxdir. */
+    outDirFromConfig: boolean;
+  };
+}
+
+/** `$out_dir` / `$aux_dir` set in the project's .latexmkrc (a simple assignment only). */
+export function latexmkrcDirs(root: string): { outDir?: string; auxDir?: string } {
+  const out: { outDir?: string; auxDir?: string } = {};
+  for (const name of ['.latexmkrc', 'latexmkrc']) {
+    const p = join(root, name);
+    if (!existsSync(p)) continue;
+    const text = readFileSync(p, 'utf8').replace(/(^|[^\\$])#.*$/gm, '$1');
+    const o = /\$out_dir\s*=\s*['"]([^'"]+)['"]/.exec(text);
+    const a = /\$aux_dir\s*=\s*['"]([^'"]+)['"]/.exec(text);
+    // Only plain relative directories are used; anything else (variables, absolute paths) is ignored.
+    const plain = (d: string | undefined) =>
+      d !== undefined && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith('/') && !d.startsWith('-') && !d.split('/').includes('..');
+    if (plain(o?.[1])) out.outDir = o?.[1] as string;
+    if (plain(a?.[1])) out.auxDir = a?.[1] as string;
+    break;
+  }
+  return out;
 }
 
 const TOP_KEYS = ['main', 'jobname', 'bib', 'profile', 'checks', 'references', 'venue', 'build'];
@@ -218,10 +254,12 @@ export function loadConfig(
   const f = file ?? join(root, CONFIG_FILE);
   if (raw.main !== undefined && typeof raw.main !== 'string')
     throw new ConfigError(f, '`main` must be a file name');
-  const main = (raw.main as string | undefined) ?? 'main.tex';
+  const main = safeRelPath((raw.main as string | undefined) ?? 'main.tex');
   if (raw.jobname !== undefined && typeof raw.jobname !== 'string')
     throw new ConfigError(f, '`jobname` must be a string');
-  const jobname = (raw.jobname as string | undefined) ?? basename(main).replace(/\.tex$/i, '');
+  const jobname = safeJobname(
+    (raw.jobname as string | undefined) ?? basename(main).replace(/\.tex$/i, ''),
+  );
   const bib = raw.bib !== undefined ? stringList(raw.bib, 'bib', f) : discoverBib(root, main);
 
   let inline: InlineProfile = {};
@@ -242,18 +280,40 @@ export function loadConfig(
 
   const refs = raw.references ?? {};
   if (!isObj(refs)) throw new ConfigError(f, '`references` must be a mapping');
-  checkKeys(refs, ['mailto', 'ignore'], 'references.', f);
+  checkKeys(refs, ['mailto', 'ignore', 'cache', 'requireCite'], 'references.', f);
+  const cache = refs.cache ?? 'user';
+  if (cache !== 'user' && cache !== 'project')
+    throw new ConfigError(f, '`references.cache` must be user or project');
+  if (refs.requireCite !== undefined && typeof refs.requireCite !== 'boolean')
+    throw new ConfigError(f, '`references.requireCite` must be true or false');
+  const requireCite = refs.requireCite === true;
   const mailto = (typeof refs.mailto === 'string' ? refs.mailto : undefined) ?? env.OVERFULL_MAILTO;
   const ignore = refs.ignore !== undefined ? stringList(refs.ignore, 'references.ignore', f) : [];
 
   const build = raw.build ?? {};
   if (!isObj(build)) throw new ConfigError(f, '`build` must be a mapping');
-  checkKeys(build, ['engine', 'image'], 'build.', f);
+  checkKeys(build, ['engine', 'image', 'outDir'], 'build.', f);
   const engine = (build.engine ?? 'auto') as Engine;
   if (!['auto', 'local', 'docker'].includes(engine))
     throw new ConfigError(f, '`build.engine` must be auto, local or docker');
-  const image =
-    env.OVERFULL_IMAGE || (typeof build.image === 'string' ? build.image : DEFAULT_IMAGE);
+  if (build.image !== undefined && typeof build.image !== 'string')
+    throw new ConfigError(f, '`build.image` must be a Docker image name');
+  const image = env.OVERFULL_IMAGE
+    ? safeImage(env.OVERFULL_IMAGE, 'OVERFULL_IMAGE')
+    : build.image
+      ? safeImage(build.image as string, 'build.image in overfull.yml')
+      : DEFAULT_IMAGE;
+  if (build.outDir !== undefined && typeof build.outDir !== 'string')
+    throw new ConfigError(f, '`build.outDir` must be a directory name');
+  const rc = latexmkrcDirs(root);
+  const norm = (d: string) => (d === '.' || d === './' ? '.' : d.replace(/^\.\//, '').replace(/\/+$/, ''));
+  const outDir = norm(
+    safeRelPath((build.outDir as string | undefined) ?? rc.outDir ?? '.', 'output directory'),
+  );
+  const auxDir =
+    build.outDir !== undefined
+      ? outDir
+      : norm(safeRelPath(rc.auxDir ?? outDir, 'aux directory'));
 
   const config: Config = {
     root,
@@ -263,8 +323,8 @@ export function loadConfig(
     profile,
     venue: inline,
     checks,
-    references: mailto ? { mailto, ignore } : { ignore },
-    build: { engine, image },
+    references: { ...(mailto ? { mailto } : {}), ignore, cache, requireCite },
+    build: { engine, image, outDir, auxDir, outDirFromConfig: build.outDir !== undefined },
   };
   if (file) config.file = file;
   return config;

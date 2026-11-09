@@ -7,6 +7,8 @@
  * characters, and output written from Lua (luaotfload) wraps at 80.
  */
 
+import { SPACED_PATH_SOURCE } from './paths.js';
+
 export const MAX_PRINT_LINE = 79;
 
 export type EngineFamily = 'pdftex' | 'luatex' | 'xetex' | 'unknown';
@@ -14,6 +16,9 @@ export type EngineFamily = 'pdftex' | 'luatex' | 'xetex' | 'unknown';
 /** Lines that always start on a fresh line in TeX output, so they never continue a wrapped line. */
 const STARTS_FRESH =
   /^(?:! |[^\s:()]+\.[A-Za-z0-9]+:\d+: |(?:LaTeX|LaTeX3|Package|Class|Module) .*?(?:Warning|Error|Info)|LaTeX Font |Package: |File: |Document Class: |Overfull \\|Underfull \\|Missing character: |Runaway |\([\w@.-]+\) {2,}|l\.\d+ |No file |Output written on |No pages of output|\\[A-Za-z@]+=\\)/;
+
+/** A `-file-line-error` line whose path contains spaces (`./sub dir/a.tex:4: …`). */
+const SPACED_FILE_LINE = new RegExp(`^${SPACED_PATH_SOURCE}:\\d+: `, 'i');
 
 export function engineFamily(firstLine: string): EngineFamily {
   if (/^This is (?:Lua(?:HB|HBJIT|JIT)?TeX)/.test(firstLine)) return 'luatex';
@@ -100,7 +105,7 @@ export class LineReader {
         this.index++;
         break;
       }
-      if (STARTS_FRESH.test(following)) break;
+      if (STARTS_FRESH.test(following) || SPACED_FILE_LINE.test(following)) break;
       text += following;
       segment = following;
       this.index++;

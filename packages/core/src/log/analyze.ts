@@ -536,8 +536,12 @@ function warningProblems(parsed: ParsedLog, buildFailed: boolean, thresholdPt: n
   let references = w.get('undefined-reference');
   if (state.references) {
     const raw = [...w.get('labels-changed'), ...w.get('rerun-latex')].map((x) => x.raw);
-    if (!buildFailed) problems.push(rerunProblem(references, raw));
-    references = [];
+    // The rerun problem covers the undefined references; without it (failed build) they
+    // must still be reported, or they would vanish from the output check.
+    if (!buildFailed) {
+      problems.push(rerunProblem(references, raw));
+      references = [];
+    }
   }
   problems.push(...undefinedReferences(references));
 

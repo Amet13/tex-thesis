@@ -55,6 +55,35 @@ const CONTEXT_REF = new RegExp(
 );
 /** "(??)" alone (equation refs) or a standalone "??" followed by punctuation or line end. */
 const STANDALONE_REF = /(?:\(\?\?\))|(?:(?<=^|[\s ([])\?\?(?=[.,;:)\]]|\s*$))/gm;
+/** Every "??" not part of a longer run of question marks. */
+const BARE_QQ = /(?<!\?)\?\?(?!\?)/g;
+/** A prose word right before a reference: "See ??", "in ??", "and ??". */
+const PROSE_BEFORE =
+  /(?:^|[^\p{L}\p{N}_])(?:see|in|of|from|by|and|or|to|cf\.|with|on|under|at|than|like|as|per|also)[\s\u00a0~]{1,3}$/iu;
+/** A prose word right after a reference: "?? and", "?? shows". */
+const PROSE_AFTER =
+  /^[\s\u00a0]{1,3}(?:and|or|shows?|for|to|in|is|are|was|were|we|that|which|with|of|on|gives?|illustrates?|lists?|summari[sz]es?|presents?|describes?|compares?|reports?|depicts?)(?![\p{L}\p{N}_])/iu;
+
+/**
+ * A standalone "??" in running prose ("See ?? and the table"): whitespace or punctuation
+ * on both sides and a prose word before or after it. Code such as `a ?? b`, `a??b` or
+ * `options ?? defaults` is not matched.
+ */
+function proseHits(text: string): Hit[] {
+  const hits: Hit[] = [];
+  BARE_QQ.lastIndex = 0;
+  for (let m = BARE_QQ.exec(text); m; m = BARE_QQ.exec(text)) {
+    const i = m.index;
+    const prev = text[i - 1] ?? ' ';
+    const next = text[i + 2] ?? ' ';
+    if (!/[\s\u00a0~([]/.test(prev) || !/[\s\u00a0.,;:)\]]/.test(next)) continue;
+    const before = text.slice(Math.max(0, i - 12), i);
+    const after = text.slice(i + 2, i + 18);
+    if (PROSE_BEFORE.test(before) || PROSE_AFTER.test(after)) hits.push({ index: i, length: 2 });
+  }
+  return hits;
+}
+
 /** "[?]" and "[?, ?]" — numeric citations that could not be resolved. */
 const UNRESOLVED_CITE = /\[\?(?:\s*[,;]\s*\?)*\]/g;
 
@@ -83,7 +112,9 @@ function refHits(text: string): Hit[] {
   const ctx = findAll(text, CONTEXT_REF);
   const covered = (i: number) => ctx.some((h) => i >= h.index && i < h.index + h.length);
   const alone = findAll(text, STANDALONE_REF).filter((h) => !covered(h.index + h.length - 1));
-  return [...ctx, ...alone].sort((a, b) => a.index - b.index);
+  const seen = (i: number) => covered(i + 1) || alone.some((h) => i >= h.index && i < h.index + h.length);
+  const prose = proseHits(text).filter((h) => !seen(h.index));
+  return [...ctx, ...alone, ...prose].sort((a, b) => a.index - b.index);
 }
 
 /**

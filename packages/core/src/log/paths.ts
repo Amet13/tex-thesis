@@ -15,7 +15,7 @@ const TEX_EXTENSIONS = new RegExp(`\\.${TEX_EXTENSION_GROUP}$`, 'i');
  * `../`, `/`, `~/`, `C:\`) and ends in a known TeX extension. Used to take the whole of
  * `./sub dir/intro.tex` where a whitespace-delimited token would stop at `./sub`.
  */
-export const SPACED_PATH_SOURCE = `(?:\\.{1,2}/|/|~/|[A-Za-z]:[\\\\/])[^:()\\n"]{0,1024}?\\.${TEX_EXTENSION_GROUP}`;
+export const SPACED_PATH_SOURCE = `(?:\\.{1,2}/|/|~/|[A-Za-z]:[\\\\/])[^:()[\\]{}<>\\n"]{0,1024}?\\.${TEX_EXTENSION_GROUP}`;
 
 /** Length of a spaced path starting at `text[start]`, or 0 when there is none. */
 export function spacedPathLength(text: string, start: number): number {
