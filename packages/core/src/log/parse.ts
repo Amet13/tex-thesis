@@ -43,7 +43,7 @@ const OUTPUT = /^Output written on (.+?) \((\d+) pages?(?:, (\d+) bytes)?\)\.?$/
 const BOX =
   /^(Overfull|Underfull) \\([hv]box) \((?:(-?[\d.]+)pt too (?:wide|high)|badness (\d+))\)(.*)$/;
 const MISSING_CHAR =
-  /^Missing character: There is no (.+?) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
+  /^Missing character: There is no (\S+) (?:\((U\+[0-9A-Fa-f]+)\) )?in font (.*?)!?$/;
 const NO_FILE = /^No file (.+?)\.$/;
 const MAX_ERROR_LINES = 60;
 /** Longest warning/error message text kept from continuation lines. */
@@ -278,7 +278,9 @@ class Parser {
   private error(first: LogicalLine): void {
     const raw = [first.text];
     const fle = this.fileLineError(first.text);
-    let message = fle ? (fle[3] ?? '') : (ERROR_START.exec(first.text)?.[1] ?? '').trim();
+    let message = (
+      fle ? (fle[3] ?? '') : (ERROR_START.exec(first.text)?.[1] ?? '').trim()
+    ).slice(0, MAX_MESSAGE_LENGTH);
     const pkg = /^(?:Package|Class|Module) (\S+) Error:/.exec(message);
     if (pkg) {
       const pattern = new RegExp(`^\\(${escapeRegExp(pkg[1] ?? '')}\\)\\s*(.*)$`);

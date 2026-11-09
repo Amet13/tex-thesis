@@ -840,7 +840,7 @@ const EXPLAINERS: [RegExp, Explainer][] = [
     explainExtraBrace,
   ],
   [
-    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)\s*(?: was complete)?\s*\.?\s*$/,
+    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)(?:\s+was complete)?(?:\s*\.)?\s*$/,
     explainRunaway,
   ],
   [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
@@ -896,7 +896,7 @@ const EXPLAINERS: [RegExp, Explainer][] = [
     ),
   ],
   [
-    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: .*?font "([^"]+)".*not found/,
+    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: [^"]*?font "([^"]+)"[^\n]*?not found/,
     explainFontNotFound,
   ],
   [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, explainTfmFont],

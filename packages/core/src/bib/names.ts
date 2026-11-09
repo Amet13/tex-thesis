@@ -8,8 +8,15 @@ export interface PersonName {
   corporate: boolean;
 }
 
-/** Splits a string on a separator regex, ignoring matches inside braces. */
+/**
+ * Splits a string on a separator regex (written anchored, `^…`), ignoring matches inside
+ * braces. Linear time: the separator is tried with a sticky regex (no slicing), and a
+ * separator that starts with whitespace is only tried at the start of a whitespace run
+ * (a match starting inside the run would have matched at its start).
+ */
 function splitTopLevel(s: string, sep: RegExp): string[] {
+  const sticky = new RegExp(sep.source.replace(/^\^/, ''), `${sep.flags.replace(/[gy]/g, '')}y`);
+  const leadingSpace = /^\^?\\s/.test(sep.source);
   const parts: string[] = [];
   let depth = 0;
   let last = 0;
@@ -18,9 +25,10 @@ function splitTopLevel(s: string, sep: RegExp): string[] {
     if (c === '{') depth++;
     else if (c === '}') depth--;
     else if (depth === 0) {
-      sep.lastIndex = 0;
-      const m = sep.exec(s.slice(i));
-      if (m && m.index === 0) {
+      if (leadingSpace && i > 0 && /\s/.test(s[i - 1] ?? '') && /\s/.test(c ?? '')) continue;
+      sticky.lastIndex = i;
+      const m = sticky.exec(s);
+      if (m) {
         parts.push(s.slice(last, i));
         i += m[0].length - 1;
         last = i + 1;
@@ -72,5 +80,5 @@ export function parseNames(field: string | undefined): PersonName[] {
 
 /** True when the list ends with `and others` (the record may have more authors). */
 export function hasOthers(field: string | undefined): boolean {
-  return !!field && /\s+and\s+others\s*$/i.test(field);
+  return !!field && /(?:^|\s)and\s+others$/i.test(field.trimEnd());
 }

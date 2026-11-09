@@ -1,7 +1,8 @@
-import { allRules, getRule, type RuleInfo } from '@overfull/core';
+import type { RuleInfo } from '@overfull/core';
 import { parse } from '../args.js';
 import { closest } from '../config.js';
 import { type Io, UsageError, useColor } from '../io.js';
+import { everyRule, findRule } from '../rules.js';
 
 export const explainHelp = `Usage: overfull explain <rule> [--json]
 
@@ -40,7 +41,7 @@ export async function explainCommand(args: string[], io: Io): Promise<number> {
     return 0;
   }
   if (values.list) {
-    const rules = allRules();
+    const rules = everyRule();
     if (values.json) io.stdout(`${JSON.stringify(rules, null, 2)}\n`);
     else {
       const w = Math.max(...rules.map((r) => r.id.length)) + 2;
@@ -55,9 +56,9 @@ export async function explainCommand(args: string[], io: Io): Promise<number> {
     throw new UsageError(
       'Give a rule id, e.g. `overfull explain undefined-control-sequence` (or --list).',
     );
-  const rule = getRule(id);
+  const rule = findRule(id);
   if (!rule) {
-    const ids = allRules().map((r) => r.id);
+    const ids = everyRule().map((r) => r.id);
     const near = new Set<string>();
     const best = closest(id, ids);
     if (best) near.add(best);

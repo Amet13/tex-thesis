@@ -47,11 +47,40 @@ export interface CommandUse {
   arg: string;
 }
 
-function lineAt(s: string, index: number): number {
+/** Line numbers for increasing offsets in one string, counted incrementally (linear overall). */
+function lineCounter(s: string): (index: number) => number {
+  let pos = 0;
   let line = 1;
-  for (let i = 0; i < index; i++) if (s.charCodeAt(i) === 10) line++;
-  return line;
+  return (index: number) => {
+    if (index < pos) {
+      pos = 0;
+      line = 1;
+    }
+    for (; pos < index; pos++) if (s.charCodeAt(pos) === 10) line++;
+    return line;
+  };
 }
+
+/** Closing-brace index for every `{` (or -1), computed in one pass with the rules of `readGroup`. */
+function braceMatches(s: string): Int32Array {
+  const close = new Int32Array(s.length).fill(-1);
+  const stack: number[] = [];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 92 /* \\ */) {
+      i++;
+    } else if (c === 123 /* { */) {
+      stack.push(i);
+    } else if (c === 125 /* } */) {
+      const open = stack.pop();
+      if (open !== undefined) close[open] = i;
+    }
+  }
+  return close;
+}
+
+/** Longest optional `[...]` argument looked at, so unclosed brackets cannot make a scan quadratic. */
+const MAX_OPTIONAL = 4096;
 
 /**
  * Finds uses of `\name[opt]{arg}` (optionally starred) in comment-stripped source.
@@ -61,25 +90,30 @@ export function findCommands(files: TexFile[], names: string[]): CommandUse[] {
   const re = new RegExp(`\\\\(${names.join('|')})\\*?(?![A-Za-z@])`, 'g');
   for (const f of files) {
     const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    let braces: Int32Array | undefined;
     re.lastIndex = 0;
     for (let m = re.exec(src); m; m = re.exec(src)) {
       let i = m.index + m[0].length;
       while (src[i] === ' ' || src[i] === '\n') i++;
       let optional: string | undefined;
       if (src[i] === '[') {
-        const close = src.indexOf(']', i);
+        let close = src.slice(i, i + MAX_OPTIONAL).indexOf(']');
         if (close < 0) continue;
+        close += i;
         optional = src.slice(i + 1, close);
         i = close + 1;
         while (src[i] === ' ' || src[i] === '\n') i++;
       }
-      const g = readGroup(src, i);
-      if (!g) continue;
+      if (src[i] !== '{') continue;
+      braces ??= braceMatches(src);
+      const end = braces[i] ?? -1;
+      if (end < 0) continue;
       const use: CommandUse = {
         file: f.path,
-        line: lineAt(src, m.index),
+        line: lineAt(m.index),
         name: m[1] as string,
-        arg: g.value,
+        arg: src.slice(i + 1, end),
       };
       if (optional !== undefined) use.optional = optional;
       out.push(use);
@@ -98,8 +132,10 @@ export function grepTex(
   const g = new RegExp(re.source, flags);
   for (const f of files) {
     const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    g.lastIndex = 0;
     for (let m = g.exec(src); m; m = g.exec(src)) {
-      out.push({ file: f.path, line: lineAt(src, m.index), match: m[0] });
+      out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
       if (m[0].length === 0) g.lastIndex++;
     }
   }

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 import { extractPdfFacts, type PdfFacts, type PdfjsLike, parsePdffonts } from '@overfull/core';
-import { run, which } from './tools.js';
+import { dockerRunArgs, run, which } from './tools.js';
 
 let pdfjsPromise: Promise<PdfjsLike> | undefined;
 
@@ -33,12 +34,24 @@ export function loadPdfjs(): Promise<PdfjsLike> {
   return pdfjsPromise;
 }
 
-/** Facts for a PDF file, with fonts from `pdffonts` when poppler is installed. */
-export async function readPdfFacts(path: string): Promise<PdfFacts> {
+/**
+ * Facts for a PDF file, with fonts from `pdffonts` when poppler is installed
+ * (or, with `docker`, from pdffonts in the Overfull image).
+ */
+export async function readPdfFacts(
+  path: string,
+  opts: { docker?: { image: string; root: string } } = {},
+): Promise<PdfFacts> {
   const data = new Uint8Array(readFileSync(path));
   const facts = await extractPdfFacts(data, await loadPdfjs());
   if (which('pdffonts')) {
     const r = await run('pdffonts', [path], { timeoutMs: 30000 });
+    if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
+  } else if (opts.docker) {
+    const rel = `./${relative(opts.docker.root, path).split('\\').join('/')}`;
+    const r = await run('docker', dockerRunArgs(opts.docker.image, opts.docker.root, ['pdffonts', rel]), {
+      timeoutMs: 60000,
+    });
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   }
   return facts;

@@ -33,8 +33,14 @@ export async function runVeraPdf(
     if (local) {
       // On Windows veraPDF is a .bat wrapper, which needs a shell; the
       // arguments are fixed apart from the (quoted) PDF path.
+      let quoted: string[] = [];
+      try {
+        if (win) quoted = [...args, pdf].map(quoteWindowsArg);
+      } catch (err) {
+        return { compliant: false, failures: [], error: String(err) } satisfies VeraPdfResult;
+      }
       r = win
-        ? await run('verapdf', [...args, pdf].map(quoteWindowsArg), {
+        ? await run('verapdf', quoted, {
             timeoutMs: 180000,
             shell: true,
           })
