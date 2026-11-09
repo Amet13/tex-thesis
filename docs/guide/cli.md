@@ -67,7 +67,7 @@ templates do), `latexmk` follows it.
 | `--config file` | Config file (default `overfull.yml`). |
 
 Without `--image`, the image is `$OVERFULL_IMAGE` if set, else `build.image`
-from `overfull.yml`, else `ghcr.io/amet13/overfull:0.1`. Exit codes: 0 built,
+from `overfull.yml`, else `ghcr.io/amet13/overfull:3`. Exit codes: 0 built,
 1 build failed, 2 usage error.
 
 ## check
@@ -230,7 +230,7 @@ added, never renamed.
 ```json
 {
   "tool": "overfull",
-  "version": "0.1.0",
+  "version": "3.0.0",
   "target": "paper.pdf",
   "status": "fail",
   "checks": [

@@ -28,8 +28,9 @@ accessibility (`make-accessible`), page limits (`fit-page-limit`), arXiv
 
 ## Setting up each agent
 
-All of them need the `overfull` command, either from npm (`npx overfull`) or
-inside the Dev Container. Building also needs Docker or a local TeX Live.
+All of them need the `overfull` command: from a clone today, from the release
+download or the Docker image after v3.0.0, or inside the Dev Container (see
+[Install](./install.md)). Building also needs Docker or a local TeX Live.
 
 **Claude Code** reads `CLAUDE.md`, which imports `AGENTS.md`, and loads skills
 from `.claude/skills/`. Start it in the project folder with `claude`.

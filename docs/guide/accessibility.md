@@ -96,8 +96,8 @@ on the `PATH` (PDF/UA-2, falling back to PDF/UA-1 for older PDFs) unless you pas
 `verapdf-<clause>` rules, for example `verapdf-8-2-5-26`.
 `overfull explain <rule>` gives a plain-language explanation.
 
-Without veraPDF (for example in the browser check or with a plain `npx overfull`
-install), Overfull still checks the basics: tagging (`pdf-not-tagged`),
+Without veraPDF (for example in the browser check, or with the CLI on a machine
+where veraPDF is not installed), Overfull still checks the basics: tagging (`pdf-not-tagged`),
 language (`pdf-missing-language`), title (`pdf-missing-title`), figures without
 alt text (`figure-missing-alt`), embedded fonts (`font-not-embedded`) and the
 PDF/UA claim (`pdfua-not-claimed`). It reports `verapdf-not-run` as `info` so you

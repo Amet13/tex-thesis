@@ -1,5 +1,11 @@
 % preamble/titlepage.tex — \thesistitlepage, built from metadata.tex.
 % Adapt the layout to your university's rules; keep the text in metadata.tex.
+%
+% Tagging: the title paragraph is tagged "Title" (PDF 2.0 structure type),
+% so screen readers announce it as the document title.
+% Page numbers: the title page is page 1 but shows no number; the next page
+% is page 2. (The titlepage environment would otherwise number the next page
+% 1 again: two pages with the same number and the same link target.)
 
 \NewDocumentCommand\thesistitlepage{}{%
   \begin{titlepage}
@@ -7,7 +13,7 @@
     {\MakeUppercase{\ThesisInstitution}\par}
     {\ThesisDepartment\par}
     \vspace*{\fill}
-    {\Large\bfseries \ThesisTitle\par}
+    {\Large\bfseries\tagpdfsetup{para/tag=Title}\ThesisTitle\par}
     \vspace{1.5em}
     {\ThesisSubtitle\par}
     \vspace*{\fill}
@@ -18,4 +24,5 @@
     \vspace{2em}
     {\ThesisCity, \ThesisYear\par}
   \end{titlepage}
+  \setcounter{page}{2}%
 }

@@ -36,8 +36,8 @@ Overleaf's Git integration and GitHub sync are available on paid plans.
    and bibliography, then build and check:
 
    ```sh
-   npx overfull build --engine docker
-   npx overfull check
+   overfull build --engine docker
+   overfull check
    ```
 
 4. Fix problems in Overleaf or locally. If you fix them locally, `git push`
@@ -56,7 +56,7 @@ commands on the extracted folder.
 2. Start from a template and copy your content in, or keep your own structure:
 
    ```sh
-   npx overfull init paper my-paper
+   overfull init paper my-paper
    ```
 
    Copy sections into `sections/` (or `chapters/`), images into `figures/`, and

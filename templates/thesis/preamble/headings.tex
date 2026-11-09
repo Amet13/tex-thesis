@@ -1,20 +1,27 @@
 % preamble/headings.tex — section headings and table of contents.
 %
 % Thesis look: numbered, centred, UPPERCASE section headings in body-size
-% type; left-aligned numbered subsections. titlesec is only partly supported
-% by the tagging code, so we use its basic \titleformat interface only
-% (the LaTeX tagging code emulates it) and avoid the "explicit" option.
-
-\usepackage{titlesec}
-\titleformat{\section}
-  {\normalfont\normalsize\bfseries\filcenter}{\thesection}{1em}{\MakeUppercase}
-\titleformat{\subsection}
-  {\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
-\titleformat{\subsubsection}
-  {\normalfont\normalsize\itshape}{\thesubsubsection}{1em}{}
-\titlespacing*{\section}{0pt}{0pt}{1.5em}
-\titlespacing*{\subsection}{\parindent}{1em}{0.5em}
-\titlespacing*{\subsubsection}{\parindent}{1em}{0.5em}
+% type; numbered subsections indented like a paragraph.
+%
+% The headings use the kernel's \@startsection, which the LaTeX tagging code
+% understands fully: sections become H1/H2/H3 inside a Sect structure. (The
+% titlesec package is only emulated by the tagging code and its headings end
+% up tagged as plain paragraphs.) The UPPERCASE look is a font feature, not
+% \MakeUppercase, so the table of contents and the PDF bookmarks keep the
+% normal spelling and screen readers do not spell the title letter by letter.
+% \@startsection{name}{level}{indent}{space before}{space after}{style};
+% a negative "space before" means: no paragraph indent after the heading.
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+  {-1sp}{1.5em}%
+  {\normalfont\normalsize\bfseries\centering\addfontfeatures{Letters=Uppercase}}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\parindent}%
+  {-1em}{0.5em}%
+  {\normalfont\normalsize\bfseries}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\parindent}%
+  {-1em}{0.5em}%
+  {\normalfont\normalsize\itshape}}
+\makeatother
 
 % Every top-level section starts on a new page.
 \AddToHook{cmd/section/before}{\clearpage}
@@ -30,7 +37,8 @@
 
 % Table of contents with dotted leaders also for sections (tocloft is
 % tagging-compatible). [titles] keeps the standard \section* heading for the
-% "Contents" title, so it gets the same centred uppercase look as above.
+% "Contents" title, so it gets the same centred uppercase look and the same
+% H1 tag as the other headings.
 \usepackage[titles]{tocloft}
 \renewcommand{\cftsecfont}{\normalfont}
 \renewcommand{\cftsecpagefont}{\normalfont}

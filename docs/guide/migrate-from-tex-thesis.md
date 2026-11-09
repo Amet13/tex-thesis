@@ -47,13 +47,13 @@ The quickest path. Keep your files and add Overfull on top.
 3. Run the checks:
 
    ```sh
-   npx overfull check
+   overfull check
    ```
 
    Or with Docker only:
 
    ```sh
-   docker run --rm -v "$PWD":/work -w /work ghcr.io/amet13/overfull:0.1 overfull check
+   docker run --rm -v "$PWD":/work -w /work ghcr.io/amet13/overfull:3 overfull check
    ```
 
 The accessibility check will fail, because the old template does not tag the
@@ -65,7 +65,7 @@ your `main.tex` yourself (see [Accessibility](./accessibility.md)).
 1. Create the new project next to the old one:
 
    ```sh
-   npx overfull init thesis my-thesis
+   overfull init thesis my-thesis
    ```
 
 2. Copy your content:
@@ -89,7 +89,7 @@ your `main.tex` yourself (see [Accessibility](./accessibility.md)).
 
 7. Fix what the report shows. Packages you added yourself may need updates to
    work with tagging.
-8. Slides: create them separately with `npx overfull init slides my-slides`.
+8. Slides: create them separately with `overfull init slides my-slides`.
 
 ## Linting and formatting
 

@@ -1,13 +1,13 @@
 ---
 title: GitHub Action
-description: Run Overfull checks in GitHub Actions with amet13/overfull@v1, its inputs and outputs, and how it differs from the template workflow that builds in Docker.
+description: Run Overfull checks in GitHub Actions with amet13/overfull@v3, its inputs and outputs, and how it differs from the template workflow that builds in Docker.
 order: 42
 section: Reference
 ---
 
 There are two ways to run Overfull in GitHub Actions.
 
-- **The Action** (`amet13/overfull@v1`) checks files your workflow already
+- **The Action** (`amet13/overfull@v3`) checks files your workflow already
   produced: the log, the PDF, the bibliography. Use it to add Overfull to an
   existing LaTeX workflow.
 - **The template workflow** (`.github/workflows/paper.yml` in each template)
@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # ... your existing step that builds main.pdf and main.log ...
-      - uses: amet13/overfull@v1
+      - uses: amet13/overfull@v3
         id: overfull
         with:
           pdf: main.pdf
@@ -101,7 +101,7 @@ Set `mailto` so CrossRef requests go to its polite pool. To add OpenAlex title
 search, pass the key as an environment variable on the step:
 
 ```yaml
-      - uses: amet13/overfull@v1
+      - uses: amet13/overfull@v3
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
 ```

@@ -27,7 +27,7 @@ venue:
   disclosure: required
 build:
   engine: auto            # local latexmk if present, else Docker
-  image: ghcr.io/amet13/overfull:0.1
+  image: ghcr.io/amet13/overfull:3
 ```
 
 ## Top level
@@ -80,7 +80,7 @@ as a mapping.
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `engine` | `auto` \| `local` \| `docker` | `auto` | How `overfull build` and `overfull diff` run their tools. `auto` uses a local `latexmk` if found, else Docker. |
-| `image` | string | `ghcr.io/amet13/overfull:0.1` | Docker image. Pin it to keep builds reproducible. The `OVERFULL_IMAGE` environment variable overrides it, and `overfull build --image` overrides both. |
+| `image` | string | `ghcr.io/amet13/overfull:3` | Docker image. Pin it to keep builds reproducible. The `OVERFULL_IMAGE` environment variable overrides it, and `overfull build --image` overrides both. |
 | `outDir` | path | the `$out_dir` of a `.latexmkrc`, else `.` | Where latexmk writes the PDF, log and aux files. `overfull build` passes it as `-outdir`/`-auxdir`, and `overfull check` reads from it. |
 
 `main`, `jobname` and `outDir` may contain only letters, digits, `.`, `_`, `-`

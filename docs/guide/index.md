@@ -1,5 +1,5 @@
 ---
-title: Overfull
+title: Guide
 description: A preflight kit for LaTeX papers and theses. It checks the build, the PDF, the references, accessibility and venue rules, for authors working by hand or with an AI agent.
 order: 1
 section: Start
@@ -16,7 +16,14 @@ answers questions that are tedious to check by hand and easy to get wrong:
   arXiv packaging?
 
 It comes as a command-line tool (`overfull`), a Docker image with TeX Live,
-templates for a thesis, a paper and slides, and a GitHub Action.
+templates for a thesis, a paper and slides, a GitHub Action, and a
+[browser check](https://amet13.github.io/overfull/check/) for a log, `.bib` or
+PDF you already have.
+
+> **Pre-release.** v3.0.0 is not released yet: the Docker image
+> `ghcr.io/amet13/overfull:3`, the release download and the Action's `@v3` tag
+> do not exist yet. Until then, run Overfull from a clone, as shown below. The
+> browser check works today.
 
 ## Two ways in
 
@@ -39,12 +46,29 @@ references or summarise papers. It adds information neither you nor a model has
 on its own: whether a DOI resolves, what is actually in the PDF, what the venue
 requires. You remain responsible for every sentence and every reference.
 
-## Start in 60 seconds
+## Start in five minutes
 
-With Node.js 22.12 or newer and Docker installed:
+The first build downloads or builds a Docker image of about 3 GB; after that,
+builds take seconds.
+
+**Today, from a clone.** With Git, Node.js 22.12+, pnpm and Docker:
 
 ```sh
-npx overfull init paper my-paper
+git clone https://github.com/amet13/overfull.git
+cd overfull
+pnpm install && pnpm build
+make image IMAGE=overfull:dev
+node packages/cli/dist/bin.js init paper ../my-paper
+cd ../my-paper
+make build IMAGE=overfull:dev
+make check IMAGE=overfull:dev
+```
+
+**After v3.0.0**, with the `overfull` command from the release download (or
+only Docker, see [Install](./install.md)):
+
+```sh
+overfull init paper my-paper
 cd my-paper
 make build
 make check
@@ -66,12 +90,12 @@ overfull paper.pdf  WARN
   ! sections/method.tex:31  Text sticks 14.2pt into the margin (lines 31–33)  overfull-box
 ```
 
-Already have a project? Run `npx overfull check` in its folder after a build.
+Already have a project? Run `overfull check` in its folder after a build.
 See [Configuration](./config.md) to point it at your files.
 
 ## Next steps
 
-- [Install](./install.md): Docker, npm, Dev Container, Overleaf.
+- [Install](./install.md): Docker, a clone, the release download, Dev Container, Overleaf.
 - [Checks](./checks.md): what each check does and what it cannot detect.
 - [References](./references.md): how verification works.
 - [Accessibility](./accessibility.md): tagged PDFs and why they now matter.
