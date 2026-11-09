@@ -178,17 +178,13 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   <section class="block" aria-labelledby="start-title">
     <p class="runhead"><span>Getting started</span></p>
     <div class="galley">
-      <aside class="marginal">
-        <p><span class="mark">Pre-release.</span> v3.0.0 is not released yet, so the Docker image on ghcr.io, the release download and the Action’s <code>@v3</code> tag do not exist yet. The steps here use a clone, which works today.</p>
-      </aside>
       <h2 id="start-title">Start in five minutes</h2>
+      <p class="prerelease"><span class="mark">Pre-release.</span> v3.0.0 is not released yet, so the Docker image on ghcr.io, the release download and the Action’s <code>@v3</code> tag do not exist yet. These steps use a clone, which works today.</p>
       <p>You need Git, Node.js 22.12+, pnpm and Docker. The first build makes a TeX Live image of about 3 GB; after that, builds take seconds.</p>
       <ol class="steps">
         <li>
           <p>Get Overfull and build its Docker image.</p>
-          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 1"><span class="p">$ </span>git clone https://github.com/amet13/overfull.git && cd overfull
-<span class="p">$ </span>pnpm install && pnpm build
-<span class="p">$ </span>make image IMAGE=overfull:dev</div>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 1"><span class="ln"><span class="p">$ </span>git clone https://github.com/amet13/overfull.git && cd overfull</span><span class="ln"><span class="p">$ </span>pnpm install && pnpm build</span><span class="ln"><span class="p">$ </span>make image IMAGE=overfull:dev</span></div>
         </li>
         <li>
           <p>Create a project from a template.</p>
@@ -196,8 +192,7 @@ venue          pass   main text ends on page 9 of 9</span></pre>
         </li>
         <li>
           <p>Build and check it. Or open the folder in your coding agent and ask for the change you want; it runs the check itself.</p>
-          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 3"><span class="p">$ </span>make build IMAGE=overfull:dev
-<span class="p">$ </span>make check IMAGE=overfull:dev</div>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 3"><span class="ln"><span class="p">$ </span>make build IMAGE=overfull:dev</span><span class="ln"><span class="p">$ </span>make check IMAGE=overfull:dev</span></div>
         </li>
       </ol>
       <h3 class="after-title">After v3.0.0</h3>
@@ -667,6 +662,22 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   }
   .steps p {
     margin-bottom: 0.4rem;
+  }
+  .block .galley h2 {
+    margin-bottom: 0.75rem;
+  }
+  .cmd .ln {
+    display: block;
+  }
+  .prerelease {
+    padding: 0.6rem 0.9rem;
+    border-left: 3px solid var(--pencil);
+    background: var(--pencil-soft);
+    font-size: var(--s-1);
+  }
+  .prerelease .mark {
+    color: var(--pencil);
+    font-weight: 600;
   }
   .after-title {
     font-size: var(--s0);

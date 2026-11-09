@@ -470,7 +470,10 @@ export function initCheck(): void {
     report = {
       tool: 'overfull',
       version: VERSION,
-      target: files.map((f) => f.name).join(', '),
+      target: files
+        .filter((f) => f.kind !== 'pdf' || f === pdfs[0])
+        .map((f) => f.name)
+        .join(', '),
       status: reportStatus(checks),
       checks,
     };

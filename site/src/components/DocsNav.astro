@@ -28,24 +28,35 @@ const groups = groupDocs(docs);
       </div>
     ))}
   </details>
-  <script is:inline>
-    // Open the contents where there is room, before first paint (no layout
-    // shift); on small screens it stays collapsed.
-    (function () {
-      var d = document.getElementById('docs-nav-details');
-      var mq = window.matchMedia('(min-width: 1000px)');
-      if (!d) return;
-      d.open = mq.matches;
-      mq.addEventListener('change', function () {
-        d.open = mq.matches;
-      });
-    })();
-  </script>
 </nav>
+<script>
+  // Wide screens show the contents through CSS (::details-content) with no
+  // layout shift; this keeps browsers without that selector in step.
+  const d = document.querySelector<HTMLDetailsElement>('#docs-nav-details');
+  const mq = window.matchMedia('(min-width: 1000px)');
+  const apply = () => {
+    if (d) d.open = mq.matches;
+  };
+  apply();
+  mq.addEventListener('change', apply);
+</script>
 <style>
   .docs-nav {
     font-size: var(--s-1);
     line-height: 1.35;
+  }
+  @media (min-width: 1000px) {
+    .docs-nav-details::details-content {
+      content-visibility: visible;
+      block-size: auto;
+    }
+    summary {
+      pointer-events: none;
+      list-style: none;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
   }
   summary {
     cursor: pointer;

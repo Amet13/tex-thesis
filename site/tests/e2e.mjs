@@ -248,6 +248,9 @@ try {
     await page.goto(`${root}check/`, { waitUntil: 'networkidle' });
     await page.uncheck('#online');
 
+    if (await page.isVisible('#result-tools'))
+      fail('check page: result tools are visible before there is a report');
+
     await page.click('[data-sample="log-undefined"]');
     await page.waitForSelector('#sheet-view .sheet', { timeout: 15000 });
     const logChecks = await page.$$eval('#sheet-view .sheet-check', (s) => s.length);
@@ -313,6 +316,25 @@ try {
       fail(
         `check page made external requests with verification off: ${external.slice(0, 3).join(', ')}`,
       );
+
+    // Unsupported, unreadable and duplicate PDFs are reported, not dropped silently
+    await page.setInputFiles('#file-input', [
+      { name: 'notes.docx', mimeType: 'application/octet-stream', buffer: Buffer.from('PK') },
+      { name: 'a.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\nnot really') },
+      { name: 'b.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\nnot either') },
+    ]);
+    await page.waitForFunction(
+      () => /readable PDF/.test(document.querySelector('#notice')?.textContent ?? ''),
+      null,
+      { timeout: 15000 },
+    );
+    const noticeText = (await page.textContent('#notice')) ?? '';
+    if (!/Skipped notes\.docx/.test(noticeText))
+      fail(`check page: unsupported file not reported: ${noticeText}`);
+    if (!/One PDF at a time; checking the first: a\.pdf/.test(noticeText))
+      fail(`check page: second PDF not reported: ${noticeText}`);
+    if (!/a\.pdf: This file isn’t a readable PDF \(pdf\.js: /.test(noticeText))
+      fail(`check page: unreadable PDF not explained: ${noticeText}`);
 
     // Keyboard: the drop zone's button is reachable and labelled
     const chooseVisible = await page.isVisible('#choose');
