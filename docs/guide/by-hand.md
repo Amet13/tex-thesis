@@ -19,11 +19,7 @@ make check    # run all checks and print a report
 make help     # list every target
 ```
 
-> **New to Docker?** Install [Docker Desktop](https://docs.docker.com/desktop/)
-> (macOS, Windows) or [Docker Engine](https://docs.docker.com/engine/install/)
-> (Linux) and start it. The first build downloads the Overfull image: about
-> 3 GB compressed, 9–10 GB on disk, so allow a few minutes and the disk space.
-> After that, builds take seconds.
+New to Docker? See [Install](./install.md#docker-only) for what to install and how big the first download is.
 
 `make build` and `make watch` run `latexmk` directly (local, or in the Docker
 image if `latexmk` is not installed). `make check` runs `overfull check`. The

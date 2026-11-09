@@ -77,7 +77,10 @@ await new Promise((r) => server.listen(port, '127.0.0.1', r));
 
 let browser;
 try {
-  browser = await chromium.launch();
+  // CHROMIUM_PATH: use an installed Chrome/Chromium instead of Playwright's download.
+  browser = await chromium.launch(
+    process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
+  );
 
   // ---- Discover pages ----
   const discover = await browser.newPage();
@@ -122,14 +125,16 @@ try {
   const fullAxe = process.env.E2E_FULL_AXE === '1';
   const links = new Map(); // href -> first page seen on
 
-  for (const v of variants) {
+  // The four viewports run side by side: each gets its own browser context.
+  const runVariant = async (v) => {
     const ctx = await browser.newContext({
       viewport: { width: v.width, height: v.height },
       deviceScaleFactor: 1,
       colorScheme: v.scheme,
+      // Animations end at once, so screenshots need no wait.
+      reducedMotion: 'reduce',
     });
     const label = `${v.width}-${v.scheme}`;
-    console.log(`\n${label}`);
     const pages =
       v.width === 1280 && v.scheme === 'light'
         ? allPages
@@ -142,7 +147,7 @@ try {
           errors.push(m.text());
       });
       page.on('pageerror', (e) => errors.push(e.message));
-      await page.goto(origin + path, { waitUntil: 'networkidle' });
+      await page.goto(origin + path, { waitUntil: 'load' });
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -184,8 +189,7 @@ try {
     ]) {
       if (!path) continue;
       const page = await ctx.newPage();
-      await page.goto(origin + path, { waitUntil: 'networkidle' });
-      await page.waitForTimeout(1400); // let the one animation finish
+      await page.goto(origin + path, { waitUntil: 'load' });
       await page.screenshot({
         path: join(shots, `${name}-${label}.png`),
         fullPage: name !== 'home' || v.width === 375,
@@ -193,7 +197,9 @@ try {
       await page.close();
     }
     await ctx.close();
-  }
+    console.log(`${label}: ${pages.length} pages`);
+  };
+  await Promise.all(variants.map(runVariant));
 
   // ---- Links ----
   console.log(`\nLinks: ${links.size} internal`);

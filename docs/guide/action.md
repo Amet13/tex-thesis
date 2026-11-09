@@ -52,10 +52,10 @@ then uses `<jobname>.pdf` and so on from `overfull.yml`. A file you name
 explicitly must exist: if it does not, the step fails with a message naming
 the missing file, so a wrong name cannot silently skip a check.
 
-**Pinning.** Before v3.0.0 is released there is no `@v3` tag. Pin a commit
-with its full 40-character SHA,
-`uses: amet13/overfull@<full 40-character commit SHA>`; GitHub rejects short
-SHAs in `uses:`. Pinning a full SHA is also good practice after the release.
+**Pinning.** `@v3` follows every 3.x release. For fully reproducible CI, pin
+a release commit by its full 40-character SHA instead,
+`uses: amet13/overfull@<full commit SHA> # v3.0.0`; GitHub rejects short SHAs
+in `uses:`, and Dependabot keeps SHA pins up to date.
 
 The Action writes problems as annotations (at most 50), adds a Markdown report
 to the job summary, and fails the step according to `fail-on`. It does not build

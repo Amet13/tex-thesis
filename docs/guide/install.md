@@ -1,47 +1,20 @@
 ---
 title: Install
-description: Run Overfull with only Docker or a single-file download from GitHub Releases, from a clone, in a VS Code Dev Container, or alongside Overleaf through Git.
+description: Run Overfull with only Docker or a single-file download from GitHub Releases, in a VS Code Dev Container, alongside Overleaf through Git, or from source.
 order: 2
 section: Start
 ---
 
-Overfull 3.0.0 is not on npm and needs no Node.js install. Pick one. All of
+Overfull is not on npm and needs no Node.js install. Pick one. All of
 them run the same checks.
 
 | You have | Use |
 | --- | --- |
 | Docker only | The Docker image and the template Makefile |
 | No Docker, no Node | The single-file `overfull` download from GitHub Releases; builds then need a local TeX Live |
-| Git, Node.js 22.12+, pnpm and Docker | [From a clone](#from-a-clone), to work on Overfull itself |
+| Git, Node.js 22.12+, pnpm and Docker | [From source](#from-source), to work on Overfull itself |
 | VS Code + Docker | The Dev Container |
 | Overleaf | Git sync to a local or GitHub copy |
-
-## From a clone
-
-```sh
-git clone https://github.com/amet13/overfull.git
-cd overfull
-pnpm install && pnpm build
-make image IMAGE=overfull:dev      # builds the Docker image locally (9–10 GB on disk)
-```
-
-`node packages/cli/dist/bin.js` is the `overfull` command. Make it short with an
-alias, and point builds at your local image:
-
-```sh
-alias overfull="node $PWD/packages/cli/dist/bin.js"
-export OVERFULL_IMAGE=overfull:dev
-overfull doctor                    # what is installed, what is missing
-overfull init paper ../my-paper
-```
-
-In a project made from a template, pass the image to `make`:
-
-```sh
-cd ../my-paper
-make build IMAGE=overfull:dev
-make check IMAGE=overfull:dev
-```
 
 ## Docker only
 
@@ -107,6 +80,33 @@ You can keep writing in Overleaf and run Overfull on a Git copy of the project.
 Overleaf's Git integration and GitHub sync are paid features; check Overleaf's
 current plans. See [Migrate from Overleaf](./migrate-from-overleaf.md) for the
 steps and for moving builds to GitHub Actions.
+
+## From source
+
+```sh
+git clone https://github.com/amet13/overfull.git
+cd overfull
+pnpm install && pnpm build
+make image IMAGE=overfull:dev      # builds the Docker image locally (9–10 GB on disk)
+```
+
+`node packages/cli/dist/bin.js` is the `overfull` command. Make it short with an
+alias, and point builds at your local image:
+
+```sh
+alias overfull="node $PWD/packages/cli/dist/bin.js"
+export OVERFULL_IMAGE=overfull:dev
+overfull doctor                    # what is installed, what is missing
+overfull init paper ../my-paper
+```
+
+In a project made from a template, pass the image to `make`:
+
+```sh
+cd ../my-paper
+make build IMAGE=overfull:dev
+make check IMAGE=overfull:dev
+```
 
 ## Check the installation
 

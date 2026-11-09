@@ -4,3 +4,8 @@ packages:
   - action
 allowBuilds:
   esbuild: true
+# Security fixes for transitive dev dependencies of markdownlint-cli2
+# (GHSA-gg6h-894w-4m9c, GHSA-238p-pmpm-9mq7); drop once markdownlint pins them.
+overrides:
+  re2js: 2.9.1
+  katex: 0.19.1
