@@ -83,7 +83,7 @@ The proposed approach reduces processing time by 51--63\% compared to Baseline~A
         ymode=log, log origin=infty, ymin=0.1, ymax=2000,
         nodes near coords, nodes near coords style={font=\scriptsize},
         point meta=rawy,
-        width=\linewidth, height=8cm,
+        width=0.85\linewidth, height=8cm,
       ]
       \addplot[fill=red!60]   table[col sep=comma, x=dataset, y=baselineA] {figures/data/benchmark.csv};
       \addplot[fill=blue!60]  table[col sep=comma, x=dataset, y=baselineB] {figures/data/benchmark.csv};
@@ -152,7 +152,7 @@ Baseline~B grows faster than linearly.
         ymin=0, ymax=500,
         legend pos=north west,
         grid=major,
-        width=\linewidth, height=8cm,
+        width=0.85\linewidth, height=8cm,
       ]
       \addplot[thick, green!50!black, mark=*] table[col sep=comma, x=records, y=proposed] {figures/data/scalability.csv};
       \addlegendentry{Proposed}

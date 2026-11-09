@@ -112,3 +112,40 @@ export function caseForRule(ruleId: string, corpusId?: string): CorpusCase | und
     all.find((c) => c.id === ruleId)
   );
 }
+
+/**
+ * The message TeX itself prints for a rule, taken from the corpus log and made
+ * generic (file names, line numbers and sizes elided), e.g. `Missing $ inserted`
+ * or `LaTeX Error: File `…' not found`. This is what people paste into a search
+ * engine, so rule pages lead with it. Undefined when the log has no clear line.
+ */
+export function texMessage(kase: CorpusCase | undefined, ruleId: string): string | undefined {
+  if (!kase) return undefined;
+  let line: string | undefined;
+  try {
+    const { build, output } = analyzeLog(kase.log);
+    const hit = [...build.problems, ...output.problems].find((p) => p.rule === ruleId);
+    line = hit?.evidence
+      ?.split(/\r?\n/)
+      .map((l) => l.trim())
+      .find(Boolean);
+  } catch {
+    return undefined;
+  }
+  if (!line) return undefined;
+  const msg = line
+    .replace(/^!\s*/, '')
+    .replace(/`[^']*'|'[^']*'/g, (q) => (q.startsWith('`') ? "`…'" : "'…'"))
+    .replace(/\S \(U\+[0-9A-F]+\)/g, '… (U+…)')
+    .replace(/ in font \[.*$/, '')
+    .replace(/, to which .*$/, '')
+    .replace(/ \[[^\]]*\]/g, '')
+    .replace(/\(\d+(\.\d+)?pt too (wide|high)\)/, '(…pt too $2)')
+    .replace(/ in paragraph at lines .*$/, '')
+    .replace(/ on page \d+/g, '')
+    .replace(/ on input line \d+/g, '')
+    .replace(/[.:]\s*$/, '')
+    .trim();
+  if (!msg || /^Package \w+ (Error|Warning)$/.test(msg) || msg.length > 90) return undefined;
+  return msg;
+}
