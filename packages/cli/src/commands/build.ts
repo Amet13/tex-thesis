@@ -14,7 +14,16 @@ import { type Config, type Engine, loadConfig } from '../config.js';
 import { type Io, UsageError, useColor } from '../io.js';
 import { readPdfFacts } from '../pdf.js';
 import { readIfExists } from '../project.js';
-import { dockerAvailable, dockerImagePresent, dockerRunArgs, run, which } from '../tools.js';
+import { insideRoot, safeImage, safeJobname, safeRelPath } from '../safety.js';
+import {
+  dockerAvailable,
+  dockerImagePresent,
+  dockerRunArgs,
+  imageUnavailable,
+  imageUnavailableMessage,
+  run,
+  which,
+} from '../tools.js';
 import { VERSION } from '../version.js';
 
 export const buildHelp = `Usage: overfull build [main.tex] [options]
@@ -24,24 +33,39 @@ Uses a local latexmk if installed, otherwise the Overfull Docker image.
 
 Options:
   --engine e      auto (default), local or docker
-  --image name    Docker image (default from overfull.yml, $OVERFULL_IMAGE or ghcr.io/amet13/overfull:0.1)
+  --image name    Docker image. Precedence: --image, then $OVERFULL_IMAGE, then
+                  build.image in overfull.yml, then ghcr.io/amet13/overfull:0.1
   --verbose, -v   Show latexmk output and fixes for each problem
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
 
 Uses -lualatex unless the project has a .latexmkrc (then latexmk follows it).
+Output goes to build.outDir from overfull.yml (passed as -outdir/-auxdir), else
+the $out_dir of a .latexmkrc, else the project directory.
+Only build projects you trust: a .latexmkrc is Perl code that latexmk runs.
 Exit codes: 0 built, 1 build failed, 2 usage error.
 `;
 
+/**
+ * latexmk arguments. latexmk builds a shell command line from the jobname,
+ * the output directories and the main file, so each is validated here
+ * (latexmk has no `--` end-of-options marker; a main file never starts with "-").
+ */
 export function latexmkArgs(config: Config, main: string): string[] {
   const rc =
     existsSync(join(config.root, '.latexmkrc')) || existsSync(join(config.root, 'latexmkrc'));
+  const { outDir, auxDir, outDirFromConfig } = config.build;
+  const dirs =
+    outDirFromConfig || !rc
+      ? [`-outdir=${safeRelPath(outDir, 'build.outDir')}`, `-auxdir=${safeRelPath(auxDir, 'build.outDir')}`]
+      : [];
   return [
     ...(rc ? [] : ['-lualatex']),
     '-interaction=nonstopmode',
     '-file-line-error',
-    `-jobname=${config.jobname}`,
-    main,
+    `-jobname=${safeJobname(config.jobname)}`,
+    ...dirs,
+    safeRelPath(main),
   ];
 }
 
@@ -102,11 +126,13 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   }
   const config = loadConfig(io.cwd, str(values.config), io.env);
   const main = positionals[0] ?? config.main;
+  safeRelPath(main);
   if (positionals[0] && !str(values.config)) {
     config.main = main;
     if (!existsSync(join(config.root, 'overfull.yml')))
-      config.jobname = main.replace(/^.*\//, '').replace(/\.tex$/i, '');
+      config.jobname = safeJobname(main.replace(/^.*\//, '').replace(/\.tex$/i, ''));
   }
+  insideRoot(config.root, main, 'Main file');
   if (!existsSync(join(config.root, main))) {
     throw new UsageError(
       `${main} not found in ${config.root}. Pass the main file: \`overfull build thesis.tex\`.`,
@@ -115,7 +141,8 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   const engineArg = (str(values.engine) ?? config.build.engine) as Engine;
   if (!['auto', 'local', 'docker'].includes(engineArg))
     throw new UsageError('--engine must be auto, local or docker');
-  const image = str(values.image) ?? config.build.image;
+  const imageArg = str(values.image);
+  const image = imageArg ? safeImage(imageArg, '--image') : config.build.image;
   const engine = await resolveEngine(engineArg, io.env);
   const lmk = latexmkArgs(config, main);
   const verbose = values.verbose === true;
@@ -135,11 +162,15 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
     if (result.code === 125) {
       io.stderr(`${result.stderr.trim()}\n`);
       throw new UsageError(
-        `Docker could not start ${image}. Check the image name (build.image in overfull.yml).`,
+        imageUnavailable(result.stderr)
+          ? imageUnavailableMessage(image)
+          : `Docker could not start ${image}. Check the image name (--image, OVERFULL_IMAGE or build.image in overfull.yml).`,
       );
     }
   }
-  const logText = readIfExists(join(config.root, `${config.jobname}.log`));
+  const auxDir = join(config.root, config.build.auxDir);
+  const outDir = join(config.root, config.build.outDir);
+  const logText = readIfExists(join(auxDir, `${config.jobname}.log`));
   if (logText === undefined) {
     io.stderr(`${(result.stderr || result.stdout).trim().split('\n').slice(-15).join('\n')}\n`);
     io.stderr(
@@ -149,7 +180,8 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   }
   const { build, output } = analyzeLog(logText, { root: config.root });
   const checks: CheckResult[] = [build, output];
-  const pdfPath = join(config.root, `${config.jobname}.pdf`);
+  const pdfPath = join(outDir, `${config.jobname}.pdf`);
+  const pdfRel = join(config.build.outDir, `${config.jobname}.pdf`).split('\\').join('/');
   if (existsSync(pdfPath)) {
     try {
       checks[1] = mergeOutput(output, pdfOutputProblems(await readPdfFacts(pdfPath)));
@@ -161,7 +193,7 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   const report: Report = {
     tool: 'overfull',
     version: VERSION,
-    target: existsSync(pdfPath) ? `${config.jobname}.pdf` : main,
+    target: existsSync(pdfPath) ? pdfRel : main,
     status: failed ? 'fail' : reportStatus(checks),
     checks,
   };

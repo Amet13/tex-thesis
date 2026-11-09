@@ -24,6 +24,8 @@ Options:
   --bib a.bib,b.bib   Bibliography files (default from overfull.yml or main.tex)
   --mailto address    Contact address for CrossRef's polite pool
   --no-verapdf        Do not run veraPDF even if installed
+  --engine e          Where veraPDF/pdffonts run if not installed: auto (default: the
+                      Overfull image when Docker already has it), docker, or local
   --config file       Config file (default overfull.yml)
   -h, --help          Show this help
 
@@ -48,6 +50,7 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
       bib: { type: 'string' },
       mailto: { type: 'string' },
       'no-verapdf': { type: 'boolean' },
+      engine: { type: 'string' },
       config: { type: 'string' },
     },
     'check',
@@ -65,6 +68,9 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
     throw new UsageError(
       `Choose one output format, not ${formats.map((f) => `--${f}`).join(' and ')}`,
     );
+  const engine = str(values.engine) ?? 'auto';
+  if (!['auto', 'local', 'docker'].includes(engine))
+    throw new UsageError(`--engine must be auto, local or docker, got "${engine}"`);
   const checksArg = list(values.checks);
   const report = await runCheck({
     cwd: io.cwd,
@@ -80,6 +86,7 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
     ...(str(values.mailto) ? { mailto: str(values.mailto) } : {}),
     offline: values.offline === true,
     verapdf: values['no-verapdf'] !== true,
+    engine: engine as 'auto' | 'local' | 'docker',
   });
   if (values.json) io.stdout(formatJson(report));
   else if (values.markdown) io.stdout(formatMarkdown(report));

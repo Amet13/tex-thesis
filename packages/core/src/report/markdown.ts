@@ -1,5 +1,13 @@
 import type { Problem, Report } from '../types.js';
-import { checkLine, formatLocation, sortedProblems, tally, tallyLine } from './shared.js';
+import {
+  checkLine,
+  formatLocation,
+  neutralizeWorkflowCommands,
+  oneLine,
+  sortedProblems,
+  tally,
+  tallyLine,
+} from './shared.js';
 
 const STATUS_TEXT = { pass: 'pass', warn: 'warn', fail: 'fail', skipped: 'skipped' } as const;
 
@@ -9,13 +17,12 @@ function escapeHtml(s: string): string {
 
 /** Escapes plain text for Markdown (and HTML), collapsing newlines. */
 export function escapeMarkdown(s: string): string {
-  return escapeHtml(s.replace(/\r?\n/g, ' ')).replace(/([\\`*_{}[\]|~#])/g, '\\$1');
+  return escapeHtml(oneLine(s)).replace(/([\\`*_{}[\]|~#])/g, '\\$1');
 }
 
 /** Renders text whose `backtick` spans are code: code becomes <code>, the rest is escaped. */
 function inline(s: string): string {
-  return s
-    .replace(/\r?\n/g, ' ')
+  return oneLine(s)
     .split('`')
     .map((part, i) =>
       i % 2 === 1
@@ -27,7 +34,7 @@ function inline(s: string): string {
 
 function problemItem(p: Problem): string {
   const loc = formatLocation(p.location);
-  const head = `- **${p.severity}**${loc ? ` <code>${escapeHtml(loc)}</code>` : ''} ${escapeMarkdown(p.message)} <sub>${escapeHtml(p.rule)}</sub>`;
+  const head = `- **${p.severity}**${loc ? ` <code>${escapeHtml(oneLine(loc))}</code>` : ''} ${escapeMarkdown(p.message)} <sub>${escapeHtml(oneLine(p.rule))}</sub>`;
   const sub: string[] = [];
   if (p.detail) sub.push(`  - Why: ${inline(p.detail)}`);
   if (p.fix) sub.push(`  - Fix: ${inline(p.fix)}`);
@@ -56,5 +63,5 @@ export function formatMarkdown(report: Report): string {
     for (const p of mine) out.push(problemItem(p));
     out.push('', '</details>', '');
   }
-  return `${out.join('\n').trimEnd()}\n`;
+  return `${neutralizeWorkflowCommands(out.join('\n').trimEnd())}\n`;
 }

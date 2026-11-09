@@ -69,3 +69,28 @@ export function tallyLine(t: Tally): string {
   if (t.skipped) parts.push(`${t.skipped} skipped`);
   return parts.join(' · ');
 }
+
+/**
+ * Makes user-derived text (from .tex/.bib/log content) safe for a single output line:
+ * line breaks become spaces and other control characters (ESC, NUL…) are removed, so the
+ * text can neither start a new line (a GitHub workflow command such as `::warning`) nor
+ * emit terminal escape sequences.
+ */
+export function oneLine(s: string): string {
+  return s
+    .replace(/[\r\n\u0085\u2028\u2029]+/g, ' ')
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '');
+}
+
+/** Splits user-derived multi-line text into lines that are each safe (see `oneLine`). */
+export function safeLines(s: string): string[] {
+  return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
+}
+
+/**
+ * Last line of defence for text printed to CI logs: no line may start with `::`, which
+ * GitHub Actions would execute as a workflow command.
+ */
+export function neutralizeWorkflowCommands(text: string): string {
+  return text.replace(/^(\s*)::/gm, '$1  ::');
+}

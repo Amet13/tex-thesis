@@ -8,6 +8,7 @@ import { initCommand } from './commands/init.js';
 import { pagesCommand } from './commands/pages.js';
 import { closest } from './config.js';
 import { type Io, UsageError } from './io.js';
+import { neutralizingWriter } from './safety.js';
 import { VERSION } from './version.js';
 
 export const mainHelp = `overfull ${VERSION} — preflight for LaTeX papers and theses
@@ -41,10 +42,17 @@ const COMMANDS: Record<string, Command> = {
 };
 
 /** Runs the CLI and returns the exit code (0 ok, 1 problems found, 2 usage/internal error). */
-export async function main(argv: string[], io: Io): Promise<number> {
+export async function main(argv: string[], ioIn: Io): Promise<number> {
   const [cmd, ...rest] = argv;
+  // In GitHub Actions, printed text (log excerpts, titles, file names) must not
+  // be read as workflow commands. `check --annotations` prints them on purpose,
+  // escaped by githubAnnotations.
+  const io: Io =
+    ioIn.env.GITHUB_ACTIONS === 'true' && !rest.includes('--annotations')
+      ? { ...ioIn, stdout: neutralizingWriter(ioIn.stdout), stderr: neutralizingWriter(ioIn.stderr) }
+      : ioIn;
   if (!cmd || cmd === '--help' || cmd === '-h' || cmd === 'help') {
-    if (cmd === 'help' && rest[0] && COMMANDS[rest[0]]) return main([rest[0], '--help'], io);
+    if (cmd === 'help' && rest[0] && COMMANDS[rest[0]]) return main([rest[0], '--help'], ioIn);
     io.stdout(mainHelp);
     return 0;
   }
