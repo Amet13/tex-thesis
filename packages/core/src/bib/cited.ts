@@ -35,3 +35,15 @@ export function citedKeys(auxOrBcf: string): string[] {
   }
   return [...seen];
 }
+
+/**
+ * True when a `.aux` or `.bcf` file records `\nocite{*}` (every bibliography entry is
+ * cited): `\citation{*}`, `\abx@aux@cite{0}{*}` or `<bcf:citekey>*</bcf:citekey>`.
+ */
+export function citesAll(auxOrBcf: string): boolean {
+  const isBcf = /<bcf:citekey\b/.test(auxOrBcf);
+  for (const raw of isBcf ? bcfKeys(auxOrBcf) : auxKeys(auxOrBcf)) {
+    if (raw.trim() === '*') return true;
+  }
+  return false;
+}

@@ -177,6 +177,29 @@ function failuresText(failures: SourceFailure[]): string {
   return failures.map((f) => f.reason).join('; ');
 }
 
+/**
+ * The entry's own DOI or arXiv id did not resolve, but a title search found the work:
+ * the identifier in the .bib is wrong, so the entry cannot be `verified`.
+ */
+function withBrokenIds(result: RefResult, ids: Identifiers, ev: Evidence): RefResult {
+  const broken: NonNullable<RefResult['differences']> = [];
+  if (ev.doiMissing && ids.doi) {
+    broken.push({ field: 'doi', bib: ids.doi, record: 'does not resolve' });
+  }
+  if (ev.arxivMissing && ids.arxivId) {
+    broken.push({ field: 'eprint', bib: ids.arxivId, record: 'does not resolve' });
+  }
+  if (!broken.length) return result;
+  const what = broken.map((d) => (d.field === 'doi' ? `DOI ${d.bib}` : `arXiv id ${d.bib}`));
+  const { reason: _reason, ...rest } = result;
+  return {
+    ...rest,
+    status: 'mismatch',
+    differences: [...broken, ...(result.differences ?? [])],
+    reason: `the ${what.join(' and the ')} does not resolve, but a record with this title exists`,
+  };
+}
+
 /** No candidate matched: decide between not-found, unverifiable and error. */
 function noMatch(
   base: RefResult,
@@ -270,11 +293,11 @@ export async function verifyEntry(
     (ids.doi ? await checkDoi(ctx, ids.doi, facts, ev) : null) ??
     (ids.arxivId ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
   const withQuery = (r: RefResult): RefResult => ({ ...r, query: ev.queries[0] ?? '' });
-  if (viaId) return withQuery(fromAssessment(base, viaId, ev));
+  if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
 
   await searchByTitle(ctx, facts, kind, ev);
   const best = bestAssessment(ev.assessments);
-  if (best) return withQuery(fromAssessment(base, best, ev));
+  if (best) return withQuery(withBrokenIds(fromAssessment(base, best, ev), ids, ev));
   return withQuery(noMatch(base, entry, kind, ids, ev));
 }
 

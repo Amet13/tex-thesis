@@ -130,9 +130,10 @@ RUN ln -s /opt/overfull/dist/bin.js /usr/local/bin/overfull \
  && chmod +x /opt/overfull/dist/bin.js \
  && overfull --version
 
-# git (already in the base image) is needed by `overfull diff`; mark any
-# mounted repository as safe because the container runs as root by default.
-RUN git --version && git config --system --add safe.directory '*'
+# git (already in the base image) is needed by `overfull diff`. Only the
+# repository mounted at /work is marked safe (the container runs as root by
+# default and the mount is owned by the host user); never '*'.
+RUN git --version && git config --system --add safe.directory /work
 
 WORKDIR /work
 CMD ["overfull", "--help"]

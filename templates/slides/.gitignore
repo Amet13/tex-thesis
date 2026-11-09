@@ -24,7 +24,7 @@
 *.pdf
 
 # Overfull cache (reference lookups)
-.overfull/cache/
+.overfull/
 
 # Editors / OS
 .DS_Store

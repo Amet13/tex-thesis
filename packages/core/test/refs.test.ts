@@ -281,13 +281,57 @@ describe('verifyEntries', () => {
     expect(r?.reason).toMatch(/does not exist/);
   });
 
-  it('a DOI that 404s but whose title is found is reported by the title match', async () => {
+  it('a made-up DOI on a real title is a mismatch, not verified', async () => {
     const f = router({
       'doi.org': () => new Response('Not found', { status: 404 }),
       'api.crossref.org': () => json({ message: { items: [clocksCsl] } }),
     });
     const [r] = await verifyEntries(parseBib(CLOCKS), { fetch: f.fetch, ...fast });
-    expect(r).toMatchObject({ status: 'verified', source: 'crossref' });
+    expect(r).toMatchObject({ status: 'mismatch', source: 'crossref' });
+    expect(r?.differences?.[0]).toEqual({
+      field: 'doi',
+      bib: '10.1145/359545.359563',
+      record: 'does not resolve',
+    });
+  });
+
+  it('a made-up arXiv id on a real title is a mismatch, not verified', async () => {
+    const bib = `@article{vaswani2017attention,
+  author = {Vaswani, Ashish and Shazeer, Noam},
+  title = {Attention Is All You Need}, year = {2017}, eprint = {1799.99999}}`;
+    const f = router({
+      'export.arxiv.org': (u) =>
+        u.searchParams.get('id_list')
+          ? atom(emptyAtom)
+          : atom(`<feed xmlns="http://www.w3.org/2005/Atom">
+<entry><id>http://arxiv.org/abs/1706.03762v7</id><published>2017-06-12T17:57:34Z</published>
+<title>Attention Is All You Need</title><author><name>Ashish Vaswani</name></author>
+<author><name>Noam Shazeer</name></author></entry></feed>`),
+      'api.crossref.org': () =>
+        json({
+          message: {
+            items: [
+              {
+                type: 'proceedings-article',
+                title: 'Attention is all you need',
+                author: [
+                  { given: 'Ashish', family: 'Vaswani' },
+                  { given: 'Noam', family: 'Shazeer' },
+                ],
+                issued: { 'date-parts': [[2017]] },
+              },
+            ],
+          },
+        }),
+      'dblp.org': () => json(emptyDblp),
+    });
+    const [r] = await verifyEntries(parseBib(bib), { fetch: f.fetch, ...fast });
+    expect(r?.status).toBe('mismatch');
+    expect(r?.differences?.[0]).toEqual({
+      field: 'eprint',
+      bib: '1799.99999',
+      record: 'does not resolve',
+    });
   });
 
   it('flags a DOI that points to a different work', async () => {

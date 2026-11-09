@@ -1,4 +1,4 @@
-export { citedKeys } from './cited.js';
+export { citedKeys, citesAll } from './cited.js';
 export { formatBibEntry } from './format.js';
 export { hasOthers, type PersonName, parseNames } from './names.js';
 export {

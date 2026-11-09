@@ -3,9 +3,27 @@
 /** Directories that belong to a TeX distribution rather than to the project. */
 const DISTRIBUTION_DIR = /(?:^|\/)(?:texmf[\w-]*|\.texlive\d*|texlive\/\d{4}|miktex[^/]*)\//i;
 
+/** Extensions TeX commonly opens, as a regex alternation (no anchors). */
+export const TEX_EXTENSION_GROUP =
+  '(?:tex|ltx|sty|cls|clo|cfg|def|fd|aux|toc|lof|lot|bbl|out|nav|snm|vrb|ldf|dfu|lua|bst|tikz|pgf|mkii|trsl|dict|xmpi|ins|dtx|tikzstyles)';
+
 /** Extensions TeX commonly opens; used to recognise bare file names such as `article.cls`. */
-const TEX_EXTENSIONS =
-  /\.(?:tex|ltx|sty|cls|clo|cfg|def|fd|aux|toc|lof|lot|bbl|out|nav|snm|vrb|ldf|dfu|lua|bst|tikz|pgf|code\.tex|mkii|trsl|dict|xmpi|ins|dtx|tikzstyles)$/i;
+const TEX_EXTENSIONS = new RegExp(`\\.${TEX_EXTENSION_GROUP}$`, 'i');
+
+/**
+ * A file path that may contain spaces, as TeX prints it: it starts like a path (`./`,
+ * `../`, `/`, `~/`, `C:\`) and ends in a known TeX extension. Used to take the whole of
+ * `./sub dir/intro.tex` where a whitespace-delimited token would stop at `./sub`.
+ */
+export const SPACED_PATH_SOURCE = `(?:\\.{1,2}/|/|~/|[A-Za-z]:[\\\\/])[^:()\\n"]{0,1024}?\\.${TEX_EXTENSION_GROUP}`;
+
+/** Length of a spaced path starting at `text[start]`, or 0 when there is none. */
+export function spacedPathLength(text: string, start: number): number {
+  const m = SPACED_PATH_AT.exec(text.slice(start, start + 1100));
+  return m ? m[0].length : 0;
+}
+
+const SPACED_PATH_AT = new RegExp(`^${SPACED_PATH_SOURCE}(?=[\\s()[\\]{}<>"]|$)`, 'i');
 
 export function basename(path: string): string {
   const parts = path.split('/');

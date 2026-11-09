@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   citedKeys,
+  citesAll,
   formatBibEntry,
   parseBib,
   parseBibWithIssues,
@@ -150,6 +151,25 @@ describe('citedKeys', () => {
   </bcf:section>
 </bcf:controlfile>`;
     expect(citedKeys(bcf)).toEqual(['vaswani2017attention', 'a&b']);
+  });
+});
+
+describe('citesAll', () => {
+  it('detects \\nocite{*} in .aux and .bcf files', () => {
+    expect(citesAll('\\relax\n\\citation{a}\n\\citation{*}\n')).toBe(true);
+    expect(citesAll('\\citation{a,*}')).toBe(true);
+    expect(citesAll('\\abx@aux@cite{0}{*}\n\\abx@aux@segm{0}{0}{*}')).toBe(true);
+    expect(citesAll('\\abx@aux@cite{*}')).toBe(true);
+    expect(citesAll('<bcf:section number="0">\n  <bcf:citekey>*</bcf:citekey>\n</bcf:section>')).toBe(
+      true,
+    );
+    expect(citesAll('<bcf:citekey order="1" intorder="1">*</bcf:citekey>')).toBe(true);
+  });
+
+  it('is false without a * key', () => {
+    expect(citesAll('\\citation{a,b}\n\\abx@aux@cite{0}{c}')).toBe(false);
+    expect(citesAll('<bcf:citekey order="1">a*b</bcf:citekey>')).toBe(false);
+    expect(citesAll('')).toBe(false);
   });
 });
 
