@@ -4,7 +4,7 @@
 
 | Version | Supported |
 |---------|-----------|
-| 0.x (Overfull) | Yes |
+| 3.x (Overfull) | Yes |
 | tex-thesis 2.x and older | No |
 
 ## Reporting a vulnerability
@@ -62,7 +62,16 @@ publisher-supplied BibTeX.
 
 ## Supply chain
 
-- Docker base image pinned by `sha256` digest.
-- GitHub Actions pinned to commit SHAs.
-- npm dependencies locked with `pnpm-lock.yaml`; packages published with provenance.
-- Dependabot updates Actions, Docker and npm weekly.
+- Docker base image pinned by `sha256` digest; Node.js and veraPDF downloads
+  in the image are checked against pinned SHA-256 sums.
+- GitHub Actions pinned to commit SHAs, with read-only default token
+  permissions and `persist-credentials: false`.
+- Dependencies locked with `pnpm-lock.yaml` and installed with
+  `--frozen-lockfile`; only esbuild may run an install script.
+- Overfull is not published to npm. Release downloads and the Docker image
+  carry GitHub build provenance attestations:
+  `gh attestation verify overfull-linux-x64 --repo amet13/overfull` or
+  `gh attestation verify oci://ghcr.io/amet13/overfull:3 --repo amet13/overfull`.
+  Each release also lists `SHA256SUMS`.
+- Dependabot updates Actions (including the template workflows), Docker and
+  npm dependencies weekly; OpenSSF Scorecard runs weekly.

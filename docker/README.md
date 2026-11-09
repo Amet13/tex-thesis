@@ -1,7 +1,12 @@
 # Overfull Docker image
 
-`ghcr.io/amet13/overfull:<version>` (for example `:0.1`) is the one image
-needed to build and check an Overfull project without installing TeX.
+`ghcr.io/amet13/overfull` is the one image needed to build and check an
+Overfull project without installing TeX. Tags: `3` (what the templates use),
+`3.0`, `3.0.0`, `edge` (main) and `sha-<commit>`; each is a multi-arch image
+for linux/amd64 and linux/arm64 with a build provenance attestation
+(`gh attestation verify oci://ghcr.io/amet13/overfull:3 --repo amet13/overfull`).
+`docker run --rm ghcr.io/amet13/overfull:3 overfull --version` prints the CLI
+version, which matches the image tag.
 
 ## What is inside
 
@@ -13,7 +18,7 @@ needed to build and check an Overfull project without installing TeX.
 | veraPDF | 1.30.3 greenfield CLI: PDF/UA-1, PDF/UA-2, WTPDF and PDF/A profiles (`verapdf -f ua2 file.pdf`) |
 | Node.js | 24 (official binary, checksum-verified) |
 | `overfull` | the CLI from this repository (`packages/cli`), on `PATH` |
-| git | for `overfull diff` (any mounted repository is marked safe) |
+| git | for `overfull diff` (`/work` is marked as a safe directory) |
 
 The working directory is `/work`.
 

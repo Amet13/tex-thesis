@@ -10,7 +10,11 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    # Release tags only: moving the major tag (v3) for the Action triggers nothing.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  # Dry run from any branch: builds and uploads every asset as a workflow
+  # artifact, publishes nothing. Do this before tagging a release.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,7 +28,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: |
+      - if: startsWith(github.ref, 'refs/tags/v')
+        run: |
           want="${GITHUB_REF_NAME#v}"
           for f in packages/cli/package.json packages/core/package.json action/package.json; do
             got="$(jq -r .version "$f")"
@@ -109,6 +114,7 @@ jobs:
           path: assets/*
 
   github-release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [pdfs, cli]
     runs-on: ubuntu-24.04
     timeout-minutes: 10

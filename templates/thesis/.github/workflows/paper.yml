@@ -1,5 +1,6 @@
 # Build the PDF in the Overfull image, run the preflight and publish results.
 # Push: PDF artifact + job summary. Pull request: also a PDF of the changes.
+# Uses the image ghcr.io/amet13/overfull:3, published with Overfull v3.0.0.
 name: paper
 
 on:
@@ -26,6 +27,11 @@ jobs:
         with:
           fetch-depth: 0 # full history for `overfull diff`
           persist-credentials: false
+
+      # The job runs as root in the image while the checkout belongs to the
+      # runner user: let git (used by `overfull diff`) trust this one directory.
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Build
         run: latexmk

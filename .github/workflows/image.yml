@@ -10,7 +10,8 @@ name: image
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    # Release tags only: moving the major tag (v3) for the Action triggers nothing.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   workflow_dispatch:
 
 permissions:

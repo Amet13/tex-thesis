@@ -16,12 +16,12 @@
 # trusted only while a download step runs and never stored in a layer:
 #   docker build --secret id=build_ca,src=/path/to/proxy-ca.crt -f docker/Dockerfile .
 
-ARG TEXLIVE_IMAGE=texlive/texlive:latest@sha256:6530544393bd37b4aec8801292231ff61599aca43a04571306479a21591e87dd
-
 # ---------------------------------------------------------------------------
 # tex: the LaTeX toolchain used by `overfull build` and the template Makefiles
 # ---------------------------------------------------------------------------
-FROM ${TEXLIVE_IMAGE} AS tex
+# Pinned by digest (multi-arch index: linux/amd64, linux/arm64). Written inline,
+# not as an ARG, so Dependabot can propose digest updates.
+FROM texlive/texlive:latest@sha256:6530544393bd37b4aec8801292231ff61599aca43a04571306479a21591e87dd AS tex
 
 ARG VERAPDF_VERSION=1.30.3
 ARG VERAPDF_SHA256=b512bf24945503a33fc10738ecffc1f2dccaaf8593a448e94ee9ac86a9559a59
