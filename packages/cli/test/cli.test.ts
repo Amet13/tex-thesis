@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Report } from '@overfull/core';
@@ -198,12 +199,15 @@ describe('overfull explain', () => {
   });
 });
 
+// Rendering needs poppler's pdftoppm on PATH (CI runners on macOS/Windows and the
+// plain Ubuntu runner do not have it; the Docker fallback needs the published image).
+const hasPdftoppm = spawnSync('pdftoppm', ['-v']).error === undefined;
+
 describe('overfull pages', () => {
-  it('renders PNGs and prints their paths', async () => {
+  it.skipIf(!hasPdftoppm)('renders PNGs and prints their paths', async () => {
     const dir = tempCopy('project');
     const io = memIo(dir);
     const code = await main(['pages', '1-2', '--dpi', '30'], io);
-    if (code === 2 && io.stderrText().includes('pdftoppm not found')) return; // no poppler, no Docker
     expect(code).toBe(0);
     expect(io.stdoutText()).toBe('.overfull/pages/page-1.png\n.overfull/pages/page-2.png\n');
     expect(readFileSync(join(dir, '.overfull/pages/page-1.png')).subarray(1, 4).toString()).toBe(

@@ -113896,7 +113896,7 @@ function arxivProblems(ctx) {
   });
 }
 
-// ../packages/core/src/venue/aux.ts
+// ../packages/core/src/venue/aux-file.ts
 function parseAuxLabels(aux) {
   const labels = /* @__PURE__ */ new Map();
   const re = /\\newlabel\s*\{/g;

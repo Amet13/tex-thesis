@@ -1,5 +1,5 @@
 import type { Problem } from '../types.js';
-import { parseAuxLabels } from './aux.js';
+import { parseAuxLabels } from './aux-file.js';
 import type { VenueContext, VenueProfile } from './types.js';
 
 const PAPER = {

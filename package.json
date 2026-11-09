@@ -10,7 +10,7 @@
     "build": "pnpm --filter @overfull/core build && pnpm --filter overfull build && pnpm --filter overfull-action build",
     "test": "vitest run",
     "typecheck": "pnpm -r run typecheck",
-    "lint": "biome check . && markdownlint-cli2",
+    "lint": "biome check . && markdownlint-cli2 && node scripts/check-portable-paths.mjs",
     "fmt": "biome check --write .",
     "corpus:capture": "node scripts/corpus.mjs --capture",
     "corpus:verify": "node scripts/corpus.mjs --verify",
