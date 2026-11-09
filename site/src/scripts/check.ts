@@ -1,8 +1,9 @@
 /**
  * The browser check. Everything runs here, in the page: files are read with
  * the File API and analysed by @overfull/core. The only network requests are
- * reference lookups (CrossRef, doi.org, arXiv, DBLP) when the user leaves
- * "Verify references online" on.
+ * reference lookups (CrossRef and doi.org; arXiv and DBLP refuse browser
+ * requests) when the user leaves "Verify references online" on. pdf.js is
+ * loaded only when a PDF is checked.
  */
 import {
   accessibilityCheck,
@@ -23,6 +24,8 @@ import {
   pdfOutputProblems,
   type RefCache,
   type RefResult,
+  type RefSource,
+  type RefsOptions,
   type Report,
   refsCheck,
   reportStatus,
@@ -126,13 +129,21 @@ export function initCheck(): void {
   const agentToggle = must<HTMLButtonElement>('#agent-toggle');
   const jsonOut = must('#json-out');
   const copyStatus = must('#copy-status');
+  const notice = must('#notice');
 
   let report: Report | null = null;
+  /** Files the last drop or pick could not use; shown until the files change. */
+  let skippedMsg = '';
   let controller: AbortController | null = null;
   let runId = 0;
 
   const say = (msg: string) => {
     progress.textContent = msg;
+  };
+  /** A message that stays until the next file change (unlike progress). */
+  const note = (msg: string) => {
+    notice.textContent = msg;
+    notice.hidden = !msg;
   };
   const setBar = (fraction: number | null) => {
     bar.hidden = fraction === null;
@@ -178,8 +189,10 @@ export function initCheck(): void {
       : [])
       b.setAttribute('aria-pressed', 'false');
     add(out);
-    if (skipped.length)
-      say(`Skipped ${skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`);
+    skippedMsg = skipped.length
+      ? `Skipped ${skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`
+      : '';
+    note(skippedMsg);
     if (out.length) void run();
   }
 
@@ -215,6 +228,7 @@ export function initCheck(): void {
       say('The paste box is empty.');
       return;
     }
+    skippedMsg = '';
     add([{ name: 'pasted.log', kind: 'log', text }]);
     void run();
   });
@@ -230,6 +244,9 @@ export function initCheck(): void {
   $<HTMLButtonElement>('#clear')?.addEventListener('click', () => {
     files.length = 0;
     renderFiles();
+    skippedMsg = '';
+    note('');
+    tools.hidden = true;
     choose.focus();
     say('All files removed.');
   });
@@ -240,6 +257,7 @@ export function initCheck(): void {
       const s = samples.find((x) => x.id === btn.dataset.sample);
       if (!s) return;
       files.length = 0;
+      skippedMsg = '';
       for (const b of document.querySelectorAll<HTMLButtonElement>('[data-sample]'))
         b.setAttribute('aria-pressed', String(b === btn));
       add(
@@ -302,6 +320,10 @@ export function initCheck(): void {
     const texes = files.filter((f) => f.kind === 'tex');
     const profile = resolveProfile(profileSel.value);
     let facts: PdfFacts | undefined;
+    let pdfError: string | undefined;
+    const multiPdf =
+      pdfs.length > 1 ? `One PDF at a time; checking the first: ${pdfs[0]?.name}.` : '';
+    note([skippedMsg, multiPdf].filter(Boolean).join(' '));
 
     try {
       // Build and output, from the log
@@ -317,8 +339,18 @@ export function initCheck(): void {
         const pdf = pdfs[0] as Loaded;
         say(`Opening ${pdf.name} with pdf.js…`);
         const pdfjs = await loadPdfjs();
-        facts = await extractPdfFacts(pdf.data ?? new Uint8Array(), pdfjs as unknown as PdfjsLike);
+        try {
+          facts = await extractPdfFacts(
+            pdf.data ?? new Uint8Array(),
+            pdfjs as unknown as PdfjsLike,
+          );
+        } catch (err) {
+          pdfError = `${pdf.name}: This file isn’t a readable PDF (pdf.js: ${err instanceof Error ? err.message : String(err)}).`;
+        }
         if (id !== runId) return;
+      }
+      if (facts && pdfs[0]) {
+        const pdf = pdfs[0];
         const out = pdfOutputProblems(facts).map((p) => withFile(p, pdf.name));
         const prev = results.get('output');
         const outputProblems = [...(prev?.problems ?? []), ...out];
@@ -326,7 +358,7 @@ export function initCheck(): void {
           check: 'output',
           status: statusOf(outputProblems),
           problems: outputProblems,
-          summary: prev?.summary ?? `${facts.pageCount} pages read`,
+          summary: prev?.summary ?? `${facts.pageCount} page${facts.pageCount === 1 ? '' : 's'} read`,
         });
         results.set(
           'accessibility',
@@ -361,15 +393,18 @@ export function initCheck(): void {
             if (signal.aborted) break;
             say(`Looking up references: ${i} of ${toCheck.length} done…`);
             setBar(i / toCheck.length);
-            const part = await verifyEntries(toCheck.slice(i, i + chunk), {
-              // Bound wrapper: window.fetch throws "Illegal invocation" when called as a method of another object.
-              fetch: (input, init) => window.fetch(input, init),
+            // arXiv and DBLP refuse cross-origin requests from web pages, so
+            // only the sources a browser can reach are asked. (Core calls
+            // fetch detached from globalThis, so window.fetch needs no wrapper.)
+            const opts: RefsOptions & { sources?: RefSource[] } = {
+              sources: ['crossref', 'doi.org'],
               cache,
               signal,
               concurrency: chunk,
               timeoutMs: 12000,
               arxivIntervalMs: 3000,
-            });
+            };
+            const part = await verifyEntries(toCheck.slice(i, i + chunk), opts);
             if (id !== runId) return;
             refResults.push(...part);
           }
@@ -417,11 +452,12 @@ export function initCheck(): void {
     }
     if (id !== runId) return;
 
+    note([skippedMsg, multiPdf, pdfError].filter(Boolean).join(' '));
     const reasons: Record<CheckId, string> = {
       build: 'No build log supplied',
-      output: 'No build log or PDF supplied',
+      output: pdfError ? 'No build log, and the PDF could not be read' : 'No build log or PDF supplied',
       references: 'No .bib or .aux file supplied',
-      accessibility: 'No PDF supplied',
+      accessibility: pdfError ? 'The PDF could not be read' : 'No PDF supplied',
       venue: 'No PDF, .tex or .aux file supplied',
     };
     const checks: CheckResult[] = CHECK_IDS.map(
