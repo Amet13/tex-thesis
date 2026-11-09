@@ -177,7 +177,7 @@ build:
   image: ghcr.io/amet13/overfull:0.1
 ```
 
-Cache: `.overfull/cache/refs.json` (git-ignored by templates).
+Cache: the user cache directory (`$XDG_CACHE_HOME/overfull`, `~/.cache/overfull`, or `%LOCALAPPDATA%\overfull`), keyed per project. `references.cache: project` keeps it in `.overfull/cache/refs.json` instead; CI ignores a git-tracked cache.
 
 ## Docker image
 

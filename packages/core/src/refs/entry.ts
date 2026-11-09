@@ -75,8 +75,14 @@ export function generateKey(entry: Pick<BibEntry, 'fields'>): string {
 }
 
 /** Escapes characters that are special in BibTeX/TeX values. */
+/** Escapes plain text from an index (titles, venues, names) for BibTeX/LaTeX. */
 export function escapeTex(s: string): string {
-  return s.replace(/([&%$#_])/g, '\\$1').replace(/[{}]/g, '');
+  return s.replace(/[\\{}&%$#_^~]/g, (c) => {
+    if (c === '\\') return '\\textbackslash{}';
+    if (c === '^') return '\\^{}';
+    if (c === '~') return '\\~{}';
+    return `\\${c}`;
+  });
 }
 
 const CROSSREF_TYPES: Record<string, string> = {

@@ -73,19 +73,17 @@ export function arxivProblems(ctx: VenueContext): Problem[] {
       data: { engine },
     });
   }
-  if (engine === 'pdflatex') {
-    for (const use of uses.filter(
-      (u) => u.name === 'includegraphics' && /\.e?ps$/i.test(u.arg.trim()),
-    )) {
-      problems.push({
-        rule: 'arxiv-eps-pdflatex',
-        check: 'venue',
-        severity: 'warning',
-        message: `EPS figure with pdfLaTeX: ${use.arg.trim()}`,
-        location: { file: use.file, line: use.line },
-        fix: 'Convert to PDF (`epstopdf figure.eps`) and include the .pdf; arXiv’s pdfLaTeX will not convert it',
-      });
-    }
+  for (const use of uses.filter(
+    (u) => u.name === 'includegraphics' && /\.e?ps$/i.test(u.arg.trim()),
+  )) {
+    problems.push({
+      rule: 'arxiv-eps-pdflatex',
+      check: 'venue',
+      severity: 'warning',
+      message: `EPS figure (arXiv compiles with pdfLaTeX, which cannot include it): ${use.arg.trim()}`,
+      location: { file: use.file, line: use.line },
+      fix: 'Convert to PDF (`epstopdf figure.eps`) and include the .pdf; arXiv’s pdfLaTeX will not convert it',
+    });
   }
   const shell =
     /\\usepackage(\[[^\]]*\])?\{[^}]*\b(minted|pythontex|svg|gnuplottex|shellesc)\b[^}]*\}|\\write18|\\ShellEscape|\\immediate\\write18/g;
