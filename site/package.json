@@ -21,7 +21,7 @@
     "@astrojs/check": "0.9.12",
     "@astrojs/sitemap": "3.7.4",
     "@axe-core/playwright": "4.14.0",
-    "playwright": "1.63.0",
-    "typescript": "6.0.3"
+    "playwright": "1.65.0",
+    "typescript": "7.0.2"
   }
 }
