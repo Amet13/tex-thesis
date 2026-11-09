@@ -36,11 +36,11 @@ const samples = [
     <p class="runhead"><span>Browser check</span></p>
     <div class="galley">
       <aside class="marginal">
-        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded. With online verification on, only each reference’s DOI or title is sent, to CrossRef and doi.org.</p>
+        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded. Online verification is on by default: each reference’s DOI or title is sent to CrossRef and doi.org, and nothing else. Untick “Verify references online” to keep everything on your computer.</p>
         <p>The full check, with veraPDF, arXiv and DBLP lookups and the venue rules from <code>overfull.yml</code>, runs from the command line: <code>overfull check</code>.</p>
       </aside>
       <h1>Check your files</h1>
-      <p class="lede">Drop a build log, a bibliography or a PDF. This page runs the same code as the <code>overfull</code> command and prints the same report.</p>
+      <p class="lede">Drop a build log, a bibliography or a PDF. This page runs the same checks as the <code>overfull</code> command, with two differences: arXiv and DBLP cannot be searched from a browser, so entries only they could confirm show as “could not be checked here”; and veraPDF’s full PDF/UA validation runs only in <code>overfull check</code>.</p>
     </div>
 
     <div class="bench">

@@ -6,6 +6,13 @@ import { isAuthorProvided } from './entry.js';
 import type { RefResult } from './types.js';
 import { hasValidProvenance, isUnproven, sourceName } from './verify.js';
 
+/**
+ * The author-provided escape hatch is for people only: agent instructions (AGENTS.md,
+ * skills) tell agents never to add it.
+ */
+const UNPROVEN_FIX =
+  'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite. If you wrote this entry yourself, add `note = {overfull: author-provided}` to it.';
+
 export const refsRules: RuleInfo[] = [
   {
     id: 'bib-file-missing',
@@ -95,7 +102,7 @@ export const refsRules: RuleInfo[] = [
     title: 'Reference neither verified nor added with overfull cite',
     summary:
       'With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite`: it carries an intact `x-overfull = {cite … <hash>}` marker and a DOI, eprint or URL. The hash makes edits evident; it is not authentication. Entries the author vouches for carry `note = {overfull: author-provided}` (added by the author, never by an agent). A hand-written entry that no index confirms may not exist.',
-    fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
+    fix: UNPROVEN_FIX,
   },
   {
     id: 'reference-not-reverified',
@@ -171,7 +178,7 @@ function unprovenProblem(r: RefResult, entry?: BibEntry): Problem {
     message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
     ...(location ? { location } : {}),
     detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ''}. The entry has no intact \`x-overfull = {cite … <hash>}\` marker (missing, hand-written, or the entry was edited after \`overfull cite\`) with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
-    fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
+    fix: UNPROVEN_FIX,
     ...(entry?.raw ? { evidence: entry.raw } : {}),
     data: { key: r.key, status: r.status },
   };
@@ -368,6 +375,57 @@ function summaryOf(results: RefResult[], stats: Record<string, number>): string 
   return parts.length ? `${head} (${parts.join(', ')})` : head;
 }
 
+/** Entries whose lookups failed for network reasons before they are folded into one problem. */
+const COLLAPSE_AT = 3;
+
+/** Hosts that could not be reached (network error, timeout) in a lookup-failure reason. */
+export function unreachableHosts(reason: string | undefined): string[] {
+  const hosts: string[] = [];
+  for (const part of (reason ?? '').replace(/^lookup incomplete: /, '').split('; ')) {
+    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,}): (?:network error|timed out)/.exec(part);
+    if (m?.[1]) hosts.push(m[1]);
+  }
+  return hosts;
+}
+
+/**
+ * When many entries could not be looked up because an index was unreachable, the
+ * per-entry warnings say the same thing N times: replace them (in place) with one
+ * `reference-lookup-failed` problem. Per-entry detail stays in data and evidence.
+ */
+function collapseNetworkFailures(problems: Problem[], results: RefResult[]): void {
+  const byKey = new Map(results.map((r) => [r.key, r]));
+  const network = problems.filter((p) => {
+    if (p.rule !== 'reference-lookup-failed' && p.rule !== 'reference-not-reverified') return false;
+    const r = byKey.get(String(p.data?.key));
+    return r?.status === 'error' && unreachableHosts(r.reason).length > 0;
+  });
+  if (network.length < COLLAPSE_AT) return;
+  const entries = network.map((p) => {
+    const r = byKey.get(String(p.data?.key)) as RefResult;
+    return { key: r.key, reason: r.reason ?? '', ...(p.location ? { location: p.location } : {}) };
+  });
+  const hosts = [...new Set(entries.flatMap((e) => unreachableHosts(e.reason)))];
+  const hostText =
+    hosts.length === 1 ? hosts[0] : `${hosts.slice(0, -1).join(', ')} and ${hosts.at(-1)}`;
+  const summary: Problem = {
+    rule: 'reference-lookup-failed',
+    check: 'references',
+    severity: 'warning',
+    message: `Could not reach ${hostText}; ${entries.length} entries were not re-verified. Run again when online.`,
+    detail:
+      'A network problem is not evidence against the references; they were neither confirmed nor ruled out.',
+    fix: 'Run `overfull check` again with network access. Entries with a DOI or arXiv id can be confirmed by doi.org or arXiv even when a title search index is unreachable.',
+    evidence: entries.map((e) => `${e.key}: ${e.reason}`).join('\n'),
+    data: { keys: entries.map((e) => e.key), hosts, entries },
+  };
+  const drop = new Set(network);
+  const at = problems.findIndex((p) => drop.has(p));
+  const kept = problems.filter((p) => !drop.has(p));
+  kept.splice(at, 0, summary);
+  problems.splice(0, problems.length, ...kept);
+}
+
 /** Builds the `references` CheckResult. */
 export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): CheckResult {
   const byKey = new Map((opts.entries ?? []).map((e) => [e.key, e]));
@@ -393,6 +451,7 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
       })
       .map((r) => unprovenProblem(r, byKey.get(r.key))),
   ];
+  collapseNetworkFailures(problems, results);
   if (problems.some((p) => p.rule === 'reference-unproven')) {
     stats.unproven = problems.filter((p) => p.rule === 'reference-unproven').length;
   }

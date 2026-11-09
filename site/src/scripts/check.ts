@@ -362,7 +362,9 @@ export function initCheck(): void {
         });
         results.set(
           'accessibility',
-          accessibilityCheck(facts, { verapdf: null, level: profile.accessibility }),
+          browserAccessibility(
+            accessibilityCheck(facts, { verapdf: null, level: profile.accessibility }),
+          ),
         );
       }
 
@@ -508,4 +510,29 @@ function mergeChecks(parts: { build: CheckResult; output: CheckResult }[]): {
     return { check: key, status: statusOf(problems), problems, summary: `${parts.length} logs` };
   };
   return { build: merge('build'), output: merge('output') };
+}
+
+/**
+ * veraPDF cannot run in a browser, so its absence here is a note, not a
+ * problem: full PDF/UA validation is `overfull check`'s job.
+ */
+function browserAccessibility(result: CheckResult): CheckResult {
+  const problems = result.problems.map((p) =>
+    p.rule === 'verapdf-not-run'
+      ? {
+          ...p,
+          severity: 'info' as const,
+          message: 'veraPDF does not run in the browser. Full PDF/UA validation runs in `overfull check`.',
+        }
+      : p,
+  );
+  const counted = problems.filter((p) => p.severity !== 'info').length;
+  return {
+    ...result,
+    problems,
+    status: statusOf(problems),
+    summary: counted
+      ? `${counted} accessibility problem${counted === 1 ? '' : 's'}`
+      : 'Tagged, language and title set',
+  };
 }
