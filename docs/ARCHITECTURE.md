@@ -174,7 +174,7 @@ venue:
   disclosure: required
 build:
   engine: auto            # local latexmk if present, else Docker
-  image: ghcr.io/amet13/overfull:0.1
+  image: ghcr.io/amet13/overfull:3
 ```
 
 Cache: the user cache directory (`$XDG_CACHE_HOME/overfull`, `~/.cache/overfull`, or `%LOCALAPPDATA%\overfull`), keyed per project. `references.cache: project` keeps it in `.overfull/cache/refs.json` instead; CI ignores a git-tracked cache.
@@ -188,7 +188,7 @@ classic path needs only Docker.
 
 ## GitHub Action
 
-`uses: amet13/overfull@v1` runs `overfull check` on outputs an existing
+`uses: amet13/overfull@v3` runs `overfull check` on outputs an existing
 workflow already produced (log, PDF, bib). It writes annotations, a job summary
 and outputs `status` and `report`. Full builds, veraPDF and latexdiff run in the
 Docker image via the template workflow.

@@ -2,7 +2,7 @@
 // Runs agent tasks against Overfull templates and scores the result with `overfull check`.
 //
 //   node evals/run.mjs --agent "claude -p {prompt} --permission-mode acceptEdits" \
-//     [--variant kit|bare|both] [--image ghcr.io/amet13/overfull:0.1] [--task id] [--runs 1]
+//     [--variant kit|bare|both] [--image ghcr.io/amet13/overfull:3] [--task id] [--runs 1]
 //
 // "kit"  = template as shipped (AGENTS.md, skills, overfull CLI in the image).
 // "bare" = same template with AGENTS.md, CLAUDE.md and skills removed.
@@ -28,7 +28,7 @@ const { values } = parseArgs({
   options: {
     agent: { type: 'string' },
     variant: { type: 'string', default: 'both' },
-    image: { type: 'string', default: process.env.OVERFULL_IMAGE ?? 'ghcr.io/amet13/overfull:0.1' },
+    image: { type: 'string', default: process.env.OVERFULL_IMAGE ?? 'ghcr.io/amet13/overfull:3' },
     task: { type: 'string', multiple: true },
     runs: { type: 'string', default: '1' },
     keep: { type: 'boolean', default: false },

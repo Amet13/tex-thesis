@@ -87,7 +87,7 @@ describe('S1: names that reach latexmk are validated', () => {
   });
 
   it('validates Docker image references from every source', async () => {
-    expect(safeImage('ghcr.io/amet13/overfull:0.1')).toBe('ghcr.io/amet13/overfull:0.1');
+    expect(safeImage('ghcr.io/amet13/overfull:3')).toBe('ghcr.io/amet13/overfull:3');
     expect(safeImage('overfull:dev')).toBe('overfull:dev');
     expect(safeImage(`localhost:5000/a/b@sha256:${'a'.repeat(64)}`)).toContain('sha256');
     expect(() => safeImage('-v/:/host')).toThrow(/Invalid Docker image/);

@@ -12,7 +12,7 @@ import { parse as parseYaml } from 'yaml';
 import { UsageError } from './io.js';
 import { safeImage, safeJobname, safeRelPath } from './safety.js';
 
-export const DEFAULT_IMAGE = 'ghcr.io/amet13/overfull:0.1';
+export const DEFAULT_IMAGE = 'ghcr.io/amet13/overfull:3';
 export const CONFIG_FILE = 'overfull.yml';
 
 export type Engine = 'auto' | 'local' | 'docker';

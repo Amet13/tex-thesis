@@ -1,6 +1,6 @@
 {
   "name": "@overfull/core",
-  "version": "0.1.0",
+  "version": "3.0.0",
   "description": "Browser-safe checks for LaTeX documents: build logs, references, PDF accessibility, venue rules.",
   "license": "MIT",
   "type": "module",

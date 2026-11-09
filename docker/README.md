@@ -22,8 +22,8 @@ The working directory is `/work`.
 The template `Makefile`s run `overfull` when it is installed and otherwise:
 
 ```sh
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:0.1 overfull check
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:0.1 latexmk
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3 overfull check
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3 latexmk
 ```
 
 `overfull build --engine docker` does the same. The template CI workflow

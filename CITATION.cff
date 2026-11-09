@@ -9,8 +9,8 @@ authors:
 repository-code: "https://github.com/amet13/overfull"
 url: "https://amet13.github.io/overfull/"
 license: MIT
-version: "0.1.0"
-date-released: "2026-11-08"
+version: "3.0.0"
+date-released: "2026-11-09"
 keywords:
   - latex
   - thesis

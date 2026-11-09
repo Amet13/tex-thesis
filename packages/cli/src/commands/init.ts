@@ -3,7 +3,14 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 import { parse } from '../args.js';
 import { type Io, UsageError } from '../io.js';
 import { insideRootForWrite, isDanglingSymlink } from '../safety.js';
-import { copyTemplate, TEMPLATE_NAMES, type TemplateName, templatesDir } from '../templates.js';
+import {
+  copyTemplate,
+  hasEmbeddedTemplate,
+  TEMPLATE_NAMES,
+  type TemplateName,
+  templatesDir,
+  writeEmbeddedTemplate,
+} from '../templates.js';
 import { run, which } from '../tools.js';
 
 /**
@@ -80,9 +87,10 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
   if (!(TEMPLATE_NAMES as readonly string[]).includes(template)) {
     throw new UsageError(`Unknown template "${template}". Choose ${TEMPLATE_NAMES.join(', ')}.`);
   }
-  const root = templatesDir();
+  const embedded = hasEmbeddedTemplate(template);
+  const root = embedded ? undefined : templatesDir();
   const src = root ? join(root, template) : undefined;
-  if (!src || !existsSync(src))
+  if (!embedded && (!src || !existsSync(src)))
     throw new UsageError(`Template "${template}" is not bundled with this overfull install.`);
   const target = resolve(io.cwd, dir ?? template);
   // A target under the current directory must not escape it through a symlink
@@ -98,7 +106,8 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
       `${relative(io.cwd, target) || '.'} is not empty. Choose another directory or pass --force.`,
     );
   }
-  copyTemplate(src, target);
+  if (embedded) writeEmbeddedTemplate(template, target);
+  else copyTemplate(src as string, target);
   const gitNote = values['no-git'] === true ? undefined : await initGit(target, template, io.env);
   const shown = relative(io.cwd, target) || '.';
   if (values.json) {

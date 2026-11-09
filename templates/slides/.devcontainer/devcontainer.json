@@ -2,7 +2,7 @@
   // VS Code / GitHub Codespaces: open this folder in the Overfull image
   // (TeX Live 2026, fonts, veraPDF, overfull CLI) with LaTeX Workshop.
   "name": "Overfull slides",
-  "image": "ghcr.io/amet13/overfull:0.1",
+  "image": "ghcr.io/amet13/overfull:3",
   "workspaceFolder": "/work",
   "workspaceMount": "source=${localWorkspaceFolder},target=/work,type=bind",
   "customizations": {

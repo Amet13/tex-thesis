@@ -61,10 +61,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test
-      - name: Standalone CLI runs
+      - name: Standalone CLI runs and creates a project
+        shell: bash
         run: |
           node scripts/build-standalone.mjs
           node dist-standalone/overfull.cjs --version
+          node dist-standalone/overfull.cjs init paper "$RUNNER_TEMP/sa-paper" --no-git
+          test -f "$RUNNER_TEMP/sa-paper/main.tex"
+          test -f "$RUNNER_TEMP/sa-paper/.agents/skills/add-citation/SKILL.md"
 
   tex:
     name: Image, corpus, templates, Action

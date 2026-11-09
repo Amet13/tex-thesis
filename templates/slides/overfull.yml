@@ -11,4 +11,4 @@ profile: generic
 checks: [build, output]
 build:
   engine: auto             # local latexmk if installed, otherwise Docker
-  image: ghcr.io/amet13/overfull:0.1
+  image: ghcr.io/amet13/overfull:3

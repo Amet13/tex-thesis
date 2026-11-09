@@ -7,4 +7,4 @@ export * from './rules.js';
 export * from './types.js';
 export * from './venue/index.js';
 
-export const VERSION = '0.1.0';
+export const VERSION = '3.0.0';

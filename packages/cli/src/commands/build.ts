@@ -37,7 +37,7 @@ Uses a local latexmk if installed, otherwise the Overfull Docker image.
 Options:
   --engine e      auto (default), local or docker
   --image name    Docker image. Precedence: --image, then $OVERFULL_IMAGE, then
-                  build.image in overfull.yml, then ghcr.io/amet13/overfull:0.1
+                  build.image in overfull.yml, then ghcr.io/amet13/overfull:3
   --verbose, -v   Show latexmk output and fixes for each problem
   --force         Rebuild even when nothing changed since the last build
   --json          Print the report as JSON (same shape as \`overfull check --json\`)

@@ -11,7 +11,7 @@ import type { Report } from '../src/types.js';
 
 const report: Report = {
   tool: 'overfull',
-  version: '0.1.0',
+  version: '3.0.0',
   target: 'thesis.pdf',
   status: 'fail',
   checks: [

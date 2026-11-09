@@ -1,6 +1,6 @@
 {
   "name": "overfull-action",
-  "version": "0.1.0",
+  "version": "3.0.0",
   "private": true,
   "description": "GitHub Action: Overfull preflight on an existing LaTeX build (log, PDF, bib).",
   "license": "MIT",

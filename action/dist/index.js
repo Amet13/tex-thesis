@@ -114461,7 +114461,7 @@ function stopCommands() {
 }
 
 // ../packages/cli/src/config.ts
-var DEFAULT_IMAGE = "ghcr.io/amet13/overfull:0.1";
+var DEFAULT_IMAGE = "ghcr.io/amet13/overfull:3";
 var CONFIG_FILE = "overfull.yml";
 function latexmkrcDirs(root) {
   const out = {};
@@ -115023,7 +115023,7 @@ async function runVeraPdf(pdf, env, opts = {}) {
 }
 
 // ../packages/cli/src/version.ts
-var VERSION = true ? "0.1.0" : readVersion();
+var VERSION = true ? "3.0.0" : readVersion();
 
 // ../packages/cli/src/check.ts
 var skipped2 = (check2, reason) => ({

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, symlinkSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,4 +59,41 @@ export function templatesDir(): string | undefined {
     }
   }
   return undefined;
+}
+
+/** File tree embedded by scripts/build-standalone.mjs: "<template>/<path>" → base64, or a symlink. */
+type EmbeddedTemplates = Record<string, string | { link: string }>;
+declare const __OVERFULL_TEMPLATES__: EmbeddedTemplates | undefined;
+
+/** Templates compiled into the standalone build, if this is one. */
+export function embeddedTemplates(): EmbeddedTemplates | undefined {
+  return typeof __OVERFULL_TEMPLATES__ === 'object' ? __OVERFULL_TEMPLATES__ : undefined;
+}
+
+/** True when the standalone build carries the named template. */
+export function hasEmbeddedTemplate(name: TemplateName): boolean {
+  const all = embeddedTemplates();
+  return !!all && Object.keys(all).some((k) => k.startsWith(`${name}/`));
+}
+
+/** Writes an embedded template to dest (same filtering and symlink handling as copyTemplate). */
+export function writeEmbeddedTemplate(name: TemplateName, dest: string): void {
+  const all = embeddedTemplates() ?? {};
+  mkdirSync(dest, { recursive: true });
+  for (const [key, value] of Object.entries(all)) {
+    if (!key.startsWith(`${name}/`)) continue;
+    const rel = key.slice(name.length + 1);
+    if (!isTemplateFile(rel)) continue;
+    const target = join(dest, ...rel.split('/'));
+    mkdirSync(dirname(target), { recursive: true });
+    if (typeof value === 'string') {
+      writeFileSync(target, Buffer.from(value, 'base64'));
+    } else {
+      try {
+        symlinkSync(value.link, target, 'dir');
+      } catch {
+        cpSync(join(dirname(target), value.link), target, { recursive: true });
+      }
+    }
+  }
 }

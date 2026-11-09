@@ -6,41 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
-## [v0.1.0] - Overfull
+## [v3.0.0] - Overfull
 
 tex-thesis becomes **Overfull**, a preflight kit for LaTeX papers and theses
-that works with AI coding agents and by hand. Version numbering restarts at
-0.1.0 for the new project; the last tex-thesis release was v2.4.1.
+that works with AI coding agents and by hand. The version continues the
+tex-thesis numbering (last release v2.4.1) because the thesis template lives on
+as `templates/thesis`.
 
 ### Added
 
-- `overfull` CLI: `init`, `build`, `check`, `cite`, `pages`, `diff`, `explain`, `doctor`.
-- `@overfull/core`: browser-safe checks for build logs, output problems,
-  reference verification (CrossRef, doi.org, DBLP, arXiv, optional OpenAlex),
-  PDF accessibility (tagging, alt text, language, title, fonts, veraPDF) and
-  venue rules (page limits, anonymity, AI-use disclosure, arXiv).
-- GitHub Action (`uses: amet13/overfull@v1`) with annotations and job summaries.
-- Templates: `thesis` (the former tex-thesis, rebuilt as a tagged, accessible
-  PDF), `paper` and `slides`, each with `AGENTS.md`, Agent Skills and a CI workflow.
-- Agent Skills: add-citation, fix-build, add-figure, make-accessible,
-  fit-page-limit, prepare-arxiv, write-disclosure, review-changes, start-paper,
-  respond-to-reviewers.
-- Corpus of failing LaTeX documents that CI recompiles on TeX Live 2026.
-- Website with docs, a rule reference and a browser-only check.
-- Docker image `ghcr.io/amet13/overfull` with TeX Live 2026, poppler, veraPDF,
-  latexdiff and the CLI.
+- `overfull` CLI: `init`, `build`, `check`, `cite`, `pages`, `diff`,
+  `explain`, `doctor`, all with `--json` for agents.
+- Five checks in `@overfull/core` (browser-safe):
+  - **build**: TeX errors grouped by root cause with plain-language fixes,
+    proven by a 49-case corpus recompiled on TeX Live 2026.
+  - **output**: `??`, `[?]`, stale bibliography, overfull boxes, floats past
+    the main text.
+  - **references**: verification against CrossRef, doi.org, DBLP, arXiv and
+    OpenAlex. Outcomes are verified, mismatch, not found, unverifiable or
+    lookup failed, never "fake".
+  - **accessibility**: tagging, alt text (also from the source, for
+    `\includegraphics` and `tikzpicture`), language, title, fonts, veraPDF
+    PDF/UA.
+  - **venue**: page limits, paper size, double-blind anonymity, AI-use
+    disclosure (including placeholders), arXiv rules.
+- `overfull cite` adds only real references; ambiguous titles list candidates
+  instead of guessing; entries carry a tamper-evident `x-overfull` marker, and
+  `references.requireCite` makes unproven references errors.
+- GitHub Action (`uses: amet13/overfull@v3`) with annotations, job summary,
+  outputs and workflow-command injection protection.
+- Templates `thesis`, `paper` and `slides`: thesis and paper are tagged
+  PDF/UA-2 and pass veraPDF; every template builds with zero warnings and
+  ships `AGENTS.md`, ten Agent Skills, pointers for Claude Code, Codex,
+  Cursor, Copilot and Gemini CLI, a Dev Container and a CI workflow.
+- Docker image `ghcr.io/amet13/overfull` (TeX Live 2026, poppler, veraPDF,
+  latexdiff, Node 24, the CLI).
+- Standalone CLI on every GitHub release: `overfull.cjs` (Node 22+) and native
+  executables for Linux, macOS and Windows, with checksums and provenance.
+- Website with docs, a rule reference built from the corpus, and a
+  browser-only check.
 - Evals harness that scores agents with and without the kit.
 
 ### Changed
 
 - Licenses: code is MIT; templates, skills and agent instructions are MIT-0
   (previously GPL-3.0 and CC BY-SA 4.0).
-- The thesis template moved to `templates/thesis` and dropped packages that
-  break PDF tagging.
+- The thesis template moved to `templates/thesis` and was rebuilt for PDF
+  tagging (kernel sectioning, table headers, MathML), with consistent sample
+  data.
 
 ### Removed
 
-- The deleted `.devcontainer` references and the old single-template build.
+- The old single-template build, root `.vscode` settings and the deleted
+  `.devcontainer` references.
 
 ## [v2.4.1] - 2026-04-12
 
