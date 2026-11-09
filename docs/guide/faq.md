@@ -24,7 +24,9 @@ whether your class supports tagging.
 ## Does it work with pdfLaTeX or XeLaTeX?
 
 The checks read logs from LuaLaTeX, pdfLaTeX and XeLaTeX. The templates use
-LuaLaTeX because LaTeX's tagging support works best with it.
+LuaLaTeX because LaTeX's tagging support works best with it. The paper template
+also builds with pdfLaTeX (`make arxiv` or `latexmk -pdf`), because arXiv does
+not support LuaLaTeX. See [Venues](./venues.md#arxiv).
 
 ## A real reference is reported as not found. What now?
 
@@ -35,16 +37,17 @@ out with `note = {overfull: skip}` or `references.ignore`. See
 
 ## Does Overfull say a reference is fake?
 
-No. It reports what the indexes returned: verified, mismatch, not found, or
-unverifiable. You decide what that means.
+No. It reports what the indexes returned: verified, mismatch, not found,
+unverifiable, or lookup failed. You decide what that means.
 
 ## What data leaves my machine?
 
-Reference checks send titles, DOIs and arXiv ids of your cited entries to
-CrossRef, doi.org, arXiv, DBLP and, if configured, OpenAlex, plus your `mailto`
-address to CrossRef and OpenAlex if you set one. Nothing else is sent. Use
-`--offline` to send nothing. The browser check on the website runs in your
-browser.
+Reference checks (and `overfull cite`) send titles, DOIs and arXiv ids of your
+cited entries to CrossRef, doi.org, arXiv and DBLP. If you set the
+`OPENALEX_API_KEY` environment variable, titles also go to OpenAlex, with the
+key. If you set a `mailto` address, it goes to CrossRef and OpenAlex. Nothing
+else is sent. Use `--offline` to send nothing. The browser check on the website
+runs in your browser.
 
 ## Does Overfull use AI?
 

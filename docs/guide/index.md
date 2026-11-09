@@ -52,14 +52,18 @@ make check
 
 `init` copies the paper template (use `thesis` or `slides` for the others).
 `make build` compiles the PDF in Docker, so you do not need a local TeX
-installation. `make check` prints a report like this:
+installation. `make check` prints a report like this (the first line shows the status, then
+one line per check, then the problems):
 
 ```text
-build          pass
-output         warn   1 overfull box (14.2pt) at sections/method.tex:31
-references     pass   12 of 12 references verified
-accessibility  pass
-venue          pass
+overfull paper.pdf  WARN
+  ✓ build          Build succeeded (paper.pdf, 8 pages)
+  ! output         1 × overfull-box
+  ✓ references     12 of 12 references verified
+  ✓ accessibility  Tagged, PDF/UA valid (veraPDF)
+  ✓ venue          profile paper, 8 pages (limit 8)
+
+  ! sections/method.tex:31  Text sticks 14.2pt into the margin (lines 31–33)  overfull-box
 ```
 
 Already have a project? Run `npx overfull check` in its folder after a build.

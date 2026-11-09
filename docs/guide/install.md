@@ -57,8 +57,9 @@ npx overfull check
 `overfull build` uses a local `latexmk` if one is installed and falls back to
 Docker otherwise. Force one with `--engine local` or `--engine docker`.
 
-Reference lookups go to CrossRef, doi.org, arXiv, DBLP and (if configured)
-OpenAlex. They need network access. Use `--offline` to skip them.
+Reference lookups go to CrossRef, doi.org, arXiv, DBLP and, if the
+`OPENALEX_API_KEY` environment variable is set, OpenAlex. They need network
+access. Use `overfull check --offline` to skip them.
 
 ## Dev Container and VS Code
 
@@ -85,5 +86,8 @@ steps and for moving builds to GitHub Actions.
 overfull doctor
 ```
 
-It reports the Overfull version, whether `latexmk`, LuaLaTeX, Biber, Docker,
-veraPDF and latexdiff are available, and what each missing tool disables.
+It reports the Node.js and Overfull versions, whether `latexmk`, LuaLaTeX, Biber,
+poppler, veraPDF, latexdiff, Git and Docker are available, whether the Docker
+image is pulled, whether CrossRef is reachable, whether `overfull.yml` is valid,
+and what each missing tool disables. `overfull doctor --json` prints the same as
+JSON.

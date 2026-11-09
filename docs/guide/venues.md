@@ -23,11 +23,14 @@ overfull check --profile arxiv
 
 | Profile | Use for | Defaults |
 | --- | --- | --- |
-| `generic` | Any LaTeX document | Accessibility as advice, no disclosure check |
-| `thesis` | Theses and dissertations | Accessible PDF/UA output required, no page limit |
-| `paper` | Conference and journal papers | Disclosure and accessibility recommended |
-| `arxiv` | Source packages for arXiv | arXiv packaging rules on |
-| `double-blind` | Anonymous review | Anonymity checks on, disclosure recommended |
+| `generic` | Any LaTeX document | Accessibility `recommended`, disclosure `off` |
+| `thesis` | Theses and dissertations | Accessibility `required` (PDF/UA output), disclosure `off`, no page limit |
+| `paper` | Conference and journal papers | Disclosure and accessibility `recommended` |
+| `arxiv` | Source packages for arXiv | arXiv packaging rules on, accessibility `recommended`, disclosure `off` |
+| `double-blind` | Anonymous review | Anonymity checks on, disclosure and accessibility `recommended` |
+
+No profile sets a page limit, and all of them accept any paper size. Set
+`pageLimit` and `paper` under `venue:`. All profiles run all five checks.
 
 Fields under `venue:` in `overfull.yml` override the profile.
 
@@ -46,8 +49,8 @@ venue:
 | `pageLimit.endLabel` | Count only up to the page with this label. |
 | `paper` | Expected paper size: `a4`, `letter` or `any`. |
 | `anonymous` | Run anonymity checks. |
-| `disclosure` | `required` (missing statement is an error), `recommended` (info) or `off`. |
-| `accessibility` | `required` (problems are errors), `recommended` or `off`. |
+| `disclosure` | `required` (a missing statement is an error), `recommended` (a missing statement is `info`) or `off`. |
+| `accessibility` | `required` (problems are errors), `recommended` (warnings) or `off` (check skipped). |
 | `arxiv` | Apply the arXiv packaging rules. |
 
 The full list is in the [configuration reference](./config.md).
@@ -65,8 +68,10 @@ Put a label where the counted part ends:
 ```
 
 and set `endLabel: overfull:main-end`. Overfull reads the page of that label
-from the `.aux` file and compares it with `max`. Without `endLabel`, every page
-counts.
+from the `.aux` file and compares it with `max`. A partial page counts as a full
+page. Without `endLabel`, every page counts. If the label is not in the `.aux`,
+the check reports `page-limit-label-missing` (warning) and counts every page.
+Going over the limit is `page-limit-exceeded` (error).
 
 If you are over, fix the content. Changing fonts, margins or spacing usually
 breaks the venue's formatting rules and can get a paper desk-rejected. The
@@ -76,13 +81,15 @@ breaks the venue's formatting rules and can get a paper desk-rejected. The
 
 With `anonymous: true` (or the `double-blind` profile), Overfull checks:
 
-- the PDF's Author metadata field;
-- the content of `\author`;
-- an acknowledgments section, which often names people and grants.
+- the PDF's Author metadata field (`anonymity-pdf-author`, error);
+- the content of `\author` (`anonymity-author-named`, error);
+- an acknowledgments section, which often names people and grants
+  (`anonymity-acknowledgments`, warning);
+- phrases such as "our previous work" (`anonymity-self-reference`, info).
 
-It cannot catch everything. Also check for first-person self-citations ("our
-earlier work [12]"), links to your own repositories or websites, file names and
-comments in the source if you upload it, and names in figure images.
+It cannot catch everything. Also check for other first-person self-citations,
+links to your own repositories or websites, file names and comments in the
+source if you upload it, and names in figure images.
 
 ## AI-use disclosure
 
@@ -99,17 +106,21 @@ that year's call for papers or author guidelines. Universities set their own
 rules for theses; ask your graduate school.
 
 If the venue requires a statement, set `disclosure: required`. The check then
-reports an error when it finds no disclosure in the document. It recognises a
-heading about AI use (for example `\section*{Use of Generative AI}`) or the
-label `\label{overfull:disclosure}` anywhere in the source:
+reports `disclosure-missing` as an error when it finds no disclosure in the
+document. It recognises a heading that mentions both AI and its use (for example
+`\section*{Use of Generative AI}`) or the label `\label{overfull:disclosure}`
+anywhere in the source:
 
 ```latex
 \section*{Use of Generative AI}\label{overfull:disclosure}
 We used ... for ...
 ```
 
-The check confirms that a statement exists. It cannot tell whether the
-statement is accurate or meets the venue's policy. The
+The check confirms that a statement exists and is not a placeholder: text such
+as "TODO" or "TBD", or fewer than 40 characters, is reported as
+`disclosure-placeholder` (an error with `required`, a warning with
+`recommended`). It cannot tell whether the statement is accurate or meets the
+venue's policy. The
 `write-disclosure` skill lets an agent draft a statement from what actually
 happened in the repository. You must read, correct and approve it. See
 [Responsible use](./responsible-use.md).
@@ -118,15 +129,30 @@ happened in the repository. You must read, correct and approve it. See
 
 `overfull check --profile arxiv` adds rules for arXiv's build system:
 
-- no absolute paths in `\input`, `\includegraphics` or `\addbibresource`;
-- no spaces in file names;
-- no `.eps` figures when the build uses pdfLaTeX;
-- no `minted` or other shell-escape features;
-- a `.bbl` file present when packaging, named like the main file.
+- no absolute paths in `\input`, `\includegraphics`, `\addbibresource` and similar
+  commands (`arxiv-absolute-path`, error);
+- no spaces in file names (`arxiv-filename-space`, warning);
+- no `.eps` figures when the build log shows pdfLaTeX (`arxiv-eps-pdflatex`,
+  warning);
+- no `minted` or other shell-escape features (`arxiv-shell-escape`, warning);
+- a `.bbl` file next to the main file, because arXiv does not run biber
+  (`arxiv-missing-bbl`, info).
 
 arXiv's own rules change; read its [submission help](https://info.arxiv.org/help/submit_tex.html)
-before you upload. Note that the templates compile with LuaLaTeX, and arXiv's
+before you upload. arXiv's
 [list of supported processors](https://info.arxiv.org/help/faq/texlive.html)
-has not included LuaLaTeX (it lists pdfLaTeX, LaTeX and XeLaTeX). Plan for
-this before your first arXiv submission.
-The `prepare-arxiv` skill covers comment removal with `arxiv_latex_cleaner`.
+has not included LuaLaTeX (it lists pdfLaTeX, LaTeX and XeLaTeX).
+
+The paper template handles this: it builds with LuaLaTeX by default and with
+pdfLaTeX for arXiv, using `make arxiv` or `latexmk -pdf`. The `.eps` rule reads
+the log it is given, so to check the pdfLaTeX build, point `check` at its files:
+
+```sh
+make arxiv
+overfull check --profile arxiv --checks build,output,venue \
+  --log paper-arxiv.log --pdf paper-arxiv.pdf --aux paper-arxiv.aux
+```
+
+The thesis and slides templates build with LuaLaTeX and have no pdfLaTeX build. Plan for this before your
+first arXiv submission with them. The `prepare-arxiv` skill covers comment
+removal with `arxiv_latex_cleaner`.

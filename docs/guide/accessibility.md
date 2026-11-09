@@ -40,13 +40,18 @@ document language, a title, alt text for figures, and more.
 
 ## How the templates do it
 
-The templates use the LaTeX team's built-in tagging support, compiled with
-LuaLaTeX. The first line of `main.tex` is a `\DocumentMetadata` declaration
-along these lines:
+The thesis and paper templates use the LaTeX team's built-in tagging support,
+compiled with LuaLaTeX. The first command of `main.tex` is a `\DocumentMetadata`
+declaration along these lines (the real one also sets `pdfversion=2.0`, and in the
+paper template a MathML setup for LuaLaTeX):
 
 ```latex
 \DocumentMetadata{lang=en, pdfstandard=ua-2, tagging=on}
 ```
+
+The slides template cannot do this: Beamer does not support tagging. Its
+`overfull.yml` leaves out the `accessibility` check. Share the thesis or paper
+PDF with the slides, or move to the `ltx-talk` class.
 
 On top of that, the templates:
 
@@ -85,13 +90,18 @@ details in the text or a table.
 
 [veraPDF](https://verapdf.org) is the open-source reference validator for
 PDF/A and PDF/UA. The Overfull Docker image includes it, and the template
-workflow runs it on every build. Its failures appear in the accessibility check
-with the rule that failed. `overfull explain <rule>` gives a plain-language
-explanation.
+workflow runs it on every build. `overfull check` runs it whenever `verapdf` is
+on the `PATH` (PDF/UA-2, falling back to PDF/UA-1 for older PDFs) unless you pass
+`--no-verapdf`. Its failures appear in the accessibility check as
+`verapdf-<clause>` rules, for example `verapdf-8-2-5-26`.
+`overfull explain <rule>` gives a plain-language explanation.
 
 Without veraPDF (for example in the browser check or with a plain `npx overfull`
-install), Overfull still checks the basics: tagging, language, title, figures
-with and without alt text, PDF/UA claim.
+install), Overfull still checks the basics: tagging (`pdf-not-tagged`),
+language (`pdf-missing-language`), title (`pdf-missing-title`), figures without
+alt text (`figure-missing-alt`), embedded fonts (`font-not-embedded`) and the
+PDF/UA claim (`pdfua-not-claimed`). It reports `verapdf-not-run` as `info` so you
+know the full validation did not happen.
 
 ## What automation cannot check
 

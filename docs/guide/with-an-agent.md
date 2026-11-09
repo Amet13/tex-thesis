@@ -20,9 +20,11 @@ agent tools for those facts and a clear definition of done.
 | `.claude/skills/` | A symlink to `.agents/skills/` for Claude Code. |
 | `overfull.yml` | Project facts: main file, bibliography, profile, venue rules. |
 
-The skills cover starting a paper, adding citations, fixing the build, adding
-figures, accessibility, page limits, arXiv, AI disclosure, preparing a PR and
-responding to reviewers.
+The skills cover starting a paper (`start-paper`), adding citations
+(`add-citation`), fixing the build (`fix-build`), adding figures (`add-figure`),
+accessibility (`make-accessible`), page limits (`fit-page-limit`), arXiv
+(`prepare-arxiv`), AI disclosure (`write-disclosure`), preparing a PR
+(`review-changes`) and responding to reviewers (`respond-to-reviewers`).
 
 ## Setting up each agent
 
@@ -49,8 +51,8 @@ CLI; see GitHub's documentation on customizing the agent environment.
 
 Agents that support Agent Skills find them in `.agents/skills/` or
 `.claude/skills/`, depending on the tool. Agents that do not can still follow
-them: `AGENTS.md` lists each skill and its path, and each `SKILL.md` is plain
-Markdown.
+them: `AGENTS.md` lists each skill and says to read its `SKILL.md` in
+`.agents/skills/` first, and each `SKILL.md` is plain Markdown.
 
 ## The loop
 
@@ -62,9 +64,10 @@ overfull check --json
 ```
 
 It fixes every `error`, reviews every `warning`, and repeats. The task is done
-when `overfull check` reports no errors. The JSON is a stable `Report` (see
-[CLI reference](./cli.md#json-output)), so the agent gets a rule id, a file and
-line or page, and a suggested fix for each problem.
+when `overfull check` reports no errors (exit code 0). The JSON is a stable
+`Report` (see [CLI reference](./cli.md#json-output)), so the agent gets a rule id,
+a file and line or page, and a suggested fix for each problem. For a rule it does
+not know, it runs `overfull explain <rule>`.
 
 When layout matters, agents that can read images use `overfull pages 3-4` to
 render pages and look at them.
@@ -80,7 +83,9 @@ skill has it:
 
 Read the highlighted PDF, not only the LaTeX diff. Check every new citation is
 one you meant, and every claim matches your notes. The template workflow builds
-the PDF and posts the check report on the PR.
+the PDF and runs the checks on the PR, writing the report to the job summary and
+as annotations, and attaches the PDFs, including the highlighted-changes PDF, as
+an artifact.
 
 ## Prompts that work
 
@@ -105,11 +110,11 @@ does not have.
 `AGENTS.md` makes these hard rules:
 
 - Add references only with `overfull cite`. Never write BibTeX from memory, and
-  never cite a key that check reports as not found.
+  never cite a key that check reports as `reference-not-found`.
 - Never invent data, results, numbers or quotes. Research claims come from
   `notes/` or from you.
-- Never weaken `overfull.yml` (venue rules, checks, ignore lists) to make a check
-  pass.
+- Never weaken `overfull.yml` (venue rules, profile, checks, ignore lists) to make
+  a check pass.
 - Never shrink fonts, margins or spacing to meet a page limit.
 - Keep tagging on and give every figure real alt text.
 - Never claim that no AI was used in a disclosure.

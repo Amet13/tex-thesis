@@ -13,14 +13,19 @@ before a reviewer, an examiner or arXiv does. No agent is involved.
 In a project made from a template:
 
 ```sh
-make build    # compile the PDF (Docker, or local TeX if configured)
+make build    # compile the PDF (local latexmk if installed, otherwise Docker)
 make watch    # rebuild whenever you save a .tex or .bib file
 make check    # run all checks and print a report
 make help     # list every target
 ```
 
-The Makefile calls `overfull build` and `overfull check`. You can call those
-directly too; see the [CLI reference](./cli.md).
+`make build` and `make watch` run `latexmk` directly (local, or in the Docker
+image if `latexmk` is not installed). `make check` runs `overfull check`. The
+Makefile has more targets: `make pages PAGES=4-6` renders pages to PNG,
+`make diff` builds a PDF of the changes against `origin/main` (set `BASE=` to
+change it), and `make clean` removes build files. The paper template adds
+`make arxiv`, which builds with pdfLaTeX as arXiv does. You can call the `overfull`
+commands directly too; see the [CLI reference](./cli.md).
 
 ## Project layout
 
@@ -51,19 +56,23 @@ Any editor works. Overfull only needs the files on disk.
 
 ## Reading the report
 
-`make check` prints one block per check, then the problems under it:
+`make check` prints one line per check, then the problems, worst first:
 
 ```text
-output  warn
-  warning  overfull-hbox  sections/method.tex:31  Line too wide by 14.2pt
-           fix: rephrase, or allow a break in the long word or URL
+overfull paper.pdf  FAIL
+  ✓ build       Build succeeded (paper.pdf, 8 pages)
+  ! output      1 × overfull-box
+  ✕ references  11 of 12 references verified (1 not found)
 
-references  fail  30 of 31 references verified
-  error    not-found  references.bib:88  No indexed record matches "Deep Graph Transformers" (2023)
-           fix: check the title and add a DOI, or remove the entry
+  ✕ references.bib:88  `lee2023deep` was not found in CrossRef, dblp or arXiv  reference-not-found
+  ! sections/method.tex:31  Text sticks 14.2pt into the margin (lines 31–33)  overfull-box
+
+1 to fix · 1 to review · 1 passed
+Run with --verbose for fixes, or `overfull explain <rule>`.
 ```
 
-The exact wording and rule ids may differ from this example. Each problem has:
+Add `--verbose` (or `-v`) to see why each problem happened and how to fix it.
+Each problem has:
 
 - a **severity**: `error` (wrong, or will be rejected), `warning` (probably a
   problem, look at it), `info` (could not be checked, or advice);
@@ -75,10 +84,12 @@ Work through errors first. A single TeX error often causes several follow-on
 messages; Overfull groups them under the first one, so fix that and rebuild.
 
 Every check ends as `pass`, `warn`, `fail` or `skipped`. `skipped` comes with a
-reason, for example "no PDF found, run make build first" or "offline".
+reason, for example "No paper.pdf — run `overfull build` first" or "offline:
+references were not looked up".
 
-The command exits with 0 when nothing failed and 1 when something did, so you can
-use it in scripts and Git hooks.
+`overfull check` exits with 0 when nothing failed and 1 when something did (use
+`--fail-on warning` to fail on warnings too), so you can use it in scripts and
+Git hooks.
 
 ## Adding references
 
