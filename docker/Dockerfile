@@ -21,7 +21,7 @@
 # ---------------------------------------------------------------------------
 # Pinned by digest (multi-arch index: linux/amd64, linux/arm64). Written inline,
 # not as an ARG, so Dependabot can propose digest updates.
-FROM texlive/texlive:latest@sha256:6530544393bd37b4aec8801292231ff61599aca43a04571306479a21591e87dd AS tex
+FROM texlive/texlive:latest@sha256:07e8062637249c4f780ca59f42cc2ed592bc2dc1db4320769406aee3f98aa70e AS tex
 
 ARG VERAPDF_VERSION=1.30.3
 ARG VERAPDF_SHA256=b512bf24945503a33fc10738ecffc1f2dccaaf8593a448e94ee9ac86a9559a59
