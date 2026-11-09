@@ -39,7 +39,9 @@ and the generated `.bbl` (rename `paper-arxiv.bbl` to `main.bbl`).
 - Set `venue.pageLimit.max` in `overfull.yml` to the venue's limit; the main
   text is counted up to `\label{overfull:main-end}`.
 - Write the **Use of AI tools** section (`sections/ai-disclosure.tex`)
-  truthfully, or state that none were used.
+  yourself: which tools, for what, and that you checked the output. Only the
+  author can make this statement; an agent may draft it from the repository
+  history for you to edit.
 - For double-blind review set `anonymous: true` and remove names from
   `metadata.tex`.
 - Every figure needs alt text: `\includegraphics[alt={...}]`,

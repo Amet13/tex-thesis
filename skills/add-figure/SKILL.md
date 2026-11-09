@@ -21,8 +21,7 @@ description: Add a reproducible figure to the document, either a data-driven pgf
    ```latex
    \begin{figure}[tbp]
      \centering
-     % alt text: follow the pattern used by the template's existing plot
-     \begin{tikzpicture}
+     \begin{tikzpicture}[alt={Line chart: validation loss falls from 2.1 at epoch 1 to 0.4 at epoch 20.}]
        \begin{axis}[xlabel={Epoch}, ylabel={Validation loss}, width=\linewidth]
          \addplot table[x=epoch, y=loss, col sep=comma] {figures/data/loss.csv};
        \end{axis}
@@ -32,7 +31,10 @@ description: Add a reproducible figure to the document, either a data-driven pgf
    \end{figure}
    ```
 
-3. Label the axes with units. Use a legend only for more than one series.
+3. Write the `alt` text from the data: what kind of chart, what it shows, and the
+   main trend or values. `overfull check` reports a `tikzpicture` or
+   `\includegraphics` without `alt=` as `figure-missing-alt`.
+4. Label the axes with units. Use a legend only for more than one series.
 
 If the plot is made by a script (Python, R), keep the script next to the data,
 write the output to `figures/`, and include it as an image (below). Tell the
