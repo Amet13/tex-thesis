@@ -2,7 +2,8 @@ name: release
 
 # Tag vX.Y.Z → GitHub release with:
 #   - overfull.cjs                      single-file CLI, runs with Node ≥ 22 on any OS
-#   - overfull-<os>-<arch>[.exe]        native executables (Node single executable)
+#   - overfull-<os>-<arch>[.exe]        native executables (Node single executable):
+#                                       linux-x64, linux-arm64, darwin-arm64, win-x64
 #   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
 #   - SHA256SUMS                        checksums, plus build provenance attestations
 # The Docker image is published by image.yml on the same tag.
@@ -58,9 +59,11 @@ jobs:
         with:
           persist-credentials: false
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      # The executables embed this Node.js. Node 26 (LTS) builds them in one step
+      # with `--build-sea`; older Node would need postject from the npm registry.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: node scripts/build-standalone.mjs --sea
@@ -70,6 +73,8 @@ jobs:
           exe=dist-standalone/overfull; [ -f "$exe.exe" ] && exe="$exe.exe"
           "$exe" --version
           "$exe" explain undefined-control-sequence > /dev/null
+          "$exe" init paper "$RUNNER_TEMP/sea-paper" --no-git > /dev/null
+          test -f "$RUNNER_TEMP/sea-paper/main.tex"
           node dist-standalone/overfull.cjs --version
       - name: Name assets
         shell: bash

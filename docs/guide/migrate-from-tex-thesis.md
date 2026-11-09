@@ -20,9 +20,6 @@ clones and issues) to `github.com/amet13/overfull`. The old GitHub Pages
 address under `/tex-thesis/` does not redirect; the site now lives at
 <https://amet13.github.io/overfull/>.
 
-Until v3.0.0 is released, the `overfull` command and Docker image below come
-from a clone; see [Install](./install.md#from-a-clone).
-
 ## What changed
 
 | tex-thesis | Overfull |

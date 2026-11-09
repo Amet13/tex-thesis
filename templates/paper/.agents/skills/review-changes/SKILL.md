@@ -27,7 +27,9 @@ The author reviews the PDF, not only the LaTeX diff. Make that easy.
    ```
 
    Use the base branch the PR targets. The command prints where it wrote the
-   PDF.
+   PDF. `--out` must stay inside the project. With `--json` it prints
+   `{pdf, base, sha, complete}`; if `complete` is `false`, the diff document had
+   LaTeX errors and the PDF may be incomplete, so say so in the PR.
 4. Write the PR description (template below).
 5. Open the PR (for example `gh pr create`). The template's workflow builds the
    PDF and the diff in CI and posts the check report.

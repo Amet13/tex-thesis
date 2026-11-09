@@ -33,7 +33,14 @@ indexed record. You only choose where to cite it.
    ```
 
    Use `--key` only to match a key the author already uses. Use `--bib file`
-   only if `overfull.yml` lists more than one bibliography.
+   only if `overfull.yml` lists more than one bibliography; it must be inside
+   the project. With `--json`, the result is `{key, entry, source, confidence,
+   added, bib}`; ambiguous and not-found results exit 1 with their own JSON
+   (`{ambiguous, candidates}`, `{found: false, ...}`).
+
+   `cite` ends each entry with an `x-overfull = {cite … <hash>}` marker. The
+   hash makes later edits evident; it is not authentication. Do not edit
+   an entry `cite` wrote: that breaks the marker.
 5. Cite the printed key where the author wants it: `\cite{key}`,
    `\textcite{key}` or `\parencite{key}` (biblatex), matching what the
    document already uses.
@@ -71,8 +78,20 @@ author can add those entries by hand. Check reports them as
   overwrites an entry (it prints the existing key and adds nothing). If the
   author agrees to replace it, they remove the old entry (or you do, at their
   request), then run `overfull cite <doi> --key <same key>`.
+- `reference-doi-wrong-work`, `reference-arxiv-wrong-work` (error): the DOI or
+  arXiv id belongs to a different paper. Do not re-add from that identifier.
+  Ask the author for the right one, or search by exact title with
+  `overfull cite "<title>"`.
 - `reference-lookup-failed` (warning): a network problem, not evidence against the
   entry. Rerun the check when online.
+- `reference-unproven` (error, with `references.requireCite`, which the
+  templates turn on): the entry was not added with `overfull cite` and no index
+  confirms it. Get a DOI or arXiv id from the author and add it with `cite`, or
+  remove the `\cite`. Do not add the marker or an author-provided note yourself.
+- `reference-not-reverified` (warning): the entry came from `cite` but could not
+  be checked again (offline or an index was down). Rerun with network access.
+- `bib-outside-project` (warning): a `.bib` outside the project was not read.
+  Tell the author.
 - `citation-key-missing` (error) and `undefined-citation` (output error): the key
   is not in the bib. Add it with `overfull cite` or remove the `\cite`.
 

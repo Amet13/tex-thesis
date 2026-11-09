@@ -21,6 +21,8 @@ checks: [build, output, references, accessibility, venue]
 references:
   mailto: you@example.org # polite pool for CrossRef (and OpenAlex)
   ignore: [rfc9110]
+  requireCite: true       # entries must come from `overfull cite`
+  cache: user             # or project
 venue:
   pageLimit: { max: 9, endLabel: overfull:main-end }
   anonymous: false
@@ -28,6 +30,7 @@ venue:
 build:
   engine: auto            # local latexmk if present, else Docker
   image: ghcr.io/amet13/overfull:3
+  outDir: build           # latexmk output folder (optional)
 ```
 
 ## Top level
@@ -47,7 +50,7 @@ build:
 | `mailto` | email | `$OVERFULL_MAILTO`, else none | Contact address sent to CrossRef (and OpenAlex) for their polite pool. `--mailto` overrides it. |
 | `ignore` | string or list of keys | `[]` | Entries not to verify. |
 | `cache` | `user` \| `project` | `user` | Where lookups are cached. `user`: your cache folder, outside the project (see [Cache](#cache)). `project`: `.overfull/cache/refs.json`, the old location. |
-| `requireCite` | boolean | `false` | Every cited entry that is not verified must carry an intact `x-overfull = {cite … <hash>}` field from `overfull cite` and a DOI, eprint or URL, or the author's `note = {overfull: author-provided}`; otherwise `reference-unproven` (error), also offline. The templates turn it on. See [References](./references.md#provenance). |
+| `requireCite` | boolean | `false` | Every cited entry that is not verified must carry an intact `x-overfull = {cite … <hash>}` field from `overfull cite` (the hash makes edits evident; it is not authentication) and a DOI, eprint or URL, or the author's `note = {overfull: author-provided}` (authors only, never agents); otherwise `reference-unproven` (error), also offline. Offline, a valid marker gives `reference-not-reverified` (warning). Off by default; the templates turn it on. See [References](./references.md#provenance). |
 
 `mailto` does not turn OpenAlex on. OpenAlex title search is used only when the
 `OPENALEX_API_KEY` environment variable is set. There is no config key for the
@@ -87,7 +90,7 @@ as a mapping.
 (and `/` except in `jobname`), and no `..`: latexmk passes them to a shell.
 Paths (`bib`, `--pdf`, `--log`, `--aux`) must stay inside the project folder.
 Files Overfull writes (`cite --bib`, `diff --out`, `pages --out`) must stay inside
-it after resolving symlinks. A `.bib` named by `\bibliography{../shared/refs}`
+it after resolving symlinks; otherwise the command exits with 2. A `.bib` named by `\bibliography{../shared/refs}`
 outside the project is not read: the check warns (`bib-outside-project`).
 
 ## Cache

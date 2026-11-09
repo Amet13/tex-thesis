@@ -29,13 +29,16 @@ Results are cached in your user cache folder (`~/.cache/overfull`, see
 [Configuration](./config.md#cache)), so repeat runs are fast and make few
 network requests. The cache is kept outside the project so it cannot be
 committed: a committed cache could make a made-up reference look verified.
+`references.cache: project` moves it into `.overfull/cache/refs.json`; that
+opt-in is ignored in CI and when the cache path goes through a symlink.
 
 ## The outcomes
 
 | Outcome | Rule id | Severity | Meaning |
 | --- | --- | --- | --- |
 | `verified` | none | none | Found, and title, authors and year match. |
-| `mismatch` | `reference-metadata-mismatch` | warning | Found, but the year, authors or title differ meaningfully, or the entry's DOI points to a different work. |
+| `mismatch` | `reference-metadata-mismatch` | warning | Found, but the year, authors or title differ meaningfully. |
+| `mismatch` (wrong work) | `reference-doi-wrong-work`, `reference-arxiv-wrong-work` | error | The entry's DOI or arXiv id exists but belongs to a different paper (other title or authors). Find the right identifier, or re-add the entry with `overfull cite "<title>"`. Do not re-add it from the wrong identifier. |
 | `not-found` | `reference-not-found` | error | An article, inproceedings, conference or incollection entry with no similar record in any index, or an entry whose DOI or arXiv id does not exist. |
 | `unverifiable` | `reference-unverifiable` | info | Not the kind of thing indexes cover (websites, software, standards, datasets, manuals), a book, thesis or report that no index has, or an entry opted out. |
 | `error` | `reference-lookup-failed` | warning | The lookup itself failed (a timeout, rate limit or service error). |
@@ -43,10 +46,15 @@ committed: a committed cache could make a made-up reference look verified.
 A failed lookup says nothing about your entry; run the check again later. The
 cache means a second run only retries what failed.
 
-The references check also reports two problems that are not lookup outcomes:
-`citation-key-missing` (error: a `\cite` key that no `.bib` file defines) and
+The references check also reports problems that are not lookup outcomes:
+`citation-key-missing` (error: a `\cite` key that no `.bib` file defines),
 `bib-parse-error` (error, or warning for a duplicate field or undefined macro:
-a malformed entry).
+a malformed entry), `bib-outside-project` (warning: the document names a `.bib`
+outside the project folder, for example `\bibliography{../shared/refs}`; it is
+not read, so its entries were not checked; pass it with `--bib` from a project
+that contains it, or move it in), `reference-unproven` and
+`reference-not-reverified` (see [Provenance](#provenance)), and
+`refs-cache-ignored` (info, see [Configuration](./config.md#cache)).
 
 ## Why it never says "fake"
 
@@ -86,7 +94,8 @@ overfull cite 10.1145/3442188.3445922 --key bender2021 --dry-run
 you have several, and `--key` sets the citation key. If the lookup is not
 confident, `cite` writes nothing and exits with 1. If a title matches several
 works, it lists them with their DOIs and writes nothing; pick one by DOI or add
-`--author` and `--year`. `cite` never overwrites an existing entry.
+`--author` and `--year`. `cite` never overwrites an existing entry. The `.bib`
+file must be inside the project.
 
 ## Opting an entry out
 
@@ -131,7 +140,9 @@ that is not verified needs an intact marker and a DOI, eprint or URL, else
 valid marker get `reference-not-reverified` (warning), entries without one are
 errors. Books, websites and software follow the same rule; for one that
 `overfull cite` cannot add, the author (never an agent) adds
-`note = {overfull: author-provided}`, reported as a note.
+`note = {overfull: author-provided}`, reported as a note (`info`) and not
+verified. Only the author may write this note: it says the author vouches for the
+entry, so an agent that adds it defeats the check.
 
 ## Configuration
 
@@ -139,6 +150,8 @@ errors. Books, websites and software follow the same rule; for one that
 references:
   mailto: you@example.org   # sent to CrossRef (and OpenAlex) as a contact address
   ignore: [rfc9110]
+  requireCite: true         # entries must come from `overfull cite` (the templates set this)
+  cache: user               # or `project`: .overfull/cache/refs.json (never read in CI)
 ```
 
 `mailto` puts your requests in CrossRef's "polite pool", which is faster and more

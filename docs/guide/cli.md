@@ -1,28 +1,34 @@
 ---
 title: CLI reference
-description: Every overfull command and flag, exit codes, and the JSON report schema with an example.
+description: Every overfull command and flag, exit codes, the --json output of each command, and the JSON report schema with an example.
 order: 40
 section: Reference
 ---
 
 ```text
-overfull init [thesis|paper|slides] [dir] [--force]
-overfull build [main.tex] [--engine auto|local|docker] [--image name] [--verbose] [--config file]
+overfull init [thesis|paper|slides] [dir] [--force] [--no-git] [--json]
+overfull build [main.tex] [--engine auto|local|docker] [--image name] [--verbose] [--force]
+               [--json] [--config file]
 overfull check [--checks a,b] [--profile p] [--offline] [--fail-on error|warning|never]
                [--json | --markdown | --annotations] [--verbose]
                [--pdf file] [--log file] [--aux file] [--bib a.bib,b.bib]
-               [--mailto address] [--no-verapdf] [--config file]
+               [--mailto address] [--no-verapdf] [--engine auto|local|docker] [--image name]
+               [--config file]
 overfull cite <doi | arXiv:id | "title"> [--bib file] [--key k] [--author name] [--year yyyy]
               [--dry-run] [--json] [--mailto addr] [--config file]
-overfull pages <range> [--pdf file] [--out dir] [--dpi n] [--config file]
-overfull diff [--base ref] [--main file] [--out file] [--engine auto|local|docker] [--config file]
+overfull pages <range> [--pdf file] [--out dir] [--dpi n] [--json] [--config file]
+overfull diff [--base ref] [--main file] [--out file] [--engine auto|local|docker] [--json]
+              [--config file]
 overfull explain <rule> [--json]
 overfull explain --list [--json]
 overfull doctor [--json] [--config file]
 ```
 
-`overfull --version` prints the version. `overfull <command> --help` (or `-h`)
-prints the options of one command.
+`overfull --version` prints the version (3.0.0). `overfull <command> --help` (or
+`-h`) prints the options of one command.
+
+Every command takes `--json` and then prints JSON on stdout. See
+[JSON output](#json-output) for the shape of each one.
 
 Commands read `overfull.yml` in the current directory for the main file, job
 name, bibliography, profile and checks. Flags override it for one run. See
@@ -42,6 +48,8 @@ creates the thesis template in `my-thesis`. Each template includes
 | Flag | Effect |
 | --- | --- |
 | `--force` | Copy into a directory that is not empty. Existing files are overwritten. |
+| `--no-git` | Do not run `git init`. By default a new project outside a Git repository gets `git init -b main` and, when `user.name` and `user.email` are set, an initial commit. |
+| `--json` | Print `{template, dir, git}`. |
 
 ## build
 
@@ -64,11 +72,24 @@ templates do), `latexmk` follows it.
 | `--engine e` | `auto` (default), `local` or `docker`. |
 | `--image name` | Docker image. Overrides `$OVERFULL_IMAGE` and `build.image`. |
 | `--verbose`, `-v` | Show `latexmk` output and the fix for each problem. |
+| `--force` | Rebuild even when nothing changed since the last build. |
+| `--json` | Print the report as JSON, the same shape as `overfull check --json` (schema below). |
 | `--config file` | Config file (default `overfull.yml`). |
+
+When no source changed since the last good build (the main file, the `.bib`
+files, the other inputs `latexmk` recorded, and `.latexmkrc`), and the log shows
+nothing left to rerun, `build` does not start `latexmk`. It prints
+`<main> is up to date` on stderr and reports on the existing log and PDF. Use
+`--force` to run `latexmk` anyway (it passes `-g`).
+
+Output goes to `build.outDir` from `overfull.yml` (passed as `-outdir` and
+`-auxdir`), else the `$out_dir` of a `.latexmkrc`, else the project folder.
+Only build projects you trust: a `.latexmkrc` is Perl code that `latexmk` runs.
 
 Without `--image`, the image is `$OVERFULL_IMAGE` if set, else `build.image`
 from `overfull.yml`, else `ghcr.io/amet13/overfull:3`. Exit codes: 0 built,
-1 build failed, 2 usage error.
+1 build failed, 2 usage error. With `--json`, a build that fails before LaTeX
+writes a log prints `{"error": {"code": "build-failed", "message", "exitCode"}}`.
 
 ## check
 
@@ -99,12 +120,19 @@ anything.
 | `--bib a.bib,b.bib` | Bibliography files (default: `bib` in `overfull.yml`, else the files named in `main.tex`). |
 | `--mailto address` | Contact address for CrossRef's polite pool. |
 | `--no-verapdf` | Do not run veraPDF, even if it is installed. |
+| `--engine e` | Where veraPDF and `pdffonts` run when they are not installed: `auto` (the Overfull image, when Docker already has it), `docker` or `local`. |
+| `--image name` | Docker image for veraPDF and `pdffonts`. Default: `$OVERFULL_IMAGE`, else `ghcr.io/amet13/overfull:3`. |
 | `--config file` | Config file (default `overfull.yml`). |
 
 Use only one of `--json`, `--markdown` and `--annotations`. If `verapdf` is on
 the `PATH`, the accessibility check runs it (PDF/UA-2, falling back to PDF/UA-1
 for PDFs older than 2.0). Without it, the check reports `verapdf-not-run` as
 `info`.
+
+`check` never uses `build.image` from `overfull.yml`. A project that is only
+checked must not choose which container image runs on your machine, so the
+image comes from `--image`, `$OVERFULL_IMAGE` or the default. (`build`, `diff`
+and `pages` do use `build.image`; only build projects you trust.)
 
 ## cite
 
@@ -126,9 +154,23 @@ set. Prints the citation key as its last line.
 | `--author name` | Narrow a title query to works with this author surname. |
 | `--year yyyy` | Narrow a title query to works from this year (±1). |
 | `--dry-run` | Print the entry, write nothing. |
-| `--json` | Print `{key, entry, source, confidence, added, bib}`, or `{ambiguous, message, candidates}`. |
+| `--json` | Print `{key, entry, source, confidence, added, bib}`. Ambiguous and not-found results have their own shapes (see below). |
 | `--mailto addr` | Contact address for CrossRef's polite pool. |
 | `--config file` | Config file (default `overfull.yml`). |
+
+The file given with `--bib` (or the first `bib` file) must be inside the project,
+also after resolving symlinks.
+
+Every entry `cite` writes ends with a provenance marker:
+
+```bibtex
+  x-overfull = {cite doi.org 2026-11-09 514dc6c201be}
+```
+
+The last part is a hash over the entry's type, key, title, authors, year, DOI and
+eprint. It makes later edits evident. It is not authentication: anyone can
+recompute it. With `references.requireCite`, an entry without an intact marker
+is reported as `reference-unproven`. See [References](./references.md#provenance).
 
 If no confident match is found, nothing is written and the command exits with 1.
 If the work is already in the bibliography (same DOI, same arXiv id, or same key
@@ -160,8 +202,9 @@ page). Useful for agents that can read images, and for quick looks. It uses
 | Flag | Effect |
 | --- | --- |
 | `--pdf file` | Render this PDF (default `<jobname>.pdf`). |
-| `--out dir` | Write images here (default `.overfull/pages`; files are named `page-<n>.png`). |
+| `--out dir` | Write images here (default `.overfull/pages`; files are named `page-<n>.png`). Must be inside the project, also after resolving symlinks. |
 | `--dpi n` | Resolution (default 110). |
+| `--json` | Print `{pages: [{page, file}]}`. |
 | `--config file` | Config file (default `overfull.yml`). |
 
 ## diff
@@ -179,8 +222,9 @@ Prints the path of the PDF. The project must be in a Git repository.
 | --- | --- |
 | `--base ref` | Revision to compare with. Default: the merge base with `origin/main`, else `HEAD~1`. |
 | `--main file` | Main `.tex` file (default `main` in `overfull.yml`). |
-| `--out file` | Output PDF (default `overfull-diff.pdf`). |
+| `--out file` | Output PDF (default `overfull-diff.pdf`). Must be inside the project, also after resolving symlinks. |
 | `--engine e` | `auto` (default), `local` or `docker`. |
+| `--json` | Print `{pdf, base, sha, complete}`. `complete` is `false` when the diff document had LaTeX errors and the PDF may be incomplete. |
 | `--config file` | Config file (default `overfull.yml`). |
 
 ## explain
@@ -193,12 +237,12 @@ overfull explain verapdf-8-2-5-26 --json
 
 Prints what a rule means and how to fix it. Every rule id in a report can be
 explained. veraPDF failures have ids of the form `verapdf-<clause>`. An unknown
-id prints suggestions and exits with 2.
+id prints suggestions and exits with 2 (with `--json`, as a usage error).
 
 | Flag | Effect |
 | --- | --- |
 | `--list` | List every rule id with its check and title. |
-| `--json` | Print the rule (or, with `--list`, all rules) as JSON. |
+| `--json` | Print the rule (or, with `--list`, an array of all rules) as JSON. |
 
 ## doctor
 
@@ -210,22 +254,47 @@ overfull doctor --json
 Reports which tools are available (Node.js, latexmk, LuaLaTeX, Biber, poppler,
 veraPDF, latexdiff, Git, Docker), whether the Docker image is pulled, whether
 `api.crossref.org` is reachable, whether `overfull.yml` is valid, and what is
-disabled without each missing tool. It always exits with 0. `--json` prints
-`{"items": [{"name", "ok", "detail", "needFor"?}]}`. `--config file` checks a
-different config file.
+disabled without each missing tool. It exits with 1 when nothing can build the
+document: no local TeX Live (`latexmk`) and no usable Docker image. Other missing
+tools only limit what can run, and the exit code stays 0. `--json` prints
+`{"canBuild", "message", "items": [{"name", "ok", "detail", "needFor"?}]}`.
+`--config file` checks a different config file.
 
 ## Exit codes
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Success. For `check`: pass, or warnings without `--fail-on warning`; always 0 with `--fail-on never`. `doctor` always exits with 0. |
-| 1 | Problems found. For `check`: at least one error (or warning with `--fail-on warning`). For `build`: the build failed. For `cite`: no confident match, or an ambiguous title. For `pages` and `diff`: rendering or building the PDF failed. |
+| 0 | Success. For `check`: pass, or warnings without `--fail-on warning`; always 0 with `--fail-on never`. `doctor`: 0 when something can build the document. |
+| 1 | Problems found. For `check`: at least one error (or warning with `--fail-on warning`). For `build`: the build failed. For `cite`: no confident match, or an ambiguous title. For `pages` and `diff`: rendering or building the PDF failed. For `doctor`: nothing can build the document. |
 | 2 | Usage error (bad flag, missing file, unknown rule or profile, invalid `overfull.yml`) or internal error. Set `OVERFULL_DEBUG=1` for a stack trace. |
+
+Under `--json`, a usage or internal error is also JSON on stdout (see below), with
+the same exit code 2.
 
 ## JSON output
 
-`overfull check --json` prints a `Report`. The schema is stable; fields may be
-added, never renamed.
+Every command prints JSON on stdout with `--json`:
+
+| Command | Output |
+| --- | --- |
+| `check`, `build` | A `Report` (below). |
+| `init` | `{template, dir, git}`; `git` is a note, or `null`. |
+| `cite` | `{key, entry, source, confidence, added, bib}`. Ambiguous title: `{ambiguous: true, message, candidates}`. No match or no network: `{found: false, query, searched, failures, message}`. Both exit with 1. |
+| `pages` | `{pages: [{page, file}]}`. |
+| `diff` | `{pdf, base, sha, complete}`. |
+| `explain <rule>` | `{id, check, severity, title, summary, fix, corpus?}`. With `--list`, an array of these. |
+| `doctor` | `{canBuild, message, items: [{name, ok, detail, needFor?}]}`. |
+
+Failures that the command itself reports (a failed build, a page that cannot be
+rendered, a diff that cannot be built) print `{"error": {"code", "message"}}` and
+exit with 1. The codes are `build-failed` (also `exitCode`), `render-failed` (also
+`page`) and `diff-failed`. Usage errors (bad flag, missing file, unknown rule,
+invalid `overfull.yml`) and internal errors print
+`{"error": {"code": "usage" | "internal", "message"}}` and exit with 2. A script
+can read stdout as JSON in every case and use the exit code for the verdict.
+
+`overfull check --json` and `overfull build --json` print a `Report`. The schema
+is stable; fields may be added, never renamed.
 
 ```json
 {

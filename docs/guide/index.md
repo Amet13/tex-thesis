@@ -20,11 +20,6 @@ templates for a thesis, a paper and slides, a GitHub Action, and a
 [browser check](https://amet13.github.io/overfull/check/) for a log, `.bib` or
 PDF you already have.
 
-> **Pre-release.** v3.0.0 is not released yet: the Docker image
-> `ghcr.io/amet13/overfull:3`, the release download and the Action's `@v3` tag
-> do not exist yet. Until then, run Overfull from a clone, as shown below. The
-> browser check works today.
-
 ## Two ways in
 
 **By hand.** You write LaTeX the way you always have. `make build` produces the
@@ -51,20 +46,8 @@ requires. You remain responsible for every sentence and every reference.
 The first build downloads or builds a Docker image of about 3 GB; after that,
 builds take seconds.
 
-**Today, from a clone.** With Git, Node.js 22.12+, pnpm and Docker:
-
-```sh
-git clone https://github.com/amet13/overfull.git
-cd overfull
-pnpm install && pnpm build
-make image IMAGE=overfull:dev
-node packages/cli/dist/bin.js init paper ../my-paper
-cd ../my-paper
-make build IMAGE=overfull:dev
-make check IMAGE=overfull:dev
-```
-
-**After v3.0.0**, with the `overfull` command from the release download (or
+With the `overfull` command from the
+[GitHub Releases](https://github.com/amet13/overfull/releases) download (or
 only Docker, see [Install](./install.md)):
 
 ```sh

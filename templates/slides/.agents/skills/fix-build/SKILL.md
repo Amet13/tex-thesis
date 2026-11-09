@@ -14,6 +14,12 @@ description: Diagnose and fix LaTeX build failures and problems that reach the P
    overfull check --json --checks build,output
    ```
 
+   If nothing changed since the last good build, `overfull build` does not start
+   `latexmk` (it prints "is up to date" and reports on the existing log). After a
+   change to a file the build does not track, or to get a clean run, use
+   `overfull build --force`. With `--json`, a build that fails before LaTeX writes
+   a log prints `{"error": {"code": "build-failed", ...}}` and exits 1.
+
 2. Work on the **first** `build` error only. Overfull groups follow-on errors
    under the root cause (`related` counts them). Fixing the first one often
    clears the rest.

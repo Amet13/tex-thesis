@@ -7,10 +7,6 @@ section: Reference
 
 There are two ways to run Overfull in GitHub Actions.
 
-> **Pre-release.** The `@v3` tag arrives with v3.0.0. Until then, pin a commit:
-> `uses: amet13/overfull@<commit-sha>`. The template workflow also needs the
-> Docker image `ghcr.io/amet13/overfull:3`, which is published with the release.
-
 - **The Action** (`amet13/overfull@v3`) checks files your workflow already
   produced: the log, the PDF, the bibliography. Use it to add Overfull to an
   existing LaTeX workflow.
@@ -53,6 +49,13 @@ to the job summary, and fails the step according to `fail-on`. It does not build
 the document or run latexdiff. It runs veraPDF only if `verapdf` is installed on
 the runner; otherwise the accessibility check reports `verapdf-not-run` as
 `info`. An invalid input or `overfull.yml` fails the step with exit code 2.
+
+Text from your documents (log excerpts, titles, file names, error messages)
+could contain GitHub workflow commands. Overfull neutralizes it: stderr is
+always escaped, and the commands Overfull itself prints run inside a
+`stop-commands` guard on stderr, so only the annotations it writes on purpose
+take effect. The `--json` and `--markdown` output of the CLI stays clean in
+Actions.
 
 ### Inputs
 

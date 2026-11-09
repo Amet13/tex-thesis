@@ -1,21 +1,18 @@
 ---
 title: Install
-description: Run Overfull from a clone today, or after v3.0.0 with only Docker or a single-file download; in a VS Code Dev Container; or alongside Overleaf through Git.
+description: Run Overfull with only Docker or a single-file download from GitHub Releases, from a clone, in a VS Code Dev Container, or alongside Overleaf through Git.
 order: 2
 section: Start
 ---
 
-> **Pre-release.** v3.0.0 is not released yet. The Docker image on ghcr.io and
-> the release download below arrive with it. Today, use
-> [From a clone](#from-a-clone); it is the same code.
-
-Pick one. All of them run the same checks.
+Overfull 3.0.0 is not on npm and needs no Node.js install. Pick one. All of
+them run the same checks.
 
 | You have | Use |
 | --- | --- |
-| Git, Node.js 22.12+, pnpm and Docker | [From a clone](#from-a-clone) (works today) |
-| Docker only | The Docker image and the template Makefile (after v3.0.0) |
-| No Docker, no Node | The single-file `overfull` download from GitHub Releases (after v3.0.0); builds then need a local TeX Live |
+| Docker only | The Docker image and the template Makefile |
+| No Docker, no Node | The single-file `overfull` download from GitHub Releases; builds then need a local TeX Live |
+| Git, Node.js 22.12+, pnpm and Docker | [From a clone](#from-a-clone), to work on Overfull itself |
 | VS Code + Docker | The Dev Container |
 | Overleaf | Git sync to a local or GitHub copy |
 
@@ -46,7 +43,7 @@ make build IMAGE=overfull:dev
 make check IMAGE=overfull:dev
 ```
 
-## Docker only (after v3.0.0)
+## Docker only
 
 The image `ghcr.io/amet13/overfull:3` contains TeX Live 2026, fonts, poppler,
 qpdf, veraPDF, latexdiff, Node.js and the `overfull` CLI. You do not need to
@@ -70,11 +67,12 @@ docker run --rm -v "$PWD":/work -w /work ghcr.io/amet13/overfull:3 overfull chec
 The image tag matches the Overfull major version. The template pins it in
 `overfull.yml` under `build.image`.
 
-## Release download (after v3.0.0)
+## Release download
 
-Each release will include a single-file `overfull` download on
+Each release includes a single-file `overfull` download on
 [GitHub Releases](https://github.com/amet13/overfull/releases). Put it on your
-`PATH` and run `overfull doctor`.
+`PATH` and run `overfull doctor`. There is no npm package, so `npx overfull` and
+`npm install` do not work.
 
 `overfull build` uses a local `latexmk` if one is installed and falls back to
 Docker otherwise. Force one with `--engine local` or `--engine docker`.
@@ -86,8 +84,8 @@ access. Use `overfull check --offline` to skip them.
 ## Dev Container and VS Code
 
 The templates include a Dev Container configuration that uses the Overfull image.
-Until v3.0.0 is released, set `"image"` in `.devcontainer/devcontainer.json` to
-the image you built from the clone (`overfull:dev`).
+To use an image you built from a clone instead, set `"image"` in
+`.devcontainer/devcontainer.json` to it (`overfull:dev`).
 
 1. Install [VS Code](https://code.visualstudio.com/), Docker, and the
    [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
@@ -113,5 +111,6 @@ overfull doctor
 It reports the Node.js and Overfull versions, whether `latexmk`, LuaLaTeX, Biber,
 poppler, veraPDF, latexdiff, Git and Docker are available, whether the Docker
 image is pulled, whether CrossRef is reachable, whether `overfull.yml` is valid,
-and what each missing tool disables. `overfull doctor --json` prints the same as
-JSON.
+and what each missing tool disables. It exits with 1 when nothing can build the
+document (no local TeX Live and no usable Docker image). `overfull doctor --json`
+prints the same as JSON.

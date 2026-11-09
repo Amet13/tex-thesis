@@ -32,13 +32,18 @@ overfull build        # or: make build
 
 - `overfull build` uses local `latexmk` if present, otherwise the Overfull
   Docker image. Do not pass `--engine` unless the author asks.
+- When no source changed since the last good build, `overfull build` skips
+  `latexmk` and reports on the existing log and PDF. `overfull build --force`
+  rebuilds anyway.
 - Never install TeX packages or fonts globally. If a package is missing, use the
   Docker engine (`overfull build --engine docker`) or tell the author.
 - Do not change the TeX engine (LuaLaTeX in the templates) or the document class
   to make an error go away, except via the documented arXiv path: the paper
   template builds with pdfLaTeX for arXiv (`make arxiv` or `latexmk -pdf`),
   because arXiv does not support LuaLaTeX. See `prepare-arxiv`.
-- `overfull doctor` reports what is installed and what is missing.
+- `overfull doctor` reports what is installed and what is missing. It exits 1
+  when nothing can build the document (no TeX Live and no usable Docker image):
+  tell the author.
 
 ## The loop and the definition of done
 
@@ -53,6 +58,10 @@ After every change:
 **Done means `overfull check` reports no errors** and you have told the author
 about any warnings that remain. Exit code 0 is pass (warnings allowed), 1 is
 fail, 2 is a usage or internal error.
+
+Every command takes `--json`. Under `--json`, errors are JSON on stdout too:
+`{"error": {"code": "usage" | "internal" | "build-failed" | ..., "message": "…"}}`,
+so parse stdout and use the exit code for the verdict.
 
 The JSON is a `Report`:
 
@@ -75,6 +84,9 @@ The JSON is a `Report`:
 - `overfull explain <rule>` prints what a rule means and how to fix it;
   `overfull explain --list` lists every rule id.
 - Run a subset with `overfull check --json --checks build,output`.
+- `overfull check` runs veraPDF in the default Overfull image or `--image`; it
+  never uses `build.image` from `overfull.yml`. Do not add `--image` unless the
+  author asks.
 
 ## Hard rules
 
@@ -89,7 +101,14 @@ References:
   searched for. Do not guess a DOI, title, year or author list.
 - Never write or edit the `x-overfull` field, and never add
   `note = {overfull: skip}` or `note = {overfull: author-provided}`. Only
-  `overfull cite` writes provenance; only the author opts entries out.
+  `overfull cite` writes provenance (a tamper-evident hash, not
+  authentication); only the author opts entries out or vouches for one.
+- With `references.requireCite` (on in the templates), an entry that no index
+  verifies and that `cite` did not write is `reference-unproven`. Ask the author
+  for a DOI or arXiv id; do not hand-write the entry. `reference-doi-wrong-work`
+  and `reference-arxiv-wrong-work` mean the identifier belongs to another paper.
+- Files you write (`cite --bib`, `pages --out`, `diff --out`) must be inside the
+  project.
 - A `reference-metadata-mismatch` warning means the bib entry differs from the
   indexed record. Show the author both and let them decide. `overfull cite`
   never overwrites an existing entry.
