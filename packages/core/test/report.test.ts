@@ -102,6 +102,63 @@ describe('formatHuman', () => {
   });
 });
 
+describe('workflow-command injection', () => {
+  const evil = 'a}\n::warning file=README.md::x';
+  const injected: Report = {
+    tool: 'overfull',
+    version: '0.0.0',
+    target: 'x.pdf\n::error::target',
+    status: 'fail',
+    checks: [
+      {
+        check: 'output',
+        status: 'fail',
+        summary: 'summary\r\n::notice::s',
+        problems: [
+          {
+            rule: 'missing-figure',
+            check: 'output',
+            severity: 'error',
+            message: `File \`${evil}\` not found`,
+            location: { file: 'main.tex\n::error::loc', line: 3 },
+            detail: `why\r::add-mask::secret`,
+            fix: `Check \\includegraphics{${evil}}`,
+            evidence: `l.3 \\includegraphics{${evil}}\n::stop-commands::tok\r::warning::cr\u2028::x`,
+          },
+        ],
+      },
+    ],
+  };
+  const commandLine = /^\s*::/m;
+
+  it('formatHuman prints no line that starts with ::', () => {
+    for (const verbose of [false, true]) {
+      for (const color of [false, true]) {
+        const out = formatHuman(injected, { verbose, color });
+        for (const line of out.split(/\r\n|[\r\n\u2028\u2029\u0085]/)) {
+          expect(line).not.toMatch(commandLine);
+        }
+      }
+    }
+    const verbose = formatHuman(injected, { verbose: true });
+    expect(verbose).toContain('File `a} ::warning file=README.md::x` not found');
+    expect(verbose).toContain('| ::stop-commands::tok');
+  });
+
+  it('formatMarkdown prints no line that starts with ::', () => {
+    const md = formatMarkdown(injected);
+    for (const line of md.split(/\r\n|[\r\n\u2028\u2029\u0085]/)) {
+      expect(line).not.toMatch(commandLine);
+    }
+  });
+
+  it('strips terminal escape sequences from user text', () => {
+    const p = injected.checks[0]?.problems[0] as Report['checks'][0]['problems'][0];
+    const out = formatHuman({ ...injected, checks: [{ ...injected.checks[0]!, problems: [{ ...p, message: 'x\u001b[2Jy' }] }] });
+    expect(out).toContain('x[2Jy');
+  });
+});
+
 describe('formatJson', () => {
   it('is pretty, parseable and has a stable key order', () => {
     const json = formatJson(report);

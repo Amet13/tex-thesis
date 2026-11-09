@@ -1,5 +1,4 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   AmbiguousLookupError,
   type BibEntry,
@@ -14,6 +13,7 @@ import {
 import { parse, str } from '../args.js';
 import { loadConfig } from '../config.js';
 import { type Io, UsageError } from '../io.js';
+import { insideRoot } from '../safety.js';
 
 export const citeHelp = `Usage: overfull cite <doi | arXiv:id | "title"> [options]
 
@@ -67,6 +67,73 @@ export function findExisting(entries: BibEntry[], entry: BibEntry): BibEntry | u
   return undefined;
 }
 
+const SOURCE_NAMES: Record<string, string> = {
+  'api.crossref.org': 'CrossRef',
+  'data.crossref.org': 'CrossRef',
+  'doi.org': 'doi.org',
+  'export.arxiv.org': 'arXiv',
+  'dblp.org': 'dblp',
+  'api.openalex.org': 'OpenAlex',
+};
+
+/** Which reference indexes a lookup actually reached, and which failed (and why). */
+export class SourceTracker {
+  private readonly ok = new Set<string>();
+  private readonly failed = new Map<string, string>();
+
+  /** Wraps `fetch` so every request is recorded by source. */
+  wrap(base: typeof fetch): typeof fetch {
+    return (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      let host = '';
+      try {
+        host = new URL(url).hostname;
+      } catch {
+        /* not a URL */
+      }
+      const name = SOURCE_NAMES[host] ?? host;
+      try {
+        const res = await base.call(globalThis, input, init);
+        if (res.status >= 500 || res.status === 429) this.fail(name, `HTTP ${res.status}`);
+        else this.ok.add(name);
+        return res;
+      } catch (err) {
+        const cause = err instanceof Error && err.cause instanceof Error ? `: ${err.cause.message}` : '';
+        this.fail(name, `${err instanceof Error ? err.message : String(err)}${cause}`);
+        throw err;
+      }
+    }) as typeof fetch;
+  }
+
+  private fail(name: string, reason: string): void {
+    if (!this.failed.has(name)) this.failed.set(name, reason);
+  }
+
+  /** Sources that answered at least once. */
+  get searched(): string[] {
+    return [...this.ok];
+  }
+
+  /** Sources that never answered, with the first reason. */
+  get failures(): { source: string; reason: string }[] {
+    return [...this.failed]
+      .filter(([source]) => !this.ok.has(source))
+      .map(([source, reason]) => ({ source, reason }));
+  }
+}
+
+const list = (xs: string[]) =>
+  xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
+
+/**
+ * Records where an entry came from: `x-overfull = {cite <source> <yyyy-mm-dd>}`.
+ * BibTeX and biber ignore unknown fields; `overfull check` can require it.
+ */
+export function markCited(entry: BibEntry, source: string, date: Date = new Date()): BibEntry {
+  const day = date.toISOString().slice(0, 10);
+  return { ...entry, fields: { ...entry.fields, 'x-overfull': `cite ${source} ${day}` } };
+}
+
 function uniqueKey(base: string, taken: Set<string>): string {
   if (!taken.has(base)) return base;
   for (const suffix of 'bcdefghijklmnopqrstuvwxyz') {
@@ -103,7 +170,7 @@ export async function citeCommand(
     throw new UsageError('Give a DOI, arXiv id or title: `overfull cite 10.1145/359545.359563`');
   const config = loadConfig(io.cwd, str(values.config), io.env);
   const bibRel = str(values.bib) ?? config.bib[0] ?? 'references.bib';
-  const bibPath = join(config.root, bibRel);
+  const bibPath = insideRoot(config.root, bibRel, 'Bibliography file');
   const text = existsSync(bibPath) ? readFileSync(bibPath, 'utf8') : '';
   const entries = parseBib(text);
 
@@ -119,16 +186,36 @@ export async function citeCommand(
     author || year !== undefined
       ? { ...(author ? { author } : {}), ...(year !== undefined ? { year } : {}) }
       : undefined;
+  const tracker = new SourceTracker();
+  const baseFetch = io.fetch ?? globalThis.fetch;
+  const notFound = (message: string, failures: { source: string; reason: string }[]) => {
+    if (values.json) {
+      io.stdout(
+        `${JSON.stringify({ found: false, query, searched: tracker.searched, failures, message }, null, 2)}\n`,
+      );
+    } else io.stderr(`${message}\n`);
+    return 1;
+  };
   let found: LookupResult | null;
   try {
     found = await lookup(query, {
-      ...(io.fetch ? { fetch: io.fetch } : {}),
+      ...(baseFetch ? { fetch: tracker.wrap(baseFetch) } : {}),
       ...(mailto ? { mailto } : {}),
       ...(openalexKey ? { openalexKey } : {}),
       ...(hint ? { hint } : {}),
     });
   } catch (error) {
-    if (!(error instanceof AmbiguousLookupError)) throw error;
+    if (!(error instanceof AmbiguousLookupError)) {
+      // No source could be reached: a normal failure, not an internal error.
+      const failures = tracker.failures.length
+        ? tracker.failures
+        : [{ source: 'lookup', reason: error instanceof Error ? error.message : String(error) }];
+      return notFound(
+        `Could not reach ${list(failures.map((f) => f.source))}: ${failures.map((f) => `${f.source}: ${f.reason}`).join('; ')}. ` +
+          'Check your network or give a DOI/arXiv id later. Nothing was added.',
+        failures,
+      );
+    }
     if (values.json) {
       io.stdout(
         `${JSON.stringify({ ambiguous: true, message: error.message, candidates: error.candidates }, null, 2)}\n`,
@@ -153,11 +240,23 @@ export async function citeCommand(
     return 1;
   }
   if (!found) {
-    io.stderr(
-      `No confident match for "${query}" in CrossRef, arXiv or dblp. Nothing was added.\n` +
-        'Ask the author for the DOI or arXiv id (or the exact title), then run `overfull cite` again. Do not write the entry by hand from memory.\n',
+    const { searched, failures } = tracker;
+    if (!searched.length && failures.length) {
+      return notFound(
+        `Could not reach ${list(failures.map((f) => f.source))}: ${failures.map((f) => `${f.source}: ${f.reason}`).join('; ')}. ` +
+          'Check your network or give a DOI/arXiv id later. Nothing was added.',
+        failures,
+      );
+    }
+    const where = searched.length ? ` in ${list(searched)}` : '';
+    const down = failures.length
+      ? ` (${list(failures.map((f) => f.source))} could not be reached: ${failures.map((f) => f.reason).join('; ')})`
+      : '';
+    return notFound(
+      `No confident match for "${query}"${where}${down}. Nothing was added.\n` +
+        'Ask the author for the DOI or arXiv id (or the exact title), then run `overfull cite` again. Do not write the entry by hand from memory.',
+      failures,
     );
-    return 1;
   }
   const entry: BibEntry = { ...found.entry, fields: { ...found.entry.fields } };
   const explicitKey = str(values.key);
@@ -188,7 +287,9 @@ export async function citeCommand(
     );
   }
   entry.key = uniqueKey(entry.key, taken);
-  const formatted = formatBibEntry(entry);
+  // Keep the file's line endings: a CRLF .bib gets CRLF entries.
+  const eol = /\r\n/.test(text) ? '\r\n' : '\n';
+  const formatted = formatBibEntry(markCited(entry, found.source)).replace(/\r?\n/g, eol);
   const where = `from ${found.source} (confidence ${found.confidence.toFixed(2)})`;
   if (values['dry-run']) {
     emit(
@@ -199,7 +300,14 @@ export async function citeCommand(
     );
     return 0;
   }
-  const sep = text === '' ? '' : text.endsWith('\n\n') ? '' : text.endsWith('\n') ? '\n' : '\n\n';
+  const sep =
+    text === ''
+      ? ''
+      : /(\r?\n){2}$/.test(text)
+        ? ''
+        : /\r?\n$/.test(text)
+          ? eol
+          : eol + eol;
   writeFileSync(bibPath, `${text}${sep}${formatted}`);
   emit(
     entry.key,

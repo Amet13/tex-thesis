@@ -89,8 +89,9 @@ export function safeLines(s: string): string[] {
 
 /**
  * Last line of defence for text printed to CI logs: no line may start with `::`, which
- * GitHub Actions would execute as a workflow command.
+ * GitHub Actions would execute as a workflow command. The runner trims leading
+ * whitespace before looking for `::`, so indenting is not enough: a `| ` is put in front.
  */
 export function neutralizeWorkflowCommands(text: string): string {
-  return text.replace(/^(\s*)::/gm, '$1  ::');
+  return text.replace(/^([ \t]*)::/gm, '$1| ::');
 }
