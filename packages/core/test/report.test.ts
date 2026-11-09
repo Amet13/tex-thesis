@@ -153,8 +153,12 @@ describe('workflow-command injection', () => {
   });
 
   it('strips terminal escape sequences from user text', () => {
-    const p = injected.checks[0]?.problems[0] as Report['checks'][0]['problems'][0];
-    const out = formatHuman({ ...injected, checks: [{ ...injected.checks[0]!, problems: [{ ...p, message: 'x\u001b[2Jy' }] }] });
+    const check = injected.checks[0] as Report['checks'][0];
+    const p = check.problems[0] as Report['checks'][0]['problems'][0];
+    const out = formatHuman({
+      ...injected,
+      checks: [{ ...check, problems: [{ ...p, message: 'x\u001b[2Jy' }] }],
+    });
     expect(out).toContain('x[2Jy');
   });
 });

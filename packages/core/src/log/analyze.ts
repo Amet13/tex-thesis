@@ -101,6 +101,19 @@ function isFollower(
   if (!group) return false;
   if (isTerminationNotice(error)) return true;
   const { root, problem } = group;
+  // A runaway inside LaTeX's own math grabbing (`\__math_grab_dollar_delim:w`) is the
+  // math mode that a missing `$` opened running on, not a forgotten `}` of its own.
+  if (
+    rule === 'runaway-argument' &&
+    problem.rule === 'missing-dollar' &&
+    isInternalRunaway(error)
+  ) {
+    return true;
+  }
+  // An unknown command does not change modes: a later `Missing $` has its own cause.
+  if (problem.rule === 'undefined-control-sequence' && rule === 'missing-dollar') {
+    return atEndDocument(error);
+  }
   if (atEndDocument(error) && check === problem.check) return true;
   if (error.file !== root.file || error.line === undefined || root.line === undefined) return false;
   if (error.line === root.line) return true;
@@ -109,6 +122,28 @@ function isFollower(
   const sideEffect =
     CONSEQUENCE_RULES.has(rule) || (rule === 'undefined-control-sequence' && problem.rule !== rule);
   return rule === problem.rule || sideEffect;
+}
+
+/** A runaway or "Paragraph ended" error in an expl3 internal (`\__module_name:w`). */
+function isInternalRunaway(error: LogError): boolean {
+  return /\\__[A-Za-z]/.test(error.message);
+}
+
+/**
+ * Root problems in source order: files in the order the log opened them, then line.
+ * Problems without a file keep their place after the located ones (stable sort).
+ */
+function bySourcePosition(groups: Group[], files: string[]): Group[] {
+  const order = new Map(files.map((f, i) => [f, i]));
+  const key = (g: Group) => {
+    const loc = g.problem.location;
+    const file = loc?.file !== undefined ? (order.get(loc.file) ?? files.length) : files.length + 1;
+    return [file, loc?.line ?? Number.POSITIVE_INFINITY] as const;
+  };
+  return groups
+    .map((g, i) => ({ g, k: key(g), i }))
+    .sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.i - b.i)
+    .map(({ g }) => g);
 }
 
 function errorProblems(parsed: ParsedLog, ctx: ExplainContext): Problem[] {
@@ -133,7 +168,7 @@ function errorProblems(parsed: ParsedLog, ctx: ExplainContext): Problem[] {
     last = { root: error, problem, followers: [] };
     groups.push(last);
   }
-  return groups.map(({ root, problem, followers }) => {
+  return bySourcePosition(groups, parsed.files).map(({ root, problem, followers }) => {
     if (followers.length > 0) problem.related = followers.length;
     // Fatal file errors print their source line only in the follow-up "Emergency stop".
     const lined = followers.find((f) => f.line !== undefined && f.file === root.file);

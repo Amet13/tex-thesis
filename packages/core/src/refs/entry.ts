@@ -174,7 +174,11 @@ export const PROVENANCE_FIELD = 'x-overfull';
  * BibTeX and biber ignore unknown fields, and `formatBibEntry` keeps them; with
  * `requireProvenance` the references check accepts unverified entries only with it.
  */
-export function markCited(entry: BibEntry, source: string, date: Date | string = new Date()): BibEntry {
+export function markCited(
+  entry: BibEntry,
+  source: string,
+  date: Date | string = new Date(),
+): BibEntry {
   const day = typeof date === 'string' ? date : date.toISOString().slice(0, 10);
   return { ...entry, fields: { ...entry.fields, [PROVENANCE_FIELD]: `cite ${source} ${day}` } };
 }

@@ -186,15 +186,50 @@ function replaceAccents(s: string): string {
     );
 }
 
+/** Logo commands: their letters are part of the title (`The {\TeX}book` → `The TeXbook`). */
+const LOGOS: Record<string, string> = {
+  TeX: 'TeX',
+  LaTeX: 'LaTeX',
+  LaTeXe: 'LaTeX2ε',
+  BibTeX: 'BibTeX',
+  BibLaTeX: 'BibLaTeX',
+  XeTeX: 'XeTeX',
+  XeLaTeX: 'XeLaTeX',
+  LuaTeX: 'LuaTeX',
+  LuaLaTeX: 'LuaLaTeX',
+  pdfTeX: 'pdfTeX',
+  pdfLaTeX: 'pdfLaTeX',
+  eTeX: 'eTeX',
+  ConTeXt: 'ConTeXt',
+  AmS: 'AMS',
+  AMS: 'AMS',
+  AmSTeX: 'AMS-TeX',
+  AMSTeX: 'AMS-TeX',
+  AmSLaTeX: 'AMS-LaTeX',
+  SliTeX: 'SliTeX',
+  METAFONT: 'METAFONT',
+  MF: 'METAFONT',
+  MP: 'MetaPost',
+  MetaPost: 'MetaPost',
+};
+
 function replaceCommands(s: string): string {
-  return s.replace(/\\([A-Za-z]+|[,; ])\*?(?:\{\})?/g, (_m, name: string) => {
-    if (name in SPECIAL_LETTERS) return SPECIAL_LETTERS[name] as string;
-    if (name in GREEK_MAP) return GREEK_MAP[name] as string;
-    if (name in NAMED_SYMBOLS) return NAMED_SYMBOLS[name] as string;
-    if (MATH_OPERATORS.has(name)) return name;
-    // Font and structure commands (\emph, \textbf, \mathrm, \url…): keep the argument.
-    return '';
-  });
+  return s.replace(
+    /\\([A-Za-z]+|[,; ])\*?(\{\})?( ?)/g,
+    (_m, name: string, empty?: string, space = '') => {
+      // TeX skips the space after a control word, so `\TeX book` is one word too
+      // (but not after `\TeX{}`).
+      if (name in LOGOS) return (LOGOS[name] as string) + (empty ? space : '');
+      const keep = (text: string) => text + space;
+      if (name in SPECIAL_LETTERS) return keep(SPECIAL_LETTERS[name] as string);
+      if (name in GREEK_MAP) return keep(GREEK_MAP[name] as string);
+      if (name in NAMED_SYMBOLS) return keep(NAMED_SYMBOLS[name] as string);
+      if (MATH_OPERATORS.has(name)) return keep(name);
+      // Font and structure commands (\emph, \textbf, \mathrm, \url…): the command goes,
+      // its `{argument}` stays (braces are removed later).
+      return space;
+    },
+  );
 }
 
 /**

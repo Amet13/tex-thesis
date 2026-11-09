@@ -160,9 +160,9 @@ describe('citesAll', () => {
     expect(citesAll('\\citation{a,*}')).toBe(true);
     expect(citesAll('\\abx@aux@cite{0}{*}\n\\abx@aux@segm{0}{0}{*}')).toBe(true);
     expect(citesAll('\\abx@aux@cite{*}')).toBe(true);
-    expect(citesAll('<bcf:section number="0">\n  <bcf:citekey>*</bcf:citekey>\n</bcf:section>')).toBe(
-      true,
-    );
+    expect(
+      citesAll('<bcf:section number="0">\n  <bcf:citekey>*</bcf:citekey>\n</bcf:section>'),
+    ).toBe(true);
     expect(citesAll('<bcf:citekey order="1" intorder="1">*</bcf:citekey>')).toBe(true);
   });
 
@@ -195,6 +195,13 @@ describe('texToPlain', () => {
     ['$O(n \\log n)$', 'O(n log n)'],
     ['A~B', 'A B'],
     ['\\{literal braces\\}', '{literal braces}'],
+    ['The {\\TeX}book', 'The TeXbook'],
+    ['The \\TeX book', 'The TeXbook'],
+    ['The \\TeX{}book', 'The TeXbook'],
+    ['The {\\LaTeX} Companion', 'The LaTeX Companion'],
+    ['{\\BibTeX}ing with \\XeTeX{} and \\LuaTeX', 'BibTeXing with XeTeX and LuaTeX'],
+    ['The {\\AmS}-{\\LaTeX} guide', 'The AMS-LaTeX guide'],
+    ['\\textsc{Unknown} \\mycmd{arg} text', 'Unknown arg text'],
   ])('%s → %s', (input, expected) => {
     expect(texToPlain(input)).toBe(expected);
   });

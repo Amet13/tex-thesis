@@ -303,6 +303,43 @@ describe('cascades', () => {
   });
 });
 
+describe('root ordering', () => {
+  it('sorts root problems by file order in the log, then line', () => {
+    const text = log(
+      '(./main.tex (./chapters/a.tex',
+      ...undefinedCs('later', 30),
+      ...undefinedCs('earlier', 2),
+      ')',
+      ...undefinedCs('inmain', 50),
+      ')',
+    );
+    const roots = analyzeLog(text).build.problems.map((p) => [p.location?.file, p.location?.line]);
+    expect(roots).toEqual([
+      ['main.tex', 50],
+      ['chapters/a.tex', 2],
+      ['chapters/a.tex', 30],
+    ]);
+  });
+
+  it('does not fold a Missing $ into an earlier unknown command', () => {
+    const text = log(
+      '(./main.tex',
+      ...undefinedCs('foobar', 4),
+      '! Missing $ inserted.',
+      '<inserted text> ',
+      '                $',
+      'l.6 The variable my_',
+      '                    data holds the input.',
+      '',
+      ')',
+    );
+    expect(analyzeLog(text).build.problems.map((p) => p.rule)).toEqual([
+      'undefined-control-sequence',
+      'missing-dollar',
+    ]);
+  });
+});
+
 describe('warnings and output', () => {
   it('reports only overfull boxes above the threshold, worst per file', () => {
     const text = log(

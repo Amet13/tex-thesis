@@ -1,5 +1,12 @@
 import { texToPlain } from '../bib/tex.js';
-import { arxivCacheKey, cached, cacheMaxAge, doiCacheKey, isFresh, titleCacheKey } from './cache.js';
+import {
+  arxivCacheKey,
+  cached,
+  cacheMaxAge,
+  doiCacheKey,
+  isFresh,
+  titleCacheKey,
+} from './cache.js';
 import { type HttpClient, SourceUnavailableError } from './http.js';
 import { arxivById, arxivSearch } from './sources/arxiv.js';
 import { crossrefSearch } from './sources/crossref.js';

@@ -77,7 +77,13 @@ describe('1 MB crafted bib and tex sources stay linear', () => {
 
   it('findCommands keeps arguments, optional arguments and lines', () => {
     const uses = findCommands(
-      [{ path: 'm.tex', content: 'x\n\\includegraphics[width=1cm]{a{b}c}\n\\includegraphics{d} % \\includegraphics{e}\n' }],
+      [
+        {
+          path: 'm.tex',
+          content:
+            'x\n\\includegraphics[width=1cm]{a{b}c}\n\\includegraphics{d} % \\includegraphics{e}\n',
+        },
+      ],
       ['includegraphics'],
     );
     expect(uses).toEqual([

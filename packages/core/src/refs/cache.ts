@@ -27,9 +27,7 @@ export interface CacheMaxAge {
 }
 
 /** Resolves `RefsOptions.cacheMaxAgeDays` (a number sets both lifetimes). */
-export function cacheMaxAge(
-  option: number | Partial<CacheMaxAge> | undefined,
-): CacheMaxAge {
+export function cacheMaxAge(option: number | Partial<CacheMaxAge> | undefined): CacheMaxAge {
   if (typeof option === 'number') return { negative: option, positive: option };
   return { ...DEFAULT_CACHE_MAX_AGE_DAYS, ...(option ?? {}) };
 }

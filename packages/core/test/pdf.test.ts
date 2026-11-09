@@ -15,8 +15,8 @@ import {
   type PdfjsLike,
   parsePdffonts,
   parseVeraPdfReport,
-  pdfRules,
   pdfOutputProblems,
+  pdfRules,
 } from '../src/pdf/index.js';
 
 const fixture = (name: string) => new URL(`./fixtures/pdf/${name}`, import.meta.url);
@@ -166,12 +166,9 @@ describe('pdfOutputProblems on synthetic text', () => {
     'really??? and then',
     'See ??? and more',
     'pattern a?? and b',
-  ])(
-    'ignores "%s"',
-    (text) => {
-      expect(run(text)).toEqual([]);
-    },
-  );
+  ])('ignores "%s"', (text) => {
+    expect(run(text)).toEqual([]);
+  });
 
   it('flags [?] and [?, ?] citations', () => {
     const p = run('prior work [?] and [?, ?] disagree');
@@ -261,7 +258,9 @@ describe('accessibilityCheck', () => {
     expect(alt[0]?.fix).toContain('\\begin{tikzpicture}[alt={...}]');
     const recommended = accessibilityCheck(facts(), { level: 'recommended', texFiles });
     expect(
-      recommended.problems.filter((p) => p.rule === 'figure-missing-alt').every((p) => p.severity === 'warning'),
+      recommended.problems
+        .filter((p) => p.rule === 'figure-missing-alt')
+        .every((p) => p.severity === 'warning'),
     ).toBe(true);
     const rule = pdfRules.find((r) => r.id === 'figure-missing-alt');
     expect(rule?.fix).toContain('\\begin{tikzpicture}[alt={...}]');

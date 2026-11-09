@@ -83,6 +83,21 @@ describe('corpus', () => {
     );
   });
 
+  it('keeps an unknown command and a later underscore as two roots, in source order', () => {
+    const { analysis } = load('undefined-and-underscore');
+    const roots = analysis.build.problems.map((p) => [p.rule, p.location?.file, p.location?.line]);
+    expect(roots).toEqual([
+      ['undefined-control-sequence', 'main.tex', 5],
+      ['missing-dollar', 'main.tex', 7],
+    ]);
+    const dollar = analysis.build.problems[1];
+    // The runaway in \__math_grab_dollar_delim:w (and the emergency stop) are follow-ons.
+    expect(dollar?.related).toBe(3);
+    expect(dollar?.fix).toContain('my\\_data');
+    expect(analysis.build.problems.some((p) => p.rule === 'runaway-argument')).toBe(false);
+    expect(analysis.build.problems[0]?.related).toBeUndefined();
+  });
+
   it('reads -file-line-error logs', () => {
     const { analysis } = load('file-line-error-style');
     const first = analysis.build.problems[0];

@@ -112,7 +112,8 @@ function refHits(text: string): Hit[] {
   const ctx = findAll(text, CONTEXT_REF);
   const covered = (i: number) => ctx.some((h) => i >= h.index && i < h.index + h.length);
   const alone = findAll(text, STANDALONE_REF).filter((h) => !covered(h.index + h.length - 1));
-  const seen = (i: number) => covered(i + 1) || alone.some((h) => i >= h.index && i < h.index + h.length);
+  const seen = (i: number) =>
+    covered(i + 1) || alone.some((h) => i >= h.index && i < h.index + h.length);
   const prose = proseHits(text).filter((h) => !seen(h.index));
   return [...ctx, ...alone, ...prose].sort((a, b) => a.index - b.index);
 }

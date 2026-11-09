@@ -299,9 +299,12 @@ describe('arXiv engine and .bbl name', () => {
 
   it('requires <main>.bbl; a <jobname>.bbl must be renamed', () => {
     const run = (files: string[]) =>
-      venueCheck(profile, { texFiles, log: 'This is pdfTeX, Version 3', main: 'main.tex', files }).problems.filter(
-        (p) => p.rule === 'arxiv-missing-bbl',
-      );
+      venueCheck(profile, {
+        texFiles,
+        log: 'This is pdfTeX, Version 3',
+        main: 'main.tex',
+        files,
+      }).problems.filter((p) => p.rule === 'arxiv-missing-bbl');
     expect(run(['main.tex', 'main.bbl'])).toEqual([]);
     const [renamed] = run(['main.tex', 'thesis.bbl']);
     expect(renamed?.message).toBe(

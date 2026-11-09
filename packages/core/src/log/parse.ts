@@ -134,7 +134,11 @@ class FileStack {
     } else {
       while (end < text.length && !/[\s()[\]{}<>"]/.test(text[end] ?? '')) end++;
       // `(./sub dir/intro.tex`: the path continues past the space up to a known extension.
-      if (end < text.length && /\s/.test(text[end] ?? '') && !HAS_TEX_EXTENSION.test(text.slice(start, end))) {
+      if (
+        end < text.length &&
+        /\s/.test(text[end] ?? '') &&
+        !HAS_TEX_EXTENSION.test(text.slice(start, end))
+      ) {
         const spaced = spacedPathLength(text, start);
         if (spaced > end - start) end = start + spaced;
       }
@@ -278,9 +282,10 @@ class Parser {
   private error(first: LogicalLine): void {
     const raw = [first.text];
     const fle = this.fileLineError(first.text);
-    let message = (
-      fle ? (fle[3] ?? '') : (ERROR_START.exec(first.text)?.[1] ?? '').trim()
-    ).slice(0, MAX_MESSAGE_LENGTH);
+    let message = (fle ? (fle[3] ?? '') : (ERROR_START.exec(first.text)?.[1] ?? '').trim()).slice(
+      0,
+      MAX_MESSAGE_LENGTH,
+    );
     const pkg = /^(?:Package|Class|Module) (\S+) Error:/.exec(message);
     if (pkg) {
       const pattern = new RegExp(`^\\(${escapeRegExp(pkg[1] ?? '')}\\)\\s*(.*)$`);

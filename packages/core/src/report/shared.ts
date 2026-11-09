@@ -79,7 +79,12 @@ export function tallyLine(t: Tally): string {
 export function oneLine(s: string): string {
   return s
     .replace(/[\r\n\u0085\u2028\u2029]+/g, ' ')
-    .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '');
+    .split('')
+    .filter((ch) => {
+      const c = ch.charCodeAt(0);
+      return c === 9 || (c >= 32 && c !== 127);
+    })
+    .join('');
 }
 
 /** Splits user-derived multi-line text into lines that are each safe (see `oneLine`). */
