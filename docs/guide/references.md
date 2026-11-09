@@ -144,13 +144,20 @@ errors. Books, websites and software follow the same rule; for one that
 verified. Only the author may write this note: it says the author vouches for the
 entry, so an agent that adds it defeats the check.
 
+**Writing entries by hand.** With `requireCite` on, an entry you type yourself
+passes when it verifies against the indexes (a correct DOI is usually enough)
+or when you add `note = {overfull: author-provided}`. Anything else is
+`reference-unproven`. If you do not use agents at all, set
+`requireCite: false`: every entry is still looked up, but none needs a marker
+or note.
+
 ## Configuration
 
 ```yaml
 references:
   mailto: you@example.org   # sent to CrossRef (and OpenAlex) as a contact address
   ignore: [rfc9110]
-  requireCite: true         # entries must come from `overfull cite` (the templates set this)
+  requireCite: true         # unverified entries need an `overfull cite` marker or an author-provided note
   cache: user               # or `project`: .overfull/cache/refs.json (never read in CI)
 ```
 

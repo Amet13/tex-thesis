@@ -662,7 +662,8 @@ function buildSummary(problems: Problem[], parsed: ParsedLog): string {
   return `${plural(errors, 'error')} (${pdf})`;
 }
 
-function outputSummary(problems: Problem[]): string {
+/** One-line summary of the output check (log and PDF findings). */
+export function outputSummary(problems: Problem[]): string {
   if (problems.length === 0) return 'No problems found in the output';
   const counts = new Map<string, number>();
   for (const p of problems) counts.set(p.rule, (counts.get(p.rule) ?? 0) + 1);

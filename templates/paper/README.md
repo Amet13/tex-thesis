@@ -15,6 +15,11 @@ them and asks you about anything it cannot source.
 **By hand.** Edit the `.tex` files and run the commands below. Only Docker is
 required; a local TeX Live 2026 works too.
 
+**New to Docker?** Install Docker Desktop (macOS, Windows) or Docker Engine
+(Linux) and start it. The first build downloads the image, about 3 GB
+compressed and 9–10 GB on disk, so allow a few minutes. After that, builds take
+seconds.
+
 Before Overfull v3.0.0 is released the image is not on ghcr.io yet: build it
 from a clone of the Overfull repository with `make image IMAGE=overfull:dev`,
 then pass `IMAGE=overfull:dev` to `make` here (`make build IMAGE=overfull:dev`).
@@ -31,6 +36,19 @@ make diff     # PDF showing changes against origin/main
 make clean    # remove build files (keeps the PDF)
 make help     # all targets
 ```
+
+With the `overfull` CLI (a single-file download from GitHub Releases or the
+Docker image) you can also run `overfull check`, `overfull cite 10.1145/2890784`
+(adds a verified BibTeX entry) and `overfull explain <rule>` directly.
+
+## References
+
+`overfull.yml` sets `references.requireCite: true`. Entries added with
+`overfull cite` carry a provenance marker. An entry you write yourself must
+either verify against the indexes (CrossRef, doi.org, DBLP, arXiv) or carry
+`note = {overfull: author-provided}`, your statement that it is real (agents
+never add it); otherwise `make check` reports `reference-unproven`. If you do
+not use agents, set `requireCite: false`.
 
 ## Submitting to arXiv
 

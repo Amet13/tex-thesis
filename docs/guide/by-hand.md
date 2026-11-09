@@ -19,6 +19,12 @@ make check    # run all checks and print a report
 make help     # list every target
 ```
 
+> **New to Docker?** Install [Docker Desktop](https://docs.docker.com/desktop/)
+> (macOS, Windows) or [Docker Engine](https://docs.docker.com/engine/install/)
+> (Linux) and start it. The first build downloads the Overfull image: about
+> 3 GB compressed, 9–10 GB on disk, so allow a few minutes and the disk space.
+> After that, builds take seconds.
+
 `make build` and `make watch` run `latexmk` directly (local, or in the Docker
 image if `latexmk` is not installed). `make check` runs `overfull check`. The
 Makefile has more targets: `make pages PAGES=4-6` renders pages to PNG,
@@ -93,16 +99,30 @@ Git hooks.
 
 ## Adding references
 
-You can edit `references.bib` by hand as usual. Overfull checks every entry on
-each `make check`. You can also let it write entries for you from a DOI, arXiv id
-or title:
+Overfull checks every entry in `references.bib` on each `make check`. The
+easiest way to add one is to let Overfull write it from a DOI, arXiv id or
+title:
 
 ```sh
 overfull cite 10.1038/s41586-021-03819-2
 overfull cite arXiv:2005.14165
 ```
 
-See [References](./references.md).
+The templates set `references.requireCite: true` in `overfull.yml`, a guard
+against made-up entries from agents. Entries added with `overfull cite` carry a
+provenance marker (`x-overfull = {cite …}`). An entry you write yourself
+passes in either of two ways:
+
+- it verifies against CrossRef, doi.org, DBLP or arXiv (a correct DOI is
+  usually enough), or
+- you add `note = {overfull: author-provided}`, your statement that the entry
+  is real. Agents never add this note.
+
+Otherwise the check reports `reference-unproven` (error). If you do not use
+agents at all, set `requireCite: false` under `references:` in `overfull.yml`
+and edit `references.bib` as usual.
+
+See [References](./references.md#provenance).
 
 ## Before you submit
 

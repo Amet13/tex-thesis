@@ -103,8 +103,12 @@ Without veraPDF (for example in the browser check, or with the CLI on a machine
 where veraPDF is not installed), Overfull still checks the basics: tagging (`pdf-not-tagged`),
 language (`pdf-missing-language`), title (`pdf-missing-title`), figures without
 alt text (`figure-missing-alt`), embedded fonts (`font-not-embedded`) and the
-PDF/UA claim (`pdfua-not-claimed`). It reports `verapdf-not-run` as `info` so you
-know the full validation did not happen.
+PDF/UA claim (`pdfua-not-claimed`). It reports `verapdf-not-run` so you know
+the full validation did not happen. That is `info` in the browser check, in the
+GitHub Action and on a machine with neither veraPDF nor Docker. It is a
+`warning` only when the CLI could have run veraPDF through Docker and the
+profile requires accessibility (thesis, paper). Full PDF/UA validation runs in
+`overfull check` with veraPDF or Docker, and in the template workflow.
 
 ## What automation cannot check
 

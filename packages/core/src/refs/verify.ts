@@ -223,11 +223,11 @@ function noMatch(
   const opts = ctx.opts;
   const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
   // Indexes left out by the `sources` allow-list were not asked; say so in the reason.
-  const skipped = (['crossref', 'dblp', 'arxiv'] as RefSource[]).filter(
+  const skipped = (['crossref', 'arxiv', 'dblp'] as RefSource[]).filter(
     (s) => !sourceAllowed(opts, s),
   );
   const skippedNote = skipped.length
-    ? ` (${sourcesText(skipped).replace(/ or /, ' and ')} ${skipped.length === 1 ? 'was' : 'were'} not searched)`
+    ? `(${sourcesText(skipped).replace(/ or /, ' and ')} ${skipped.length === 1 ? 'was' : 'were'} not searched)`
     : '';
   const titleNote = entry.fields.title ? ' and no record has a similar title' : '';
   if (ev.arxivMissing) {
@@ -277,10 +277,15 @@ function noMatch(
       reason: `lookup incomplete: ${failuresText(ev.failures) || 'no source answered'}`,
     };
   }
+  // Indexes that a not-found verdict relies on were left out (the browser cannot reach
+  // arXiv or dblp): absence here proves nothing, so the entry is unverifiable, not missing.
+  if (skipped.length) {
+    return { ...withSearched, status: 'unverifiable', reason: `could not be checked here ${skippedNote}` };
+  }
   return {
     ...withSearched,
     status: 'not-found',
-    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== 'doi.org'))}${skippedNote}`,
+    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== 'doi.org'))}`,
   };
 }
 

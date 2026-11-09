@@ -104,7 +104,8 @@ structure tree have alt text (`figure-missing-alt`), embedded fonts
 (`font-not-embedded`), and whether it claims PDF/UA (`pdfua-not-claimed`, info).
 If `verapdf` is installed (the Docker image includes it), the check runs it
 and includes its failures as `verapdf-<clause>` rules. Without it, the check
-reports `verapdf-not-run` (info). `--no-verapdf` skips it on purpose. If veraPDF
+reports `verapdf-not-run`: `info`, or a `warning` when the CLI could have run
+veraPDF through Docker and the profile requires accessibility. `--no-verapdf` skips it on purpose. If veraPDF
 runs but cannot validate the PDF, the result is `verapdf-error` (warning).
 
 The profile's `accessibility` setting decides the severity: `required` makes

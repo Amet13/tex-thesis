@@ -50,8 +50,9 @@ verified, metadata differs, not found, or can't be checked automatically.
 
 ## Start today, from a clone
 
-You need Git, Node.js 22.12+, pnpm and Docker. The first build makes a Docker
-image with TeX Live (about 3 GB), so allow a few minutes.
+You need Git, Node.js 22.12+, pnpm and Docker. The first step builds a Docker
+image with TeX Live (9–10 GB on disk; the released image is about a 3 GB
+download), so allow a few minutes.
 
 ```bash
 git clone https://github.com/amet13/overfull.git
@@ -126,7 +127,8 @@ After v3.0.0:
     checks: build,output,references,accessibility,venue
 ```
 
-Until then, pin a commit instead of `@v3` (`uses: amet13/overfull@<commit-sha>`).
+Until then, pin a commit instead of `@v3`
+(`uses: amet13/overfull@<full 40-character commit SHA>`; short SHAs are rejected).
 The Action reads the log, PDF and `.bib` your workflow already produces, then
 annotates pull requests and writes a summary. Each template also includes a
 workflow that builds in Docker, runs veraPDF and attaches a highlighted-changes

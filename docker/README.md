@@ -8,6 +8,8 @@ for linux/amd64 and linux/arm64 with a build provenance attestation
 `docker run --rm ghcr.io/amet13/overfull:3 overfull --version` prints the CLI
 version, which matches the image tag.
 
+The image is about 3 GB to download (compressed) and takes 9–10 GB on disk.
+
 ## What is inside
 
 | Component | Version / source |

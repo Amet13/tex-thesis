@@ -33,7 +33,15 @@ Overleaf's Git integration and GitHub sync are available on paid plans.
    ```
 
 3. Add an `overfull.yml` (see [Configuration](./config.md)) with your main file
-   and bibliography, then build and check:
+   and bibliography. Overfull builds with LuaLaTeX unless a `.latexmkrc` sets
+   `$pdf_mode = 1;` (pdfLaTeX, Overleaf's default). If your project was written
+   for pdfLaTeX, add a `.latexmkrc` next to `main.tex`:
+
+   ```perl
+   $pdf_mode = 1;   # pdfLaTeX, as on Overleaf
+   ```
+
+   Then build and check:
 
    ```sh
    overfull build --engine docker

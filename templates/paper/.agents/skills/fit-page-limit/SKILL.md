@@ -32,7 +32,8 @@ Work from least to most invasive and ask before cutting content:
 2. Fix widows: a paragraph ending with one or two words on its own line. Small
    rewording of that paragraph often saves a line.
 3. Resize figures that are wider or taller than their content needs. Combine
-   related plots into one figure with subfigures if the author agrees.
+   related plots into a single plot (one `tikzpicture` or one image) if the
+   author agrees. Do not use the `subcaption` package: it breaks PDF tagging.
 4. Tighten prose you or an agent wrote. Propose cuts in the author's prose as
    suggestions in the PR, do not apply them silently.
 5. Move proofs, extra experiments, extended tables or implementation details to

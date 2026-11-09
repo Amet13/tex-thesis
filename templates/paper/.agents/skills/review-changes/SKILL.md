@@ -30,8 +30,16 @@ The author reviews the PDF, not only the LaTeX diff. Make that easy.
    PDF. `--out` must stay inside the project. With `--json` it prints
    `{pdf, base, sha, complete}`; if `complete` is `false`, the diff document had
    LaTeX errors and the PDF may be incomplete, so say so in the PR.
-4. Write the PR description (template below).
-5. Open the PR (for example `gh pr create`). The template's workflow builds the
+4. List every open question for the author. `TODO(author)` comments do not
+   show in the diff PDF, so collect them from the source:
+
+   ```sh
+   grep -rn "TODO(author)" --include=*.tex --include=*.bib .
+   ```
+
+5. Write the PR description (template below). List every `TODO(author)` item
+   from step 4 with its file and line.
+6. Open the PR (for example `gh pr create`). The template's workflow builds the
    PDF and the diff in CI and posts the check report.
 
 ## PR description template
@@ -44,7 +52,7 @@ The author reviews the PDF, not only the LaTeX diff. Make that easy.
 
 ## Needs the author's attention
 - Claims I could not find in notes/: <list with file:line>
-- TODO(author) markers: <list>
+- TODO(author) markers (from `grep -rn "TODO(author)"`): <every one, file:line and question>
 - Reference mismatches to confirm: <key: what differs>
 
 ## Check report
@@ -58,8 +66,8 @@ Highlighted-changes PDF: <path or CI artifact>
 ## Done
 
 - `overfull check` has no errors on the branch.
-- The PR description lists every content change, every unverified claim, and
-  every remaining warning.
+- The PR description lists every content change, every unverified claim, every
+  `TODO(author)` marker, and every remaining warning.
 - The author has a highlighted-changes PDF to read.
 
 ## Pitfalls

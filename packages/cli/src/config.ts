@@ -27,8 +27,10 @@ export interface Config {
   bib: string[];
   /** True when `bib` was found in the main file (`\\bibliography`, `\\addbibresource`), not configured. */
   bibDiscovered: boolean;
-  /** True when overfull.yml sets `jobname` (otherwise it follows the main file). */
+  /** True when overfull.yml or .latexmkrc sets the jobname (otherwise it follows the main file). */
   jobnameFromConfig: boolean;
+  /** Where the jobname comes from, for messages. */
+  jobnameSource: 'overfull.yml' | '.latexmkrc' | 'main file';
   profile: VenueProfile;
   /** Inline venue overrides from overfull.yml (re-applied when `--profile` changes the base). */
   venue: InlineProfile;
@@ -53,9 +55,9 @@ export interface Config {
   };
 }
 
-/** `$out_dir` / `$aux_dir` set in the project's .latexmkrc (a simple assignment only). */
-export function latexmkrcDirs(root: string): { outDir?: string; auxDir?: string } {
-  const out: { outDir?: string; auxDir?: string } = {};
+/** `$out_dir` / `$aux_dir` / `$jobname` set in the project's .latexmkrc (a simple assignment only). */
+export function latexmkrcDirs(root: string): { outDir?: string; auxDir?: string; jobname?: string } {
+  const out: { outDir?: string; auxDir?: string; jobname?: string } = {};
   for (const name of ['.latexmkrc', 'latexmkrc']) {
     const p = join(root, name);
     if (!existsSync(p)) continue;
@@ -71,6 +73,8 @@ export function latexmkrcDirs(root: string): { outDir?: string; auxDir?: string 
       !d.split('/').includes('..');
     if (plain(o?.[1])) out.outDir = o?.[1] as string;
     if (plain(a?.[1])) out.auxDir = a?.[1] as string;
+    const j = /\$jobname\s*=\s*['"]([^'"]+)['"]/.exec(text);
+    if (j?.[1] && /^[A-Za-z0-9._-]+$/.test(j[1]) && !j[1].startsWith('-')) out.jobname = j[1];
     break;
   }
   return out;
@@ -265,8 +269,11 @@ export function loadConfig(
   const main = safeRelPath((raw.main as string | undefined) ?? 'main.tex');
   if (raw.jobname !== undefined && typeof raw.jobname !== 'string')
     throw new ConfigError(f, '`jobname` must be a string');
+  const rc = latexmkrcDirs(root);
+  const jobnameSource: Config['jobnameSource'] =
+    raw.jobname !== undefined ? 'overfull.yml' : rc.jobname ? '.latexmkrc' : 'main file';
   const jobname = safeJobname(
-    (raw.jobname as string | undefined) ?? basename(main).replace(/\.tex$/i, ''),
+    (raw.jobname as string | undefined) ?? rc.jobname ?? basename(main).replace(/\.tex$/i, ''),
   );
   const bib = raw.bib !== undefined ? stringList(raw.bib, 'bib', f) : discoverBib(root, main);
 
@@ -313,7 +320,6 @@ export function loadConfig(
       : DEFAULT_IMAGE;
   if (build.outDir !== undefined && typeof build.outDir !== 'string')
     throw new ConfigError(f, '`build.outDir` must be a directory name');
-  const rc = latexmkrcDirs(root);
   const norm = (d: string) =>
     d === '.' || d === './' ? '.' : d.replace(/^\.\//, '').replace(/\/+$/, '');
   const outDir = norm(
@@ -328,7 +334,8 @@ export function loadConfig(
     jobname,
     bib,
     bibDiscovered: raw.bib === undefined,
-    jobnameFromConfig: raw.jobname !== undefined,
+    jobnameFromConfig: jobnameSource !== 'main file',
+    jobnameSource,
     profile,
     venue: inline,
     checks,

@@ -837,18 +837,36 @@ describe('sources allow-list', () => {
   author = {Smith, John}, title = {Quantum Consensus for Everyone}, booktitle = {SOSP}, year = {2099},
   eprint = {2401.99999}}`;
 
-  it('decides not-found from the allowed sources only and says what was skipped', async () => {
+  it('without dblp and arXiv, no match is unverifiable (info), not reference-not-found', async () => {
     const f = router({ 'api.crossref.org': () => json(emptyCrossref) });
-    const [r] = await verifyEntries(parseBib(FAKE), {
+    const entries = parseBib(FAKE);
+    const [r] = await verifyEntries(entries, {
+      fetch: f.fetch,
+      sources: ['crossref', 'doi.org'],
+      ...fast,
+    });
+    expect(r?.status).toBe('unverifiable');
+    expect(r?.reason).toBe('could not be checked here (arXiv and dblp were not searched)');
+    expect(f.calls.every((c) => c.includes('api.crossref.org'))).toBe(true);
+    const problems = refsCheck(r ? [r] : [], { entries }).problems;
+    expect(problems.map((p) => p.severity)).toEqual(['info']);
+    expect(problems.map((p) => p.rule)).not.toContain('reference-not-found');
+  });
+
+  it('an own DOI that does not resolve stays not-found with restricted sources', async () => {
+    const bib = `@article{x, author = {Smith, John}, title = {Quantum Consensus for Everyone},
+  journal = {J}, year = {2020}, doi = {10.9999/does-not-exist}}`;
+    const f = router({
+      'doi.org': () => json({}, 404),
+      'api.crossref.org': () => json(emptyCrossref),
+    });
+    const [r] = await verifyEntries(parseBib(bib), {
       fetch: f.fetch,
       sources: ['crossref', 'doi.org'],
       ...fast,
     });
     expect(r?.status).toBe('not-found');
-    expect(r?.reason).toBe(
-      'no record with a similar title in CrossRef (dblp and arXiv were not searched)',
-    );
-    expect(f.calls.every((c) => c.includes('api.crossref.org'))).toBe(true);
+    expect(r?.reason).toMatch(/DOI 10.9999\/does-not-exist does not exist/);
   });
 
   it('still verifies through an allowed source', async () => {

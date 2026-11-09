@@ -14,6 +14,7 @@ import {
   missingKeys,
   type PdfFacts,
   type Problem,
+  outputSummary,
   parseBibWithIssues,
   pdfOutputProblems,
   type Report,
@@ -88,6 +89,8 @@ interface Inputs {
   facts?: PdfFacts;
   factsError?: string;
   docker?: DockerTools;
+  /** Running in CI: skip reasons must not suggest `overfull build`. */
+  ci: boolean;
   /** Project sources, read once on first use (venue, accessibility, citation locations). */
   sources?: { files: string[]; texFiles: TexFile[]; skipped: { path: string; reason: string }[] };
 }
@@ -103,6 +106,28 @@ function sourcesOf(inp: Inputs): NonNullable<Inputs['sources']> {
 
 /** A project-relative display path with forward slashes. */
 const rel = (root: string, abs: string) => relative(root, abs).split('\\').join('/') || '.';
+
+/**
+ * A file named explicitly (CLI flag, Action input) that does not exist is a
+ * usage error, never a silent skip: a typo would otherwise pass CI.
+ */
+export function missingInputError(
+  what: 'pdf' | 'log' | 'aux' | 'bib',
+  given: string,
+  config: Config,
+): UsageError {
+  const label = { pdf: 'PDF', log: 'Log file', aux: 'Aux file', bib: 'Bibliography file' }[what];
+  let hint = '';
+  if (what !== 'bib') {
+    const dir = what === 'pdf' ? config.build.outDir : config.build.auxDir;
+    const expected = join(dir, `${config.jobname}.${what}`).split('\\').join('/');
+    hint =
+      ` The jobname is "${config.jobname}" (from ${config.jobnameSource}), so the build writes ${expected}.` +
+      ' Check the path and the jobname (`jobname:` in overfull.yml, `$jobname` in .latexmkrc),' +
+      ' or build the document before this step.';
+  } else hint = ' Check the path (relative to the project directory).';
+  return new UsageError(`${label} not found: ${given} (given as \`${what}\`).${hint}`);
+}
 
 /**
  * The image `check` may run veraPDF/pdffonts in: `--image`, else $OVERFULL_IMAGE,
@@ -139,7 +164,21 @@ async function gather(opts: CheckOptions, config: Config, needPdf: boolean): Pro
   const pdfAbs = opts.pdf
     ? insideRoot(root, opts.pdf, 'PDF')
     : insideRoot(root, join(out, `${config.jobname}.pdf`), 'PDF');
-  const inputs: Inputs = { config, root, logPath: rel(root, logAbs), pdfPath: rel(root, pdfAbs) };
+  if (opts.pdf && needPdf && !existsSync(pdfAbs)) throw missingInputError('pdf', opts.pdf, config);
+  if (opts.log && !existsSync(logAbs)) throw missingInputError('log', opts.log, config);
+  if (opts.aux && !existsSync(insideRoot(root, opts.aux, 'Aux file')))
+    throw missingInputError('aux', opts.aux, config);
+  for (const b of opts.bib ?? []) {
+    if (!existsSync(insideRoot(root, b, 'Bibliography file')))
+      throw missingInputError('bib', b, config);
+  }
+  const inputs: Inputs = {
+    config,
+    root,
+    logPath: rel(root, logAbs),
+    pdfPath: rel(root, pdfAbs),
+    ci: isCI(opts.env ?? process.env),
+  };
   const log = readIfExists(logAbs);
   if (log !== undefined) inputs.log = log;
   const auxText = opts.aux
@@ -161,9 +200,16 @@ async function gather(opts: CheckOptions, config: Config, needPdf: boolean): Pro
   return inputs;
 }
 
+/** Why a check without its input was skipped; in CI, `overfull build` is not the advice. */
+function missingReason(inp: Inputs, path: string): string {
+  if (inp.ci)
+    return `No ${path} — build the document in an earlier workflow step, or set \`pdf:\`/\`log:\``;
+  return `No ${path} — run \`overfull build\` first`;
+}
+
 function missingPdfReason(inp: Inputs): string {
   if (inp.factsError) return `Could not read ${inp.pdfPath}: ${inp.factsError}`;
-  return `No ${inp.pdfPath} — run \`overfull build\` first`;
+  return missingReason(inp, inp.pdfPath);
 }
 
 /** Drops PDF "??"/"[?]" findings the log already explains, to avoid double counting. */
@@ -176,7 +222,8 @@ export function mergeOutput(output: CheckResult, pdfProblems: Problem[]): CheckR
   );
   if (extra.length === 0) return output;
   const problems = [...output.problems, ...extra];
-  return { ...output, status: statusOf(problems), problems };
+  // The log's summary ("No problems found…") no longer describes the merged list.
+  return { ...output, status: statusOf(problems), problems, summary: outputSummary(problems) };
 }
 
 /**
@@ -214,7 +261,7 @@ export function bibliographyAttribution(
 function buildAndOutput(inp: Inputs, wanted: Set<CheckId>): CheckResult[] {
   const out: CheckResult[] = [];
   if (inp.log === undefined) {
-    const reason = `No ${inp.logPath} — run \`overfull build\` first`;
+    const reason = missingReason(inp, inp.logPath);
     if (wanted.has('build')) out.push(skipped('build', reason));
     if (wanted.has('output')) {
       if (inp.facts) {

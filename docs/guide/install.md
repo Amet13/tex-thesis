@@ -22,7 +22,7 @@ them run the same checks.
 git clone https://github.com/amet13/overfull.git
 cd overfull
 pnpm install && pnpm build
-make image IMAGE=overfull:dev      # builds the Docker image locally (about 3 GB)
+make image IMAGE=overfull:dev      # builds the Docker image locally (9–10 GB on disk)
 ```
 
 `node packages/cli/dist/bin.js` is the `overfull` command. Make it short with an
@@ -48,6 +48,12 @@ make check IMAGE=overfull:dev
 The image `ghcr.io/amet13/overfull:3` contains TeX Live 2026, fonts, poppler,
 qpdf, veraPDF, latexdiff, Node.js and the `overfull` CLI. You do not need to
 install TeX or Node.
+
+> **New to Docker?** Install [Docker Desktop](https://docs.docker.com/desktop/)
+> (macOS, Windows) or [Docker Engine](https://docs.docker.com/engine/install/)
+> (Linux) and start it. The first build downloads the Overfull image: about
+> 3 GB compressed, 9–10 GB on disk, so allow a few minutes and the disk space.
+> After that, builds take seconds.
 
 In a project made from an Overfull template, the Makefile uses the image for
 you:

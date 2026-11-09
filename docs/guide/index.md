@@ -43,8 +43,8 @@ requires. You remain responsible for every sentence and every reference.
 
 ## Start in five minutes
 
-The first build downloads or builds a Docker image of about 3 GB; after that,
-builds take seconds.
+The first build downloads the Docker image (about 3 GB compressed, 9–10 GB on
+disk) or builds it from a clone; after that, builds take seconds.
 
 With the `overfull` command from the
 [GitHub Releases](https://github.com/amet13/overfull/releases) download (or
