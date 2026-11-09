@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import {
   accessibilityCheck,
   analyzeLog,
@@ -9,6 +9,7 @@ import {
   type CheckId,
   type CheckResult,
   citedKeys,
+  citesAll,
   missingKeys,
   type PdfFacts,
   type Problem,
@@ -24,12 +25,14 @@ import {
   venueCheck,
   verifyEntries,
 } from '@overfull/core';
-import { FileCache } from './cache.js';
+import { FileCache, refsCachePath, trackedByGit } from './cache.js';
 import { type Config, loadConfig } from './config.js';
 import { UsageError } from './io.js';
 import { readPdfFacts } from './pdf.js';
 import { listFiles, readAux, readIfExists, readTexFiles } from './project.js';
-import { runVeraPdf } from './verapdf.js';
+import { insideRoot } from './safety.js';
+import { dockerAvailable, dockerImagePresent, which } from './tools.js';
+import { type DockerTools, runVeraPdf } from './verapdf.js';
 import { VERSION } from './version.js';
 
 export interface CheckOptions {
@@ -47,8 +50,14 @@ export interface CheckOptions {
   mailto?: string;
   /** Run veraPDF when installed (default true). */
   verapdf?: boolean;
-  /** Use .overfull/cache/refs.json (default true). */
+  /** Cache reference lookups (default true): in the user cache dir, or `.overfull/cache` with `references.cache: project`. */
   cache?: boolean;
+  /**
+   * Where veraPDF and pdffonts run when not installed locally: `auto` (default)
+   * uses the Overfull image if Docker has it, `docker` always may (pulling it),
+   * `local` never uses Docker.
+   */
+  engine?: 'auto' | 'local' | 'docker';
   fetch?: typeof fetch;
   env?: Record<string, string | undefined>;
 }
@@ -67,22 +76,54 @@ interface Inputs {
   pdfPath: string;
   log?: string;
   aux?: string;
+  bcf?: string;
   facts?: PdfFacts;
   factsError?: string;
+  docker?: DockerTools;
+}
+
+/** A project-relative display path with forward slashes. */
+const rel = (root: string, abs: string) => relative(root, abs).split('\\').join('/') || '.';
+
+/** The image to run veraPDF/pdffonts in when they are not installed, or undefined. */
+async function dockerTools(opts: CheckOptions, config: Config): Promise<DockerTools | undefined> {
+  const engine = opts.engine ?? 'auto';
+  if (engine === 'local') return undefined;
+  const env = opts.env ?? process.env;
+  if (which('verapdf', env) && which('pdffonts', env)) return undefined;
+  if (!(await dockerAvailable(env))) return undefined;
+  if (engine === 'auto' && !(await dockerImagePresent(config.build.image))) return undefined;
+  return { image: config.build.image, root: config.root };
 }
 
 async function gather(opts: CheckOptions, config: Config, needPdf: boolean): Promise<Inputs> {
   const root = config.root;
-  const logPath = opts.log ?? `${config.jobname}.log`;
-  const pdfPath = opts.pdf ?? `${config.jobname}.pdf`;
-  const inputs: Inputs = { config, root, logPath, pdfPath };
-  const log = readIfExists(join(root, logPath));
+  const out = config.build.outDir;
+  const aux = config.build.auxDir;
+  // Paths from options (CLI flags, Action inputs) must stay inside the project.
+  const logAbs = opts.log
+    ? insideRoot(root, opts.log, 'Log file')
+    : insideRoot(root, join(aux, `${config.jobname}.log`), 'Log file');
+  const pdfAbs = opts.pdf
+    ? insideRoot(root, opts.pdf, 'PDF')
+    : insideRoot(root, join(out, `${config.jobname}.pdf`), 'PDF');
+  const inputs: Inputs = { config, root, logPath: rel(root, logAbs), pdfPath: rel(root, pdfAbs) };
+  const log = readIfExists(logAbs);
   if (log !== undefined) inputs.log = log;
-  const aux = opts.aux ? readIfExists(join(root, opts.aux)) : readAux(root, config.jobname);
-  if (aux !== undefined) inputs.aux = aux;
-  if (needPdf && existsSync(join(root, pdfPath))) {
+  const auxText = opts.aux
+    ? readIfExists(insideRoot(root, opts.aux, 'Aux file'))
+    : readAux(root, config.jobname, aux);
+  if (auxText !== undefined) inputs.aux = auxText;
+  const bcf = readIfExists(insideRoot(root, join(aux, `${config.jobname}.bcf`), 'Bcf file'));
+  if (bcf !== undefined) inputs.bcf = bcf;
+  if (needPdf && existsSync(pdfAbs)) {
+    if (opts.verapdf !== false && (opts.checks ?? config.checks).includes('accessibility'))
+      inputs.docker = await dockerTools(opts, config);
     try {
-      inputs.facts = await readPdfFacts(join(root, pdfPath));
+      inputs.facts = await readPdfFacts(
+        pdfAbs,
+        inputs.docker ? { docker: inputs.docker } : {},
+      );
     } catch (err) {
       inputs.factsError = err instanceof Error ? err.message : String(err);
     }
@@ -144,7 +185,7 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   const parseProblems: Problem[] = [];
   const missingFiles: string[] = [];
   for (const file of bibFiles) {
-    const text = readIfExists(join(root, file));
+    const text = readIfExists(insideRoot(root, file, 'Bibliography file'));
     if (text === undefined) {
       missingFiles.push(file);
       continue;
@@ -168,11 +209,11 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   if (missingFiles.length === bibFiles.length) {
     return skipped('references', `Bibliography not found: ${missingFiles.join(', ')}`);
   }
-  const bcf = readIfExists(join(root, `${config.jobname}.bcf`));
-  const citeSource = [inp.aux, bcf].filter(Boolean).join('\n');
-  const cited = citeSource ? citedKeys(citeSource) : undefined;
-  const citeAll = cited?.includes('*') ?? false;
-  const keys = cited?.filter((k) => k !== '*');
+  // Read .aux and .bcf separately: each has its own syntax.
+  const sources = [inp.aux, inp.bcf].filter((x): x is string => Boolean(x));
+  const keys = sources.length ? [...new Set(sources.flatMap((t) => citedKeys(t)))] : undefined;
+  // \nocite{*}: every entry is cited, so every entry is verified.
+  const citeAll = sources.some((t) => citesAll(t));
   const toVerify = !keys || citeAll ? entries : entries.filter((e) => keys.includes(e.key));
   const extra = [...parseProblems, ...(keys ? missingKeys(keys, entries) : [])];
   for (const f of missingFiles) {
@@ -185,18 +226,33 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
     });
   }
   const env = opts.env ?? process.env;
-  const cache =
-    opts.cache === false ? undefined : new FileCache(join(root, '.overfull', 'cache', 'refs.json'));
+  let cache: FileCache | undefined;
+  if (opts.cache !== false) {
+    const path = refsCachePath(root, config.references.cache, env);
+    const inCi = env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
+    if (config.references.cache === 'project' && inCi && existsSync(path) && trackedByGit(root, path)) {
+      // A cache committed in a pull request must not make references "verified".
+      extra.push({
+        rule: 'refs-cache-ignored',
+        check: 'references',
+        severity: 'info',
+        message: `Ignored ${rel(root, path)}: it is tracked by git, and in CI a committed cache is not trusted`,
+        fix: 'Remove it from git (`git rm --cached .overfull/cache/refs.json`) and ignore `.overfull/`',
+      });
+    } else cache = new FileCache(path);
+  }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
-  const results = await verifyEntries(toVerify, {
+  const refsOptions: Parameters<typeof verifyEntries>[1] & { requireProvenance?: boolean } = {
     ...(opts.fetch ? { fetch: opts.fetch } : {}),
     ...(mailto ? { mailto } : {}),
     ...(openalexKey ? { openalexKey } : {}),
     ...(cache ? { cache } : {}),
     offline: opts.offline ?? false,
     ignore: config.references.ignore,
-  });
+    ...(config.references.requireCite ? { requireProvenance: true } : {}),
+  };
+  const results = await verifyEntries(toVerify, refsOptions);
   cache?.save();
   const result = refsCheck(results, { entries: toVerify, extra });
   if (!keys) {
@@ -216,7 +272,11 @@ async function accessibility(inp: Inputs, opts: CheckOptions): Promise<CheckResu
     return skipped('accessibility', `Accessibility is off for profile ${inp.config.profile.id}`);
   if (!inp.facts) return skipped('accessibility', missingPdfReason(inp));
   let verapdf: VeraPdfResult | null | undefined;
-  if (opts.verapdf !== false) verapdf = await runVeraPdf(join(inp.root, inp.pdfPath), opts.env);
+  if (opts.verapdf !== false)
+    verapdf = await runVeraPdf(join(inp.root, inp.pdfPath), opts.env, {
+      ...(inp.facts.pdfua !== undefined ? { pdfuaPart: inp.facts.pdfua } : {}),
+      ...(inp.docker ? { docker: inp.docker } : {}),
+    });
   return accessibilityCheck(inp.facts, { verapdf, level });
 }
 
