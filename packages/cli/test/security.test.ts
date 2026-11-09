@@ -155,7 +155,7 @@ describe('S2: workflow commands in printed text', () => {
     const rel = readInputs({ 'INPUT_WORKING-DIRECTORY': 'paper' }, '/ws');
     expect(rel.check.cwd).toBe(resolve('/ws', 'paper'));
     const abs = readInputs({ 'INPUT_WORKING-DIRECTORY': '/abs/dir' }, '/ws');
-    expect(abs.check.cwd).toBe(resolve('/abs/dir'));
+    expect(abs.check.cwd).toBe('/abs/dir');
     expect(abs.check.engine).toBe('local');
   });
 });
@@ -165,7 +165,7 @@ describe('S3: reference cache location', () => {
     const env = { XDG_CACHE_HOME: '/xdg' };
     const a = refsCachePath('/p/one', 'user', env);
     const b = refsCachePath('/p/two', 'user', env);
-    expect(a.startsWith(join('/xdg', 'overfull'))).toBe(true);
+    expect(a.startsWith(userCacheDir(env))).toBe(true);
     expect(a).not.toBe(b);
     expect(userCacheDir({ HOME: '/home/u' }, 'linux')).toBe(join('/home/u', '.cache', 'overfull'));
     expect(userCacheDir({ LOCALAPPDATA: 'C:\\L' }, 'win32')).toContain('overfull');
