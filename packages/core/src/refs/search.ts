@@ -46,6 +46,11 @@ type TitleCacheValue = Partial<Record<RefSource, WorkRecord[]>> & {
   cachedAt?: Partial<Record<RefSource, number>>;
 };
 
+/** True when `opts.sources` (the allow-list) lets this index be queried. */
+export function sourceAllowed(opts: RefsOptions, source: RefSource): boolean {
+  return !opts.sources || opts.sources.includes(source);
+}
+
 export function failureReason(err: unknown): string {
   return err instanceof SourceUnavailableError ? err.message : `unexpected error: ${String(err)}`;
 }
@@ -84,7 +89,7 @@ function titleSources(ctx: Ctx, q: TitleSearch): [RefSource, () => Promise<WorkR
   ];
   const key = opts.openalexKey;
   if (key) list.push(['openalex', () => openalexSearch(client, plain, key, opts.mailto)]);
-  return list;
+  return list.filter(([source]) => sourceAllowed(opts, source));
 }
 
 async function searchOne(
@@ -145,7 +150,11 @@ export async function titleSearch(
   }
   // Keyless fallback: when dblp could not answer (bot wall, 429, 5xx) and no OpenAlex key
   // is configured, ask OpenAlex without a key (it has a free per-IP daily budget).
-  if (!ctx.opts.openalexKey && outcome.failures.some((f) => f.source === 'dblp')) {
+  if (
+    !ctx.opts.openalexKey &&
+    sourceAllowed(ctx.opts, 'openalex') &&
+    outcome.failures.some((f) => f.source === 'dblp')
+  ) {
     const plain = q.isTex ? texToPlain(q.title) : q.title;
     try {
       const records = await searchOne(ctx, cacheKey, 'openalex', () =>

@@ -77,6 +77,12 @@ export interface RefsOptions {
   timeoutMs?: number;
   offline?: boolean;
   /**
+   * Allow-list of indexes to query (default: all). The browser check passes
+   * `['crossref', 'doi.org']` because arXiv and dblp send no CORS headers. A required
+   * source left out here does not block `not-found`; the reason names what was skipped.
+   */
+  sources?: RefSource[];
+  /**
    * Guardrail against hand-written entries (config `references.requireCite`): an entry
    * that is not `verified` must carry `x-overfull = {cite …}` from `overfull cite`, or it
    * is reported as `reference-unproven` (error). Websites, software and standards, which

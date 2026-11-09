@@ -16,6 +16,7 @@ import {
   failureReason,
   resolveDoiCached,
   type SourceFailure,
+  sourceAllowed,
   titleSearch,
 } from './search.js';
 import type { MatchedRecord, RefResult, RefSource, RefsOptions, WorkRecord } from './types.js';
@@ -207,6 +208,7 @@ function withBrokenIds(result: RefResult, ids: Identifiers, ev: Evidence): RefRe
 
 /** No candidate matched: decide between not-found, unverifiable and error. */
 function noMatch(
+  ctx: Ctx,
   base: RefResult,
   entry: BibEntry,
   kind: EntryKind,
@@ -215,7 +217,15 @@ function noMatch(
 ): RefResult {
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
+  const opts = ctx.opts;
   const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
+  // Indexes left out by the `sources` allow-list were not asked; say so in the reason.
+  const skipped = (['crossref', 'dblp', 'arxiv'] as RefSource[]).filter(
+    (s) => !sourceAllowed(opts, s),
+  );
+  const skippedNote = skipped.length
+    ? ` (${sourcesText(skipped).replace(/ or /, ' and ')} ${skipped.length === 1 ? 'was' : 'were'} not searched)`
+    : '';
   const titleNote = entry.fields.title ? ' and no record has a similar title' : '';
   if (ev.arxivMissing) {
     return {
@@ -267,7 +277,7 @@ function noMatch(
   return {
     ...withSearched,
     status: 'not-found',
-    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== 'doi.org'))}`,
+    reason: `no record with a similar title in ${sourcesText(searched.filter((s) => s !== 'doi.org'))}${skippedNote}`,
   };
 }
 
@@ -297,15 +307,17 @@ export async function verifyEntry(
   };
   // The entry's own identifiers are authoritative: their verdict is final.
   const viaId =
-    (ids.doi ? await checkDoi(ctx, ids.doi, facts, ev) : null) ??
-    (ids.arxivId ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
+    (ids.doi && sourceAllowed(ctx.opts, 'doi.org') ? await checkDoi(ctx, ids.doi, facts, ev) : null) ??
+    (ids.arxivId && sourceAllowed(ctx.opts, 'arxiv')
+      ? await checkArxiv(ctx, ids.arxivId, facts, ev)
+      : null);
   const withQuery = (r: RefResult): RefResult => ({ ...r, query: ev.queries[0] ?? '' });
   if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
 
   await searchByTitle(ctx, facts, kind, ev);
   const best = bestAssessment(ev.assessments);
   if (best) return withQuery(withBrokenIds(fromAssessment(base, best, ev), ids, ev));
-  return withQuery(noMatch(base, entry, kind, ids, ev));
+  return withQuery(noMatch(ctx, base, entry, kind, ids, ev));
 }
 
 async function runPool<T, R>(
