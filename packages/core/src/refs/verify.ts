@@ -78,6 +78,9 @@ function fromAssessment(base: RefResult, a: Assessment, ev: Evidence): RefResult
   if (a.differentWork && doiDiff?.field === 'doi' && a.record.source === 'doi.org') {
     result.wrongWork = { field: 'doi', id: doiDiff.bib, title: toMatched(a.record).title };
   }
+  if (a.differentWork && doiDiff?.field === 'eprint' && a.record.source === 'arxiv') {
+    result.wrongWork = { field: 'eprint', id: doiDiff.bib, title: toMatched(a.record).title };
+  }
   if (a.verdict === 'verified' && a.yearDiff === 1) {
     result.reason = 'year differs by one (common between preprint, online and print versions)';
   }
@@ -364,8 +367,16 @@ export async function verifyEntries(
   });
 }
 
-/** Not verified, not added with `overfull cite`, and of a kind `overfull cite` can add. */
+/**
+ * Not verified, not added with `overfull cite`, and of a kind `overfull cite` can add.
+ * The `x-overfull` marker is a convenience, not authentication: anyone can type it.
+ * It only excuses an unverified entry that also carries something a reader can
+ * follow (a DOI, an eprint id or a URL).
+ */
 export function isUnproven(entry: BibEntry, result: RefResult): boolean {
-  if (result.status === 'verified' || provenanceOf(entry)) return false;
+  if (result.status === 'verified') return false;
+  const f = entry.fields;
+  const ids = identifiersOf(entry);
+  if (provenanceOf(entry) && (ids.doi || ids.arxivId || f.doi || f.eprint || f.url)) return false;
   return entryKind(entry, identifiersOf(entry)) !== 'not-indexed';
 }
