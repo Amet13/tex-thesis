@@ -42,7 +42,11 @@ function mustEdit(rel, re, replacement) {
   });
 }
 
-for (const rel of ['packages/cli/package.json', 'packages/core/package.json', 'action/package.json']) {
+for (const rel of [
+  'packages/cli/package.json',
+  'packages/core/package.json',
+  'action/package.json',
+]) {
   mustEdit(rel, /("version":\s*")[^"]+(")/, `$1${next}$2`);
 }
 mustEdit('packages/core/src/index.ts', /(export const VERSION = ')[^']+(')/, `$1${next}$2`);
@@ -58,7 +62,10 @@ if (newMajor !== oldMajor) {
   const action = new RegExp(`(amet13/overfull@v)${oldMajor}(?![\\d.])`, 'g');
   const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
     .split('\0')
-    .filter((f) => f && !f.startsWith('corpus/') && f !== 'CHANGELOG.md' && !f.endsWith('.pdf'));
+    .filter(
+      (f) =>
+        f && !/^(corpus|action\/dist)\//.test(f) && f !== 'CHANGELOG.md' && !f.endsWith('.pdf'),
+    );
   for (const rel of tracked) {
     let text;
     try {
@@ -89,6 +96,8 @@ Next:
   2. pnpm build && pnpm --filter overfull-action build   (action/dist embeds the version)
   3. pnpm lint && pnpm typecheck && pnpm test && pnpm templates:check
   4. Commit, then: git tag v${next} && git push origin v${next}${
-    newMajor !== oldMajor ? `\n  5. After the release: git tag -f v${newMajor} v${next} && git push -f origin v${newMajor}` : ''
+    newMajor !== oldMajor
+      ? `\n  5. After the release: git tag -f v${newMajor} v${next} && git push -f origin v${newMajor}`
+      : ''
   }`);
 }
