@@ -25,6 +25,10 @@ export interface Config {
   main: string;
   jobname: string;
   bib: string[];
+  /** True when `bib` was found in the main file (`\\bibliography`, `\\addbibresource`), not configured. */
+  bibDiscovered: boolean;
+  /** True when overfull.yml sets `jobname` (otherwise it follows the main file). */
+  jobnameFromConfig: boolean;
   profile: VenueProfile;
   /** Inline venue overrides from overfull.yml (re-applied when `--profile` changes the base). */
   venue: InlineProfile;
@@ -323,6 +327,8 @@ export function loadConfig(
     main,
     jobname,
     bib,
+    bibDiscovered: raw.bib === undefined,
+    jobnameFromConfig: raw.jobname !== undefined,
     profile,
     venue: inline,
     checks,

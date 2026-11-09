@@ -145,4 +145,13 @@ export const venueRules: RuleInfo[] = [
     summary: 'arXiv’s processing breaks on file names containing spaces.',
     fix: 'Rename files using - or _ instead of spaces.',
   },
+  {
+    id: 'tex-file-skipped',
+    check: 'venue',
+    severity: 'info',
+    title: 'Source file not read',
+    summary:
+      'A .tex/.sty/.cls file in the project was not read for the venue checks: it is not a regular file (a pipe, socket or device) or it is larger than 20 MB.',
+    fix: 'Nothing to do if the file is not part of the document. Otherwise replace it with a regular file of normal size.',
+  },
 ];

@@ -403,8 +403,11 @@ describe('H5: check --engine', () => {
       { docker: { image: 'overfull:dev', root: '/proj' } },
     );
     const args = readFileSync(log, 'utf8');
-    expect(args).toContain('overfull:dev verapdf --flavour ua2 --format json ./out/x.pdf');
-    expect(args).toContain('-v /proj:/work');
+    expect(args).toContain(
+      '--entrypoint verapdf overfull:dev --flavour ua2 --format json ./out/x.pdf',
+    );
+    expect(args).toContain('--network none');
+    expect(args).toContain('--mount type=bind,source=/proj,target=/work,readonly');
   });
 });
 

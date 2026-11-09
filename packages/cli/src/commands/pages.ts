@@ -4,6 +4,7 @@ import { int, parse, str } from '../args.js';
 import { loadConfig } from '../config.js';
 import { type Io, UsageError } from '../io.js';
 import { loadPdfjs } from '../pdf.js';
+import { insideRootForWrite } from '../safety.js';
 import { dockerAvailable, dockerRunArgs, run, which } from '../tools.js';
 
 export const pagesHelp = `Usage: overfull pages <range> [options]
@@ -13,7 +14,7 @@ Range: "3", "2-5", "1,4,7", "8-" (to the end). Prints the written paths.
 
 Options:
   --pdf file      PDF to render (default <jobname>.pdf)
-  --out dir       Output directory (default .overfull/pages)
+  --out dir       Output directory inside the project (default .overfull/pages)
   --dpi n         Resolution (default 110)
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
@@ -81,7 +82,11 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
   const dpi = int(values.dpi, 'dpi') ?? 110;
   const pages = parseRange(spec, await pageCount(pdfAtRoot));
   const outRel = str(values.out) ?? join('.overfull', 'pages');
-  const outDir = isAbsolute(outRel) ? outRel : join(io.cwd, outRel);
+  const outDir = insideRootForWrite(
+    config.root,
+    isAbsolute(outRel) ? outRel : join(io.cwd, outRel),
+    'Output directory',
+  );
   mkdirSync(outDir, { recursive: true });
 
   const local = Boolean(which('pdftoppm', io.env));
@@ -111,7 +116,7 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
       const inRoot = (abs: string) => relative(config.root, abs);
       if (inRoot(outDir).startsWith('..') || inRoot(pdfAtRoot).startsWith('..')) {
         throw new UsageError(
-          'With Docker, the PDF and --out must be inside the project directory.',
+          'With Docker, the PDF must be inside the project directory.',
         );
       }
       const toPosix = (s: string) => s.split('\\').join('/');

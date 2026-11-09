@@ -31,10 +31,11 @@ export interface RefResult {
   differences?: RefDifference[];
   reason?: string;
   /**
-   * Set when the entry's own DOI resolves to a different, identified work (rule
-   * `reference-doi-wrong-work`): `title` is that other work's title.
+   * Set when the entry's own DOI (rule `reference-doi-wrong-work`) or arXiv id
+   * (rule `reference-arxiv-wrong-work`) resolves to a different, identified work:
+   * `title` is that other work's title.
    */
-  wrongWork?: { field: 'doi'; id: string; title: string };
+  wrongWork?: { field: 'doi' | 'eprint'; id: string; title: string };
   /**
    * With `requireProvenance`: the entry is not verified and was not added with
    * `overfull cite` (no `x-overfull` field). Reported as `reference-unproven`.

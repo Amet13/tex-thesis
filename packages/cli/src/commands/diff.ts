@@ -3,7 +3,7 @@ import { basename, dirname, join, relative } from 'node:path';
 import { parse, str } from '../args.js';
 import { loadConfig } from '../config.js';
 import { type Io, UsageError } from '../io.js';
-import { insideRoot, safeRelPath } from '../safety.js';
+import { insideRoot, insideRootForWrite, safeRelPath } from '../safety.js';
 import {
   dockerAvailable,
   dockerRunArgs,
@@ -122,7 +122,7 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
   const stem = basename(main).replace(/\.tex$/i, '');
   const diffTex = join(dirname(main), `${stem}-diff${sha}.tex`).split('\\').join('/');
   const outPdf = str(values.out) ?? 'overfull-diff.pdf';
-  const outAbs = insideRoot(config.root, outPdf, 'Output PDF');
+  const outAbs = insideRootForWrite(config.root, outPdf, 'Output PDF');
   const jobname = 'overfull-diff';
   const diffDir = DIFF_DIR.split('\\').join('/');
   const dockerFailed = (r: { code: number; stderr: string }) => {

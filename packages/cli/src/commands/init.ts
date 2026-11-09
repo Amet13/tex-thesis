@@ -1,7 +1,8 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { parse } from '../args.js';
 import { type Io, UsageError } from '../io.js';
+import { insideRootForWrite, isDanglingSymlink } from '../safety.js';
 import { copyTemplate, TEMPLATE_NAMES, type TemplateName, templatesDir } from '../templates.js';
 import { run, which } from '../tools.js';
 
@@ -83,6 +84,14 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
   if (!src || !existsSync(src))
     throw new UsageError(`Template "${template}" is not bundled with this overfull install.`);
   const target = resolve(io.cwd, dir ?? template);
+  // A target under the current directory must not escape it through a symlink
+  // (an untrusted checkout could hold `paper -> ~/.ssh`); a dangling symlink is
+  // refused anywhere.
+  const rel = relative(io.cwd, target);
+  if (rel === '' || (!rel.startsWith('..') && !isAbsolute(rel)))
+    insideRootForWrite(io.cwd, target, 'Target directory');
+  else if (isDanglingSymlink(target))
+    throw new UsageError(`Target directory "${dir}" is a dangling symlink.`);
   if (existsSync(target) && readdirSync(target).length > 0 && values.force !== true) {
     throw new UsageError(
       `${relative(io.cwd, target) || '.'} is not empty. Choose another directory or pass --force.`,

@@ -9,7 +9,9 @@ import {
   formatMarkdown,
   githubAnnotations,
   neutralizeWorkflowCommands,
+  oneLine,
   runCheck,
+  stopCommands,
 } from 'overfull';
 import { readInputs } from './inputs.js';
 import { escapeData, outputRecord } from './output.js';
@@ -30,9 +32,12 @@ async function main(): Promise<number> {
     }
   }
   const report = await runCheck(inputs.check);
-  // Messages carry text from the log, PDF and .bib: never let a line act as a workflow command.
+  // Messages carry text from the log, PDF and .bib: never let a line act as a workflow
+  // command. Neutralized, and printed inside stop-commands with a random token, so
+  // the runner executes nothing from it even if a bypass of the neutralizer existed.
+  const guard = stopCommands();
   process.stdout.write(
-    neutralizeWorkflowCommands(formatHuman(report, { color: true, verbose: true })),
+    `${guard.start}${neutralizeWorkflowCommands(formatHuman(report, { color: true, verbose: true }))}${guard.end}`,
   );
 
   if (inputs.annotations) {
@@ -56,7 +61,7 @@ main().then(
   },
   (err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
-    process.stdout.write(`::error title=Overfull preflight::${escapeData(msg)}\n`);
+    process.stdout.write(`::error title=Overfull preflight::${escapeData(oneLine(msg))}\n`);
     process.exitCode = 2;
   },
 );

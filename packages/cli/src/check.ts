@@ -25,12 +25,18 @@ import {
   venueCheck,
   verifyEntries,
 } from '@overfull/core';
-import { FileCache, refsCachePath, trackedByGit } from './cache.js';
-import { type Config, loadConfig } from './config.js';
+import { FileCache, MemoryCache, refsCachePath, symlinkOnPath } from './cache.js';
+import { type Config, DEFAULT_IMAGE, loadConfig } from './config.js';
 import { UsageError } from './io.js';
 import { readPdfFacts } from './pdf.js';
-import { listFiles, readAux, readIfExists, readTexFiles } from './project.js';
-import { insideRoot } from './safety.js';
+import {
+  listFiles,
+  readAux,
+  readIfExists,
+  readTexFiles,
+  requireRegularFile,
+} from './project.js';
+import { insideRoot, insideRootOrUndefined, isCI, safeImage } from './safety.js';
 import { dockerAvailable, dockerImagePresent, which } from './tools.js';
 import { type DockerTools, runVeraPdf } from './verapdf.js';
 import { VERSION } from './version.js';
@@ -58,6 +64,11 @@ export interface CheckOptions {
    * `local` never uses Docker.
    */
   engine?: 'auto' | 'local' | 'docker';
+  /**
+   * Image for veraPDF/pdffonts in Docker. Default $OVERFULL_IMAGE, else the
+   * Overfull image; `build.image` in overfull.yml is ignored by `check`.
+   */
+  image?: string;
   fetch?: typeof fetch;
   env?: Record<string, string | undefined>;
 }
@@ -85,15 +96,28 @@ interface Inputs {
 /** A project-relative display path with forward slashes. */
 const rel = (root: string, abs: string) => relative(root, abs).split('\\').join('/') || '.';
 
+/**
+ * The image `check` may run veraPDF/pdffonts in: `--image`, else $OVERFULL_IMAGE,
+ * else the default. Never `build.image` from overfull.yml: the project is
+ * untrusted input to `check`, and must not choose code to run.
+ */
+export function checkImage(opts: Pick<CheckOptions, 'image' | 'env'>): string {
+  const env = opts.env ?? process.env;
+  if (opts.image) return safeImage(opts.image, '--image');
+  if (env.OVERFULL_IMAGE) return safeImage(env.OVERFULL_IMAGE, 'OVERFULL_IMAGE');
+  return DEFAULT_IMAGE;
+}
+
 /** The image to run veraPDF/pdffonts in when they are not installed, or undefined. */
 async function dockerTools(opts: CheckOptions, config: Config): Promise<DockerTools | undefined> {
   const engine = opts.engine ?? 'auto';
   if (engine === 'local') return undefined;
   const env = opts.env ?? process.env;
-  if (which('verapdf', env) && which('pdffonts', env)) return undefined;
+  if (which('verapdf', env, { allowBatch: true }) && which('pdffonts', env)) return undefined;
   if (!(await dockerAvailable(env))) return undefined;
-  if (engine === 'auto' && !(await dockerImagePresent(config.build.image))) return undefined;
-  return { image: config.build.image, root: config.root };
+  const image = checkImage(opts);
+  if (engine === 'auto' && !(await dockerImagePresent(image))) return undefined;
+  return { image, root: config.root };
 }
 
 async function gather(opts: CheckOptions, config: Config, needPdf: boolean): Promise<Inputs> {
@@ -116,6 +140,7 @@ async function gather(opts: CheckOptions, config: Config, needPdf: boolean): Pro
   if (auxText !== undefined) inputs.aux = auxText;
   const bcf = readIfExists(insideRoot(root, join(aux, `${config.jobname}.bcf`), 'Bcf file'));
   if (bcf !== undefined) inputs.bcf = bcf;
+  if (needPdf && existsSync(pdfAbs)) requireRegularFile(pdfAbs);
   if (needPdf && existsSync(pdfAbs)) {
     if (opts.verapdf !== false && (opts.checks ?? config.checks).includes('accessibility'))
       inputs.docker = await dockerTools(opts, config);
@@ -181,8 +206,19 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   const entries: BibEntry[] = [];
   const parseProblems: Problem[] = [];
   const missingFiles: string[] = [];
+  // Paths the user gave (--bib, `bib:`) must be inside the project; paths found
+  // inside the main file are only skipped, with a note, when they are not.
+  const discovered = !opts.bib && config.bibDiscovered;
+  const outside: string[] = [];
   for (const file of bibFiles) {
-    const text = readIfExists(insideRoot(root, file, 'Bibliography file'));
+    const abs = discovered
+      ? insideRootOrUndefined(root, file)
+      : insideRoot(root, file, 'Bibliography file');
+    if (abs === undefined) {
+      outside.push(file);
+      continue;
+    }
+    const text = readIfExists(abs);
     if (text === undefined) {
       missingFiles.push(file);
       continue;
@@ -203,8 +239,23 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
       });
     }
   }
-  if (missingFiles.length === bibFiles.length) {
-    return skipped('references', `Bibliography not found: ${missingFiles.join(', ')}`);
+  const outsideProblems: Problem[] = outside.map((f) => ({
+    rule: 'bib-outside-project',
+    check: 'references',
+    severity: 'warning',
+    message: `References in ${f} were not checked: it is outside the project directory`,
+    fix: 'Pass it explicitly with `--bib` from a directory that contains it, or move it into the project.',
+    data: { file: f },
+  }));
+  if (missingFiles.length + outside.length === bibFiles.length) {
+    if (!outside.length)
+      return skipped('references', `Bibliography not found: ${missingFiles.join(', ')}`);
+    return {
+      check: 'references',
+      status: 'warn',
+      problems: outsideProblems,
+      summary: `No bibliography inside the project was checked${missingFiles.length ? ` (not found: ${missingFiles.join(', ')})` : ''}`,
+    };
   }
   // Read .aux and .bcf separately: each has its own syntax.
   const sources = [inp.aux, inp.bcf].filter((x): x is string => Boolean(x));
@@ -212,7 +263,11 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   // \nocite{*}: every entry is cited, so every entry is verified.
   const citeAll = sources.some((t) => citesAll(t));
   const toVerify = !keys || citeAll ? entries : entries.filter((e) => keys.includes(e.key));
-  const extra = [...parseProblems, ...(keys ? missingKeys(keys, entries) : [])];
+  const extra = [
+    ...outsideProblems,
+    ...parseProblems,
+    ...(keys ? missingKeys(keys, entries) : []),
+  ];
   for (const f of missingFiles) {
     extra.push({
       rule: 'bib-file-missing',
@@ -223,23 +278,32 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
     });
   }
   const env = opts.env ?? process.env;
-  let cache: FileCache | undefined;
+  let cache: FileCache | MemoryCache | undefined;
   if (opts.cache !== false) {
     const path = refsCachePath(root, config.references.cache, env);
-    const inCi = env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
-    if (
-      config.references.cache === 'project' &&
-      inCi &&
-      existsSync(path) &&
-      trackedByGit(root, path)
-    ) {
-      // A cache committed in a pull request must not make references "verified".
+    const project = config.references.cache === 'project';
+    const link = project ? symlinkOnPath(root, path) : undefined;
+    if (project && isCI(env)) {
+      // A project-located cache is repository content: in CI (a pull request, an
+      // artifact, a tarball without .git) it must never mark references as verified.
+      cache = new MemoryCache();
+      if (existsSync(path) || link) {
+        extra.push({
+          rule: 'refs-cache-ignored',
+          check: 'references',
+          severity: 'info',
+          message: `Ignored ${rel(root, path)}: in CI a reference cache inside the project is not trusted`,
+          fix: 'Nothing to do in CI. Keep `.overfull/` out of git (add it to .gitignore).',
+        });
+      }
+    } else if (link) {
+      cache = new MemoryCache();
       extra.push({
         rule: 'refs-cache-ignored',
         check: 'references',
         severity: 'info',
-        message: `Ignored ${rel(root, path)}: it is tracked by git, and in CI a committed cache is not trusted`,
-        fix: 'Remove it from git (`git rm --cached .overfull/cache/refs.json`) and ignore `.overfull/`',
+        message: `Ignored ${rel(root, path)}: ${rel(root, link)} is a symlink, so the cache may be a file from the repository`,
+        fix: 'Replace the symlink with a real directory, or drop `references.cache: project`.',
       });
     } else cache = new FileCache(path);
   }
@@ -285,7 +349,8 @@ async function accessibility(inp: Inputs, opts: CheckOptions): Promise<CheckResu
 function venue(inp: Inputs): CheckResult {
   const { config, root } = inp;
   const files = listFiles(root);
-  const texFiles = readTexFiles(root, files);
+  const skippedFiles: { path: string; reason: string }[] = [];
+  const texFiles = readTexFiles(root, files, skippedFiles);
   const result = venueCheck(config.profile, {
     ...(inp.facts ? { facts: inp.facts } : {}),
     ...(inp.aux !== undefined ? { aux: inp.aux } : {}),
@@ -295,6 +360,19 @@ function venue(inp: Inputs): CheckResult {
     main: config.main,
   });
   if (result.status === 'skipped' && !inp.facts) return skipped('venue', missingPdfReason(inp));
+  if (skippedFiles.length) {
+    result.problems.push(
+      ...skippedFiles.map(
+        (f): Problem => ({
+          rule: 'tex-file-skipped',
+          check: 'venue',
+          severity: 'info',
+          message: `${f.path} was not read: ${f.reason}`,
+          location: { file: f.path },
+        }),
+      ),
+    );
+  }
   return result;
 }
 

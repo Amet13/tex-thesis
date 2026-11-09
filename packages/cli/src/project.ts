@@ -1,6 +1,7 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import type { TexFile } from '@overfull/core';
+import { UsageError } from './io.js';
 import { insideRootOrUndefined } from './safety.js';
 
 const SKIP_DIRS = new Set([
@@ -65,14 +66,70 @@ export function isDiffArtifact(path: string): boolean {
   return name.startsWith('overfull-diff') || /-diff[0-9a-f]{4,40}\.tex$/i.test(name);
 }
 
-export function readTexFiles(root: string, files: string[]): TexFile[] {
-  return files
-    .filter((f) => /\.(tex|sty|cls)$/i.test(f) && !isDiffArtifact(f))
-    .map((path) => ({ path, content: readFileSync(join(root, path), 'utf8') }));
+/** Largest source file read for the venue checks. */
+export const MAX_TEX_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Reads the project's .tex/.sty/.cls files. Non-regular files (FIFOs, sockets,
+ * devices, which could block or never end) and files over MAX_TEX_BYTES are
+ * skipped and listed in `skipped` with the reason.
+ */
+export function readTexFiles(
+  root: string,
+  files: string[],
+  skipped: { path: string; reason: string }[] = [],
+): TexFile[] {
+  const out: TexFile[] = [];
+  for (const path of files) {
+    if (!/\.(tex|sty|cls)$/i.test(path) || isDiffArtifact(path)) continue;
+    const abs = join(root, path);
+    let st: ReturnType<typeof statSync>;
+    try {
+      st = statSync(abs);
+    } catch {
+      continue;
+    }
+    if (!st.isFile()) {
+      skipped.push({ path, reason: 'not a regular file' });
+      continue;
+    }
+    if (st.size > MAX_TEX_BYTES) {
+      skipped.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
+      continue;
+    }
+    try {
+      out.push({ path, content: readFileSync(abs, 'utf8') });
+    } catch (err) {
+      skipped.push({ path, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return out;
 }
 
+/**
+ * Reads a file when it exists. A path that exists but is not a regular file
+ * (a directory named `main.log`, a FIFO) is a usage error with a clear message,
+ * never a hang or an internal error.
+ */
 export function readIfExists(path: string): string | undefined {
-  return existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+  if (!existsSync(path)) return undefined;
+  requireRegularFile(path);
+  return readFileSync(path, 'utf8');
+}
+
+/** Throws a UsageError unless `path` is a regular file. */
+export function requireRegularFile(path: string): void {
+  let st: ReturnType<typeof statSync>;
+  try {
+    st = statSync(path);
+  } catch (err) {
+    throw new UsageError(`Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!st.isFile()) {
+    throw new UsageError(
+      `${path} is not a file (${st.isDirectory() ? 'it is a directory' : 'it is a pipe, socket or device'}).`,
+    );
+  }
 }
 
 /**

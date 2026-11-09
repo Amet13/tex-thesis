@@ -14,7 +14,7 @@ import {
 import { parse, str } from '../args.js';
 import { loadConfig } from '../config.js';
 import { type Io, UsageError } from '../io.js';
-import { insideRoot } from '../safety.js';
+import { insideRootForWrite } from '../safety.js';
 
 export const citeHelp = `Usage: overfull cite <doi | arXiv:id | "title"> [options]
 
@@ -127,6 +127,15 @@ export class SourceTracker {
 const list = (xs: string[]) =>
   xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
 
+/** Citation keys that BibTeX, biber and \\cite all read as one plain token. */
+export const SAFE_KEY = /^[A-Za-z0-9_:.+\-/]+$/;
+
+/** A generated key reduced to SAFE_KEY characters (index metadata is untrusted). */
+export function sanitizeKey(key: string): string {
+  const clean = key.replace(/[^A-Za-z0-9_:.+\-/]/g, '');
+  return clean || 'anon';
+}
+
 function uniqueKey(base: string, taken: Set<string>): string {
   if (!taken.has(base)) return base;
   for (const suffix of 'bcdefghijklmnopqrstuvwxyz') {
@@ -161,9 +170,15 @@ export async function citeCommand(
   const query = positionals.join(' ').trim();
   if (!query)
     throw new UsageError('Give a DOI, arXiv id or title: `overfull cite 10.1145/359545.359563`');
+  const explicitKey = str(values.key);
+  if (explicitKey !== undefined && !SAFE_KEY.test(explicitKey)) {
+    throw new UsageError(
+      `Invalid --key "${explicitKey}": use only letters, digits and _ : . + - / (a BibTeX key cannot contain spaces, braces, commas or quotes).`,
+    );
+  }
   const config = loadConfig(io.cwd, str(values.config), io.env);
   const bibRel = str(values.bib) ?? config.bib[0] ?? 'references.bib';
-  const bibPath = insideRoot(config.root, bibRel, 'Bibliography file');
+  const bibPath = insideRootForWrite(config.root, bibRel, 'Bibliography file');
   const text = existsSync(bibPath) ? readFileSync(bibPath, 'utf8') : '';
   const entries = parseBib(text);
 
@@ -252,8 +267,8 @@ export async function citeCommand(
     );
   }
   const entry: BibEntry = { ...found.entry, fields: { ...found.entry.fields } };
-  const explicitKey = str(values.key);
   if (explicitKey) entry.key = explicitKey;
+  else entry.key = sanitizeKey(entry.key);
   const existing = findExisting(entries, entry);
   const emit = (key: string, entryText: string, added: boolean, message: string) => {
     if (values.json) {

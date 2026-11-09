@@ -26,6 +26,9 @@ Options:
   --no-verapdf        Do not run veraPDF even if installed
   --engine e          Where veraPDF/pdffonts run if not installed: auto (default: the
                       Overfull image when Docker already has it), docker, or local
+  --image name        Image for veraPDF/pdffonts (default $OVERFULL_IMAGE, else the
+                      Overfull image). build.image in overfull.yml is not used by check:
+                      check never runs code chosen by the project.
   --config file       Config file (default overfull.yml)
   -h, --help          Show this help
 
@@ -51,6 +54,7 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
       mailto: { type: 'string' },
       'no-verapdf': { type: 'boolean' },
       engine: { type: 'string' },
+      image: { type: 'string' },
       config: { type: 'string' },
     },
     'check',
@@ -87,6 +91,7 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
     offline: values.offline === true,
     verapdf: values['no-verapdf'] !== true,
     engine: engine as 'auto' | 'local' | 'docker',
+    ...(str(values.image) ? { image: str(values.image) } : {}),
   });
   if (values.json) io.stdout(formatJson(report));
   else if (values.markdown) io.stdout(formatMarkdown(report));

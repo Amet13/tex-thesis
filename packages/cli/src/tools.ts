@@ -2,18 +2,29 @@ import { spawn } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
 
-/** Absolute path of an executable on PATH, or undefined. */
+/**
+ * Absolute path of an executable on PATH, or undefined. On Windows only files
+ * `spawn` can start without a shell (.exe, .com) count, unless `allowBatch`:
+ * a `.bat`/`.cmd` wrapper needs cmd.exe, which re-parses its arguments.
+ */
 export function which(
   cmd: string,
   env: Record<string, string | undefined> = process.env,
+  opts: { platform?: NodeJS.Platform; allowBatch?: boolean } = {},
 ): string | undefined {
-  const exts = process.platform === 'win32' ? (env.PATHEXT ?? '.EXE;.CMD;.BAT').split(';') : [''];
-  for (const dir of (env.PATH ?? '').split(delimiter)) {
+  const win = (opts.platform ?? process.platform) === 'win32';
+  const exts = win
+    ? (env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD')
+        .split(';')
+        .filter((e) => e && (opts.allowBatch || !/^\.(bat|cmd)$/i.test(e)))
+    : [''];
+  const sepChar = win ? ';' : delimiter;
+  for (const dir of (env.PATH ?? env.Path ?? '').split(sepChar)) {
     if (!dir) continue;
     for (const ext of exts) {
       const p = join(dir, cmd + ext);
       try {
-        accessSync(p, constants.X_OK);
+        accessSync(p, win ? constants.F_OK : constants.X_OK);
         return p;
       } catch {
         /* not here */
@@ -21,6 +32,17 @@ export function which(
     }
   }
   return undefined;
+}
+
+/** On Windows: `cmd` exists only as a .bat/.cmd wrapper (which `which` does not return). */
+export function batchOnly(
+  cmd: string,
+  env: Record<string, string | undefined> = process.env,
+  platform: NodeJS.Platform = process.platform,
+): string | undefined {
+  if (platform !== 'win32' || which(cmd, env, { platform })) return undefined;
+  const found = which(cmd, env, { platform, allowBatch: true });
+  return found && /\.(bat|cmd)$/i.test(found) ? found : undefined;
 }
 
 export interface RunResult {
@@ -130,6 +152,24 @@ export async function dockerImagePresent(image: string): Promise<boolean> {
   return r.code === 0;
 }
 
+/** The `--user` for containers: the current user, else nobody (Windows has no uid). */
+function dockerUser(): string[] {
+  return typeof process.getuid === 'function' && typeof process.getgid === 'function'
+    ? ['--user', `${process.getuid()}:${process.getgid()}`]
+    : ['--user', '65534:65534'];
+}
+
+/**
+ * A `--mount` bind of `dir` at /work. Unlike `-v src:dst`, a path containing
+ * `:` (a Windows drive, `C:\\paper`) is unambiguous; a field with `,` or `"`
+ * is CSV-quoted as docker's parser expects.
+ */
+export function bindMount(dir: string, readonly = false): string[] {
+  const field = `source=${dir}`;
+  const source = /[",]/.test(field) ? `"${field.replace(/"/g, '""')}"` : field;
+  return ['--mount', `type=bind,${source},target=/work${readonly ? ',readonly' : ''}`];
+}
+
 /**
  * Arguments for `docker run` that mount `dir` at /work and run as the current
  * user (so outputs are not root-owned). `subdir` sets the working directory below /work.
@@ -150,5 +190,34 @@ export function dockerRunArgs(
   ]);
   const workdir =
     opts.subdir && opts.subdir !== '.' ? `/work/${opts.subdir.split('\\').join('/')}` : '/work';
-  return ['run', '--rm', ...user, ...env, '-v', `${dir}:/work`, '-w', workdir, image, ...command];
+  return ['run', '--rm', ...user, ...env, ...bindMount(dir), '-w', workdir, image, ...command];
+}
+
+/**
+ * `docker run` arguments for a read-only tool (veraPDF, pdffonts) used by
+ * `overfull check`: no network, the project mounted read-only, an unprivileged
+ * user, and the tool as the entrypoint, so the image's own entrypoint and the
+ * project cannot change what runs.
+ */
+export function dockerToolArgs(image: string, dir: string, tool: string, args: string[]): string[] {
+  return [
+    'run',
+    '--rm',
+    '--network',
+    'none',
+    '--cap-drop',
+    'ALL',
+    '--security-opt',
+    'no-new-privileges',
+    ...dockerUser(),
+    '-e',
+    'HOME=/tmp',
+    ...bindMount(dir, true),
+    '-w',
+    '/work',
+    '--entrypoint',
+    tool,
+    image,
+    ...args,
+  ];
 }

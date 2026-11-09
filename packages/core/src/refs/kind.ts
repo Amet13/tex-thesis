@@ -49,11 +49,20 @@ export interface Identifiers {
   arxivId?: string;
 }
 
-/** DOI and arXiv id from doi/eprint/archiveprefix/journal/url/note fields. */
+/** DOI and arXiv id from doi/eprint/archiveprefix/journal/url/howpublished/note fields. */
 export function identifiersOf(entry: BibEntry): Identifiers {
   const f = entry.fields;
   const ids: Identifiers = {};
-  const doi = f.doi ? parseDoi(f.doi) : null;
+  // A DOI written as a doi.org link in `url` or `howpublished` is the entry's DOI too.
+  const doi =
+    (f.doi ? parseDoi(f.doi) : null) ??
+    [f.url, f.howpublished]
+      .map((v) => {
+        const m = /https?:\/\/(?:dx\.)?doi\.org\/(10\.\d{4,9}\/[^\s{}]+)/i.exec(v ?? '');
+        return m ? parseDoi(m[1] as string) : null;
+      })
+      .find((d): d is string => Boolean(d)) ??
+    null;
   const archive = (f.archiveprefix ?? f.eprinttype ?? '').toLowerCase();
   const candidates = [
     archive === 'arxiv' || (!archive && f.eprint) ? f.eprint : undefined,
@@ -76,15 +85,38 @@ export function identifiersOf(entry: BibEntry): Identifiers {
   return ids;
 }
 
-/** RFCs, ISO/IEEE standards and similar, whatever entry type they were filed under. */
+/** Entry types a standard is filed under. Journal and conference papers never are. */
+const STANDARD_TYPES = new Set(['techreport', 'report', 'standard', 'manual', 'misc']);
+
+/** Bodies that publish standards (institution / organization / publisher). */
+const STANDARDS_BODY =
+  /^(?:the\s+)?(?:ISO|IEC|ISO\/IEC|IETF|Internet Engineering Task Force|RFC Editor|W3C|World Wide Web Consortium|ANSI|American National Standards Institute|NIST|National Institute of Standards and Technology|ETSI|European Telecommunications Standards Institute|ITU|ITU-T|ITU-R|International Telecommunication Union|International Organization for Standardization|International Electrotechnical Commission|DIN|BSI|British Standards Institution|CEN|CENELEC|Ecma International|ECMA|Unicode Consortium|The Unicode Consortium|OASIS|IEEE Standards Association|IEEE-SA|3GPP|WHATWG|Khronos Group)\b/i;
+
+/** A standards identifier at the start of a number, title or howpublished field. */
+const STANDARD_ID =
+  /^(?:RFC\s*-?\s*\d+|BCP\s*\d+|ISO(?:\/IEC)?(?:\/IEEE)?\s+\d{3,}|IEC\s+\d{3,}|IEEE\s+Std\b|IEEE\s+\d{3,}(?:\.\d+)?-\d{4}|ANSI\s+[A-Z]|NIST\s+(?:SP|FIPS|IR)\b|FIPS\s*(?:PUB\s*)?\d+|ITU-[TR]\s+[A-Z]\.\d+|ETSI\s+(?:TS|EN|ES|TR)\b|ECMA-\d+|3GPP\s+TS\b|W3C\s+Recommendation\b)/i;
+
+/** URLs of standards bodies' document pages. */
+const STANDARD_URL =
+  /^https?:\/\/(?:www\.)?(?:rfc-editor\.org|datatracker\.ietf\.org|tools\.ietf\.org|iso\.org|w3\.org\/TR|nvlpubs\.nist\.gov|etsi\.org\/deliver|itu\.int\/rec)\b/i;
+
+const plain = (v: string | undefined) => (v ?? '').replace(/[{}]/g, '').replace(/\\url/g, '').trim();
+
+/**
+ * RFCs, ISO/IEEE standards and similar. Only report-like entry types qualify
+ * (techreport, standard, manual, misc), and only when a standards body issued
+ * them or their number/title starts with a standards identifier: a journal or
+ * conference paper whose title mentions "ISO 9001" is still a paper.
+ */
 export function isStandard(entry: BibEntry): boolean {
+  if (!STANDARD_TYPES.has(entry.type)) return false;
   const f = entry.fields;
-  const text = [f.title, f.number, f.series, f.howpublished, f.url, f.publisher, f.institution]
-    .filter(Boolean)
-    .join(' ');
-  return /\bRFC\s*\d+|rfc-editor\.org|datatracker\.ietf\.org|\bISO(?:\/IEC)?\s+\d{3,}|\bInternet Engineering Task Force\b/i.test(
-    text,
-  );
+  if (entry.type !== 'standard' && (f.journal || f.journaltitle || f.booktitle)) return false;
+  const body = [f.institution, f.organization, f.publisher].map(plain);
+  if (body.some((b) => STANDARDS_BODY.test(b))) return true;
+  const ids = [f.number, f.title, f.howpublished, f.series].map(plain);
+  if (ids.some((v) => STANDARD_ID.test(v))) return true;
+  return [f.url, f.howpublished].map(plain).some((u) => STANDARD_URL.test(u));
 }
 
 /** Only a URL (and maybe a title/date): a web page, whatever the entry type says. */

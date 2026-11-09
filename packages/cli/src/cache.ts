@@ -1,8 +1,7 @@
-import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import type { RefCache } from '@overfull/core';
 
 type Env = Record<string, string | undefined>;
@@ -33,14 +32,35 @@ export function refsCachePath(root: string, mode: 'user' | 'project', env: Env):
   return join(userCacheDir(env), key, 'refs.json');
 }
 
-/** True when `file` is tracked by git in the repository containing `root`. */
-export function trackedByGit(root: string, file: string): boolean {
-  const r = spawnSync('git', ['ls-files', '--error-unmatch', '--', relative(root, file)], {
-    cwd: root,
-    stdio: 'ignore',
-    timeout: 10000,
-  });
-  return r.status === 0;
+/**
+ * The first path component from `root` down to `file` (both included) that is
+ * a symlink, or undefined. A cache reached through a symlink may be a file the
+ * repository controls (`.overfull -> some/tracked/dir`), so it is not used.
+ */
+export function symlinkOnPath(root: string, file: string): string | undefined {
+  const parts = relative(root, file).split(sep).filter(Boolean);
+  let p = root;
+  for (const part of parts) {
+    p = join(p, part);
+    try {
+      if (lstatSync(p).isSymbolicLink()) return p;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+/** A RefCache that lives only for this run (fresh in CI). */
+export class MemoryCache implements RefCache {
+  private readonly data = new Map<string, unknown>();
+  get(key: string): unknown {
+    return this.data.get(key);
+  }
+  set(key: string, value: unknown): void {
+    this.data.set(key, value);
+  }
+  save(): void {}
 }
 
 /** A JSON-file-backed RefCache. Call `save()` once at the end; failures to save are ignored. */

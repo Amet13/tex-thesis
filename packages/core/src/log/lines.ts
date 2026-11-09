@@ -15,7 +15,7 @@ export type EngineFamily = 'pdftex' | 'luatex' | 'xetex' | 'unknown';
 
 /** Lines that always start on a fresh line in TeX output, so they never continue a wrapped line. */
 const STARTS_FRESH =
-  /^(?:! |[^\s:()]+\.[A-Za-z0-9]+:\d+: |(?:LaTeX|LaTeX3|Package|Class|Module) .*?(?:Warning|Error|Info)|LaTeX Font |Package: |File: |Document Class: |Overfull \\|Underfull \\|Missing character: |Runaway |\([\w@.-]+\) {2,}|l\.\d+ |No file |Output written on |No pages of output|\\[A-Za-z@]+=\\)/;
+  /^(?:! |(?:[A-Za-z]:[\\/])?[^\s:()]+\.[A-Za-z0-9]+:\d+: |(?:LaTeX|LaTeX3|Package|Class|Module) .*?(?:Warning|Error|Info)|LaTeX Font |Package: |File: |Document Class: |Overfull \\|Underfull \\|Missing character: |Runaway |\([\w@.-]+\) {2,}|l\.\d+ |No file |Output written on |No pages of output|\\[A-Za-z@]+=\\)/;
 
 /** A `-file-line-error` line whose path contains spaces (`./sub dir/a.tex:4: …`). */
 const SPACED_FILE_LINE = new RegExp(`^${SPACED_PATH_SOURCE}:\\d+: `, 'i');

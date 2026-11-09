@@ -1,6 +1,6 @@
 import { relative } from 'node:path';
 import { parseVeraPdfReport, type VeraPdfResult } from '@overfull/core';
-import { dockerRunArgs, quoteWindowsArg, run, which } from './tools.js';
+import { dockerToolArgs, quoteWindowsArg, run, which } from './tools.js';
 
 /** Runs a tool inside the Overfull image, with the project root mounted at /work. */
 export interface DockerTools {
@@ -24,7 +24,8 @@ export async function runVeraPdf(
   env?: Record<string, string | undefined>,
   opts: { pdfuaPart?: number; docker?: DockerTools } = {},
 ): Promise<VeraPdfResult | null> {
-  const local = which('verapdf', env);
+  // On Windows veraPDF ships as verapdf.bat, run below through the shell with quoted fixed arguments.
+  const local = which('verapdf', env, { allowBatch: true });
   if (!local && !opts.docker) return null;
   const win = process.platform === 'win32';
   const attempt = async (flavour: string) => {
@@ -50,7 +51,7 @@ export async function runVeraPdf(
     } else {
       const { image, root } = opts.docker as DockerTools;
       const rel = `./${relative(root, pdf).split('\\').join('/')}`;
-      r = await run('docker', dockerRunArgs(image, root, ['verapdf', ...args, rel]), {
+      r = await run('docker', dockerToolArgs(image, root, 'verapdf', [...args, rel]), {
         timeoutMs: 300000,
       });
       if (r.code === 125)

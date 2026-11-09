@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { extractPdfFacts, type PdfFacts, type PdfjsLike, parsePdffonts } from '@overfull/core';
-import { dockerRunArgs, run, which } from './tools.js';
+import { dockerToolArgs, run, which } from './tools.js';
 
 let pdfjsPromise: Promise<PdfjsLike> | undefined;
 
@@ -51,7 +51,7 @@ export async function readPdfFacts(
     const rel = `./${relative(opts.docker.root, path).split('\\').join('/')}`;
     const r = await run(
       'docker',
-      dockerRunArgs(opts.docker.image, opts.docker.root, ['pdffonts', rel]),
+      dockerToolArgs(opts.docker.image, opts.docker.root, 'pdffonts', [rel]),
       {
         timeoutMs: 60000,
       },

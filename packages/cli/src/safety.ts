@@ -1,5 +1,7 @@
-import { existsSync, realpathSync } from 'node:fs';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { existsSync, lstatSync, realpathSync } from 'node:fs';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { neutralizeWorkflowCommands, RUNNER_WHITESPACE } from '@overfull/core';
 import { UsageError } from './io.js';
 
 /**
@@ -89,42 +91,124 @@ export function insideRootOrUndefined(root: string, path: string): string | unde
 }
 
 /**
- * Neutralizes GitHub workflow commands in untrusted text: a line whose first
- * non-blank characters are `::` (or `##[`) would be run by the Actions runner,
- * which trims leading whitespace before matching. A zero-width space before
- * the marker keeps the line readable but no longer a command.
+ * Resolves a path the CLI is about to write (a new .bib, `diff --out`,
+ * `pages --out`, an `init` target) and refuses it unless it stays inside
+ * `root` after symlinks: the nearest existing ancestor is resolved with
+ * realpath, and a dangling symlink anywhere on the way is refused (writing
+ * through it would create its target, wherever that is).
  */
-export function neutralizeWorkflowCommands(text: string): string {
-  return text.replace(/^([ \t]*)(::|##\[)/gm, '$1\u200b$2');
+export function insideRootForWrite(root: string, path: string, what: string): string {
+  const abs = insideRoot(root, path, what);
+  const refuse = (why: string) =>
+    new UsageError(
+      `${what} "${path}" ${why}. Overfull only writes files inside the project directory (${root}).`,
+    );
+  let probe = abs;
+  for (;;) {
+    let st: ReturnType<typeof lstatSync> | undefined;
+    try {
+      st = lstatSync(probe);
+    } catch {
+      st = undefined;
+    }
+    if (st) {
+      if (st.isSymbolicLink() && !existsSync(probe)) throw refuse('goes through a dangling symlink');
+      break;
+    }
+    const parent = dirname(probe);
+    if (parent === probe) break;
+    probe = parent;
+  }
+  let realRoot = root;
+  let realProbe = probe;
+  try {
+    realRoot = realpathSync(root);
+    realProbe = realpathSync(probe);
+  } catch {
+    throw refuse('cannot be resolved');
+  }
+  if (!isInside(realRoot, realProbe)) throw refuse('leads outside the project through a symlink');
+  return abs;
 }
+
+/** True when `path` is a symlink whose target does not exist. */
+export function isDanglingSymlink(path: string): boolean {
+  try {
+    return lstatSync(path).isSymbolicLink() && !existsSync(path);
+  } catch {
+    return false;
+  }
+}
+
+/** CI providers' marker variables; any of them set (non-empty, not "false") means CI. */
+const CI_VARS = [
+  'CI',
+  'GITHUB_ACTIONS',
+  'TF_BUILD',
+  'GITLAB_CI',
+  'BUILDKITE',
+  'CIRCLECI',
+  'JENKINS_URL',
+  'TEAMCITY_VERSION',
+];
+
+/** True when running in a CI system. Used by every CI-dependent behavior. */
+export function isCI(env: Record<string, string | undefined>): boolean {
+  return CI_VARS.some((k) => {
+    const v = env[k];
+    return v !== undefined && v !== '' && v.toLowerCase() !== 'false' && v !== '0';
+  });
+}
+
+/** True inside a GitHub Actions job, where printed lines can be workflow commands. */
+export function inGitHubActions(env: Record<string, string | undefined>): boolean {
+  return env.GITHUB_ACTIONS === 'true';
+}
+
+export { neutralizeWorkflowCommands };
+
+const LEADING_WS = new RegExp(`^${RUNNER_WHITESPACE}+`);
 
 /**
  * Wraps a writer so every line it prints is neutralized, across chunk
- * boundaries. A line start is held back only until it is clear whether it
- * begins with a command marker (at most a few characters).
+ * boundaries. Lines end at LF or CR (as the Actions runner reads them). Every
+ * chunk is processed: only the start of a line is held back, and only until it
+ * is clear whether it begins with a command marker (whitespace plus at most a
+ * few characters).
  */
 export function neutralizingWriter(write: (s: string) => void): (s: string) => void {
-  let line = '';
-  let decided = false;
+  let pending = '';
+  let midLine = false;
   return (s: string) => {
     let out = '';
-    for (const part of s.split(/(?<=\n)/)) {
+    for (const part of s.split(/(?<=[\r\n])/)) {
       if (!part) continue;
-      if (decided) {
+      const complete = /[\r\n]$/.test(part);
+      if (midLine) {
+        // The rest of a line already known not to be a command.
         out += part;
-        if (part.endsWith('\n')) decided = false;
+        if (complete) midLine = false;
         continue;
       }
-      line += part;
-      const complete = line.endsWith('\n');
-      const head = line.replace(/^[ \t]+/, '');
+      pending += part;
+      const head = pending.replace(LEADING_WS, '');
       const maybeMarker = head === '' || '::'.startsWith(head) || '##['.startsWith(head);
       if (complete || !maybeMarker) {
-        out += neutralizeWorkflowCommands(line);
-        decided = !complete;
-        line = '';
+        out += neutralizeWorkflowCommands(pending);
+        pending = '';
+        midLine = !complete;
       }
     }
     if (out) write(out);
   };
+}
+
+/**
+ * `::stop-commands::<token>` … `::<token>::`: while active, the Actions runner
+ * executes no workflow command at all, whatever the text. Used around
+ * untrusted human-readable output, in addition to neutralizing it.
+ */
+export function stopCommands(): { start: string; end: string } {
+  const token = `overfull-${randomBytes(16).toString('hex')}`;
+  return { start: `::stop-commands::${token}\n`, end: `::${token}::\n` };
 }

@@ -764,7 +764,7 @@ describe('provenance guardrail', () => {
   it('entries with x-overfull, verified entries and websites pass', async () => {
     const f = router({ ...allEmpty, 'dblp.org': () => json(raftDblp) });
     const entries = parseBib(
-      `${RAFT}\n${FAKE.replace('year = {2099}', 'year = {2099}, x-overfull = {cite crossref 2026-11-09}')}\n@online{w, title={CTAN}, url={https://ctan.org}}`,
+      `${RAFT}\n${FAKE.replace('year = {2099}', 'year = {2099}, url = {https://example.org/p}, x-overfull = {cite crossref 2026-11-09}')}\n@online{w, title={CTAN}, url={https://ctan.org}}`,
     );
     const results = await verifyEntries(entries, {
       fetch: f.fetch,

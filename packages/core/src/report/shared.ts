@@ -71,20 +71,24 @@ export function tallyLine(t: Tally): string {
 }
 
 /**
+ * Whitespace the GitHub Actions runner trims (.NET `TrimStart`) before it looks
+ * for a workflow command: every Unicode space, not just blanks and tabs.
+ */
+export const RUNNER_WHITESPACE =
+  '[\\s\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff\\f\\v]';
+
+/** C0/C1 controls, DEL, and bidirectional overrides/isolates (Trojan Source). */
+const UNSAFE_CHARS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g;
+
+/**
  * Makes user-derived text (from .tex/.bib/log content) safe for a single output line:
- * line breaks become spaces and other control characters (ESC, NUL…) are removed, so the
- * text can neither start a new line (a GitHub workflow command such as `::warning`) nor
- * emit terminal escape sequences.
+ * line breaks become spaces; other control characters (ESC, NUL, C1 controls such as
+ * U+009B CSI) and bidirectional overrides are removed, so the text can neither start a
+ * new line (a GitHub workflow command such as `::warning`), emit terminal escape
+ * sequences, nor reorder what a reader sees.
  */
 export function oneLine(s: string): string {
-  return s
-    .replace(/[\r\n\u0085\u2028\u2029]+/g, ' ')
-    .split('')
-    .filter((ch) => {
-      const c = ch.charCodeAt(0);
-      return c === 9 || (c >= 32 && c !== 127);
-    })
-    .join('');
+  return s.replace(/[\r\n\u0085\u2028\u2029]+/g, ' ').replace(UNSAFE_CHARS, '');
 }
 
 /** Splits user-derived multi-line text into lines that are each safe (see `oneLine`). */
@@ -92,11 +96,24 @@ export function safeLines(s: string): string[] {
   return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
 }
 
+const COMMAND_AT_LINE_START = new RegExp(
+  `(^|[\\r\\n])(${RUNNER_WHITESPACE}*?)(::|##\\[)`,
+  'g',
+);
+
 /**
- * Last line of defence for text printed to CI logs: no line may start with `::`, which
- * GitHub Actions would execute as a workflow command. The runner trims leading
- * whitespace before looking for `::`, so indenting is not enough: a `| ` is put in front.
+ * Last line of defence for text printed to CI logs: no line may start with `::` (or
+ * `##[`), which GitHub Actions would execute as a workflow command. The runner splits
+ * lines at CR as well as LF and trims all Unicode whitespace before matching, so a
+ * zero-width space (not whitespace to .NET) is put right before the marker.
  */
 export function neutralizeWorkflowCommands(text: string): string {
-  return text.replace(/^([ \t]*)::/gm, '$1| ::');
+  // Repeat until stable: a match consumes the terminator that may start the next one.
+  let prev: string;
+  let out = text;
+  do {
+    prev = out;
+    out = out.replace(COMMAND_AT_LINE_START, '$1$2\u200b$3');
+  } while (out !== prev);
+  return out;
 }

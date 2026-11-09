@@ -4012,10 +4012,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep3, value } = collItem;
+        const { start, key, sep: sep4, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep3?.[0],
+          next: key ?? sep4?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4029,7 +4029,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep3) {
+          if (!keyProps.anchor && !keyProps.tag && !sep4) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4053,7 +4053,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep4 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4069,7 +4069,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep4, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4160,7 +4160,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep3 = "";
+        let sep4 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -4174,13 +4174,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep3 + cb;
-              sep3 = "";
+                comment += sep4 + cb;
+              sep4 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep3 += source;
+                sep4 += source;
               hasSpace = true;
               break;
             default:
@@ -4223,18 +4223,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep3, value } = collItem;
+        const { start, key, sep: sep4, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep3?.[0],
+          next: key ?? sep4?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep3 && !value) {
+          if (!props.anchor && !props.tag && !sep4 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4288,8 +4288,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep3 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
+        if (!isMap && !sep4 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep4, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4301,7 +4301,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep4 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4312,8 +4312,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep3)
-                for (const st of sep3) {
+              if (sep4)
+                for (const st of sep4) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4330,7 +4330,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep4, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4510,7 +4510,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep3 = "";
+      let sep4 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4527,24 +4527,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep3 + indent.slice(trimIndent) + content;
-          sep3 = "\n";
+          value += sep4 + indent.slice(trimIndent) + content;
+          sep4 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep3 === " ")
-            sep3 = "\n";
-          else if (!prevMoreIndented && sep3 === "\n")
-            sep3 = "\n\n";
-          value += sep3 + indent.slice(trimIndent) + content;
-          sep3 = "\n";
+          if (sep4 === " ")
+            sep4 = "\n";
+          else if (!prevMoreIndented && sep4 === "\n")
+            sep4 = "\n\n";
+          value += sep4 + indent.slice(trimIndent) + content;
+          sep4 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep3 === "\n")
+          if (sep4 === "\n")
             value += "\n";
           else
-            sep3 = "\n";
+            sep4 = "\n";
         } else {
-          value += sep3 + content;
-          sep3 = " ";
+          value += sep4 + content;
+          sep4 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4727,25 +4727,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep3 = " ";
+      let sep4 = " ";
       let pos = line.lastIndex;
       while (match = line.exec(source)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep3 === "\n")
-            res += sep3;
+          if (sep4 === "\n")
+            res += sep4;
           else
-            sep3 = "\n";
+            sep4 = "\n";
         } else {
-          res += sep3 + lm;
-          sep3 = " ";
+          res += sep4 + lm;
+          sep4 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep3 + (match?.[1] ?? "");
+      return res + sep4 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -5555,14 +5555,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep3, value }) {
+    function stringifyItem({ start, key, sep: sep4, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep3)
-        for (const st of sep3)
+      if (sep4)
+        for (const st of sep4)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6729,18 +6729,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep3;
+          let sep4;
           if (scalar.end) {
-            sep3 = scalar.end;
-            sep3.push(this.sourceToken);
+            sep4 = scalar.end;
+            sep4.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep3 = [this.sourceToken];
+            sep4 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep3 }]
+            items: [{ start, key: scalar, sep: sep4 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6893,15 +6893,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep3 = it.sep;
-                  sep3.push(this.sourceToken);
+                  const sep4 = it.sep;
+                  sep4.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep3 }]
+                    items: [{ start: start2, key, sep: sep4 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7095,13 +7095,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep3 = fc.end.splice(1, fc.end.length);
-            sep3.push(this.sourceToken);
+            const sep4 = fc.end.splice(1, fc.end.length);
+            sep4.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep3 }]
+              items: [{ start, key: fc, sep: sep4 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -68480,12 +68480,12 @@ var init_pdf_worker = __esm({
           if (bufferLength < 16) {
             continue;
           }
-          const plain = this._decrypt(buffer, this._key);
+          const plain2 = this._decrypt(buffer, this._key);
           for (let j = 0; j < 16; ++j) {
-            plain[j] ^= iv[j];
+            plain2[j] ^= iv[j];
           }
           iv = buffer;
-          result.push(plain);
+          result.push(plain2);
           buffer = new Uint8Array(16);
           bufferLength = 0;
         }
@@ -108537,9 +108537,9 @@ function texToPlain(s) {
 }
 
 // ../packages/core/src/bib/names.ts
-function splitTopLevel(s, sep3) {
-  const sticky = new RegExp(sep3.source.replace(/^\^/, ""), `${sep3.flags.replace(/[gy]/g, "")}y`);
-  const leadingSpace = /^\^?\\s/.test(sep3.source);
+function splitTopLevel(s, sep4) {
+  const sticky = new RegExp(sep4.source.replace(/^\^/, ""), `${sep4.flags.replace(/[gy]/g, "")}y`);
+  const leadingSpace = /^\^?\\s/.test(sep4.source);
   const parts = [];
   let depth = 0;
   let last = 0;
@@ -109262,11 +109262,16 @@ function cleanRoot(root) {
   while (r.length > 1 && r.endsWith("/")) r = r.slice(0, -1);
   return r;
 }
+function underRoot(p, root) {
+  if (p.startsWith(`${root}/`)) return true;
+  const drive = /^[A-Za-z]:\//;
+  return drive.test(root) && drive.test(p) && p.length > root.length && p[root.length] === "/" && p.slice(0, root.length).toLowerCase() === root.toLowerCase();
+}
 function normalizePath(path, root) {
   let p = path.trim().replace(/\\/g, "/");
   if (p.startsWith('"') && p.endsWith('"') && p.length >= 2) p = p.slice(1, -1);
   const r = root ? cleanRoot(root) : "";
-  if (r && p.startsWith(`${r}/`)) p = p.slice(r.length + 1);
+  if (r && underRoot(p, r)) p = p.slice(r.length + 1);
   else if (DISTRIBUTION_DIR.test(p)) return basename(p);
   p = p.replace(/\/{2,}/g, "/").replace(/\/(?:\.\/)+/g, "/");
   while (p.startsWith("./")) p = p.slice(2);
@@ -110043,7 +110048,7 @@ function explainError(error, ctx) {
 
 // ../packages/core/src/log/lines.ts
 var MAX_PRINT_LINE = 79;
-var STARTS_FRESH = /^(?:! |[^\s:()]+\.[A-Za-z0-9]+:\d+: |(?:LaTeX|LaTeX3|Package|Class|Module) .*?(?:Warning|Error|Info)|LaTeX Font |Package: |File: |Document Class: |Overfull \\|Underfull \\|Missing character: |Runaway |\([\w@.-]+\) {2,}|l\.\d+ |No file |Output written on |No pages of output|\\[A-Za-z@]+=\\)/;
+var STARTS_FRESH = /^(?:! |(?:[A-Za-z]:[\\/])?[^\s:()]+\.[A-Za-z0-9]+:\d+: |(?:LaTeX|LaTeX3|Package|Class|Module) .*?(?:Warning|Error|Info)|LaTeX Font |Package: |File: |Document Class: |Overfull \\|Underfull \\|Missing character: |Runaway |\([\w@.-]+\) {2,}|l\.\d+ |No file |Output written on |No pages of output|\\[A-Za-z@]+=\\)/;
 var SPACED_FILE_LINE = new RegExp(`^${SPACED_PATH_SOURCE}:\\d+: `, "i");
 function engineFamily(firstLine) {
   if (/^This is (?:Lua(?:HB|HBJIT|JIT)?TeX)/.test(firstLine)) return "luatex";
@@ -111539,10 +111544,10 @@ function parsePdffonts(text2) {
   const lines = text2.split(/\r?\n/);
   const sepIndex = lines.findIndex((l) => /^-{4,}( -+)+\s*$/.test(l));
   if (sepIndex < 0) return [];
-  const sep3 = lines[sepIndex] ?? "";
+  const sep4 = lines[sepIndex] ?? "";
   const starts = [];
   const re = /-+/g;
-  for (let m = re.exec(sep3); m; m = re.exec(sep3)) starts.push(m.index);
+  for (let m = re.exec(sep4); m; m = re.exec(sep4)) starts.push(m.index);
   const typeStart = starts[1] ?? 37;
   const encStart = starts[2] ?? 55;
   const fonts = [];
@@ -111902,12 +111907,12 @@ var ENTITIES = {
 function stripMarkup(s) {
   return s.replace(/<[^>]+>/g, "").replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(Number.parseInt(h, 16))).replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d))).replace(/&([a-z]+);/gi, (m, name) => ENTITIES[name.toLowerCase()] ?? m).replace(/\s+/g, " ").trim();
 }
-function foldText(plain) {
-  return plain.toLowerCase().replace(/[α-ωϑϕς]/g, (c) => ` ${GREEK_NAMES[c] ?? c} `).replace(/[ßøæœłðþıŋ]/g, (c) => FOLD[c] ?? c).normalize("NFKD").replace(/[̀-ͯ]/g, "");
+function foldText(plain2) {
+  return plain2.toLowerCase().replace(/[α-ωϑϕς]/g, (c) => ` ${GREEK_NAMES[c] ?? c} `).replace(/[ßøæœłðþıŋ]/g, (c) => FOLD[c] ?? c).normalize("NFKD").replace(/[̀-ͯ]/g, "");
 }
 function titleWords(title, isTex = true) {
-  const plain = isTex ? texToPlain(title) : stripMarkup(title);
-  return foldText(plain).replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+  const plain2 = isTex ? texToPlain(title) : stripMarkup(title);
+  return foldText(plain2).replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
 }
 function normalizeTitle(title, isTex = true) {
   return titleWords(title, isTex).join(" ");
@@ -111926,9 +111931,9 @@ function dice(a, b) {
   }
   return 2 * shared / (a.length + b.length);
 }
-function mainTitle(plain) {
-  const m = /^(.+?)(?:\s*[:?!.]\s+|\s+[-–—]+\s+|\s*—\s*)\S/.exec(plain);
-  return m ? m[1] : plain;
+function mainTitle(plain2) {
+  const m = /^(.+?)(?:\s*[:?!.]\s+|\s+[-–—]+\s+|\s*—\s*)\S/.exec(plain2);
+  return m ? m[1] : plain2;
 }
 function titleSimilarity(bibTitle, recordTitle) {
   const a = titleWords(bibTitle, true);
@@ -112012,6 +112017,63 @@ async function cached(cache, key, compute, opts) {
 }
 
 // ../packages/core/src/refs/entry.ts
+var DANGEROUS_MACROS = new Set(
+  [
+    "input",
+    "include",
+    "includeonly",
+    "inputiffileexists",
+    "iffileexists",
+    "endinput",
+    "write",
+    "immediate",
+    "openout",
+    "openin",
+    "read",
+    "readline",
+    "closeout",
+    "closein",
+    "catcode",
+    "def",
+    "edef",
+    "gdef",
+    "xdef",
+    "let",
+    "futurelet",
+    "newcommand",
+    "renewcommand",
+    "providecommand",
+    "declarerobustcommand",
+    "csname",
+    "endcsname",
+    "expandafter",
+    "scantokens",
+    "everyeof",
+    "everypar",
+    "everyjob",
+    "output",
+    "shipout",
+    "special",
+    "directlua",
+    "latelua",
+    "luaexec",
+    "luadirect",
+    "usepackage",
+    "requirepackage",
+    "documentclass",
+    "shellescape",
+    "pdfshellescape",
+    "outer",
+    "uppercase",
+    "lowercase",
+    "detokenize",
+    "unexpanded",
+    "begingroup",
+    "aftergroup",
+    "afterassignment",
+    "globaldefs"
+  ].map((m) => m.toLowerCase())
+);
 var PROVENANCE_FIELD = "x-overfull";
 function provenanceOf(entry) {
   const value = entry.fields[PROVENANCE_FIELD]?.trim();
@@ -112336,7 +112398,10 @@ var NOT_INDEXED = /* @__PURE__ */ new Set([
 function identifiersOf(entry) {
   const f = entry.fields;
   const ids = {};
-  const doi = f.doi ? parseDoi(f.doi) : null;
+  const doi = (f.doi ? parseDoi(f.doi) : null) ?? [f.url, f.howpublished].map((v) => {
+    const m = /https?:\/\/(?:dx\.)?doi\.org\/(10\.\d{4,9}\/[^\s{}]+)/i.exec(v ?? "");
+    return m ? parseDoi(m[1]) : null;
+  }).find((d) => Boolean(d)) ?? null;
   const archive = (f.archiveprefix ?? f.eprinttype ?? "").toLowerCase();
   const candidates = [
     archive === "arxiv" || !archive && f.eprint ? f.eprint : void 0,
@@ -112357,12 +112422,20 @@ function identifiersOf(entry) {
   if (doi && !doi.startsWith("10.48550/")) ids.doi = doi;
   return ids;
 }
+var STANDARD_TYPES = /* @__PURE__ */ new Set(["techreport", "report", "standard", "manual", "misc"]);
+var STANDARDS_BODY = /^(?:the\s+)?(?:ISO|IEC|ISO\/IEC|IETF|Internet Engineering Task Force|RFC Editor|W3C|World Wide Web Consortium|ANSI|American National Standards Institute|NIST|National Institute of Standards and Technology|ETSI|European Telecommunications Standards Institute|ITU|ITU-T|ITU-R|International Telecommunication Union|International Organization for Standardization|International Electrotechnical Commission|DIN|BSI|British Standards Institution|CEN|CENELEC|Ecma International|ECMA|Unicode Consortium|The Unicode Consortium|OASIS|IEEE Standards Association|IEEE-SA|3GPP|WHATWG|Khronos Group)\b/i;
+var STANDARD_ID = /^(?:RFC\s*-?\s*\d+|BCP\s*\d+|ISO(?:\/IEC)?(?:\/IEEE)?\s+\d{3,}|IEC\s+\d{3,}|IEEE\s+Std\b|IEEE\s+\d{3,}(?:\.\d+)?-\d{4}|ANSI\s+[A-Z]|NIST\s+(?:SP|FIPS|IR)\b|FIPS\s*(?:PUB\s*)?\d+|ITU-[TR]\s+[A-Z]\.\d+|ETSI\s+(?:TS|EN|ES|TR)\b|ECMA-\d+|3GPP\s+TS\b|W3C\s+Recommendation\b)/i;
+var STANDARD_URL = /^https?:\/\/(?:www\.)?(?:rfc-editor\.org|datatracker\.ietf\.org|tools\.ietf\.org|iso\.org|w3\.org\/TR|nvlpubs\.nist\.gov|etsi\.org\/deliver|itu\.int\/rec)\b/i;
+var plain = (v) => (v ?? "").replace(/[{}]/g, "").replace(/\\url/g, "").trim();
 function isStandard(entry) {
+  if (!STANDARD_TYPES.has(entry.type)) return false;
   const f = entry.fields;
-  const text2 = [f.title, f.number, f.series, f.howpublished, f.url, f.publisher, f.institution].filter(Boolean).join(" ");
-  return /\bRFC\s*\d+|rfc-editor\.org|datatracker\.ietf\.org|\bISO(?:\/IEC)?\s+\d{3,}|\bInternet Engineering Task Force\b/i.test(
-    text2
-  );
+  if (entry.type !== "standard" && (f.journal || f.journaltitle || f.booktitle)) return false;
+  const body = [f.institution, f.organization, f.publisher].map(plain);
+  if (body.some((b) => STANDARDS_BODY.test(b))) return true;
+  const ids = [f.number, f.title, f.howpublished, f.series].map(plain);
+  if (ids.some((v) => STANDARD_ID.test(v))) return true;
+  return [f.url, f.howpublished].map(plain).some((u) => STANDARD_URL.test(u));
 }
 function isWebOnly(entry) {
   const f = entry.fields;
@@ -112639,20 +112712,20 @@ async function arxivByIdCached(ctx, id) {
   return value.record;
 }
 function titleSources(ctx, q) {
-  const plain = q.isTex ? texToPlain(q.title) : q.title;
+  const plain2 = q.isTex ? texToPlain(q.title) : q.title;
   const { client, opts } = ctx;
   const crossrefQuery = {
-    title: plain,
+    title: plain2,
     ...q.firstAuthor ? { firstAuthor: q.firstAuthor } : {},
     ...q.year ? { year: q.year } : {}
   };
   const list3 = [
     ["crossref", () => crossrefSearch(client, crossrefQuery, opts.mailto)],
-    ["dblp", () => dblpSearch(client, plain)],
-    ["arxiv", () => arxivSearch(client, plain)]
+    ["dblp", () => dblpSearch(client, plain2)],
+    ["arxiv", () => arxivSearch(client, plain2)]
   ];
   const key = opts.openalexKey;
-  if (key) list3.push(["openalex", () => openalexSearch(client, plain, key, opts.mailto)]);
+  if (key) list3.push(["openalex", () => openalexSearch(client, plain2, key, opts.mailto)]);
   return list3.filter(([source]) => sourceAllowed(opts, source));
 }
 async function searchOne(ctx, cacheKey, source, run2) {
@@ -112693,13 +112766,13 @@ async function titleSearch(ctx, q, visit) {
     if (visit(records, source)) return outcome;
   }
   if (!ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
-    const plain = q.isTex ? texToPlain(q.title) : q.title;
+    const plain2 = q.isTex ? texToPlain(q.title) : q.title;
     try {
       const records = await searchOne(
         ctx,
         cacheKey,
         "openalex",
-        () => openalexSearch(ctx.client, plain, void 0, ctx.opts.mailto)
+        () => openalexSearch(ctx.client, plain2, void 0, ctx.opts.mailto)
       );
       outcome.searched.push("openalex");
       visit(records, "openalex");
@@ -112752,6 +112825,9 @@ function fromAssessment(base, a, ev) {
   const doiDiff = a.differences[0];
   if (a.differentWork && doiDiff?.field === "doi" && a.record.source === "doi.org") {
     result.wrongWork = { field: "doi", id: doiDiff.bib, title: toMatched(a.record).title };
+  }
+  if (a.differentWork && doiDiff?.field === "eprint" && a.record.source === "arxiv") {
+    result.wrongWork = { field: "eprint", id: doiDiff.bib, title: toMatched(a.record).title };
   }
   if (a.verdict === "verified" && a.yearDiff === 1) {
     result.reason = "year differs by one (common between preprint, online and print versions)";
@@ -112964,7 +113040,10 @@ async function verifyEntries(entries, opts = {}) {
   });
 }
 function isUnproven(entry, result) {
-  if (result.status === "verified" || provenanceOf(entry)) return false;
+  if (result.status === "verified") return false;
+  const f = entry.fields;
+  const ids = identifiersOf(entry);
+  if (provenanceOf(entry) && (ids.doi || ids.arxivId || f.doi || f.eprint || f.url)) return false;
   return entryKind(entry, identifiersOf(entry)) !== "not-indexed";
 }
 
@@ -113000,7 +113079,7 @@ function unprovenProblem(r, entry) {
     severity: "error",
     message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
     ...location2 ? { location: location2 } : {},
-    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ""}. The entry has no \`x-overfull = {cite \u2026}\` field, so nothing shows it came from real metadata.`,
+    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ""}. The entry has no \`x-overfull = {cite \u2026}\` field with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
     fix: "Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite",
     ...entry?.raw ? { evidence: entry.raw } : {},
     data: { key: r.key, status: r.status }
@@ -113029,6 +113108,18 @@ function problemFor(r, entry) {
         fix: `Check the DOI and title against the publisher page, or re-add it from real metadata with \`${citeHint(r, entry)}\`. If it is real but unindexed, add \`note = {overfull: skip}\`.`
       };
     case "mismatch": {
+      if (r.wrongWork?.field === "eprint") {
+        const others = (r.differences ?? []).filter((d) => d.field !== "eprint").map((d) => `${d.field}: bib \u201C${d.bib}\u201D, record \u201C${d.record}\u201D`);
+        return {
+          ...common,
+          ...evidence2,
+          rule: "reference-arxiv-wrong-work",
+          severity: "error",
+          message: `\`${r.key}\`: the arXiv id ${r.wrongWork.id} points to a different paper, \u201C${r.wrongWork.title}\u201D`,
+          detail: [`arXiv has \u201C${r.wrongWork.title}\u201D as ${r.wrongWork.id}, not the cited work`, ...others].join("; "),
+          fix: `Find the correct arXiv id for the cited title, or re-add the entry with \`${citeHint(r, entry)}\`. Do not re-add it from this id: that would cite the unrelated paper.`
+        };
+      }
       if (r.wrongWork) {
         const others = (r.differences ?? []).filter((d) => d.field !== "doi").map((d) => `${d.field}: bib \u201C${d.bib}\u201D, record \u201C${d.record}\u201D`);
         return {
@@ -113194,17 +113285,26 @@ function tallyLine(t) {
   if (t.skipped) parts.push(`${t.skipped} skipped`);
   return parts.join(" \xB7 ");
 }
+var RUNNER_WHITESPACE = "[\\s\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff\\f\\v]";
+var UNSAFE_CHARS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g;
 function oneLine(s) {
-  return s.replace(/[\r\n\u0085\u2028\u2029]+/g, " ").split("").filter((ch2) => {
-    const c = ch2.charCodeAt(0);
-    return c === 9 || c >= 32 && c !== 127;
-  }).join("");
+  return s.replace(/[\r\n\u0085\u2028\u2029]+/g, " ").replace(UNSAFE_CHARS, "");
 }
 function safeLines(s) {
   return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
 }
+var COMMAND_AT_LINE_START = new RegExp(
+  `(^|[\\r\\n])(${RUNNER_WHITESPACE}*?)(::|##\\[)`,
+  "g"
+);
 function neutralizeWorkflowCommands(text2) {
-  return text2.replace(/^([ \t]*)::/gm, "$1| ::");
+  let prev;
+  let out = text2;
+  do {
+    prev = out;
+    out = out.replace(COMMAND_AT_LINE_START, "$1$2\u200B$3");
+  } while (out !== prev);
+  return out;
 }
 
 // ../packages/core/src/report/annotations.ts
@@ -113920,11 +114020,10 @@ import { existsSync as existsSync4 } from "node:fs";
 import { join as join5, relative as relative6 } from "node:path";
 
 // ../packages/cli/src/cache.ts
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname as dirname2, join, relative } from "node:path";
+import { dirname as dirname2, join, relative, sep } from "node:path";
 function userCacheDir(env, platform = process.platform) {
   const home = env.HOME || env.USERPROFILE || homedir();
   if (platform === "win32")
@@ -113941,14 +114040,30 @@ function refsCachePath(root, mode, env) {
   const key = createHash("sha256").update(real).digest("hex").slice(0, 16);
   return join(userCacheDir(env), key, "refs.json");
 }
-function trackedByGit(root, file) {
-  const r = spawnSync("git", ["ls-files", "--error-unmatch", "--", relative(root, file)], {
-    cwd: root,
-    stdio: "ignore",
-    timeout: 1e4
-  });
-  return r.status === 0;
+function symlinkOnPath(root, file) {
+  const parts = relative(root, file).split(sep).filter(Boolean);
+  let p = root;
+  for (const part of parts) {
+    p = join(p, part);
+    try {
+      if (lstatSync(p).isSymbolicLink()) return p;
+    } catch {
+      return void 0;
+    }
+  }
+  return void 0;
 }
+var MemoryCache = class {
+  data = /* @__PURE__ */ new Map();
+  get(key) {
+    return this.data.get(key);
+  }
+  set(key, value) {
+    this.data.set(key, value);
+  }
+  save() {
+  }
+};
 var FileCache = class {
   constructor(path) {
     this.path = path;
@@ -113984,7 +114099,7 @@ var FileCache = class {
 
 // ../packages/cli/src/config.ts
 import { existsSync as existsSync2, readdirSync, readFileSync as readFileSync2 } from "node:fs";
-import { basename as basename2, dirname as dirname3, isAbsolute as isAbsolute3, join as join2, resolve as resolve2 } from "node:path";
+import { basename as basename2, dirname as dirname4, isAbsolute as isAbsolute3, join as join2, resolve as resolve2 } from "node:path";
 var import_yaml = __toESM(require_dist(), 1);
 
 // ../packages/cli/src/io.ts
@@ -113996,8 +114111,9 @@ var UsageError = class extends Error {
 };
 
 // ../packages/cli/src/safety.ts
-import { existsSync, realpathSync as realpathSync2 } from "node:fs";
-import { isAbsolute as isAbsolute2, relative as relative2, resolve, sep } from "node:path";
+import { randomBytes } from "node:crypto";
+import { existsSync, lstatSync as lstatSync2, realpathSync as realpathSync2 } from "node:fs";
+import { dirname as dirname3, isAbsolute as isAbsolute2, relative as relative2, resolve, sep as sep2 } from "node:path";
 var SAFE_NAME = /^[A-Za-z0-9._/-]+$/;
 function checkName(value, what, allowSlash) {
   const segments = value.split("/");
@@ -114026,7 +114142,7 @@ function safeImage(value, where = "image") {
 }
 function isInside(root, target) {
   const rel2 = relative2(root, target);
-  return rel2 === "" || !rel2.startsWith(`..${sep}`) && rel2 !== ".." && !isAbsolute2(rel2);
+  return rel2 === "" || !rel2.startsWith(`..${sep2}`) && rel2 !== ".." && !isAbsolute2(rel2);
 }
 function insideRoot(root, path, what) {
   const abs = resolve(root, path);
@@ -114051,8 +114167,28 @@ function insideRootOrUndefined(root, path) {
     return void 0;
   }
 }
-function neutralizeWorkflowCommands2(text2) {
-  return text2.replace(/^([ \t]*)(::|##\[)/gm, "$1\u200B$2");
+var CI_VARS = [
+  "CI",
+  "GITHUB_ACTIONS",
+  "TF_BUILD",
+  "GITLAB_CI",
+  "BUILDKITE",
+  "CIRCLECI",
+  "JENKINS_URL",
+  "TEAMCITY_VERSION"
+];
+function isCI(env) {
+  return CI_VARS.some((k) => {
+    const v = env[k];
+    return v !== void 0 && v !== "" && v.toLowerCase() !== "false" && v !== "0";
+  });
+}
+var LEADING_WS = new RegExp(`^${RUNNER_WHITESPACE}+`);
+function stopCommands() {
+  const token = `overfull-${randomBytes(16).toString("hex")}`;
+  return { start: `::stop-commands::${token}
+`, end: `::${token}::
+` };
 }
 
 // ../packages/cli/src/config.ts
@@ -114066,9 +114202,9 @@ function latexmkrcDirs(root) {
     const text2 = readFileSync2(p, "utf8").replace(/(^|[^\\$])#.*$/gm, "$1");
     const o = /\$out_dir\s*=\s*['"]([^'"]+)['"]/.exec(text2);
     const a = /\$aux_dir\s*=\s*['"]([^'"]+)['"]/.exec(text2);
-    const plain = (d) => d !== void 0 && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith("/") && !d.startsWith("-") && !d.split("/").includes("..");
-    if (plain(o?.[1])) out.outDir = o?.[1];
-    if (plain(a?.[1])) out.auxDir = a?.[1];
+    const plain2 = (d) => d !== void 0 && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith("/") && !d.startsWith("-") && !d.split("/").includes("..");
+    if (plain2(o?.[1])) out.outDir = o?.[1];
+    if (plain2(a?.[1])) out.auxDir = a?.[1];
     break;
   }
   return out;
@@ -114199,7 +114335,7 @@ function discoverBib(root, main3) {
         if (name) found.push(name.endsWith(".bib") ? name : `${name}.bib`);
       }
     }
-    const rel2 = dirname3(main3);
+    const rel2 = dirname4(main3);
     const resolved = found.map((f) => rel2 === "." || isAbsolute3(f) ? f : join2(rel2, f));
     if (resolved.length) return [...new Set(resolved)];
   }
@@ -114219,7 +114355,7 @@ function loadConfig(cwd, explicit, env = {}) {
   } else if (existsSync2(join2(cwd, "overfull.yaml"))) {
     file = join2(cwd, "overfull.yaml");
   }
-  const root = file ? dirname3(file) : cwd;
+  const root = file ? dirname4(file) : cwd;
   let raw = {};
   if (file) {
     let data;
@@ -114293,6 +114429,8 @@ function loadConfig(cwd, explicit, env = {}) {
     main: main3,
     jobname,
     bib,
+    bibDiscovered: raw.bib === void 0,
+    jobnameFromConfig: raw.jobname !== void 0,
     profile,
     venue: inline2,
     checks,
@@ -114311,14 +114449,16 @@ import { relative as relative3 } from "node:path";
 import { spawn } from "node:child_process";
 import { accessSync, constants } from "node:fs";
 import { delimiter, join as join3 } from "node:path";
-function which(cmd, env = process.env) {
-  const exts = process.platform === "win32" ? (env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";") : [""];
-  for (const dir of (env.PATH ?? "").split(delimiter)) {
+function which(cmd, env = process.env, opts = {}) {
+  const win = (opts.platform ?? process.platform) === "win32";
+  const exts = win ? (env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((e) => e && (opts.allowBatch || !/^\.(bat|cmd)$/i.test(e))) : [""];
+  const sepChar = win ? ";" : delimiter;
+  for (const dir of (env.PATH ?? env.Path ?? "").split(sepChar)) {
     if (!dir) continue;
     for (const ext of exts) {
       const p = join3(dir, cmd + ext);
       try {
-        accessSync(p, constants.X_OK);
+        accessSync(p, win ? constants.F_OK : constants.X_OK);
         return p;
       } catch {
       }
@@ -114377,14 +114517,35 @@ async function dockerImagePresent(image) {
   const r = await run("docker", ["image", "inspect", image], { timeoutMs: 8e3 });
   return r.code === 0;
 }
-function dockerRunArgs(image, dir, command, opts = {}) {
-  const user = typeof process.getuid === "function" && typeof process.getgid === "function" ? ["--user", `${process.getuid()}:${process.getgid()}`] : [];
-  const env = Object.entries({ HOME: "/tmp", ...opts.env }).flatMap(([k, v]) => [
+function dockerUser() {
+  return typeof process.getuid === "function" && typeof process.getgid === "function" ? ["--user", `${process.getuid()}:${process.getgid()}`] : ["--user", "65534:65534"];
+}
+function bindMount(dir, readonly = false) {
+  const field = `source=${dir}`;
+  const source = /[",]/.test(field) ? `"${field.replace(/"/g, '""')}"` : field;
+  return ["--mount", `type=bind,${source},target=/work${readonly ? ",readonly" : ""}`];
+}
+function dockerToolArgs(image, dir, tool, args) {
+  return [
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--cap-drop",
+    "ALL",
+    "--security-opt",
+    "no-new-privileges",
+    ...dockerUser(),
     "-e",
-    `${k}=${v}`
-  ]);
-  const workdir = opts.subdir && opts.subdir !== "." ? `/work/${opts.subdir.split("\\").join("/")}` : "/work";
-  return ["run", "--rm", ...user, ...env, "-v", `${dir}:/work`, "-w", workdir, image, ...command];
+    "HOME=/tmp",
+    ...bindMount(dir, true),
+    "-w",
+    "/work",
+    "--entrypoint",
+    tool,
+    image,
+    ...args
+  ];
 }
 
 // ../packages/cli/src/pdf.ts
@@ -114417,7 +114578,7 @@ async function readPdfFacts(path, opts = {}) {
     const rel2 = `./${relative3(opts.docker.root, path).split("\\").join("/")}`;
     const r = await run(
       "docker",
-      dockerRunArgs(opts.docker.image, opts.docker.root, ["pdffonts", rel2]),
+      dockerToolArgs(opts.docker.image, opts.docker.root, "pdffonts", [rel2]),
       {
         timeoutMs: 6e4
       }
@@ -114428,8 +114589,8 @@ async function readPdfFacts(path, opts = {}) {
 }
 
 // ../packages/cli/src/project.ts
-import { existsSync as existsSync3, lstatSync, readdirSync as readdirSync2, readFileSync as readFileSync4, realpathSync as realpathSync3, statSync } from "node:fs";
-import { join as join4, relative as relative4, sep as sep2 } from "node:path";
+import { existsSync as existsSync3, lstatSync as lstatSync3, readdirSync as readdirSync2, readFileSync as readFileSync4, realpathSync as realpathSync3, statSync } from "node:fs";
+import { join as join4, relative as relative4, sep as sep3 } from "node:path";
 var SKIP_DIRS = /* @__PURE__ */ new Set([
   ".git",
   "node_modules",
@@ -114460,7 +114621,7 @@ function listFiles(root) {
       const full = join4(dir, name);
       let st;
       try {
-        st = lstatSync(full);
+        st = lstatSync3(full);
         if (st.isSymbolicLink()) {
           const target = statSync(full);
           if (target.isDirectory()) continue;
@@ -114472,7 +114633,7 @@ function listFiles(root) {
       }
       if (st.isDirectory()) {
         if (!SKIP_DIRS.has(name)) walk(full);
-      } else out.push(relative4(root, full).split(sep2).join("/"));
+      } else out.push(relative4(root, full).split(sep3).join("/"));
     }
   };
   walk(root);
@@ -114482,11 +114643,51 @@ function isDiffArtifact(path) {
   const name = path.split("/").pop() ?? path;
   return name.startsWith("overfull-diff") || /-diff[0-9a-f]{4,40}\.tex$/i.test(name);
 }
-function readTexFiles(root, files) {
-  return files.filter((f) => /\.(tex|sty|cls)$/i.test(f) && !isDiffArtifact(f)).map((path) => ({ path, content: readFileSync4(join4(root, path), "utf8") }));
+var MAX_TEX_BYTES = 20 * 1024 * 1024;
+function readTexFiles(root, files, skipped3 = []) {
+  const out = [];
+  for (const path of files) {
+    if (!/\.(tex|sty|cls)$/i.test(path) || isDiffArtifact(path)) continue;
+    const abs = join4(root, path);
+    let st;
+    try {
+      st = statSync(abs);
+    } catch {
+      continue;
+    }
+    if (!st.isFile()) {
+      skipped3.push({ path, reason: "not a regular file" });
+      continue;
+    }
+    if (st.size > MAX_TEX_BYTES) {
+      skipped3.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
+      continue;
+    }
+    try {
+      out.push({ path, content: readFileSync4(abs, "utf8") });
+    } catch (err) {
+      skipped3.push({ path, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return out;
 }
 function readIfExists(path) {
-  return existsSync3(path) ? readFileSync4(path, "utf8") : void 0;
+  if (!existsSync3(path)) return void 0;
+  requireRegularFile(path);
+  return readFileSync4(path, "utf8");
+}
+function requireRegularFile(path) {
+  let st;
+  try {
+    st = statSync(path);
+  } catch (err) {
+    throw new UsageError(`Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!st.isFile()) {
+    throw new UsageError(
+      `${path} is not a file (${st.isDirectory() ? "it is a directory" : "it is a pipe, socket or device"}).`
+    );
+  }
 }
 function readAux(root, jobname, auxDir = ".") {
   const dir = join4(root, auxDir);
@@ -114508,7 +114709,7 @@ function verapdfFlavour(pdfuaPart) {
   return pdfuaPart === 1 ? "ua1" : "ua2";
 }
 async function runVeraPdf(pdf, env, opts = {}) {
-  const local = which("verapdf", env);
+  const local = which("verapdf", env, { allowBatch: true });
   if (!local && !opts.docker) return null;
   const win = process.platform === "win32";
   const attempt = async (flavour2) => {
@@ -114530,7 +114731,7 @@ async function runVeraPdf(pdf, env, opts = {}) {
     } else {
       const { image, root } = opts.docker;
       const rel2 = `./${relative5(root, pdf).split("\\").join("/")}`;
-      r = await run("docker", dockerRunArgs(image, root, ["verapdf", ...args, rel2]), {
+      r = await run("docker", dockerToolArgs(image, root, "verapdf", [...args, rel2]), {
         timeoutMs: 3e5
       });
       if (r.code === 125)
@@ -114561,14 +114762,21 @@ var skipped2 = (check2, reason) => ({
   skippedReason: reason
 });
 var rel = (root, abs) => relative6(root, abs).split("\\").join("/") || ".";
+function checkImage(opts) {
+  const env = opts.env ?? process.env;
+  if (opts.image) return safeImage(opts.image, "--image");
+  if (env.OVERFULL_IMAGE) return safeImage(env.OVERFULL_IMAGE, "OVERFULL_IMAGE");
+  return DEFAULT_IMAGE;
+}
 async function dockerTools(opts, config) {
   const engine = opts.engine ?? "auto";
   if (engine === "local") return void 0;
   const env = opts.env ?? process.env;
-  if (which("verapdf", env) && which("pdffonts", env)) return void 0;
+  if (which("verapdf", env, { allowBatch: true }) && which("pdffonts", env)) return void 0;
   if (!await dockerAvailable(env)) return void 0;
-  if (engine === "auto" && !await dockerImagePresent(config.build.image)) return void 0;
-  return { image: config.build.image, root: config.root };
+  const image = checkImage(opts);
+  if (engine === "auto" && !await dockerImagePresent(image)) return void 0;
+  return { image, root: config.root };
 }
 async function gather(opts, config, needPdf) {
   const root = config.root;
@@ -114583,6 +114791,7 @@ async function gather(opts, config, needPdf) {
   if (auxText !== void 0) inputs.aux = auxText;
   const bcf = readIfExists(insideRoot(root, join5(aux, `${config.jobname}.bcf`), "Bcf file"));
   if (bcf !== void 0) inputs.bcf = bcf;
+  if (needPdf && existsSync4(pdfAbs)) requireRegularFile(pdfAbs);
   if (needPdf && existsSync4(pdfAbs)) {
     if (opts.verapdf !== false && (opts.checks ?? config.checks).includes("accessibility"))
       inputs.docker = await dockerTools(opts, config);
@@ -114639,8 +114848,15 @@ async function references(inp, opts) {
   const entries = [];
   const parseProblems = [];
   const missingFiles = [];
+  const discovered = !opts.bib && config.bibDiscovered;
+  const outside = [];
   for (const file of bibFiles) {
-    const text2 = readIfExists(insideRoot(root, file, "Bibliography file"));
+    const abs = discovered ? insideRootOrUndefined(root, file) : insideRoot(root, file, "Bibliography file");
+    if (abs === void 0) {
+      outside.push(file);
+      continue;
+    }
+    const text2 = readIfExists(abs);
     if (text2 === void 0) {
       missingFiles.push(file);
       continue;
@@ -114658,14 +114874,33 @@ async function references(inp, opts) {
       });
     }
   }
-  if (missingFiles.length === bibFiles.length) {
-    return skipped2("references", `Bibliography not found: ${missingFiles.join(", ")}`);
+  const outsideProblems = outside.map((f) => ({
+    rule: "bib-outside-project",
+    check: "references",
+    severity: "warning",
+    message: `References in ${f} were not checked: it is outside the project directory`,
+    fix: "Pass it explicitly with `--bib` from a directory that contains it, or move it into the project.",
+    data: { file: f }
+  }));
+  if (missingFiles.length + outside.length === bibFiles.length) {
+    if (!outside.length)
+      return skipped2("references", `Bibliography not found: ${missingFiles.join(", ")}`);
+    return {
+      check: "references",
+      status: "warn",
+      problems: outsideProblems,
+      summary: `No bibliography inside the project was checked${missingFiles.length ? ` (not found: ${missingFiles.join(", ")})` : ""}`
+    };
   }
   const sources = [inp.aux, inp.bcf].filter((x) => Boolean(x));
   const keys = sources.length ? [...new Set(sources.flatMap((t) => citedKeys(t)))] : void 0;
   const citeAll = sources.some((t) => citesAll(t));
   const toVerify = !keys || citeAll ? entries : entries.filter((e) => keys.includes(e.key));
-  const extra = [...parseProblems, ...keys ? missingKeys(keys, entries) : []];
+  const extra = [
+    ...outsideProblems,
+    ...parseProblems,
+    ...keys ? missingKeys(keys, entries) : []
+  ];
   for (const f of missingFiles) {
     extra.push({
       rule: "bib-file-missing",
@@ -114679,14 +114914,27 @@ async function references(inp, opts) {
   let cache;
   if (opts.cache !== false) {
     const path = refsCachePath(root, config.references.cache, env);
-    const inCi = env.CI === "true" || env.GITHUB_ACTIONS === "true";
-    if (config.references.cache === "project" && inCi && existsSync4(path) && trackedByGit(root, path)) {
+    const project = config.references.cache === "project";
+    const link = project ? symlinkOnPath(root, path) : void 0;
+    if (project && isCI(env)) {
+      cache = new MemoryCache();
+      if (existsSync4(path) || link) {
+        extra.push({
+          rule: "refs-cache-ignored",
+          check: "references",
+          severity: "info",
+          message: `Ignored ${rel(root, path)}: in CI a reference cache inside the project is not trusted`,
+          fix: "Nothing to do in CI. Keep `.overfull/` out of git (add it to .gitignore)."
+        });
+      }
+    } else if (link) {
+      cache = new MemoryCache();
       extra.push({
         rule: "refs-cache-ignored",
         check: "references",
         severity: "info",
-        message: `Ignored ${rel(root, path)}: it is tracked by git, and in CI a committed cache is not trusted`,
-        fix: "Remove it from git (`git rm --cached .overfull/cache/refs.json`) and ignore `.overfull/`"
+        message: `Ignored ${rel(root, path)}: ${rel(root, link)} is a symlink, so the cache may be a file from the repository`,
+        fix: "Replace the symlink with a real directory, or drop `references.cache: project`."
       });
     } else cache = new FileCache(path);
   }
@@ -114728,7 +114976,8 @@ async function accessibility(inp, opts) {
 function venue(inp) {
   const { config, root } = inp;
   const files = listFiles(root);
-  const texFiles = readTexFiles(root, files);
+  const skippedFiles = [];
+  const texFiles = readTexFiles(root, files, skippedFiles);
   const result = venueCheck(config.profile, {
     ...inp.facts ? { facts: inp.facts } : {},
     ...inp.aux !== void 0 ? { aux: inp.aux } : {},
@@ -114738,6 +114987,19 @@ function venue(inp) {
     main: config.main
   });
   if (result.status === "skipped" && !inp.facts) return skipped2("venue", missingPdfReason(inp));
+  if (skippedFiles.length) {
+    result.problems.push(
+      ...skippedFiles.map(
+        (f) => ({
+          rule: "tex-file-skipped",
+          check: "venue",
+          severity: "info",
+          message: `${f.path} was not read: ${f.reason}`,
+          location: { file: f.path }
+        })
+      )
+    );
+  }
   return result;
 }
 async function runCheck(opts = {}) {
@@ -114778,7 +115040,7 @@ function exitCodeFor(report, failOn) {
 }
 
 // ../packages/cli/src/commands/diff.ts
-import { basename as basename3, dirname as dirname4, join as join6, relative as relative7 } from "node:path";
+import { basename as basename3, dirname as dirname5, join as join6, relative as relative7 } from "node:path";
 var DIFF_DIR = join6(".overfull", "diff");
 
 // ../packages/cli/src/main.ts
@@ -114874,8 +115136,9 @@ async function main2() {
     }
   }
   const report = await runCheck(inputs.check);
+  const guard = stopCommands();
   process.stdout.write(
-    neutralizeWorkflowCommands2(formatHuman(report, { color: true, verbose: true }))
+    `${guard.start}${neutralizeWorkflowCommands(formatHuman(report, { color: true, verbose: true }))}${guard.end}`
   );
   if (inputs.annotations) {
     const root = relative8(workspace, resolve4(inputs.check.cwd ?? workspace)) || ".";
@@ -114899,7 +115162,7 @@ main2().then(
   },
   (err) => {
     const msg = err instanceof Error ? err.message : String(err);
-    process.stdout.write(`::error title=Overfull preflight::${escapeData2(msg)}
+    process.stdout.write(`::error title=Overfull preflight::${escapeData2(oneLine(msg))}
 `);
     process.exitCode = 2;
   }

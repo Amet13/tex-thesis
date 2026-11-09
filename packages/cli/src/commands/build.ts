@@ -16,6 +16,7 @@ import { readPdfFacts } from '../pdf.js';
 import { readIfExists } from '../project.js';
 import { insideRoot, safeImage, safeJobname, safeRelPath } from '../safety.js';
 import {
+  batchOnly,
   dockerAvailable,
   dockerImagePresent,
   dockerRunArgs,
@@ -72,20 +73,32 @@ export function latexmkArgs(config: Config, main: string): string[] {
   ];
 }
 
-export async function resolveEngine(engine: Engine, env: Io['env']): Promise<'local' | 'docker'> {
+export async function resolveEngine(
+  engine: Engine,
+  env: Io['env'],
+  platform: NodeJS.Platform = process.platform,
+): Promise<'local' | 'docker'> {
+  const local = Boolean(which('latexmk', env, { platform }));
+  // Windows: a latexmk.bat/.cmd cannot be started without cmd.exe, which would
+  // re-parse the arguments; Overfull never runs it that way.
+  const batch = local ? undefined : batchOnly('latexmk', env, platform);
+  const batchMessage = `${batch} found, but Overfull cannot run a .bat/.cmd wrapper safely. Install latexmk.exe (MiKTeX or TeX Live provide one), or use \`--engine docker\`.`;
   if (engine === 'local') {
-    if (!which('latexmk', env))
+    if (batch) throw new UsageError(batchMessage);
+    if (!local)
       throw new UsageError(
         'latexmk not found on PATH. Install TeX Live, or use `--engine docker`.',
       );
     return 'local';
   }
-  if (engine === 'docker' || !which('latexmk', env)) {
+  if (engine === 'docker' || !local) {
     if (!(await dockerAvailable(env))) {
       throw new UsageError(
         engine === 'docker'
           ? 'Docker is not running. Start Docker, or use `--engine local` with TeX Live installed.'
-          : 'Neither latexmk nor Docker is available. Install Docker (https://docs.docker.com/get-docker/) or TeX Live, then retry. `overfull doctor` shows what is missing.',
+          : batch
+            ? batchMessage
+            : 'Neither latexmk nor Docker is available. Install Docker (https://docs.docker.com/get-docker/) or TeX Live, then retry. `overfull doctor` shows what is missing.',
       );
     }
     return 'docker';
@@ -130,9 +143,11 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
   const config = loadConfig(io.cwd, str(values.config), io.env);
   const main = positionals[0] ?? config.main;
   safeRelPath(main);
-  if (positionals[0] && !str(values.config)) {
+  if (positionals[0]) {
     config.main = main;
-    if (!existsSync(join(config.root, 'overfull.yml')))
+    // The jobname follows the file being built unless overfull.yml (or
+    // overfull.yaml, or --config) sets one explicitly.
+    if (!config.jobnameFromConfig)
       config.jobname = safeJobname(main.replace(/^.*\//, '').replace(/\.tex$/i, ''));
   }
   insideRoot(config.root, main, 'Main file');
