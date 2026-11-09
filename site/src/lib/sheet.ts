@@ -1,5 +1,5 @@
 /**
- * Renders an Overfull Report as a "preflight sheet" (HTML string). Used at
+ * Renders an Overfull Report as a report sheet (HTML string). Used at
  * build time for the landing page sample and in the browser on /check/, so
  * both look identical. Everything user-supplied is escaped.
  */
@@ -116,7 +116,7 @@ export function renderSheet(report: Report, opts: SheetOptions = {}): string {
   return `<div class="sheet" data-status="${esc(report.status)}">
   <header class="sheet-head">
     <div class="sheet-title">
-      <span class="sheet-kicker">Preflight sheet</span>
+      <span class="sheet-kicker">Overfull report</span>
       <span class="sheet-target">${esc(report.target ?? 'untitled')}</span>
     </div>
     <div class="sheet-stamp stamp-${esc(report.status)}"><span class="sr-only">Overall: </span>${esc(STAMP[report.status])}</div>

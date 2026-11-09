@@ -31,16 +31,16 @@ const samples = [
   },
 ].filter((s) => s.files.every((f) => f.text));
 ---
-<Base title="Browser check" description="Check a LaTeX build log, bibliography or PDF in your browser. Files never leave your computer." section="check">
+<Base title="Check a LaTeX log, .bib or PDF in your browser" description="Drop a LaTeX build log, bibliography or PDF and get a plain-language report: TeX errors, undefined references, unverifiable citations, PDF accessibility. Files never leave your computer." section="check">
   <div class="check-page">
     <p class="runhead"><span>Browser check</span></p>
     <div class="galley">
       <aside class="marginal">
-        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded. With online verification on, only each reference’s DOI, arXiv id or title is sent to CrossRef, doi.org, arXiv and DBLP.</p>
-        <p>The full check, with veraPDF and venue rules from <code>overfull.yml</code>, runs from the command line: <code>npx overfull check</code>.</p>
+        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded. With online verification on, only each reference’s DOI or title is sent, to CrossRef and doi.org.</p>
+        <p>The full check, with veraPDF, arXiv and DBLP lookups and the venue rules from <code>overfull.yml</code>, runs from the command line: <code>overfull check</code>.</p>
       </aside>
       <h1>Check your files</h1>
-      <p class="lede">Drop a build log, a bibliography or a PDF. This page runs the same code as the <code>overfull</code> command and prints a preflight sheet.</p>
+      <p class="lede">Drop a build log, a bibliography or a PDF. This page runs the same code as the <code>overfull</code> command and prints the same report.</p>
     </div>
 
     <div class="bench">
@@ -52,6 +52,7 @@ const samples = [
           <input id="file-input" type="file" multiple aria-label="Choose files to check" tabindex="-1" accept=".log,.bib,.aux,.bcf,.pdf,.tex,.blg,text/plain,application/pdf" class="sr-only" />
           <button type="button" class="btn" id="choose">Choose files</button>
         </div>
+        <p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
 
         <details class="paste">
           <summary>Paste a build log instead</summary>
@@ -77,7 +78,7 @@ const samples = [
           <legend>Options</legend>
           <label class="opt">
             <input type="checkbox" id="online" checked />
-            <span>Verify references online <span class="opt-note">CrossRef and doi.org answer requests from web pages. arXiv and DBLP do not, so entries only they index show as “could not be checked” here; <code>overfull check</code> asks all four.</span></span>
+            <span>Verify references online <span class="opt-note">CrossRef and doi.org are checked from your browser. arXiv and DBLP block browser requests, so only <code>overfull check</code> asks them.</span></span>
           </label>
           <label class="opt-select" for="profile">
             <span>Venue profile</span>
@@ -92,7 +93,7 @@ const samples = [
         </fieldset>
 
         <div class="run-row">
-          <button type="submit" class="btn" id="run" disabled>Run preflight</button>
+          <button type="submit" class="btn" id="run" disabled>Run check</button>
           <button type="button" class="btn ghost" id="stop" hidden>Stop</button>
         </div>
       </form>
@@ -109,7 +110,7 @@ const samples = [
         </div>
         <div id="sheet-view" class="sheet-view">
           <div class="placeholder" aria-hidden="true">
-            <div class="ph-head"><span>Preflight sheet</span><span class="ph-stamp">awaiting proof</span></div>
+            <div class="ph-head"><span>Report</span><span class="ph-stamp">awaiting proof</span></div>
             {['Build', 'Output', 'References', 'Accessibility', 'Venue'].map((c, i) => (
               <div class="ph-row"><span class="ph-n">{i + 1}</span><span class="ph-name">{c}</span><span class="ph-line" /></div>
             ))}
@@ -332,6 +333,14 @@ const samples = [
     width: 0;
     background: var(--pencil);
     transition: width 200ms;
+  }
+  .notice {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-left: 2px solid var(--warn);
+    background: var(--warn-soft);
+    font-size: var(--s-1);
+    color: var(--ink);
   }
   .result-tools {
     display: flex;

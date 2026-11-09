@@ -82,8 +82,8 @@ const md = (s: string) =>
       <section class="tpl" id={t.id} aria-labelledby={`t-${t.id}`}>
         <div class="tpl-preview">
           {previews[t.id] ? (
-            <a class="preview-link" href={url(`previews/${t.id}-full.png`)} aria-label={`First page of the ${t.name.toLowerCase()} template, full size`}>
-              <img class="page-preview" src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF`} width="640" height={t.id === 'slides' ? 361 : 906} loading="lazy" decoding="async" />
+            <a class="preview-link" href={url(`previews/${t.id}-full.png`)}>
+              <img class="page-preview" src={url(`previews/${t.id}.png`)} alt={`First page of the ${t.name.toLowerCase()} template PDF, open at full size`} width="640" height={t.id === 'slides' ? 361 : 906} loading="lazy" decoding="async" />
               <span class="preview-hint" aria-hidden="true">Open full page</span>
             </a>
           ) : (
