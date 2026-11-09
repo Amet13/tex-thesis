@@ -5,7 +5,7 @@ A Beamer deck (16:9, LuaLaTeX) for a thesis defense, made from the
 defined in the local theme `beamerthemeThesisSlides.sty`; title and author
 come from `metadata.tex`; frames live in `sections/slides.tex`.
 
-**Accessibility:** Beamer cannot produce a tagged (PDF/UA) document, so
+**Accessibility:** Beamer slides cannot be tagged yet (no PDF/UA), so
 `overfull.yml` leaves the accessibility check out. Images still carry alt
 text and the PDF has a title and language. Share the thesis PDF (PDF/UA-2)
 together with the slides; for a fully tagged deck look at the `ltx-talk` class.
@@ -20,7 +20,7 @@ to build and check the deck. Keep your speaker notes and numbers in `notes/`.
 ```sh
 make build    # slides.pdf
 make watch    # rebuild on every save
-make check    # preflight: build log and PDF
+make check    # checks: build log and PDF
 make pages PAGES=1-4   # render slides to PNG
 make diff     # PDF showing changes against origin/main
 make clean    # remove build files (keeps the PDF)
@@ -28,5 +28,9 @@ make help     # all targets
 ```
 
 Only Docker is required; a local TeX Live 2026 works too.
+
+Before Overfull v3.0.0 is released the image is not on ghcr.io yet: build it
+from a clone of the Overfull repository with `make image IMAGE=overfull:dev`,
+then pass `IMAGE=overfull:dev` to `make` here (`make build IMAGE=overfull:dev`).
 
 Licensed MIT-0: use it without attribution.

@@ -8,8 +8,8 @@ The reporting follows the benchmarking rules of Hoefler and Belli~\cite{hoefler2
 The experiments were performed on the following hardware:
 \begin{itemize}
   \item CPU: 8-core processor, \qty{3.2}{\giga\hertz};
-  \item RAM: 32~GB DDR4;
-  \item storage: 512~GB NVMe SSD;
+  \item RAM: \qty{32}{\giga\byte} DDR4;
+  \item storage: \qty{512}{\giga\byte} NVMe SSD;
   \item OS: Ubuntu 24.04 LTS.
 \end{itemize}
 
@@ -20,7 +20,7 @@ Three datasets of varying sizes were used for evaluation (\cref{tab:datasets}).
 % EXAMPLE: table with booktabs and siunitx; thousands are grouped automatically.
 \begin{table}[htbp]
   \centering
-  \caption{Test datasets}\label{tab:datasets}
+  \caption{Test datasets (sample data)}\label{tab:datasets}
   \begin{tabular}{l S[table-format=7.0] S[table-format=4.0] l}
     \toprule
     Dataset & {Records} & {Size (MB)} & Purpose             \\
@@ -42,7 +42,9 @@ The raw numbers are stored in \path{figures/data/benchmark.csv}.
 % (multirow is avoided: it is not yet compatible with PDF tagging.)
 \begin{table}[htbp]
   \centering
-  \caption{Performance comparison (processing time in seconds)}\label{tab:performance}
+  \caption{Performance comparison, processing time in seconds (sample data)}\label{tab:performance}
+  % Two header rows: tag both as table headers (TH) for screen readers.
+  \tagpdfsetup{table/header-rows={1,2}}
   \begin{tabular}{l S[table-format=1.1] S[table-format=2.1] S[table-format=3.1]}
     \toprule
                       & \multicolumn{3}{c}{Dataset size}           \\
@@ -51,33 +53,37 @@ The raw numbers are stored in \path{figures/data/benchmark.csv}.
     \midrule
     Baseline A        & 0.8     & 45.2     & 512.0   \\
     Baseline B        & 0.5     & 38.7     & 478.3   \\
-    Proposed approach & 0.3     & 22.1     & 287.5   \\
+    Proposed approach & 0.3     & 22.1     & 221.1   \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The proposed approach reduces processing time by 44--63\% compared to Baseline~A and by 40--43\% compared to Baseline~B.
+The proposed approach reduces processing time by 51--63\% compared to Baseline~A and by 40--54\% compared to Baseline~B.
 
-% EXAMPLE: pgfplots bar chart that reads its data from a CSV file.
+% EXAMPLE: pgfplots bar chart that reads its data from a CSV file. The times
+% span three orders of magnitude, so the axis is logarithmic and every bar
+% carries its value; on a linear axis the small-dataset bars would vanish.
 \Cref{fig:bar-chart} visualizes the performance comparison across dataset sizes.
 
 \begin{figure}[htbp]
   \centering
-  \begin{tikzpicture}[alt={Grouped bar chart of processing time in seconds.
-      Small dataset: Baseline A 0.8, Baseline B 0.5, Proposed 0.3. Medium:
-      45.2, 38.7, 22.1. Large: 512.0, 478.3, 287.5. The proposed approach is
-      fastest for every dataset size.}]
+  \begin{tikzpicture}[alt={Grouped bar chart of processing time in seconds,
+      logarithmic axis. Small dataset: Baseline A 0.8, Baseline B 0.5,
+      Proposed 0.3. Medium: 45.2, 38.7, 22.1. Large: 512.0, 478.3, 221.1.
+      The proposed approach is fastest for every dataset size.}]
     \begin{axis}[
         ybar,
         bar width=14pt,
         enlarge x limits=0.25,
         legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1,
           /tikz/every even column/.append style={column sep=1em}},
-        ylabel={Time (s)},
+        ylabel={Time (s, log scale)},
         symbolic x coords={Small, Medium, Large},
         xtick=data,
-        ymin=0, ymax=600,
-        width=12cm, height=8cm,
+        ymode=log, log origin=infty, ymin=0.1, ymax=2000,
+        nodes near coords, nodes near coords style={font=\scriptsize},
+        point meta=rawy,
+        width=\linewidth, height=8cm,
       ]
       \addplot[fill=red!60]   table[col sep=comma, x=dataset, y=baselineA] {figures/data/benchmark.csv};
       \addplot[fill=blue!60]  table[col sep=comma, x=dataset, y=baselineB] {figures/data/benchmark.csv};
@@ -85,7 +91,7 @@ The proposed approach reduces processing time by 44--63\% compared to Baseline~A
       \legend{Baseline A, Baseline B, Proposed}
     \end{axis}
   \end{tikzpicture}
-  \caption{Performance comparison across dataset sizes}\label{fig:bar-chart}
+  \caption{Performance comparison across dataset sizes (sample data)}\label{fig:bar-chart}
 \end{figure}
 
 \subsection{Accuracy results}
@@ -108,7 +114,7 @@ The proposed approach achieved an accuracy of 94.2\%, compared to 89.5\% for Bas
 
 \begin{table}[htbp]
   \centering
-  \caption{Detailed classification metrics (\%)}\label{tab:metrics}
+  \caption{Detailed classification metrics in percent (sample data)}\label{tab:metrics}
   \begin{tabular}{l *{4}{S[table-format=2.1]}}
     \toprule
     Method            & {Accuracy} & {Precision} & {Recall} & {$F_1$-score} \\
@@ -122,11 +128,13 @@ The proposed approach achieved an accuracy of 94.2\%, compared to 89.5\% for Bas
 
 \subsection{Scalability analysis}
 
-The system scales linearly with dataset size, as evidenced by the following relationship:
+The processing time of the proposed approach grows linearly with dataset size and is well described by
 \begin{equation}\label{eq:scalability}
   T(n) = a \cdot n + b
 \end{equation}
-where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ are constants determined through regression analysis ($a = \num{2.21e-4}$, $b = \num{0.12}$).
+where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ are constants determined through regression analysis ($a = \qty{2.21e-4}{\second}$ per record, $b = \qty{0.12}{\second}$).
+For the large dataset ($n = \num{1000000}$) the model predicts \qty{221.1}{\second}, as measured (\cref{tab:performance}).
+Baseline~B grows faster than linearly.
 
 % EXAMPLE: pgfplots line plot from a CSV file.
 \Cref{fig:scalability-plot} shows the scalability curve.
@@ -135,16 +143,16 @@ where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ 
   \centering
   \begin{tikzpicture}[alt={Line chart of processing time in seconds against
       records in hundreds of thousands. The proposed approach grows linearly
-      from 0.3 seconds to 176.8 seconds at 800 thousand records; Baseline B
-      grows faster, reaching 260 seconds.}]
+      from 0.3 seconds at one thousand records to 221.1 seconds at one million
+      records; Baseline B grows faster, reaching 478.3 seconds.}]
     \begin{axis}[
         xlabel={Records ($\times 10^5$)},
         ylabel={Time (s)},
-        xmin=0, xmax=8.5,
-        ymin=0, ymax=300,
+        xmin=0, xmax=10.5,
+        ymin=0, ymax=500,
         legend pos=north west,
         grid=major,
-        width=12cm, height=8cm,
+        width=\linewidth, height=8cm,
       ]
       \addplot[thick, green!50!black, mark=*] table[col sep=comma, x=records, y=proposed] {figures/data/scalability.csv};
       \addlegendentry{Proposed}
@@ -152,5 +160,5 @@ where $T(n)$ is the processing time, $n$ is the number of records, and $a$, $b$ 
       \addlegendentry{Baseline B}
     \end{axis}
   \end{tikzpicture}
-  \caption{Scalability: processing time versus dataset size}\label{fig:scalability-plot}
+  \caption{Scalability: processing time versus dataset size (sample data)}\label{fig:scalability-plot}
 \end{figure}

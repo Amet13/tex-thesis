@@ -6,7 +6,11 @@
 %
 % The first line turns on PDF tagging and declares PDF/UA-2 (accessible PDF)
 % conformance. Keep it as the very first command of the document.
-%   lang          document language (screen readers, hyphenation metadata)
+%   lang          document language, recorded in the PDF for screen readers.
+%                 It does not choose hyphenation patterns: LaTeX hyphenates
+%                 American English by default. For another language also
+%                 load babel after \documentclass, e.g. \usepackage[ngerman]{babel},
+%                 and set lang = de-DE here.
 %   pdfstandard   ua-2 = PDF/UA-2 (ISO 14289-2), checked by veraPDF
 %   pdfversion    PDF/UA-2 requires PDF 2.0
 %   tagging       structure tags for headings, lists, tables, figures, links

@@ -8,8 +8,10 @@
 \IfFontExistsTF{Times New Roman}
   {\setmainfont{Times New Roman}}
   {\setmainfont{TeX Gyre Termes}}
-\IfFontExistsTF{FreeMono}
-  {\setmonofont{FreeMono}}
+% Code: Inconsolata (TeX Live package "inconsolata"), a sturdy monospace
+% that stays legible at listing size, scaled to the x-height of the text.
+\IfFontExistsTF{Inconsolatazi4}
+  {\setmonofont{Inconsolatazi4}[Scale=MatchLowercase]}
   {\setmonofont{Latin Modern Mono}}
 
 % Math: amsmath/mathtools first, unicode-math last. With tagging=on and

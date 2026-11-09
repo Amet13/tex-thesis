@@ -10,7 +10,7 @@ const { docs, current } = Astro.props;
 const groups = groupDocs(docs);
 ---
 <nav class="docs-nav" aria-label="Guide">
-  <details class="docs-nav-details" open>
+  <details class="docs-nav-details" id="docs-nav-details">
     <summary>Contents</summary>
     {groups.map((g) => (
       <div class="docs-nav-group">
@@ -21,21 +21,27 @@ const groups = groupDocs(docs);
               <a href={url(docPath(d))} aria-current={docSlug(d) === current ? 'page' : undefined}>{d.data.title}</a>
             </li>
           ))}
+          {g.section === 'Start' && (
+            <li><a href={url('check/')}>Browser check</a></li>
+          )}
         </ul>
       </div>
     ))}
   </details>
+  <script is:inline>
+    // Open the contents where there is room, before first paint (no layout
+    // shift); on small screens it stays collapsed.
+    (function () {
+      var d = document.getElementById('docs-nav-details');
+      var mq = window.matchMedia('(min-width: 1000px)');
+      if (!d) return;
+      d.open = mq.matches;
+      mq.addEventListener('change', function () {
+        d.open = mq.matches;
+      });
+    })();
+  </script>
 </nav>
-<script>
-  // Collapse the contents on small screens; keep it open where there is room.
-  const d = document.querySelector<HTMLDetailsElement>('.docs-nav-details');
-  const mq = window.matchMedia('(min-width: 1000px)');
-  const apply = () => {
-    if (d) d.open = mq.matches;
-  };
-  apply();
-  mq.addEventListener('change', apply);
-</script>
 <style>
   .docs-nav {
     font-size: var(--s-1);

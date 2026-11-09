@@ -16,12 +16,16 @@ come back to you as a question.
 **By hand.** Edit the `.tex` files and run the commands below. Only Docker is
 required; a local TeX Live 2026 works too.
 
+Before Overfull v3.0.0 is released the image is not on ghcr.io yet: build it
+from a clone of the Overfull repository with `make image IMAGE=overfull:dev`,
+then pass `IMAGE=overfull:dev` to `make` here (`make build IMAGE=overfull:dev`).
+
 ## Commands
 
 ```sh
 make build    # thesis.pdf (latexmk, LuaLaTeX + biber)
 make watch    # rebuild on every save
-make check    # preflight: log, PDF, references, accessibility (veraPDF)
+make check    # checks: log, PDF, references, accessibility (veraPDF)
 make pages PAGES=4-6   # render pages to PNG to look at them
 make diff     # PDF showing changes against origin/main
 make clean    # remove build files (keeps the PDF)

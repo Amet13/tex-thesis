@@ -8,6 +8,18 @@
 \usepackage{graphicx}
 \graphicspath{{figures/}}
 
+% \addimg{file}{width}{caption}{label}{alt text}: a complete figure with an
+% image whose alt text cannot be forgotten (it is a required argument).
+% Example: \addimg{sample-photo}{0.5\linewidth}{Test rig}{fig:rig}
+%            {Photo of the test rig: two servers in a rack}
+\NewDocumentCommand\addimg{m m m m m}{%
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics[width=#2, alt={#5}]{#1}
+    \caption{#3}\label{#4}
+  \end{figure}%
+}
+
 % Number figures, tables and equations per section: Figure 3.2, (2.1).
 \counterwithin{figure}{section}
 \counterwithin{table}{section}
@@ -21,6 +33,11 @@
 \usepackage{booktabs}
 \usepackage{siunitx}
 \sisetup{group-minimum-digits=4}
+% Table header cells: the first row of every table is tagged TH (header),
+% so screen readers can announce the column for each cell. A table with two
+% header rows sets \tagpdfsetup{table/header-rows={1,2}} inside its table
+% environment (see tab:performance in chapters/06-experiments.tex).
+\tagpdfsetup{table/header-rows={1}}
 
 % Diagrams and data plots. Plots read their numbers from figures/data/*.csv,
 % so the figure is regenerated whenever the data changes.
@@ -33,6 +50,8 @@
 % TeX Live 2026 (it breaks the structure tree), so code is typeset with the
 % kernel's verbatim environment inside a numbered "Listing" float.
 % Keep code lines under ~70 characters.
+% Captions go above listings, as for tables (plaintop).
+\floatstyle{plaintop}
 \newfloat{codelisting}{htbp}{lol}[section]
 \floatname{codelisting}{Listing}
 \AddToHook{env/verbatim/begin}{\footnotesize\setstretch{1}}

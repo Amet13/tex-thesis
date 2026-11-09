@@ -12,7 +12,16 @@ and venue rules, plus templates for papers and slides and instructions for AI
 agents.
 
 If your thesis builds today, nothing forces you to move. Your fork or copy keeps
-working. Releases up to v2.4.1 stay available.
+working. Releases up to v2.4.1 stay available, and Overfull continues the
+version line at v3.0.0.
+
+Old links: GitHub redirects `github.com/amet13/tex-thesis` (the repository,
+clones and issues) to `github.com/amet13/overfull`. The old GitHub Pages
+address under `/tex-thesis/` does not redirect; the site now lives at
+<https://amet13.github.io/overfull/>.
+
+Until v3.0.0 is released, the `overfull` command and Docker image below come
+from a clone; see [Install](./install.md#from-a-clone).
 
 ## What changed
 

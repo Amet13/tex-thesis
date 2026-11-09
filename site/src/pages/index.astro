@@ -7,10 +7,10 @@ import { renderSheet } from '../lib/sheet';
 
 const groups = rulesByCheck();
 const ruleCount = (check: string) => groups.find((g) => g.check === check)?.rules.length ?? 0;
-const sheet = renderSheet(sampleReport(), { ruleHref: (r) => url(`rules/${r}/`), headingLevel: 4 });
+const sheet = renderSheet(sampleReport(), { ruleHref: (r) => url(`rules/${r}/`), headingLevel: 3 });
 const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as const;
 ---
-<Base title="Preflight for LaTeX papers and theses" description="Write your paper with any AI agent, or by hand. Overfull checks the build, the PDF, the references, accessibility and venue rules before you submit." section="home">
+<Base title="Preflight for LaTeX papers and theses" description="Overfull checks a LaTeX paper or thesis before you submit: the build log, the PDF, every reference, accessibility and venue rules. For authors working by hand or with an AI agent." section="home">
   <section class="hero" aria-labelledby="hero-title">
     <p class="runhead"><span>Preflight for LaTeX papers and theses</span></p>
     <div class="hero-grid">
@@ -20,29 +20,28 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
       <div class="hero-text">
         <p class="lede">Overfull is a free, open preflight kit for LaTeX. It compiles your document, reads the log and the PDF, looks up every reference, and tells you what is wrong in plain language, with the file and line to fix.</p>
         <p class="hero-links">
+          <a class="cta" href={url('check/')}>Check a log or PDF in your browser</a>
           <a class="caret-link" href={url('docs/')}>Read the guide</a>
-          <a class="caret-link" href={url('check/')}>Check a log or PDF in your browser</a>
         </p>
+        <p class="hero-note">The browser check runs on this page; your files are not uploaded.</p>
       </div>
-      <aside class="hero-aside" aria-label="At a glance">
-        <dl>
-          <dt>Licence</dt><dd>MIT; templates MIT-0</dd>
-          <dt>Runs on</dt><dd>Node 22+, or Docker alone</dd>
-          <dt>Agents</dt><dd>Claude Code, Codex, Cursor, Copilot, Gemini CLI, or none</dd>
-          <dt>TeX</dt><dd>TeX Live 2026, LuaLaTeX by default</dd>
-        </dl>
-      </aside>
+      <dl class="hero-facts" aria-label="At a glance">
+        <div><dt>Status</dt><dd>Pre-release: v3.0.0 is not out yet</dd></div>
+        <div><dt>Licence</dt><dd>MIT; templates MIT-0</dd></div>
+        <div><dt>Runs on</dt><dd>Docker, or a local TeX Live 2026</dd></div>
+        <div><dt>Agents</dt><dd>Claude Code, Codex, Cursor, Copilot, Gemini CLI, or none</dd></div>
+      </dl>
     </div>
   </section>
 
   <section class="block" aria-labelledby="gap-title">
     <p class="runhead"><span>What goes wrong</span></p>
-    <div class="galley indent">
+    <div class="galley">
       <aside class="marginal">
         <p>Overfull never writes research content, and never calls a reference fake. It reports what the indexes say: verified, metadata differs, not found, or cannot be checked automatically.</p>
       </aside>
-      <h2 id="gap-title">Agents write fluent LaTeX and verify none of it</h2>
-      <p>A language model cannot know from memory whether a paper it cites exists, whether the compiled PDF prints <code>??</code> where a figure number should be, or whether the workshop allows nine pages or ten. People miss the same things the night before a deadline. These are facts about files and public indexes, so a program can check them.</p>
+      <h2 id="gap-title">What goes wrong before a deadline</h2>
+      <p>A citation to a paper that does not exist, or exists with a different year. <code>??</code> where a figure number should be. A figure without alt text. Ten pages when the workshop allows nine. Whether you typed the LaTeX or an agent did, these slip through on the last night, and none of them needs judgement to find: they are facts about the log, the PDF and public indexes, so a program can check them.</p>
     </div>
 
     <figure class="specimen" aria-labelledby="specimen-cap">
@@ -74,28 +73,33 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
   </section>
 
   <section class="block" aria-labelledby="ways-title">
-    <p class="runhead"><span>Two ways in, one engine</span></p>
-    <h2 id="ways-title" class="sr-only">Two ways to work</h2>
+    <p class="runhead"><span>Three ways to work</span></p>
+    <h2 id="ways-title" class="sr-only">Three ways to work</h2>
     <div class="ways">
       <div class="way">
-        <h3>With an agent</h3>
-        <p>Start from a template. It ships <code>AGENTS.md</code> and skills that any coding agent reads. The agent adds references only through <code>overfull cite</code>, which writes the entry from CrossRef, arXiv or DBLP. After each change it runs <code>overfull check --json</code>, reads stable rule ids, fixes what is reported, and opens a pull request you review with the changes highlighted in the PDF.</p>
-        <p><a href={url('docs/')} class="caret-link">Working with an agent</a></p>
+        <h3>By hand</h3>
+        <p>Write LaTeX the way you always have. <code>make build</code> compiles in Docker, so a local TeX Live is optional. <code>make check</code> prints the report in plain language, with the file and line of each problem.</p>
+        <p><a href={url('docs/by-hand/')} class="caret-link">Working by hand</a></p>
       </div>
       <div class="way">
-        <h3>By hand</h3>
-        <p>Write LaTeX the way you always have. <code>make build</code> compiles in Docker, so TeX Live is optional. <code>make check</code> prints the same report in plain language. The GitHub Action annotates pull requests with the file and line of each problem.</p>
-        <p><a href={url('docs/')} class="caret-link">Writing by hand</a></p>
+        <h3>With an agent</h3>
+        <p>The templates ship <code>AGENTS.md</code> and skills that coding agents read. The agent adds references only through <code>overfull cite</code>, which writes the entry from CrossRef, arXiv or DBLP, runs <code>overfull check --json</code> after each change, and opens a pull request you review with the changes highlighted in the PDF.</p>
+        <p><a href={url('docs/with-an-agent/')} class="caret-link">Working with an agent</a></p>
+      </div>
+      <div class="way">
+        <h3>In CI</h3>
+        <p>The GitHub Action reads the log, PDF and <code>.bib</code> your workflow already builds, annotates the pull request at the right lines and writes a summary. Each template also ships a workflow that builds in Docker and runs veraPDF.</p>
+        <p><a href={url('docs/action/')} class="caret-link">The GitHub Action</a></p>
       </div>
     </div>
-    <p class="ways-joint galley">Both paths call <code>@overfull/core</code>. A report means the same thing in a terminal, in CI and to an agent, and the browser check on this site runs the same code.</p>
+    <p class="ways-joint">All three give the same report, and so does the browser check on this site.</p>
   </section>
 
   <section class="block" aria-labelledby="checks-title">
     <p class="runhead"><span>Five checks</span></p>
-    <div class="galley indent">
+    <div class="galley">
       <aside class="marginal"><p>Reports list the checks in this order. A check is <em>skipped</em>, with a reason, when its inputs are missing: no PDF yet, or offline.</p></aside>
-      <h2 id="checks-title">What a preflight covers</h2>
+      <h2 id="checks-title">What a check covers</h2>
     </div>
     <ol class="checks">
       {checks.map((c) => (
@@ -110,7 +114,7 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
 
   <section class="block" aria-labelledby="session-title">
     <p class="runhead"><span>An agent session</span></p>
-    <div class="galley indent">
+    <div class="galley">
       <aside class="marginal">
         <p>The agent never types a BibTeX entry. <code>overfull cite</code> fetches the record, and <code>check</code> catches anything that slipped in another way.</p>
         <p>JSON output is the <code>Report</code> type: stable rule ids, locations and fixes.</p>
@@ -139,12 +143,12 @@ output         pass
 references     pass   32 of 32 verified
 accessibility  pass   tagged, PDF/UA-2
 venue          pass   main text ends on page 9 of 9</span></pre>
-      <p class="t-agent"><span class="t-who">agent</span><span class="t-say">All five checks pass. Opened pull request #42, “Cite Vaswani et al.; move Table 3 detail to appendix”, with the preflight report and a PDF showing the changes.</span></p>
+      <p class="t-agent"><span class="t-who">agent</span><span class="t-say">All five checks pass. Opened pull request #42, “Cite Vaswani et al.; move Table 3 detail to appendix”, with the report and a PDF showing the changes.</span></p>
     </figure>
   </section>
 
   <section class="block" aria-labelledby="report-title">
-    <p class="runhead"><span>The preflight report</span></p>
+    <p class="runhead"><span>The report</span></p>
     <div class="report-grid">
       <div>
         <h2 id="report-title">One sheet per build</h2>
@@ -158,14 +162,14 @@ venue          pass   main text ends on page 9 of 9</span></pre>
 
   <section class="block" aria-labelledby="templates-title">
     <p class="runhead"><span>Templates</span></p>
-    <div class="galley indent">
+    <div class="galley">
       <aside class="marginal"><p>All three use LuaLaTeX, biblatex and TeX Live 2026, and are licensed MIT-0: copy them, owe nothing.</p></aside>
-      <h2 id="templates-title">Start from a document that already passes</h2>
-      <p>Each template is tagged for accessibility, sets its language and title, requires alt text on figures, and ships agent instructions, a Makefile and a CI workflow.</p>
+      <h2 id="templates-title">Start from a template</h2>
+      <p>The thesis and paper templates produce tagged PDF/UA-2; Beamer slides cannot be tagged yet. Each template sets its language and title, requires alt text on figures, and ships agent instructions, a Makefile and a CI workflow. A fresh copy builds without errors; the paper template warns until you write its AI-use statement.</p>
       <dl class="tpl-list">
-        <dt>Thesis</dt><dd>Bachelor’s, master’s and PhD. A4, chapters, front matter, PDF/UA-2. <code>npx overfull init thesis</code></dd>
-        <dt>Paper</dt><dd>Research papers and preprints, with a page-limit marker and arXiv packaging. <code>npx overfull init paper</code></dd>
-        <dt>Slides</dt><dd>Beamer for defences and conference talks. <code>npx overfull init slides</code></dd>
+        <dt>Thesis</dt><dd>Bachelor’s, master’s and PhD. A4, chapters, front matter, PDF/UA-2. <code>overfull init thesis</code></dd>
+        <dt>Paper</dt><dd>Research papers and preprints, with a page-limit marker and arXiv packaging. <code>overfull init paper</code></dd>
+        <dt>Slides</dt><dd>Beamer for defences and conference talks. <code>overfull init slides</code></dd>
       </dl>
       <p><a class="caret-link" href={url('templates/')}>What is in each template</a></p>
     </div>
@@ -173,23 +177,32 @@ venue          pass   main text ends on page 9 of 9</span></pre>
 
   <section class="block" aria-labelledby="start-title">
     <p class="runhead"><span>Getting started</span></p>
-    <div class="galley indent">
-      <h2 id="start-title">Three commands</h2>
+    <div class="galley">
+      <aside class="marginal">
+        <p><span class="mark">Pre-release.</span> v3.0.0 is not released yet, so the Docker image on ghcr.io, the release download and the Action’s <code>@v3</code> tag do not exist yet. The steps here use a clone, which works today.</p>
+      </aside>
+      <h2 id="start-title">Start in five minutes</h2>
+      <p>You need Git, Node.js 22.12+, pnpm and Docker. The first build makes a TeX Live image of about 3 GB; after that, builds take seconds.</p>
       <ol class="steps">
         <li>
+          <p>Get Overfull and build its Docker image.</p>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 1"><span class="p">$ </span>git clone https://github.com/amet13/overfull.git && cd overfull
+<span class="p">$ </span>pnpm install && pnpm build
+<span class="p">$ </span>make image IMAGE=overfull:dev</div>
+        </li>
+        <li>
           <p>Create a project from a template.</p>
-          <div class="cmd" tabindex="0"><span class="p">$ </span>npx overfull init paper my-paper && cd my-paper</div>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 2"><span class="p">$ </span>node packages/cli/dist/bin.js init paper ../my-paper && cd ../my-paper</div>
         </li>
         <li>
-          <p>Build it. Without a local TeX installation this runs in the Overfull Docker image.</p>
-          <div class="cmd" tabindex="0"><span class="p">$ </span>make build</div>
-        </li>
-        <li>
-          <p>Check it. Or open the folder in your coding agent and ask for the change you want; it runs the check itself.</p>
-          <div class="cmd" tabindex="0"><span class="p">$ </span>make check</div>
+          <p>Build and check it. Or open the folder in your coding agent and ask for the change you want; it runs the check itself.</p>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 3"><span class="p">$ </span>make build IMAGE=overfull:dev
+<span class="p">$ </span>make check IMAGE=overfull:dev</div>
         </li>
       </ol>
-      <p>Already have a LaTeX project? Run <code>npx overfull check</code> in its folder, or add <code>uses: amet13/overfull@v1</code> to a workflow that builds it. Source and issues are on <a href={REPO_URL}>GitHub</a>.</p>
+      <h3 class="after-title">After v3.0.0</h3>
+      <p>Install the single-file <code>overfull</code> download from GitHub Releases, or use only Docker with the image <code>ghcr.io/amet13/overfull:3</code>. The steps shrink to <code>overfull init paper my-paper</code>, <code>make build</code>, <code>make check</code>, and CI to <code>uses: amet13/overfull@v3</code>.</p>
+      <p>Already have a LaTeX project and a build log? <a href={url('check/')}>Check it in your browser</a> now. Source and issues are on <a href={REPO_URL}>GitHub</a>.</p>
     </div>
   </section>
 </Base>
@@ -299,52 +312,69 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   .hero-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.75rem;
+    align-items: center;
+    gap: 0.75rem 1.75rem;
+    margin-bottom: 0.6rem;
   }
-  .hero-aside {
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    min-height: 2.75rem;
+    padding: 0.35rem 1.1rem 0.5rem;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.07em;
+    font-size: var(--s0);
+    border: 1px solid var(--ink);
+  }
+  .cta::before {
+    content: '‸';
+    color: var(--pencil);
+    font-variant-caps: normal;
+    font-weight: 700;
+    filter: brightness(1.6);
+  }
+  .cta:hover {
+    background: var(--ink-2);
+  }
+  .hero-note {
+    font-size: var(--s-1);
+    color: var(--ink-3);
+  }
+  .hero-facts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem 2rem;
+    margin: 0;
     font-size: var(--s-1);
     color: var(--ink-2);
     border-top: 1px solid var(--hair);
-    padding-top: 0.75rem;
+    padding-top: 0.9rem;
   }
-  .hero-aside dl {
+  .hero-facts div {
     display: grid;
     grid-template-columns: 5.5rem 1fr;
-    gap: 0.35rem 1rem;
-    margin: 0;
+    gap: 1rem;
   }
-  .hero-aside dt {
+  .hero-facts dt {
     font-variant-caps: all-small-caps;
     letter-spacing: 0.08em;
     color: var(--ink-3);
   }
-  .hero-aside dd {
+  .hero-facts dd {
     margin: 0;
   }
-  @media (min-width: 1100px) {
-    .hero-grid {
-      grid-template-columns: minmax(0, 40rem) var(--margin-w);
-      column-gap: calc(var(--gap) + 1rem);
-      margin-left: clamp(0rem, 6vw, 6.5rem);
+  @media (min-width: 760px) {
+    .hero-facts {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
-    .hero-measure {
-      grid-column: 1;
-    }
-    .hero-text {
-      grid-column: 1;
-    }
-    .hero-aside {
-      grid-column: 2;
-      grid-row: 2;
-      border-top: 0;
-      padding-top: 0.3rem;
-    }
-    .hero-aside dl {
+    .hero-facts div {
       grid-template-columns: 1fr;
-      gap: 0;
-    }
-    .hero-aside dd {
-      margin-bottom: 0.6rem;
+      gap: 0.1rem;
+      align-content: start;
     }
   }
 
@@ -352,11 +382,6 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   .specimen {
     margin: 2.5rem 0 0;
     max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
-  }
-  @media (min-width: 1100px) {
-    .specimen {
-      margin-left: clamp(0rem, 6vw, 6.5rem);
-    }
   }
   .specimen-page {
     background: var(--paper);
@@ -374,8 +399,13 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   }
   .sp-text {
     margin: 0 0 1rem;
-    text-align: justify;
-    hyphens: auto;
+    text-align: left;
+  }
+  @media (min-width: 640px) {
+    .sp-text {
+      text-align: justify;
+      hyphens: auto;
+    }
   }
   .sp-note {
     margin: 0;
@@ -450,32 +480,26 @@ venue          pass   main text ends on page 9 of 9</span></pre>
     max-width: var(--measure);
   }
 
-  /* ----- Two ways ----- */
+  /* ----- Three ways ----- */
   .ways {
     display: grid;
-    gap: 1.5rem 3rem;
+    gap: 1.5rem 2.5rem;
   }
   .way h3 {
     font-variant-caps: small-caps;
     letter-spacing: 0.03em;
     margin-bottom: 0.6rem;
   }
-  @media (min-width: 760px) {
+  .way p {
+    font-size: var(--s-1);
+  }
+  @media (min-width: 900px) {
     .ways {
-      grid-template-columns: 1.15fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .way + .way {
       border-left: 1px solid var(--hair);
-      padding-left: 3rem;
-    }
-  }
-  @media (min-width: 1100px) {
-    .ways,
-    .ways-joint {
-      margin-left: clamp(0rem, 6vw, 6.5rem);
-    }
-    .ways {
-      max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
+      padding-left: 2.5rem;
     }
   }
   .ways-joint {
@@ -491,11 +515,6 @@ venue          pass   main text ends on page 9 of 9</span></pre>
     margin: 1.5rem 0 0;
     padding: 0;
     max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
-  }
-  @media (min-width: 1100px) {
-    .checks {
-      margin-left: clamp(0rem, 6vw, 6.5rem);
-    }
   }
   .checks li {
     counter-increment: chk;
@@ -557,11 +576,6 @@ venue          pass   main text ends on page 9 of 9</span></pre>
     font-size: var(--s-1);
     max-width: calc(var(--measure) + var(--margin-w) + var(--gap));
   }
-  @media (min-width: 1100px) {
-    .transcript {
-      margin-left: clamp(0rem, 6vw, 6.5rem);
-    }
-  }
   .transcript p {
     margin: 0 0 0.8rem;
     display: grid;
@@ -615,11 +629,6 @@ venue          pass   main text ends on page 9 of 9</span></pre>
       gap: 3rem;
     }
   }
-  @media (min-width: 1100px) {
-    .report-grid {
-      margin-left: clamp(0rem, 6vw, 6.5rem);
-    }
-  }
 
   /* ----- Templates and steps ----- */
   .tpl-list {
@@ -658,5 +667,11 @@ venue          pass   main text ends on page 9 of 9</span></pre>
   }
   .steps p {
     margin-bottom: 0.4rem;
+  }
+  .after-title {
+    font-size: var(--s0);
+    font-variant-caps: small-caps;
+    letter-spacing: 0.03em;
+    margin: 1.75rem 0 0.4rem;
   }
 </style>

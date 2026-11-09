@@ -1,4 +1,5 @@
 // @ts-check
+import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import { galleyTheme } from './src/lib/shiki-theme.mjs';
 
@@ -11,7 +12,9 @@ export default defineConfig({
   site: process.env.SITE_URL ?? 'https://amet13.github.io',
   base,
   trailingSlash: 'always',
-  build: { format: 'directory' },
+  // Inline the (small) stylesheets so no CSS request blocks the first paint.
+  build: { format: 'directory', inlineStylesheets: 'always' },
+  integrations: [sitemap({ filter: (page) => !/\/404\/?$/.test(page) })],
   devToolbar: { enabled: false },
   // Strict Content-Security-Policy, emitted by Astro as a <meta> tag on every
   // page with hashes for its own inline scripts and styles (no 'unsafe-inline'

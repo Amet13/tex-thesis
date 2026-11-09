@@ -7,6 +7,10 @@ section: Reference
 
 There are two ways to run Overfull in GitHub Actions.
 
+> **Pre-release.** The `@v3` tag arrives with v3.0.0. Until then, pin a commit:
+> `uses: amet13/overfull@<commit-sha>`. The template workflow also needs the
+> Docker image `ghcr.io/amet13/overfull:3`, which is published with the release.
+
 - **The Action** (`amet13/overfull@v3`) checks files your workflow already
   produced: the log, the PDF, the bibliography. Use it to add Overfull to an
   existing LaTeX workflow.

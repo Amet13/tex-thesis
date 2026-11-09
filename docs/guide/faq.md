@@ -47,7 +47,9 @@ cited entries to CrossRef, doi.org, arXiv and DBLP. If you set the
 `OPENALEX_API_KEY` environment variable, titles also go to OpenAlex, with the
 key. If you set a `mailto` address, it goes to CrossRef and OpenAlex. Nothing
 else is sent. Use `--offline` to send nothing. The browser check on the website
-runs in your browser.
+reads your files in the browser and never uploads them; with online
+verification on, it sends each reference's DOI or title to CrossRef and doi.org
+only.
 
 ## Does Overfull use AI?
 

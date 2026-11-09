@@ -37,6 +37,7 @@
   --code-constant: #29508c;
   --code-punct: #4a5266;
   --code-error: #b0122b;
+  --scroll-shade: #141a2b33;
 
   /* Type */
   --serif: "Libertinus Serif", "Linux Libertine O", "STIX Two Text", Georgia, serif;
@@ -88,6 +89,7 @@
     --code-constant: #9fc4f6;
     --code-punct: #a9b4ae;
     --code-error: #ff8a78;
+    --scroll-shade: #000000b3;
   }
 }
 
@@ -120,6 +122,7 @@
   --code-constant: #9fc4f6;
   --code-punct: #a9b4ae;
   --code-error: #ff8a78;
+  --scroll-shade: #000000b3;
 }
 
 /* ---------- Base ---------- */
@@ -224,10 +227,35 @@ pre {
   margin: 0 0 1.5em;
   padding: 1rem 1.1rem;
   overflow-x: auto;
-  background: var(--code-paper);
+  background-color: var(--code-paper);
   color: var(--code-ink);
   border-left: 2px solid var(--guide);
   tab-size: 2;
+}
+/*
+ * Scroll hint for code that is wider than its box: a soft shadow appears at
+ * the edge that has more to scroll to. The "local" layers cover the shadows
+ * when the content is scrolled to that end, so short code shows nothing.
+ */
+pre,
+.cmd {
+  background-image:
+    linear-gradient(to right, var(--code-paper) 40%, transparent),
+    linear-gradient(to left, var(--code-paper) 40%, transparent),
+    linear-gradient(to right, var(--scroll-shade), transparent),
+    linear-gradient(to left, var(--scroll-shade), transparent);
+  background-position:
+    left center,
+    right center,
+    left center,
+    right center;
+  background-repeat: no-repeat;
+  background-size:
+    2.5rem 100%,
+    2.5rem 100%,
+    1.1rem 100%,
+    1.1rem 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 pre code {
   background: none;
@@ -276,6 +304,11 @@ hr {
   font-variant-caps: all-small-caps;
   letter-spacing: 0.06em;
   font-variant-numeric: lining-nums;
+}
+
+/* biome-ignore lint/complexity/noImportantStyles: the hidden attribute must win over component display rules */
+[hidden] {
+  display: none !important;
 }
 
 /* ---------- The sheet ---------- */
@@ -464,9 +497,6 @@ hr {
     border-top: 1px solid var(--guide);
     margin-bottom: 0.4rem;
   }
-  .indent {
-    margin-left: clamp(0rem, 6vw, 6.5rem);
-  }
 }
 
 section.block {
@@ -510,7 +540,7 @@ section.block::after {
 .cmd {
   font-family: var(--mono);
   font-size: 0.8rem;
-  background: var(--code-paper);
+  background-color: var(--code-paper);
   padding: 0.75rem 1rem;
   border-left: 2px solid var(--guide);
   margin: 0 0 1rem;

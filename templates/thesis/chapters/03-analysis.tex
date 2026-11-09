@@ -114,24 +114,26 @@ The bottom layer handles infrastructure concerns such as data storage and networ
   \centering
   \begin{tikzpicture}[
       alt={State machine: Idle goes to Loading on start, Loading to Processing when data is ready, Processing to Done on completion. Loading or Processing go to Error on failure; Error returns to Idle on retry, Done returns to Idle on reset.},
-      state/.style={circle, draw, minimum size=1.5cm, align=center, font=\small},
+      state/.style={circle, draw, minimum size=1.9cm, align=center, font=\small},
       accept/.style={state, double},
+      every node/.append style={font=\small},
       >=Stealth,
-      auto
     ]
     \node[state] (idle) {Idle};
     \node[state, right=2cm of idle] (load) {Loading};
     \node[state, right=2cm of load] (proc) {Processing};
     \node[accept, right=2cm of proc] (done) {Done};
-    \node[state, below=1.5cm of proc] (err) {Error};
+    % Error sits below the middle of Loading and Processing.
+    \node[state] (err) at ($(load)!0.5!(proc) + (0,-3.2cm)$) {Error};
 
-    \draw[->] (idle) edge node {\small start} (load);
-    \draw[->] (load) edge node {\small data ready} (proc);
-    \draw[->] (proc) edge node {\small complete} (done);
-    \draw[->] (load) edge[bend right] node[left] {\small fail} (err);
-    \draw[->] (proc) edge node[right] {\small fail} (err);
-    \draw[->] (err) edge[bend right=50] node[below] {\small retry} (idle);
-    \draw[->] (done) edge[bend left=60] node[above] {\small reset} (idle);
+    \draw[->] (idle) -- node[above] {start} (load);
+    \draw[->] (load) -- node[above] {data ready} (proc);
+    \draw[->] (proc) -- node[above] {complete} (done);
+    \draw[->] (load) -- node[left] {fail} (err);
+    \draw[->] (proc) -- node[right] {fail} (err);
+    % Return arrows leave and enter at fixed angles, clear of the other states.
+    \draw[->] (err) to[out=180, in=-90] node[below left] {retry} (idle);
+    \draw[->] (done) to[out=110, in=70] node[above] {reset} (idle);
   \end{tikzpicture}
   \caption{Processing pipeline state machine}\label{fig:state-machine}
 \end{figure}
@@ -149,7 +151,7 @@ The share of compute resources allocated to each subsystem is shown in \cref{fig
       Monitoring 10 percent.}]
     \begin{axis}[
         xbar,
-        width=11cm, height=6cm,
+        width=\linewidth, height=6cm,
         xmin=0, xmax=50,
         xlabel={Share of resources (\%)},
         symbolic y coords={Monitoring, User interface, Analysis, Processing},
@@ -161,7 +163,7 @@ The share of compute resources allocated to each subsystem is shown in \cref{fig
       \addplot[fill=blue!40] table[col sep=comma, x=share, y=subsystem] {figures/data/allocation.csv};
     \end{axis}
   \end{tikzpicture}
-  \caption{Resource allocation across subsystems}\label{fig:allocation}
+  \caption{Resource allocation across subsystems (sample data)}\label{fig:allocation}
 \end{figure}
 
 \subsection{Summary}

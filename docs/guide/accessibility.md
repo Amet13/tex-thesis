@@ -12,18 +12,21 @@ heavy manual work. That has changed, and so have the rules.
 ## Why it matters now
 
 - **European Accessibility Act.** Applies since 28 June 2025 to many digital
-  products and services sold in the EU, including e-books. Publishers have been
-  updating their requirements as a result.
-- **ADA Title II (United States).** A Department of Justice rule from 2024
-  requires state and local governments, including public universities, to make
-  web content and documents they provide meet WCAG 2.1 AA. The first compliance
-  date was 24 April 2026 for larger entities, with 26 April 2027 for smaller
-  ones. Check the current status with your institution, as guidance and
-  deadlines can change.
-- **Universities.** Many graduate schools now require accessible theses and
-  dissertations for their repositories. The University of Utah, for example,
-  announced requirements taking effect in late April 2026. Ask your graduate
-  school or library for their current rules.
+  products and services sold in the EU, including e-books
+  ([European Commission](https://commission.europa.eu/strategy-and-policy/policies/justice-and-fundamental-rights/disability/union-equality-strategy-rights-persons-disabilities-2021-2030/european-accessibility-act_en)).
+  Publishers have been updating their requirements as a result.
+- **ADA Title II (United States).** A 2024 Department of Justice rule requires
+  state and local governments, including public universities, to make the web
+  content and documents they provide meet WCAG 2.1 AA. An interim final rule
+  published in the Federal Register on 20 April 2026 moved the compliance dates
+  to 26 April 2027 for entities serving 50,000 people or more, and to 26 April
+  2028 for smaller entities and special districts. The standard did not change
+  ([Federal Register, interim final rule](https://public-inspection.federalregister.gov/2026-07663.pdf);
+  [summary by Parker Poe](https://www.parkerpoe.com/news/2026/05/doj-delays-ada-web-accessibility-compliance-deadlines-for)).
+  This is not legal advice; ask your institution how it applies to you.
+- **Universities.** Many universities already require accessible theses; check
+  your graduate school. See, for example, the
+  [University of Utah's thesis accessibility guidance](https://www.math.utah.edu/accessibility/thesis.php).
 
 Accessibility also helps readers who are not disabled: text that copies
 correctly, a PDF that reflows on a phone, figures that are described.
@@ -49,7 +52,7 @@ paper template a MathML setup for LuaLaTeX):
 \DocumentMetadata{lang=en, pdfstandard=ua-2, tagging=on}
 ```
 
-The slides template cannot do this: Beamer does not support tagging. Its
+The slides template cannot do this: Beamer slides cannot be tagged yet. Its
 `overfull.yml` leaves out the `accessibility` check. Share the thesis or paper
 PDF with the slides, or move to the `ltx-talk` class.
 

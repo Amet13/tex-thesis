@@ -15,13 +15,17 @@ them and asks you about anything it cannot source.
 **By hand.** Edit the `.tex` files and run the commands below. Only Docker is
 required; a local TeX Live 2026 works too.
 
+Before Overfull v3.0.0 is released the image is not on ghcr.io yet: build it
+from a clone of the Overfull repository with `make image IMAGE=overfull:dev`,
+then pass `IMAGE=overfull:dev` to `make` here (`make build IMAGE=overfull:dev`).
+
 ## Commands
 
 ```sh
 make build    # paper.pdf (latexmk, LuaLaTeX + biber)
 make arxiv    # paper-arxiv.pdf with pdfLaTeX, as arXiv compiles it
 make watch    # rebuild on every save
-make check    # preflight: log, PDF, references, page limit, AI disclosure, accessibility
+make check    # checks: log, PDF, references, page limit, AI disclosure, accessibility
 make pages PAGES=1-2   # render pages to PNG
 make diff     # PDF showing changes against origin/main
 make clean    # remove build files (keeps the PDF)

@@ -1,5 +1,5 @@
 /**
- * The preflight report shown on the landing page. The build and output checks
+ * The report shown on the landing page. The build and output checks
  * come from a real TeX Live log in the corpus; the other three are what the CLI
  * reports for a draft with one invented reference, one figure without alt text
  * and a page too many.
@@ -27,12 +27,18 @@ function check(
 export function sampleReport(): Report {
   const log = readText('corpus/undefined-reference/main.log') ?? '';
   const { build, output } = analyzeLog(log, { root: '.' });
-  const outputProblems = output.problems.map((p) => ({
-    ...p,
-    location: { ...p.location, file: p.location?.file ?? 'main.tex' },
-  }));
+  // The corpus log is a one-page document; the sample stands for a 10-page
+  // paper.pdf, so the page-specific parts are restated to match.
+  const outputProblems = output.problems.map((p) => {
+    const { page: _page, ...location } = p.location ?? {};
+    return { ...p, location: { ...location, file: location.file ?? 'main.tex' } };
+  });
   const checks: CheckResult[] = [
-    { ...build, summary: build.summary ?? 'No TeX errors' },
+    {
+      ...build,
+      summary: 'Build succeeded (paper.pdf, 10 pages)',
+      stats: { ...build.stats, pages: 10 },
+    },
     { ...output, problems: outputProblems },
     check(
       'references',

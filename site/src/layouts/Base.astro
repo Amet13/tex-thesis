@@ -2,10 +2,9 @@
 import '@fontsource/libertinus-serif/latin-400.css';
 import '@fontsource/libertinus-serif/latin-400-italic.css';
 import '@fontsource/libertinus-serif/latin-600.css';
-import '@fontsource/libertinus-serif/latin-ext-400.css';
 import '@fontsource/libertinus-sans/latin-700.css';
 import '@fontsource/commit-mono/latin-400.css';
-import '@fontsource/commit-mono/latin-700.css';
+import serif400 from '@fontsource/libertinus-serif/files/libertinus-serif-latin-400-normal.woff2?url';
 import '../styles/global.css';
 import { REPO_URL, url } from '../lib/paths';
 
@@ -16,9 +15,18 @@ interface Props {
   section?: 'home' | 'docs' | 'rules' | 'check' | 'templates';
   /** Full-bleed main (no frame padding). */
   bare?: boolean;
+  /** Keep the page out of search results (and give it no canonical URL). */
+  noindex?: boolean;
+  /** Full <title> as given, without the " · Overfull" suffix. */
+  rawTitle?: boolean;
 }
-const { title, description, section } = Astro.props;
-const fullTitle = section === 'home' ? `Overfull — ${title}` : `${title} · Overfull`;
+const { title, description, section, noindex = false, rawTitle = false } = Astro.props;
+const fullTitle = rawTitle
+  ? title
+  : section === 'home'
+    ? `Overfull — ${title}`
+    : `${title} · Overfull`;
+const ogImage = new URL(url('og.png'), Astro.site);
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const nav = [
   { href: url('docs/'), label: 'Guide', key: 'docs' },
@@ -34,7 +42,8 @@ const nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <link rel="preload" href={serif400} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href={url('favicon.svg')} type="image/svg+xml" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)" />
@@ -42,7 +51,13 @@ const nav = [
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonical} />
+    {!noindex && <meta property="og:url" content={canonical} />}
+    <meta property="og:site_name" content="Overfull" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A LaTeX proof page marked in red pencil: an undefined reference, a missing citation, a page over the limit. Overfull, preflight for LaTeX papers and theses." />
+    <meta name="twitter:card" content="summary_large_image" />
     <script is:inline>
       (function () {
         try {
@@ -79,7 +94,7 @@ const nav = [
         <footer class="colophon">
           <div>
             <h2>Overfull</h2>
-            <p>A free preflight kit for LaTeX papers and theses. It checks the build, the PDF, the references, accessibility and venue rules, for people and for coding agents.</p>
+            <p>A free preflight kit for LaTeX papers and theses. It checks the build, the PDF, the references, accessibility and venue rules, whether you write by hand or with a coding agent.</p>
           </div>
           <div>
             <h2>Pages</h2>

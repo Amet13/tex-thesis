@@ -15,3 +15,9 @@
 \usepackage{csquotes}
 \usepackage[backend=biber, style=ieee, sorting=none]{biblatex}
 \addbibresource{references.bib}
+% DOIs and URLs in the text font, and allowed to break after any character,
+% so long DOIs do not force letter-spaced, stretched lines.
+\urlstyle{same}
+\setcounter{biburlnumpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+\setcounter{biburllcpenalty}{100}
