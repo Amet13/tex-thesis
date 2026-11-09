@@ -18,6 +18,10 @@ import type { RefSource, RefsOptions, WorkRecord } from './types.js';
 export interface Ctx {
   client: HttpClient;
   opts: RefsOptions;
+  /** What `lookup` reached so far (for `RefsOptions.onSearch`). */
+  outcome?: SearchOutcome;
+  /** Epoch ms after which title searches stop asking further sources. */
+  deadline?: number;
 }
 
 export interface SourceFailure {
@@ -137,6 +141,10 @@ export async function titleSearch(
     titleCacheKey(q.title, q.year, q.isTex) +
     (q.hinted && q.firstAuthor ? `|author:${q.firstAuthor.toLowerCase()}` : '');
   for (const [source, run] of titleSources(ctx, q)) {
+    if (ctx.deadline !== undefined && Date.now() > ctx.deadline) {
+      outcome.failures.push({ source, reason: `${source} not asked: lookup time budget used up` });
+      continue;
+    }
     let records: WorkRecord[];
     try {
       records = await searchOne(ctx, cacheKey, source, run);
@@ -151,6 +159,7 @@ export async function titleSearch(
   // Keyless fallback: when dblp could not answer (bot wall, 429, 5xx) and no OpenAlex key
   // is configured, ask OpenAlex without a key (it has a free per-IP daily budget).
   if (
+    (ctx.deadline === undefined || Date.now() <= ctx.deadline) &&
     !ctx.opts.openalexKey &&
     sourceAllowed(ctx.opts, 'openalex') &&
     outcome.failures.some((f) => f.source === 'dblp')

@@ -206,10 +206,14 @@ describe('accessibilityCheck', () => {
     });
   });
 
-  it('adds an info when veraPDF is unavailable', () => {
-    const r = accessibilityCheck(facts(), { verapdf: null });
+  it('adds an info when veraPDF is unavailable (recommended), a warning when required', () => {
+    const r = accessibilityCheck(facts(), { verapdf: null, level: 'recommended' });
     expect(r.status).toBe('pass');
     expect(r.problems.map((p) => [p.rule, p.severity])).toEqual([['verapdf-not-run', 'info']]);
+    const req = accessibilityCheck(facts(), { verapdf: null, level: 'required' });
+    expect(req.status).toBe('warn');
+    expect(req.problems.map((p) => [p.rule, p.severity])).toEqual([['verapdf-not-run', 'warning']]);
+    expect(req.problems[0]?.fix).toMatch(/--engine docker/);
   });
 
   it('does not call a non-compliant veraPDF report with no failures valid', () => {

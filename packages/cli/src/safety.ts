@@ -112,7 +112,8 @@ export function insideRootForWrite(root: string, path: string, what: string): st
       st = undefined;
     }
     if (st) {
-      if (st.isSymbolicLink() && !existsSync(probe)) throw refuse('goes through a dangling symlink');
+      if (st.isSymbolicLink() && !existsSync(probe))
+        throw refuse('goes through a dangling symlink');
       break;
     }
     const parent = dirname(probe);

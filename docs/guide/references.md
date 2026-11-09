@@ -111,6 +111,28 @@ by author"). Opting out is visible in the source, so co-authors and reviewers ca
 see which entries were not checked. Agents are told never to add opt-outs
 themselves.
 
+## Provenance
+
+`overfull cite` marks what it writes:
+
+```bibtex
+  x-overfull = {cite doi.org 2026-11-09 514dc6c201be}
+```
+
+The last part is a hash over the entry's type, key, title, authors, year, DOI
+and eprint. Editing any of them by hand breaks it, and a marker without a
+matching hash counts as no marker. The hash is tamper-evident, not
+authentication: anyone can recompute it. The guarantee is verification against
+the indexes; the marker only records that an entry came from real metadata.
+
+With `references.requireCite: true` (the templates set it), every cited entry
+that is not verified needs an intact marker and a DOI, eprint or URL, else
+`reference-unproven` (error). Offline, that is still checked: entries with a
+valid marker get `reference-not-reverified` (warning), entries without one are
+errors. Books, websites and software follow the same rule; for one that
+`overfull cite` cannot add, the author (never an agent) adds
+`note = {overfull: author-provided}`, reported as a note.
+
 ## Configuration
 
 ```yaml
@@ -133,5 +155,6 @@ overfull check --offline
 ```
 
 The references check is skipped with the reason "offline: references were not
-looked up". Missing citation keys and `.bib` syntax errors are still reported.
+looked up". Missing citation keys, `.bib` syntax errors and, with
+`requireCite`, entries without provenance are still reported.
 Other checks run normally.

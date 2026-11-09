@@ -16,6 +16,27 @@ export function formatLocation(loc: Location | undefined): string {
   return '';
 }
 
+/**
+ * Problems of one check in reading order: errors, then warnings, then notes;
+ * within a severity by file and line (problems without a file last), else as found.
+ */
+export function sortProblems(problems: Problem[]): Problem[] {
+  return problems
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => {
+      const fa = a.p.location?.file;
+      const fb = b.p.location?.file;
+      return (
+        SEVERITY_ORDER[a.p.severity] - SEVERITY_ORDER[b.p.severity] ||
+        (fa === undefined ? 1 : 0) - (fb === undefined ? 1 : 0) ||
+        (fa ?? '').localeCompare(fb ?? '') ||
+        (a.p.location?.line ?? 0) - (b.p.location?.line ?? 0) ||
+        a.i - b.i
+      );
+    })
+    .map(({ p }) => p);
+}
+
 /** Problems from all checks, sorted by severity, check order, then location. */
 export function sortedProblems(report: Report): Problem[] {
   const checkIndex = (c: string) => CHECK_IDS.indexOf(c as (typeof CHECK_IDS)[number]);
@@ -78,6 +99,7 @@ export const RUNNER_WHITESPACE =
   '[\\s\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff\\f\\v]';
 
 /** C0/C1 controls, DEL, and bidirectional overrides/isolates (Trojan Source). */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point.
 const UNSAFE_CHARS = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g;
 
 /**
@@ -96,10 +118,7 @@ export function safeLines(s: string): string[] {
   return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
 }
 
-const COMMAND_AT_LINE_START = new RegExp(
-  `(^|[\\r\\n])(${RUNNER_WHITESPACE}*?)(::|##\\[)`,
-  'g',
-);
+const COMMAND_AT_LINE_START = new RegExp(`(^|[\\r\\n])(${RUNNER_WHITESPACE}*?)(::|##\\[)`, 'g');
 
 /**
  * Last line of defence for text printed to CI logs: no line may start with `::` (or

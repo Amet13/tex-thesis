@@ -1,6 +1,6 @@
 import type { BibEntry } from '../bib/parse.js';
 import { arxivCacheKey, doiCacheKey, titleCacheKey } from './cache.js';
-import { provenanceOf } from './entry.js';
+import { isAuthorProvided, provenanceOf } from './entry.js';
 import { HttpClient } from './http.js';
 import {
   type EntryKind,
@@ -352,12 +352,17 @@ export async function verifyEntries(
   opts: RefsOptions = {},
 ): Promise<RefResult[]> {
   if (opts.offline) {
-    return entries.map((e) => ({
-      key: e.key,
-      status: 'unverifiable' as const,
-      reason: 'offline',
-      ...(e.line ? { location: { line: e.line, ...(e.file ? { file: e.file } : {}) } } : {}),
-    }));
+    const ignore = new Set(opts.ignore ?? []);
+    return entries.map((e) => {
+      const r: RefResult = {
+        key: e.key,
+        status: 'unverifiable' as const,
+        reason: isSkipped(e, ignore) ? 'skipped by author' : 'offline',
+        ...(e.line ? { location: { line: e.line, ...(e.file ? { file: e.file } : {}) } } : {}),
+      };
+      // Offline nothing is re-verified, so nothing but provenance vouches for an entry.
+      return opts.requireProvenance && isUnproven(e, r) ? { ...r, unproven: true } : r;
+    });
   }
   const ctx: Ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
@@ -368,15 +373,23 @@ export async function verifyEntries(
 }
 
 /**
- * Not verified, not added with `overfull cite`, and of a kind `overfull cite` can add.
- * The `x-overfull` marker is a convenience, not authentication: anyone can type it.
- * It only excuses an unverified entry that also carries something a reader can
- * follow (a DOI, an eprint id or a URL).
+ * With `requireProvenance`: true for an entry that is not verified and that
+ * nothing vouches for. Vouching means a valid `x-overfull` marker from
+ * `overfull cite` (its hash matches the entry) together with a DOI, eprint or
+ * URL a reader can follow; or the author's own `note = {overfull:
+ * author-provided}`; or the author's `overfull: skip` / `references.ignore`.
+ * Books, websites and software are no exception: `overfull cite` adds them
+ * when they have a DOI, and the author can vouch for the rest.
  */
 export function isUnproven(entry: BibEntry, result: RefResult): boolean {
   if (result.status === 'verified') return false;
+  if (result.reason === 'skipped by author' || isAuthorProvided(entry)) return false;
+  return !hasValidProvenance(entry);
+}
+
+/** A valid `x-overfull` marker plus something to follow (DOI, eprint or URL). */
+export function hasValidProvenance(entry: BibEntry): boolean {
   const f = entry.fields;
   const ids = identifiersOf(entry);
-  if (provenanceOf(entry) && (ids.doi || ids.arxivId || f.doi || f.eprint || f.url)) return false;
-  return entryKind(entry, identifiersOf(entry)) !== 'not-indexed';
+  return Boolean(provenanceOf(entry) && (ids.doi || ids.arxivId || f.doi || f.eprint || f.url));
 }

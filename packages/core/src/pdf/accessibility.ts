@@ -249,12 +249,13 @@ export function accessibilityCheck(facts: PdfFacts, opts: AccessibilityOptions =
     });
   }
   if (opts.verapdf === null) {
+    // When the profile requires an accessible PDF, a skipped validation is worth a look.
     problems.push({
       rule: 'verapdf-not-run',
       check: 'accessibility',
-      severity: 'info',
+      severity: level === 'required' ? 'warning' : 'info',
       message: 'veraPDF not found, full PDF/UA validation skipped',
-      fix: 'Install veraPDF or run the check in the Overfull Docker image',
+      fix: 'Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, or run `overfull check --engine docker` (uses the Overfull image), or run the check inside the Overfull Docker image',
     });
   } else if (opts.verapdf) {
     problems.push(...veraPdfProblems(opts.verapdf, sev));

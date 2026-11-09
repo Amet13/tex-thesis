@@ -25,10 +25,11 @@ export const builtinProfiles: Record<string, VenueProfile> = {
   paper: {
     id: 'paper',
     name: 'Paper',
-    description: 'Conference or journal paper: AI-use disclosure and accessibility recommended.',
+    description:
+      'Conference or journal paper: AI-use disclosure recommended, accessible (tagged) PDF required.',
     paper: 'any',
     disclosure: 'recommended',
-    accessibility: 'recommended',
+    accessibility: 'required',
     checks: ALL_CHECKS,
   },
   arxiv: {

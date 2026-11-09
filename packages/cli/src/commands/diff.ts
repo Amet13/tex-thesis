@@ -25,6 +25,7 @@ Options:
   --main file     Main .tex file (default from overfull.yml)
   --out file      Output PDF (default overfull-diff.pdf)
   --engine e      auto (default), local or docker
+  --json          Print {pdf, base, sha} (or {error}) as JSON
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
 `;
@@ -66,6 +67,7 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
       main: { type: 'string' },
       out: { type: 'string' },
       engine: { type: 'string' },
+      json: { type: 'boolean' },
       config: { type: 'string' },
     },
     'diff',
@@ -177,7 +179,12 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
         renameSync(produced, outAbs);
         if (lmk.code !== 0)
           io.stderr('The diff document had LaTeX errors; the PDF may be incomplete.\n');
-        io.stdout(`${relative(io.cwd, outAbs) || outPdf}\n`);
+        const shown = relative(io.cwd, outAbs) || outPdf;
+        io.stdout(
+          values.json
+            ? `${JSON.stringify({ pdf: shown, base: baseRef, sha, complete: lmk.code === 0 }, null, 2)}\n`
+            : `${shown}\n`,
+        );
         return 0;
       }
       lastError = `latexmk failed on ${diffTex} (see ${diffDir}/${jobname}.log)`;
@@ -186,9 +193,10 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
           `latexdiff markup did not compile; retrying with ${ATTEMPTS[ATTEMPTS.indexOf(extra) + 1]?.join(' ')}…\n`,
         );
     }
-    io.stderr(
-      `${lastError}\nCould not build a diff PDF. Try an older --base, or compare a smaller change.\n`,
-    );
+    const message = `${lastError}\nCould not build a diff PDF. Try an older --base, or compare a smaller change.`;
+    if (values.json)
+      io.stdout(`${JSON.stringify({ error: { code: 'diff-failed', message } }, null, 2)}\n`);
+    else io.stderr(`${message}\n`);
     return 1;
   };
   try {

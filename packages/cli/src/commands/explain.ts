@@ -11,7 +11,7 @@ problem Overfull reports. \`overfull explain --list\` lists all rules.
 
 Options:
   --list          List every rule id with its title
-  --json          Print the rule as JSON
+  --json          Print the rule (or the list) as JSON; an unknown rule prints {error}
   -h, --help      Show this help
 `;
 
@@ -64,11 +64,10 @@ export async function explainCommand(args: string[], io: Io): Promise<number> {
     if (best) near.add(best);
     for (const r of ids) if (r.includes(id) || id.includes(r)) near.add(r);
     const list = [...near].slice(0, 8);
-    io.stderr(
+    throw new UsageError(
       `Unknown rule "${id}".${list.length ? ` Did you mean:\n${list.map((r) => `  ${r}`).join('\n')}` : ''}\n` +
-        'Run `overfull explain --list` to see all rules.\n',
+        'Run `overfull explain --list` to see all rules.',
     );
-    return 2;
   }
   io.stdout(values.json ? `${JSON.stringify(rule, null, 2)}\n` : format(rule, useColor(io)));
   return 0;

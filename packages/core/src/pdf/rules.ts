@@ -73,11 +73,11 @@ export const pdfRules: RuleInfo[] = [
   {
     id: 'verapdf-not-run',
     check: 'accessibility',
-    severity: 'info',
+    severity: 'warning',
     title: 'veraPDF validation not run',
     summary:
-      'veraPDF was not available, so only Overfull’s own accessibility checks ran (no full PDF/UA validation).',
-    fix: 'Install veraPDF (https://verapdf.org) or run `overfull check` in the Overfull Docker image.',
+      'veraPDF was not available, so only Overfull’s own accessibility checks ran (no full PDF/UA validation). A warning when the profile requires accessibility (thesis, paper), otherwise a note.',
+    fix: 'Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, run `overfull check --engine docker`, or run the check in the Overfull Docker image.',
   },
   {
     id: 'verapdf-error',

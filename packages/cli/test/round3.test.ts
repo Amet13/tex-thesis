@@ -220,7 +220,8 @@ describe('R3: errors are neutralized in GitHub Actions, also with --annotations'
   it('error messages lose control characters outside CI too', async () => {
     const io = memIo(tempCopy('project'));
     await main(['check', '--profile', 'x\u001b[31m\u202eevil'], io);
-    expect(io.stderrText()).not.toMatch(/[\u001b\u202e]/);
+    expect(io.stderrText()).not.toContain('\u001b');
+    expect(io.stderrText()).not.toContain('\u202e');
   });
 
   it('plain output runs inside stop-commands, with no other command line', async () => {
@@ -311,9 +312,7 @@ describe('R5: write paths through symlinks', () => {
     });
     for (const bib of ['link/new.bib', 'dangling.bib']) {
       const io = memIo(dir);
-      await expect(citeCommand(['10.1/x', '--bib', bib], io, lookup)).rejects.toThrow(
-        /symlink/,
-      );
+      await expect(citeCommand(['10.1/x', '--bib', bib], io, lookup)).rejects.toThrow(/symlink/);
     }
     expect(existsSync(join(outside, 'new.bib'))).toBe(false);
     expect(existsSync(join(outside, 'nope'))).toBe(false);
@@ -391,9 +390,9 @@ describe('R8: a discovered .bib outside the project is a warning, not an abort',
     mkdirSync(dir);
     writeFileSync(join(parent, 'x.bib'), '');
     const io = memIo(dir);
-    expect(await main(['check', '--offline', '--checks', 'references', '--bib', '../x.bib'], io)).toBe(
-      2,
-    );
+    expect(
+      await main(['check', '--offline', '--checks', 'references', '--bib', '../x.bib'], io),
+    ).toBe(2);
   });
 });
 

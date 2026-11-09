@@ -38,7 +38,9 @@ function fromOpenAlex(w: OpenAlexWork): WorkRecord | null {
   if (w.doi) record.doi = w.doi.replace(/^https?:\/\/doi\.org\//i, '').toLowerCase();
   const url = w.primary_location?.landing_page_url;
   if (url) record.url = url;
-  if (w.type) record.type = w.type;
+  // Without a venue an OpenAlex "article" is often a repository deposit or a
+  // preprint; it becomes @misc rather than an @article with no journal.
+  if (w.type && (venue || w.type !== 'article')) record.type = w.type;
   if (typeof w.cited_by_count === 'number') record.citations = w.cited_by_count;
   return record;
 }

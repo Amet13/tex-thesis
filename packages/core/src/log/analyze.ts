@@ -65,6 +65,12 @@ function isTerminationNotice(error: LogError): boolean {
   );
 }
 
+/** TeX stopped at a paragraph end: an empty source line, `\par`, or a closing `\end{…}`. */
+function paragraphEnd(error: LogError): boolean {
+  const before = (error.source?.before ?? '').trim();
+  return before === '' || /^(?:\.\.\.)?\\(?:par|end)\b/.test(before);
+}
+
 function atEndDocument(error: LogError): boolean {
   return /^\s*(?:\.\.\.)?\\end\s*\{document\}/.test(error.source?.before ?? '');
 }
@@ -115,6 +121,17 @@ function isFollower(
     return atEndDocument(error);
   }
   if (atEndDocument(error) && check === problem.check) return true;
+  // The `$` TeX inserted opened math mode; it runs to the end of the paragraph, where
+  // TeX inserts the closing `$` with a second "Missing $" at the blank line (or \par),
+  // often in the parent file after an \input file closed. Same cause, not a new error.
+  if (
+    rule === 'missing-dollar' &&
+    problem.rule === 'missing-dollar' &&
+    paragraphEnd(error) &&
+    error.logLine > root.logLine
+  ) {
+    return true;
+  }
   if (error.file !== root.file || error.line === undefined || root.line === undefined) return false;
   if (error.line === root.line) return true;
   if (check !== problem.check) return false;
@@ -416,7 +433,7 @@ function overfullBoxes(list: LogWarning[], thresholdPt: number, errors: LogError
         : `TeX could not break the line without exceeding the text width${text ? `: ${code(text)}` : ''}. Long URLs, code, file names and unhyphenated words are the usual cause.`,
       fix: vertical
         ? 'Shrink the float or table, allow it to break across pages, or move material.'
-        : 'Rephrase or allow a break: use `\\url{}`/`\\path{}` for URLs and identifiers, `\\-` to suggest hyphenation, or `\\sloppy` for this paragraph. Wide tables and figures: scale them to `\\linewidth`.',
+        : 'Rephrase or allow a break: use `\\url{}`/`\\path{}` for URLs and identifiers, `\\-` to suggest hyphenation, or load `microtype` for finer spacing. Wide tables and figures: scale them to `\\linewidth`.',
       evidence: evidence([worst.raw]),
       data: compact({ amountPt: amount, box: worst.data.box, lines, others, thresholdPt }),
     });

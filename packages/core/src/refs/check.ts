@@ -2,8 +2,9 @@ import type { BibEntry, BibParseIssue } from '../bib/parse.js';
 import { type CheckResult, type Problem, type RuleInfo, statusOf } from '../types.js';
 import { citeLocations } from '../venue/tex.js';
 import type { TexFile } from '../venue/types.js';
+import { isAuthorProvided } from './entry.js';
 import type { RefResult } from './types.js';
-import { isUnproven, sourceName } from './verify.js';
+import { hasValidProvenance, isUnproven, sourceName } from './verify.js';
 
 export const refsRules: RuleInfo[] = [
   {
@@ -93,8 +94,17 @@ export const refsRules: RuleInfo[] = [
     severity: 'error',
     title: 'Reference neither verified nor added with overfull cite',
     summary:
-      'With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite`: it carries `x-overfull = {cite …}` and a DOI, eprint or URL. The marker is a convenience, not proof; a hand-written entry that no index confirms may not exist.',
+      'With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite`: it carries an intact `x-overfull = {cite … <hash>}` marker and a DOI, eprint or URL. The hash makes edits evident; it is not authentication. Entries the author vouches for carry `note = {overfull: author-provided}` (added by the author, never by an agent). A hand-written entry that no index confirms may not exist.',
     fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
+  },
+  {
+    id: 'reference-not-reverified',
+    check: 'references',
+    severity: 'warning',
+    title: 'Cited entry could not be re-verified',
+    summary:
+      'The entry was added with `overfull cite` (its `x-overfull` marker is intact), but this run could not confirm it again: the check ran offline or the indexes could not be reached.',
+    fix: 'Run `overfull check` again with network access. If an index stays unreachable, the DOI or arXiv id in the entry lets doi.org or arXiv confirm it.',
   },
   {
     id: 'bib-parse-error',
@@ -160,14 +170,55 @@ function unprovenProblem(r: RefResult, entry?: BibEntry): Problem {
     severity: 'error',
     message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
     ...(location ? { location } : {}),
-    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ''}. The entry has no \`x-overfull = {cite …}\` field with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
+    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ''}. The entry has no intact \`x-overfull = {cite … <hash>}\` marker (missing, hand-written, or the entry was edited after \`overfull cite\`) with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
     fix: 'Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite',
     ...(entry?.raw ? { evidence: entry.raw } : {}),
     data: { key: r.key, status: r.status },
   };
 }
 
-function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
+function notReverifiedProblem(r: RefResult, entry?: BibEntry): Problem {
+  const location =
+    r.location ??
+    (entry?.line ? { line: entry.line, ...(entry.file ? { file: entry.file } : {}) } : undefined);
+  return {
+    rule: 'reference-not-reverified',
+    check: 'references',
+    severity: 'warning',
+    message: `\`${r.key}\` was added with \`overfull cite\` but could not be re-verified${r.reason === 'offline' ? ' (offline)' : r.reason ? `: ${r.reason}` : ''}`,
+    ...(location ? { location } : {}),
+    fix: 'Run the check again with network access; the entry’s DOI or arXiv id lets doi.org or arXiv confirm it.',
+    data: { key: r.key, status: r.status },
+  };
+}
+
+function authorProvidedProblem(r: RefResult, entry?: BibEntry): Problem {
+  const location =
+    r.location ??
+    (entry?.line ? { line: entry.line, ...(entry.file ? { file: entry.file } : {}) } : undefined);
+  return {
+    rule: 'reference-unverifiable',
+    check: 'references',
+    severity: 'info',
+    message: `\`${r.key}\` is marked \`overfull: author-provided\` and was not verified${r.reason ? ` (${r.reason})` : ''}`,
+    ...(location ? { location } : {}),
+    fix: 'The author vouches for this entry; check it by hand before submission.',
+    data: { key: r.key, status: r.status, authorProvided: true },
+  };
+}
+
+function problemFor(r: RefResult, entry?: BibEntry, requireProvenance = false): Problem | null {
+  if (r.status !== 'verified' && r.status !== 'mismatch' && entry && isAuthorProvided(entry))
+    return r.reason === 'offline' || r.reason === 'skipped by author'
+      ? null
+      : authorProvidedProblem(r, entry);
+  if (
+    requireProvenance &&
+    entry &&
+    (r.reason === 'offline' || r.status === 'error') &&
+    hasValidProvenance(entry)
+  )
+    return notReverifiedProblem(r, entry);
   const location =
     r.location ??
     (entry?.line ? { line: entry.line, ...(entry.file ? { file: entry.file } : {}) } : undefined);
@@ -202,7 +253,10 @@ function problemFor(r: RefResult, entry?: BibEntry): Problem | null {
           rule: 'reference-arxiv-wrong-work',
           severity: 'error',
           message: `\`${r.key}\`: the arXiv id ${r.wrongWork.id} points to a different paper, “${r.wrongWork.title}”`,
-          detail: [`arXiv has “${r.wrongWork.title}” as ${r.wrongWork.id}, not the cited work`, ...others].join('; '),
+          detail: [
+            `arXiv has “${r.wrongWork.title}” as ${r.wrongWork.id}, not the cited work`,
+            ...others,
+          ].join('; '),
           fix: `Find the correct arXiv id for the cited title, or re-add the entry with \`${citeHint(r, entry)}\`. Do not re-add it from this id: that would cite the unrelated paper.`,
         };
       }
@@ -328,10 +382,11 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
   const problems = [
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...(opts.extra ?? []),
-    ...results.map((r) => problemFor(r, byKey.get(r.key))).filter((p): p is Problem => p !== null),
+    ...results
+      .map((r) => problemFor(r, byKey.get(r.key), opts.requireProvenance))
+      .filter((p): p is Problem => p !== null),
     ...results
       .filter((r) => {
-        if (r.reason === 'offline') return false;
         if (r.unproven) return true;
         const entry = byKey.get(r.key);
         return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
@@ -341,7 +396,10 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
   if (problems.some((p) => p.rule === 'reference-unproven')) {
     stats.unproven = problems.filter((p) => p.rule === 'reference-unproven').length;
   }
-  if (results.length > 0 && results.every((r) => r.reason === 'offline')) {
+  if (
+    results.some((r) => r.reason === 'offline') &&
+    results.every((r) => r.reason === 'offline' || r.reason === 'skipped by author')
+  ) {
     const blocking = problems.filter((p) => p.rule !== 'reference-unverifiable');
     return {
       check: 'references',

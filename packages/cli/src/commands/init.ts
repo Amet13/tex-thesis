@@ -53,6 +53,7 @@ Arguments:
 
 Options:
   --force         Copy into a non-empty directory (existing files are overwritten)
+  --json          Print {template, dir, git} as JSON
   --no-git        Do not run \`git init\` (by default a new project outside a git
                   repository gets \`git init -b main\` and, when user.name and
                   user.email are set, an initial commit)
@@ -62,7 +63,7 @@ Options:
 export async function initCommand(args: string[], io: Io): Promise<number> {
   const { values, positionals } = parse(
     args,
-    { force: { type: 'boolean' }, 'no-git': { type: 'boolean' } },
+    { force: { type: 'boolean' }, 'no-git': { type: 'boolean' }, json: { type: 'boolean' } },
     'init',
   );
   if (values.help) {
@@ -100,6 +101,10 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
   copyTemplate(src, target);
   const gitNote = values['no-git'] === true ? undefined : await initGit(target, template, io.env);
   const shown = relative(io.cwd, target) || '.';
+  if (values.json) {
+    io.stdout(`${JSON.stringify({ template, dir: shown, git: gitNote ?? null }, null, 2)}\n`);
+    return 0;
+  }
   const cd = shown === '.' ? '' : `  cd ${shown}\n`;
   io.stdout(
     `Created a ${template} project in ${shown}/\n\n` +

@@ -7,13 +7,21 @@
 import { entryFromPublisherBibtex, entryFromRecord } from './entry.js';
 import { HttpClient } from './http.js';
 import { foldName, namesMatch, titleSimilarity } from './normalize.js';
-import { arxivByIdCached, type Ctx, resolveDoiCached, titleSearch } from './search.js';
+import {
+  arxivByIdCached,
+  type Ctx,
+  failureReason,
+  resolveDoiCached,
+  type SearchOutcome,
+  titleSearch,
+} from './search.js';
 import { parseArxivId } from './sources/arxiv.js';
 import { fetchDoiBibtex, parseDoi } from './sources/doi.js';
 import type {
   LookupCandidate,
   LookupHint,
   LookupResult,
+  RefSource,
   RefsOptions,
   WorkRecord,
 } from './types.js';
@@ -186,8 +194,26 @@ export function pickTitleMatch(query: string, records: WorkRecord[], hint?: Look
   return { record: best.record, confidence: best.sim };
 }
 
+/** Records what answered, for `RefsOptions.onSearch`. */
+function track(ctx: Ctx): SearchOutcome {
+  ctx.outcome ??= { searched: [], failures: [] };
+  return ctx.outcome;
+}
+
+async function tracked<T>(ctx: Ctx, source: RefSource, run: () => Promise<T>): Promise<T> {
+  const o = track(ctx);
+  try {
+    const v = await run();
+    if (!o.searched.includes(source)) o.searched.push(source);
+    return v;
+  } catch (err) {
+    if (!ctx.opts.signal?.aborted) o.failures.push({ source, reason: failureReason(err) });
+    throw err;
+  }
+}
+
 async function lookupDoi(ctx: Ctx, doi: string): Promise<LookupResult | null> {
-  const res = await resolveDoiCached(ctx, doi);
+  const res = await tracked(ctx, 'doi.org', () => resolveDoiCached(ctx, doi));
   if (res.kind !== 'found') return null;
   const bibtex = await fetchDoiBibtex(ctx.client, doi);
   const entry = (bibtex && entryFromPublisherBibtex(bibtex, doi)) || entryFromRecord(res.record);
@@ -195,15 +221,19 @@ async function lookupDoi(ctx: Ctx, doi: string): Promise<LookupResult | null> {
 }
 
 async function lookupArxiv(ctx: Ctx, id: string): Promise<LookupResult | null> {
-  const record = await arxivByIdCached(ctx, id);
+  const record = await tracked(ctx, 'arxiv', () => arxivByIdCached(ctx, id));
   return record ? { entry: entryFromRecord(record), source: 'arxiv', confidence: 1 } : null;
 }
+
+/** Total time a title lookup may spend across sources before it reports (ms). */
+export const TITLE_LOOKUP_BUDGET_MS = 10_000;
 
 async function lookupTitle(
   ctx: Ctx,
   title: string,
   hint?: LookupHint,
 ): Promise<LookupResult | null> {
+  ctx.deadline ??= Date.now() + (ctx.opts.titleBudgetMs ?? TITLE_LOOKUP_BUDGET_MS);
   const records: WorkRecord[] = [];
   const surname = hint?.author?.trim().split(/\s+/).pop();
   const query = {
@@ -216,6 +246,9 @@ async function lookupTitle(
     records.push(...found);
     return false;
   });
+  const o = track(ctx);
+  for (const s of outcome.searched) if (!o.searched.includes(s)) o.searched.push(s);
+  o.failures.push(...outcome.failures);
   const picked = pickTitleMatch(title, records, hint);
   if (picked && 'ambiguous' in picked) {
     throw new AmbiguousLookupError(title, picked.ambiguous.map(toCandidate));
@@ -250,7 +283,16 @@ export async function lookup(query: string, opts: RefsOptions = {}): Promise<Loo
   if (opts.offline) return null;
   const ctx: Ctx = { client: new HttpClient(opts), opts };
   const { kind, value } = queryKind(query);
-  if (kind === 'doi') return lookupDoi(ctx, value);
-  if (kind === 'arxiv') return lookupArxiv(ctx, value);
-  return lookupTitle(ctx, value, opts.hint);
+  try {
+    if (kind === 'doi') return await lookupDoi(ctx, value);
+    if (kind === 'arxiv') return await lookupArxiv(ctx, value);
+    return await lookupTitle(ctx, value, opts.hint);
+  } finally {
+    const o = track(ctx);
+    // A source that failed once but answered later counts as answered.
+    opts.onSearch?.({
+      searched: o.searched,
+      failures: o.failures.filter((f) => !o.searched.includes(f.source)),
+    });
+  }
 }

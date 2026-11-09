@@ -426,7 +426,13 @@ class Parser {
     if (lines) data.lines = [Number(lines[1]), Number(lines[2] ?? lines[1])];
     const kind = m[1] === 'Overfull' ? 'overfull' : 'underfull';
     const warning = this.warn(line, kind, 'TeX', line.text, data, raw);
-    if (lines) warning.line = Number(lines[1]);
+    if (lines) {
+      const [from, to] = [Number(lines[1]), Number(lines[2] ?? lines[1])];
+      // "lines 13--1": the paragraph began in an \input file that has closed since; the
+      // end line is in the current file, so point there rather than at a wrong line.
+      warning.line = Math.min(from, to);
+      if (from > to) data.spansFiles = true;
+    }
     warning.page = this.stack.page + 1;
   }
 

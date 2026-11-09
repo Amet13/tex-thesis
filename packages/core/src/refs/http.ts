@@ -85,6 +85,12 @@ export class HttpClient {
     const downReason = this.down.get(host);
     if (downReason) throw new SourceUnavailableError(host, downReason);
     let res = await this.attempt(url, accept, host);
+    if (res.status === 429 && /daily|budget|quota|per day|credits/i.test(res.body)) {
+      // A used-up daily budget does not come back after a retry: fail fast for the run.
+      const reason = `${host} answered HTTP 429: daily request budget used up`;
+      this.markDown(host, reason);
+      throw new SourceUnavailableError(host, reason);
+    }
     if (res.status === 429 || res.status >= 500) {
       await sleep(retryAfterMs(res.retryAfter, this.retryDelayMs), this.signal);
       res = await this.attempt(url, accept, host);

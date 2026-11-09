@@ -16,6 +16,7 @@ Options:
   --pdf file      PDF to render (default <jobname>.pdf)
   --out dir       Output directory inside the project (default .overfull/pages)
   --dpi n         Resolution (default 110)
+  --json          Print {pages: [{page, file}]} (or {error}) as JSON
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
 `;
@@ -63,6 +64,7 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
       pdf: { type: 'string' },
       out: { type: 'string' },
       dpi: { type: 'string' },
+      json: { type: 'boolean' },
       config: { type: 'string' },
     },
     'pages',
@@ -95,7 +97,7 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
       'pdftoppm not found and Docker is not running. Install poppler (`brew install poppler` / `apt install poppler-utils`) or start Docker.',
     );
   }
-  const written: string[] = [];
+  const written: { page: number; file: string }[] = [];
   for (const p of pages) {
     const prefix = join(outDir, `page-${p}`);
     let r: Awaited<ReturnType<typeof run>>;
@@ -115,9 +117,7 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
     } else {
       const inRoot = (abs: string) => relative(config.root, abs);
       if (inRoot(outDir).startsWith('..') || inRoot(pdfAtRoot).startsWith('..')) {
-        throw new UsageError(
-          'With Docker, the PDF must be inside the project directory.',
-        );
+        throw new UsageError('With Docker, the PDF must be inside the project directory.');
       }
       const toPosix = (s: string) => s.split('\\').join('/');
       r = await run(
@@ -138,12 +138,20 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
       );
     }
     if (r.code !== 0) {
-      io.stderr(`${(r.error ?? r.stderr).trim()}\n`);
-      io.stderr(`Could not render page ${p}.\n`);
+      const message = `${(r.error ?? r.stderr).trim()}\nCould not render page ${p}.`;
+      if (values.json)
+        io.stdout(
+          `${JSON.stringify({ error: { code: 'render-failed', message, page: p } }, null, 2)}\n`,
+        );
+      else io.stderr(`${message}\n`);
       return 1;
     }
-    written.push(relative(io.cwd, `${prefix}.png`) || `${prefix}.png`);
+    written.push({ page: p, file: relative(io.cwd, `${prefix}.png`) || `${prefix}.png` });
   }
-  io.stdout(`${written.join('\n')}\n`);
+  io.stdout(
+    values.json
+      ? `${JSON.stringify({ pages: written }, null, 2)}\n`
+      : `${written.map((w) => w.file).join('\n')}\n`,
+  );
   return 0;
 }

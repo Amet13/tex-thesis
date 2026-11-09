@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 import {
   accessibilityCheck,
   analyzeLog,
+  attributeBibliography,
   type BibEntry,
   type BibParseIssue,
   CHECK_IDS,
@@ -19,7 +20,9 @@ import {
   refsCheck,
   reportStatus,
   resolveProfile,
+  sortProblems,
   statusOf,
+  type TexFile,
   UnknownProfileError,
   type VeraPdfResult,
   venueCheck,
@@ -29,13 +32,7 @@ import { FileCache, MemoryCache, refsCachePath, symlinkOnPath } from './cache.js
 import { type Config, DEFAULT_IMAGE, loadConfig } from './config.js';
 import { UsageError } from './io.js';
 import { readPdfFacts } from './pdf.js';
-import {
-  listFiles,
-  readAux,
-  readIfExists,
-  readTexFiles,
-  requireRegularFile,
-} from './project.js';
+import { listFiles, readAux, readIfExists, readTexFiles, requireRegularFile } from './project.js';
 import { insideRoot, insideRootOrUndefined, isCI, safeImage } from './safety.js';
 import { dockerAvailable, dockerImagePresent, which } from './tools.js';
 import { type DockerTools, runVeraPdf } from './verapdf.js';
@@ -91,6 +88,17 @@ interface Inputs {
   facts?: PdfFacts;
   factsError?: string;
   docker?: DockerTools;
+  /** Project sources, read once on first use (venue, accessibility, citation locations). */
+  sources?: { files: string[]; texFiles: TexFile[]; skipped: { path: string; reason: string }[] };
+}
+
+function sourcesOf(inp: Inputs): NonNullable<Inputs['sources']> {
+  if (!inp.sources) {
+    const files = listFiles(inp.root);
+    const skipped: { path: string; reason: string }[] = [];
+    inp.sources = { files, texFiles: readTexFiles(inp.root, files, skipped), skipped };
+  }
+  return inp.sources;
 }
 
 /** A project-relative display path with forward slashes. */
@@ -171,6 +179,38 @@ export function mergeOutput(output: CheckResult, pdfProblems: Problem[]): CheckR
   return { ...output, status: statusOf(problems), problems };
 }
 
+/**
+ * Points errors from typeset bibliography entries at the .bib entry (see core's
+ * attributeBibliography). Reads `<jobname>.bbl` and the configured .bib files.
+ */
+export function bibliographyAttribution(
+  config: Config,
+  bib: string[] = config.bib,
+): (problems: Problem[]) => Problem[] {
+  const root = config.root;
+  const bblRel = join(config.build.auxDir, `${config.jobname}.bbl`).split('\\').join('/');
+  const bblAbs = insideRootOrUndefined(root, bblRel);
+  let bblText: string | undefined;
+  try {
+    bblText = bblAbs ? readIfExists(bblAbs) : undefined;
+  } catch {
+    bblText = undefined;
+  }
+  if (bblText === undefined) return (p) => p;
+  const bibs: { file: string; text: string }[] = [];
+  for (const file of bib) {
+    const abs = insideRootOrUndefined(root, file);
+    try {
+      const text = abs ? readIfExists(abs) : undefined;
+      if (text !== undefined) bibs.push({ file, text });
+    } catch {
+      /* not a file: skip */
+    }
+  }
+  const bbl = { path: bblRel.replace(/^\.\//, ''), text: bblText };
+  return (problems) => attributeBibliography(problems, { bbl, bibs });
+}
+
 function buildAndOutput(inp: Inputs, wanted: Set<CheckId>): CheckResult[] {
   const out: CheckResult[] = [];
   if (inp.log === undefined) {
@@ -191,7 +231,10 @@ function buildAndOutput(inp: Inputs, wanted: Set<CheckId>): CheckResult[] {
     }
     return out;
   }
-  const { build, output } = analyzeLog(inp.log, { root: inp.root });
+  const analyzed = analyzeLog(inp.log, { root: inp.root });
+  const attribute = bibliographyAttribution(inp.config);
+  const build = { ...analyzed.build, problems: attribute(analyzed.build.problems) };
+  const output = { ...analyzed.output, problems: attribute(analyzed.output.problems) };
   if (wanted.has('build')) out.push(build);
   if (wanted.has('output'))
     out.push(inp.facts ? mergeOutput(output, pdfOutputProblems(inp.facts)) : output);
@@ -266,7 +309,7 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   const extra = [
     ...outsideProblems,
     ...parseProblems,
-    ...(keys ? missingKeys(keys, entries) : []),
+    ...(keys ? missingKeys(keys, entries, sourcesOf(inp).texFiles) : []),
   ];
   for (const f of missingFiles) {
     extra.push({
@@ -320,7 +363,11 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   };
   const results = await verifyEntries(toVerify, refsOptions);
   cache?.save();
-  const result = refsCheck(results, { entries: toVerify, extra });
+  const result = refsCheck(results, {
+    entries: toVerify,
+    extra,
+    requireProvenance: config.references.requireCite,
+  });
   if (!keys) {
     result.summary =
       `${result.summary ?? ''} — all entries checked (no .aux to tell which are cited)`.trim();
@@ -343,14 +390,12 @@ async function accessibility(inp: Inputs, opts: CheckOptions): Promise<CheckResu
       ...(inp.facts.pdfua !== undefined ? { pdfuaPart: inp.facts.pdfua } : {}),
       ...(inp.docker ? { docker: inp.docker } : {}),
     });
-  return accessibilityCheck(inp.facts, { verapdf, level });
+  return accessibilityCheck(inp.facts, { verapdf, level, texFiles: sourcesOf(inp).texFiles });
 }
 
 function venue(inp: Inputs): CheckResult {
-  const { config, root } = inp;
-  const files = listFiles(root);
-  const skippedFiles: { path: string; reason: string }[] = [];
-  const texFiles = readTexFiles(root, files, skippedFiles);
+  const { config } = inp;
+  const { files, texFiles, skipped: skippedFiles } = sourcesOf(inp);
   const result = venueCheck(config.profile, {
     ...(inp.facts ? { facts: inp.facts } : {}),
     ...(inp.aux !== undefined ? { aux: inp.aux } : {}),
@@ -398,6 +443,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   if (wanted.has('accessibility')) results.push(await accessibility(inp, { ...opts, env }));
   if (wanted.has('venue')) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
+  for (const r of results) r.problems = sortProblems(r.problems);
   const target = existsSync(join(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
   return {
     tool: 'overfull',

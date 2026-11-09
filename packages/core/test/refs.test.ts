@@ -723,16 +723,17 @@ describe('provenance guardrail', () => {
   it('markCited adds x-overfull and formatBibEntry keeps it', () => {
     const [e] = parseBib(RAFT);
     const marked = markCited(e as NonNullable<typeof e>, 'dblp', '2026-11-09');
-    expect(marked.fields['x-overfull']).toBe('cite dblp 2026-11-09');
-    expect(provenanceOf(marked)).toBe('cite dblp 2026-11-09');
+    expect(marked.fields['x-overfull']).toMatch(/^cite dblp 2026-11-09 [0-9a-f]{12}$/);
+    const value = marked.fields['x-overfull'] as string;
+    expect(provenanceOf(marked)).toBe(value);
     const text = formatBibEntry(marked);
-    expect(text).toContain('x-overfull = {cite dblp 2026-11-09}');
-    expect(provenanceOf(parseBib(text)[0] as NonNullable<typeof e>)).toBe('cite dblp 2026-11-09');
+    expect(text).toContain(`x-overfull = {${value}}`);
+    expect(provenanceOf(parseBib(text)[0] as NonNullable<typeof e>)).toBe(value);
     expect(
       markCited(e as NonNullable<typeof e>, 'crossref', new Date('2026-01-02T10:00:00Z')).fields[
         'x-overfull'
       ],
-    ).toBe('cite crossref 2026-01-02');
+    ).toMatch(/^cite crossref 2026-01-02 [0-9a-f]{12}$/);
   });
 
   it('an unverified hand-written entry is an error with requireProvenance', async () => {
@@ -763,8 +764,14 @@ describe('provenance guardrail', () => {
 
   it('entries with x-overfull, verified entries and websites pass', async () => {
     const f = router({ ...allEmpty, 'dblp.org': () => json(raftDblp) });
+    const [fake] = parseBib(
+      FAKE.replace('year = {2099}', 'year = {2099}, url = {https://example.org/p}'),
+    );
+    const cited = formatBibEntry(
+      markCited(fake as NonNullable<typeof fake>, 'crossref', '2026-11-09'),
+    );
     const entries = parseBib(
-      `${RAFT}\n${FAKE.replace('year = {2099}', 'year = {2099}, url = {https://example.org/p}, x-overfull = {cite crossref 2026-11-09}')}\n@online{w, title={CTAN}, url={https://ctan.org}}`,
+      `${RAFT}\n${cited}\n@online{w, title={CTAN}, url={https://ctan.org}, note={overfull: author-provided}}`,
     );
     const results = await verifyEntries(entries, {
       fetch: f.fetch,

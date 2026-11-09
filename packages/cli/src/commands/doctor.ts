@@ -13,7 +13,8 @@ import { VERSION } from '../version.js';
 export const doctorHelp = `Usage: overfull doctor [--json]
 
 Show which tools Overfull can use on this machine and whether the project
-config is valid. Never fails: missing tools only limit what can run.
+config is valid. Exits 1 when nothing can build the document (no local
+TeX Live and no usable Docker image); other missing tools only limit what can run.
 
 Options:
   --json          Print the results as JSON
@@ -182,25 +183,25 @@ export async function doctorCommand(args: string[], io: Io): Promise<number> {
   items.push(await reachable('https://api.crossref.org/works?rows=0', io.fetch ?? fetch));
   items.push(configItem);
 
+  const localBuild = items.some((i) => i.name === 'latexmk' && i.ok);
+  const canBuild = localBuild || (docker && imageOk);
+  const verdict = canBuild
+    ? 'Ready to build.'
+    : docker
+      ? `Cannot build: no local TeX Live, and the Docker image is not available. ${imageUnavailableMessage(image)}`
+      : 'Cannot build: neither TeX Live (latexmk) nor Docker is available. Install Docker (recommended) or TeX Live.';
   if (values.json) {
-    io.stdout(`${JSON.stringify({ items }, null, 2)}\n`);
-    return 0;
+    io.stdout(`${JSON.stringify({ canBuild, message: verdict, items }, null, 2)}\n`);
+    return canBuild ? 0 : 1;
   }
   const w = Math.max(...items.map((i) => i.name.length)) + 2;
   const lines = items.map(
     (i) =>
       `  ${i.ok ? '✓' : '–'} ${i.name.padEnd(w)}${i.detail}${!i.ok && i.needFor ? ` (needed for ${i.needFor})` : ''}`,
   );
-  const localBuild = items.some((i) => i.name === 'latexmk' && i.ok);
-  const canBuild = localBuild || (docker && imageOk);
-  lines.push(
-    '',
-    canBuild
-      ? 'Ready to build.'
-      : docker
-        ? `Cannot build yet: the Docker image is not available. ${imageUnavailableMessage(image)}`
-        : 'Cannot build yet: install Docker (recommended) or TeX Live.',
+  // A machine that cannot build at all says so first, and exits 1.
+  io.stdout(
+    canBuild ? `${lines.join('\n')}\n\n${verdict}\n` : `${verdict}\n\n${lines.join('\n')}\n`,
   );
-  io.stdout(`${lines.join('\n')}\n`);
-  return 0;
+  return canBuild ? 0 : 1;
 }

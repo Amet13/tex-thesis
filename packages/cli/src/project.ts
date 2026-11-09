@@ -123,7 +123,9 @@ export function requireRegularFile(path: string): void {
   try {
     st = statSync(path);
   } catch (err) {
-    throw new UsageError(`Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`);
+    throw new UsageError(
+      `Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
   if (!st.isFile()) {
     throw new UsageError(

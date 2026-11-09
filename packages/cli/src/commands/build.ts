@@ -1,15 +1,17 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { isAbsolute, join, relative } from 'node:path';
 import {
   analyzeLog,
   type CheckResult,
   formatHuman,
+  formatJson,
   pdfOutputProblems,
   type Report,
   reportStatus,
+  sortProblems,
 } from '@overfull/core';
 import { parse, str } from '../args.js';
-import { mergeOutput } from '../check.js';
+import { bibliographyAttribution, mergeOutput } from '../check.js';
 import { type Config, type Engine, loadConfig } from '../config.js';
 import { type Io, UsageError, useColor } from '../io.js';
 import { readPdfFacts } from '../pdf.js';
@@ -37,6 +39,8 @@ Options:
   --image name    Docker image. Precedence: --image, then $OVERFULL_IMAGE, then
                   build.image in overfull.yml, then ghcr.io/amet13/overfull:0.1
   --verbose, -v   Show latexmk output and fixes for each problem
+  --force         Rebuild even when nothing changed since the last build
+  --json          Print the report as JSON (same shape as \`overfull check --json\`)
   --config file   Config file (default overfull.yml)
   -h, --help      Show this help
 
@@ -106,6 +110,62 @@ export async function resolveEngine(
   return 'local';
 }
 
+/** Files LaTeX writes during a build: their times say nothing about the sources. */
+const GENERATED =
+  /\.(aux|bbl|bcf|blg|fdb_latexmk|fls|lof|lot|lol|log|out|toc|nav|snm|vrb|xmpi|run\.xml|synctex\.gz|xdv|glo|gls|glg|idx|ind|ilg|ist)$|-luamml-mathml\.html$/i;
+
+/**
+ * True when the PDF is newer than every project file the last LaTeX run read
+ * (from the `.fls` recorder file), the .bib files and the build configuration,
+ * and the last log has no errors and asks for no rerun.
+ */
+export function upToDate(config: Config, main: string): boolean {
+  const root = config.root;
+  const pdf = join(root, config.build.outDir, `${config.jobname}.pdf`);
+  const fls = [config.build.auxDir, config.build.outDir]
+    .map((d) => join(root, d, `${config.jobname}.fls`))
+    .find((p) => existsSync(p));
+  const logPath = join(root, config.build.auxDir, `${config.jobname}.log`);
+  if (!fls || !existsSync(pdf) || !existsSync(logPath)) return false;
+  let pdfTime: number;
+  let flsText: string;
+  let log: string;
+  try {
+    pdfTime = statSync(pdf).mtimeMs;
+    flsText = readFileSync(fls, 'utf8');
+    log = readFileSync(logPath, 'utf8');
+  } catch {
+    return false;
+  }
+  if (
+    /^! |^\S+:\d+: |Rerun to get|Please \(re\)run|Please rerun|may have changed|rerun LaTeX/m.test(
+      log,
+    )
+  )
+    return false;
+  const pwd = /^PWD (.+)$/m.exec(flsText)?.[1]?.trim();
+  const inputs = new Set<string>([main, ...config.bib, '.latexmkrc', 'latexmkrc']);
+  if (config.file) inputs.add(relative(root, config.file));
+  for (const m of flsText.matchAll(/^INPUT (.+)$/gm)) {
+    let p = (m[1] as string).trim();
+    if (isAbsolute(p) || /^[A-Za-z]:[\\/]/.test(p)) {
+      if (!pwd || !p.startsWith(`${pwd}/`)) continue; // the TeX distribution
+      p = p.slice(pwd.length + 1);
+    }
+    if (!GENERATED.test(p)) inputs.add(p);
+  }
+  for (const p of inputs) {
+    const abs = join(root, p);
+    if (abs === pdf) continue;
+    try {
+      if (statSync(abs).mtimeMs > pdfTime) return false;
+    } catch {
+      if (p === main) return false;
+    }
+  }
+  return true;
+}
+
 /** Turns latexmk chatter into short progress lines ("lualatex (run 2)"). */
 function progress(io: Io, verbose: boolean): (line: string) => void {
   return (line) => {
@@ -132,6 +192,8 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
       engine: { type: 'string' },
       image: { type: 'string' },
       verbose: { type: 'boolean', short: 'v' },
+      json: { type: 'boolean' },
+      force: { type: 'boolean' },
       config: { type: 'string' },
     },
     'build',
@@ -161,42 +223,67 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
     throw new UsageError('--engine must be auto, local or docker');
   const imageArg = str(values.image);
   const image = imageArg ? safeImage(imageArg, '--image') : config.build.image;
-  const engine = await resolveEngine(engineArg, io.env);
-  const lmk = latexmkArgs(config, main);
   const verbose = values.verbose === true;
+  const force = values.force === true;
   let result: Awaited<ReturnType<typeof run>>;
-  if (engine === 'local') {
-    io.stderr(`Building ${main} with latexmk…\n`);
-    result = await run('latexmk', lmk, { cwd: config.root, onLine: progress(io, verbose) });
-  } else {
-    const present = await dockerImagePresent(image);
+  if (!force && upToDate(config, main)) {
+    // Nothing changed since the last good build: report on it without starting
+    // LaTeX (in Docker, latexmk would rerun LuaLaTeX because the container's
+    // font cache is new every time).
     io.stderr(
-      `Building ${main} with latexmk in ${image}${present ? '' : ' (pulling the image first; this takes a few minutes once)'}…\n`,
+      `${main} is up to date (no source changed since the last build; --force rebuilds).\n`,
     );
-    result = await run('docker', dockerRunArgs(image, config.root, ['latexmk', ...lmk]), {
-      cwd: config.root,
-      onLine: progress(io, verbose),
-    });
-    if (result.code === 125) {
-      io.stderr(`${result.stderr.trim()}\n`);
-      throw new UsageError(
-        imageUnavailable(result.stderr)
-          ? imageUnavailableMessage(image)
-          : `Docker could not start ${image}. Check the image name (--image, OVERFULL_IMAGE or build.image in overfull.yml).`,
+    result = { code: 0, stdout: '', stderr: '' };
+  } else {
+    const engine = await resolveEngine(engineArg, io.env);
+    const lmk = [...(force ? ['-g'] : []), ...latexmkArgs(config, main)];
+    result = await runLatexmk(engine, lmk);
+  }
+  async function runLatexmk(
+    engine: 'local' | 'docker',
+    lmk: string[],
+  ): Promise<Awaited<ReturnType<typeof run>>> {
+    let result: Awaited<ReturnType<typeof run>>;
+    if (engine === 'local') {
+      io.stderr(`Building ${main} with latexmk…\n`);
+      result = await run('latexmk', lmk, { cwd: config.root, onLine: progress(io, verbose) });
+    } else {
+      const present = await dockerImagePresent(image);
+      io.stderr(
+        `Building ${main} with latexmk in ${image}${present ? '' : ' (pulling the image first; this takes a few minutes once)'}…\n`,
       );
+      result = await run('docker', dockerRunArgs(image, config.root, ['latexmk', ...lmk]), {
+        cwd: config.root,
+        onLine: progress(io, verbose),
+      });
+      if (result.code === 125) {
+        io.stderr(`${result.stderr.trim()}\n`);
+        throw new UsageError(
+          imageUnavailable(result.stderr)
+            ? imageUnavailableMessage(image)
+            : `Docker could not start ${image}. Check the image name (--image, OVERFULL_IMAGE or build.image in overfull.yml).`,
+        );
+      }
     }
+    return result;
   }
   const auxDir = join(config.root, config.build.auxDir);
   const outDir = join(config.root, config.build.outDir);
   const logText = readIfExists(join(auxDir, `${config.jobname}.log`));
   if (logText === undefined) {
     io.stderr(`${(result.stderr || result.stdout).trim().split('\n').slice(-15).join('\n')}\n`);
-    io.stderr(
-      `Build failed before LaTeX wrote ${config.jobname}.log (latexmk exit code ${result.code}).\n`,
-    );
+    const message = `Build failed before LaTeX wrote ${config.jobname}.log (latexmk exit code ${result.code}).`;
+    if (values.json)
+      io.stdout(
+        `${JSON.stringify({ error: { code: 'build-failed', message, exitCode: result.code } }, null, 2)}\n`,
+      );
+    else io.stderr(`${message}\n`);
     return 1;
   }
-  const { build, output } = analyzeLog(logText, { root: config.root });
+  const analyzed = analyzeLog(logText, { root: config.root });
+  const attribute = bibliographyAttribution(config);
+  const build = { ...analyzed.build, problems: attribute(analyzed.build.problems) };
+  const output = { ...analyzed.output, problems: attribute(analyzed.output.problems) };
   const checks: CheckResult[] = [build, output];
   const pdfPath = join(outDir, `${config.jobname}.pdf`);
   const pdfRel = join(config.build.outDir, `${config.jobname}.pdf`).split('\\').join('/');
@@ -207,6 +294,7 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
       /* unreadable PDF: the log check still stands */
     }
   }
+  for (const c of checks) c.problems = sortProblems(c.problems);
   const failed = result.code !== 0 || build.status === 'fail' || !existsSync(pdfPath);
   const report: Report = {
     tool: 'overfull',
@@ -215,7 +303,8 @@ export async function buildCommand(args: string[], io: Io): Promise<number> {
     status: failed ? 'fail' : reportStatus(checks),
     checks,
   };
-  io.stdout(formatHuman(report, { color: useColor(io), verbose }));
+  if (values.json) io.stdout(formatJson(report));
+  else io.stdout(formatHuman(report, { color: useColor(io), verbose }));
   if (failed && build.status !== 'fail') {
     io.stderr(
       `latexmk exited with code ${result.code}. Run \`overfull build --verbose\` to see its output.\n`,

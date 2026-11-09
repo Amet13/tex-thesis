@@ -100,7 +100,8 @@ const STANDARD_ID =
 const STANDARD_URL =
   /^https?:\/\/(?:www\.)?(?:rfc-editor\.org|datatracker\.ietf\.org|tools\.ietf\.org|iso\.org|w3\.org\/TR|nvlpubs\.nist\.gov|etsi\.org\/deliver|itu\.int\/rec)\b/i;
 
-const plain = (v: string | undefined) => (v ?? '').replace(/[{}]/g, '').replace(/\\url/g, '').trim();
+const plain = (v: string | undefined) =>
+  (v ?? '').replace(/[{}]/g, '').replace(/\\url/g, '').trim();
 
 /**
  * RFCs, ISO/IEEE standards and similar. Only report-like entry types qualify

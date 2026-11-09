@@ -1,0 +1,73 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{good}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=d6cfb2b8c4b3f9440ec4642438129367}{%
+           family={Doe},
+           familyi={D\bibinitperiod},
+           given={Jane},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{fullhash}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{fullhashraw}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{bibnamehash}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{authorbibnamehash}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{authornamehash}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{authorfullhash}{d6cfb2b8c4b3f9440ec4642438129367}
+      \strng{authorfullhashraw}{d6cfb2b8c4b3f9440ec4642438129367}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{J}
+      \field{title}{A good title}
+      \field{year}{2020}
+    \endentry
+    \entry{bad}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=ea4af292b125c2c2c5ca36c6461b4124}{%
+           family={Roe},
+           familyi={R\bibinitperiod},
+           given={Rick},
+           giveni={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{fullhash}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{fullhashraw}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{bibnamehash}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{authorbibnamehash}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{authornamehash}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{authorfullhash}{ea4af292b125c2c2c5ca36c6461b4124}
+      \strng{authorfullhashraw}{ea4af292b125c2c2c5ca36c6461b4124}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{J}
+      \field{title}{Speedups in R&D with snake_case names}
+      \field{year}{2021}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

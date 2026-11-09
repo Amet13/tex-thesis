@@ -35,7 +35,7 @@ build:
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `main` | path | `main.tex` | Main `.tex` file. |
-| `jobname` | string | `main` without `.tex` | Output name. Overfull looks for `<jobname>.pdf`, `<jobname>.log` and `<jobname>.aux`. |
+| `jobname` | string | `main` without `.tex` | Output name. Overfull looks for `<jobname>.pdf`, `<jobname>.log` and `<jobname>.aux`. Without `jobname`, `overfull build other.tex` names the output `other`. |
 | `bib` | string or list of paths | the files named by `\addbibresource` or `\bibliography` in `main`, else every `.bib` in the project folder | Bibliography files. `overfull cite` writes to the first one unless `--bib` is given (and to `references.bib` if there is none). |
 | `profile` | string | `generic` | Venue profile: `generic`, `thesis`, `paper`, `arxiv` or `double-blind`. See [Venues](./venues.md). A mapping with the `venue` fields is also accepted. |
 | `checks` | string or list | the profile's checks (all five for every built-in profile) | Checks to run: `build`, `output`, `references`, `accessibility`, `venue`. |
@@ -47,7 +47,7 @@ build:
 | `mailto` | email | `$OVERFULL_MAILTO`, else none | Contact address sent to CrossRef (and OpenAlex) for their polite pool. `--mailto` overrides it. |
 | `ignore` | string or list of keys | `[]` | Entries not to verify. |
 | `cache` | `user` \| `project` | `user` | Where lookups are cached. `user`: your cache folder, outside the project (see [Cache](#cache)). `project`: `.overfull/cache/refs.json`, the old location. |
-| `requireCite` | boolean | `false` | Require every entry to carry the `x-overfull = {cite …}` field that `overfull cite` writes. The templates turn it on. |
+| `requireCite` | boolean | `false` | Every cited entry that is not verified must carry an intact `x-overfull = {cite … <hash>}` field from `overfull cite` and a DOI, eprint or URL, or the author's `note = {overfull: author-provided}`; otherwise `reference-unproven` (error), also offline. The templates turn it on. See [References](./references.md#provenance). |
 
 `mailto` does not turn OpenAlex on. OpenAlex title search is used only when the
 `OPENALEX_API_KEY` environment variable is set. There is no config key for the
@@ -80,12 +80,15 @@ as a mapping.
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `engine` | `auto` \| `local` \| `docker` | `auto` | How `overfull build` and `overfull diff` run their tools. `auto` uses a local `latexmk` if found, else Docker. |
-| `image` | string | `ghcr.io/amet13/overfull:3` | Docker image. Pin it to keep builds reproducible. The `OVERFULL_IMAGE` environment variable overrides it, and `overfull build --image` overrides both. |
+| `image` | string | `ghcr.io/amet13/overfull:3` | Docker image for `overfull build`, `diff` and `pages`. Pin it to keep builds reproducible. The `OVERFULL_IMAGE` environment variable overrides it, and `overfull build --image` overrides both. `overfull check` ignores it: it runs veraPDF/pdffonts only in `--image`, `$OVERFULL_IMAGE` or the default image. |
 | `outDir` | path | the `$out_dir` of a `.latexmkrc`, else `.` | Where latexmk writes the PDF, log and aux files. `overfull build` passes it as `-outdir`/`-auxdir`, and `overfull check` reads from it. |
 
 `main`, `jobname` and `outDir` may contain only letters, digits, `.`, `_`, `-`
 (and `/` except in `jobname`), and no `..`: latexmk passes them to a shell.
 Paths (`bib`, `--pdf`, `--log`, `--aux`) must stay inside the project folder.
+Files Overfull writes (`cite --bib`, `diff --out`, `pages --out`) must stay inside
+it after resolving symlinks. A `.bib` named by `\bibliography{../shared/refs}`
+outside the project is not read: the check warns (`bib-outside-project`).
 
 ## Cache
 
@@ -97,9 +100,12 @@ request mark a made-up reference as verified. Delete the folder to force fresh
 lookups.
 
 `references.cache: project` keeps the cache in `.overfull/cache/refs.json`
-instead. When that file is tracked by git and the check runs in CI (`CI` or
-`GITHUB_ACTIONS` is `true`), Overfull ignores it and says so
-(`refs-cache-ignored`).
+instead. That file is repository content, so in CI (`CI`, `GITHUB_ACTIONS`,
+`TF_BUILD`, `GITLAB_CI`, `BUILDKITE`, `CIRCLECI`, `JENKINS_URL` or
+`TEAMCITY_VERSION` set) Overfull never reads it, tracked by git or not, and
+uses a fresh cache for the run. Outside CI a cache reached through a symlink
+(`.overfull -> somewhere`) is not used either. Both are reported as
+`refs-cache-ignored`.
 
 `overfull pages` writes images to `.overfull/pages`, and `overfull diff` builds
 in `.overfull/diff`. The templates add `.overfull/` to `.gitignore`.
@@ -109,7 +115,7 @@ in `.overfull/diff`. The templates add `.overfull/` to `.gitignore`.
 | Variable | Effect |
 | --- | --- |
 | `OVERFULL_MAILTO` | Contact address, used when `references.mailto` and `--mailto` are not set. |
-| `OVERFULL_IMAGE` | Docker image, overrides `build.image`. |
+| `OVERFULL_IMAGE` | Docker image, overrides `build.image`; the image `overfull check` may use for veraPDF/pdffonts. |
 | `OPENALEX_API_KEY` | Enables OpenAlex title search for `check` and `cite`. |
 | `OVERFULL_DEBUG` | Set to `1` to print a stack trace on an internal error. |
 

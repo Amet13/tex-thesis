@@ -435,7 +435,7 @@ describe('cite (C5, H1, H2)', () => {
     expect(code).toBe(0);
     const text = readFileSync(join(dir, 'references.bib'), 'utf8');
     expect(text.replace(/\r\n/g, '')).not.toContain('\n');
-    expect(text).toMatch(/x-overfull\s*=\s*\{cite doi\.org \d{4}-\d{2}-\d{2}\}/);
+    expect(text).toMatch(/x-overfull\s*=\s*\{cite doi\.org \d{4}-\d{2}-\d{2} [0-9a-f]{12}\}/);
   });
 
   it('reports unreachable sources as a normal failure, in JSON too', async () => {

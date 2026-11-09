@@ -3,7 +3,8 @@
 import { parseNames } from '../bib/names.js';
 import { type BibEntry, parseBib } from '../bib/parse.js';
 import { texToPlain } from '../bib/tex.js';
-import { foldText, stripMarkup } from './normalize.js';
+import { foldText, normalizeTitle, stripMarkup } from './normalize.js';
+import { sha256Hex } from './sha256.js';
 import type { WorkRecord } from './types.js';
 
 const STOPWORDS = new Set([
@@ -74,7 +75,84 @@ export function generateKey(entry: Pick<BibEntry, 'fields'>): string {
   return `${surname || 'anon'}${year}${word}`;
 }
 
-/** Escapes characters that are special in BibTeX/TeX values. */
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: '\u00a0',
+  ndash: '–',
+  mdash: '—',
+};
+
+/** Decodes HTML entities that indexes leave in metadata (`&amp;`, `&#39;`, `&#x2014;`). */
+export function htmlUnescape(s: string): string {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
+    if (name[0] === '#') {
+      const code =
+        name[1] === 'x' || name[1] === 'X'
+          ? Number.parseInt(name.slice(2), 16)
+          : Number(name.slice(1));
+      return Number.isFinite(code) && code > 0 && code <= 0x10ffff
+        ? String.fromCodePoint(code)
+        : whole;
+    }
+    return NAMED_ENTITIES[name.toLowerCase()] ?? whole;
+  });
+}
+
+/** Removes emoji and pictographs (with their variation selectors and joiners), tidying spaces. */
+export function stripPictographs(s: string): string {
+  const out = s.replace(
+    /\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}]|\u200d|\ufe0e|\ufe0f/gu,
+    '',
+  );
+  return out === s
+    ? s
+    : out
+        .replace(/ {2,}/g, ' ')
+        .replace(/\s+([}.,;:!?])/g, '$1')
+        .trim();
+}
+
+/**
+ * Escapes the TeX specials in a value that is mostly plain text but may already
+ * contain TeX (publisher BibTeX): unescaped `&`, `%`, `#` get a backslash, and
+ * `_` outside `$…$` too. Existing macros and math are kept.
+ */
+export function escapeLooseTex(s: string): string {
+  let out = '';
+  let math = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i] as string;
+    const escaped = i > 0 && s[i - 1] === '\\';
+    if (c === '$' && !escaped) math = !math;
+    if (!escaped && (c === '&' || c === '%' || c === '#' || (c === '_' && !math))) out += '\\';
+    out += c;
+  }
+  return out;
+}
+
+/** Fields that hold plain text (not names, numbers, URLs or identifiers). */
+const TEXT_FIELDS = new Set([
+  'title',
+  'booktitle',
+  'journal',
+  'journaltitle',
+  'publisher',
+  'series',
+  'collection',
+  'school',
+  'institution',
+  'organization',
+]);
+
+/** Cleans one value from an index: HTML entities decoded, emoji removed. */
+function cleanValue(v: string): string {
+  return stripPictographs(htmlUnescape(v));
+}
+
 /** Escapes plain text from an index (titles, venues, names) for BibTeX/LaTeX. */
 export function escapeTex(s: string): string {
   return s.replace(/[\\{}&%$#_^~]/g, (c) => {
@@ -113,7 +191,9 @@ function bibType(record: WorkRecord): string {
 function authorField(record: WorkRecord): string {
   return record.authors
     .map((a) =>
-      a.given ? `${escapeTex(a.family)}, ${escapeTex(a.given)}` : `{${escapeTex(a.family)}}`,
+      a.given
+        ? `${escapeTex(cleanValue(a.family))}, ${escapeTex(cleanValue(a.given))}`
+        : `{${escapeTex(cleanValue(a.family))}}`,
     )
     .join(' and ');
 }
@@ -123,10 +203,10 @@ export function entryFromRecord(record: WorkRecord): BibEntry {
   const type = bibType(record);
   const fields: Record<string, string> = {};
   if (record.authors.length) fields.author = authorField(record);
-  fields.title = escapeTex(stripMarkup(record.title));
+  fields.title = escapeTex(cleanValue(stripMarkup(record.title)));
   if (record.venue && record.source !== 'arxiv') {
     fields[type === 'inproceedings' || type === 'incollection' ? 'booktitle' : 'journal'] =
-      escapeTex(record.venue);
+      escapeTex(cleanValue(record.venue));
   }
   const year = record.years.length ? Math.min(...record.years) : undefined;
   if (year) fields.year = String(year);
@@ -241,7 +321,10 @@ export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry 
   const fields: Record<string, string> = {};
   for (const [name, value] of Object.entries(parsed.fields)) {
     if (DROP_FIELDS.has(name)) continue;
-    const clean = sanitizeTexValue(value);
+    // Publisher BibTeX is TeX-ish text with HTML entities left in (`&amp;`) and
+    // sometimes emoji: decode, drop pictographs, escape loose specials, defuse macros.
+    const decoded = cleanValue(value);
+    const clean = sanitizeTexValue(TEXT_FIELDS.has(name) ? escapeLooseTex(decoded) : decoded);
     fields[name] = name === 'pages' ? clean.replace(/\s*[–—-]+\s*/g, '--') : clean;
   }
   fields.doi = doi;
@@ -255,9 +338,34 @@ export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry 
 export const PROVENANCE_FIELD = 'x-overfull';
 
 /**
- * Records where an entry came from: `x-overfull = {cite <source> <yyyy-mm-dd>}`.
- * BibTeX and biber ignore unknown fields, and `formatBibEntry` keeps them; with
- * `requireProvenance` the references check accepts unverified entries only with it.
+ * The string the provenance hash covers: type, key, normalized title, authors,
+ * year, DOI and eprint. Editing any of them after `overfull cite` breaks the hash.
+ */
+export function provenanceCanonical(entry: Pick<BibEntry, 'type' | 'key' | 'fields'>): string {
+  const f = entry.fields;
+  const ws = (v: string | undefined) => (v ?? '').replace(/\s+/g, ' ').trim();
+  return [
+    entry.type.toLowerCase(),
+    entry.key,
+    normalizeTitle(f.title ?? '', true),
+    ws(f.author),
+    ws(f.year ?? f.date),
+    ws(f.doi).toLowerCase(),
+    ws(f.eprint).toLowerCase(),
+  ].join('\u001f');
+}
+
+/** First 12 hex digits of SHA-256 over `provenanceCanonical(entry)`. */
+export function provenanceHash(entry: Pick<BibEntry, 'type' | 'key' | 'fields'>): string {
+  return sha256Hex(provenanceCanonical(entry)).slice(0, 12);
+}
+
+/**
+ * Records where an entry came from: `x-overfull = {cite <source> <yyyy-mm-dd> <hash>}`.
+ * The hash makes later edits to the entry evident (it is tamper-evident, not
+ * authentication: anyone can recompute it). BibTeX and biber ignore unknown
+ * fields; with `requireProvenance` the references check accepts unverified
+ * entries only with a valid marker.
  */
 export function markCited(
   entry: BibEntry,
@@ -265,11 +373,30 @@ export function markCited(
   date: Date | string = new Date(),
 ): BibEntry {
   const day = typeof date === 'string' ? date : date.toISOString().slice(0, 10);
-  return { ...entry, fields: { ...entry.fields, [PROVENANCE_FIELD]: `cite ${source} ${day}` } };
+  return {
+    ...entry,
+    fields: {
+      ...entry.fields,
+      [PROVENANCE_FIELD]: `cite ${source} ${day} ${provenanceHash(entry)}`,
+    },
+  };
 }
 
-/** The `x-overfull = {cite …}` provenance of an entry, if it has one. */
-export function provenanceOf(entry: Pick<BibEntry, 'fields'>): string | undefined {
-  const value = entry.fields[PROVENANCE_FIELD]?.trim();
-  return value && /^cite\b/i.test(value) ? value : undefined;
+/**
+ * The `x-overfull = {cite … <hash>}` provenance of an entry, when it has one
+ * whose hash matches the entry as it is now. A missing or wrong hash (a
+ * hand-written or edited entry) counts as no provenance.
+ */
+export function provenanceOf(entry: Pick<BibEntry, 'type' | 'key' | 'fields'>): string | undefined {
+  const value = entry.fields[PROVENANCE_FIELD]?.replace(/\s+/g, ' ').trim();
+  const m = value ? /^cite\s+\S+\s+\d{4}-\d{2}-\d{2}\s+([0-9a-f]{12})$/i.exec(value) : null;
+  if (!m || (m[1] as string).toLowerCase() !== provenanceHash(entry)) return undefined;
+  return value;
+}
+
+/** An entry the author vouches for: `note = {overfull: author-provided}` (agents must not add it). */
+export function isAuthorProvided(entry: Pick<BibEntry, 'fields'>): boolean {
+  return /overfull\s*:\s*author-provided/i.test(
+    `${entry.fields.note ?? ''} ${entry.fields.annote ?? ''}`,
+  );
 }

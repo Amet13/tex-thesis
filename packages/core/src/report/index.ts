@@ -14,4 +14,5 @@ export {
   RUNNER_WHITESPACE,
   safeLines,
   sortedProblems,
+  sortProblems,
 } from './shared.js';

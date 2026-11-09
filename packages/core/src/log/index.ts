@@ -5,6 +5,7 @@
  */
 
 export { type AnalyzeLogOptions, analyzeLog, type LogAnalysis } from './analyze.js';
+export { attributeBibliography, type BibliographySources } from './bibliography.js';
 export { type ParseOptions, parseLog } from './parse.js';
 export { normalizePath } from './paths.js';
 export { logRules } from './rules.js';

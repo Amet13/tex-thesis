@@ -93,9 +93,18 @@ async function run(argv: string[], io: Io): Promise<number> {
     io.stdout(`${VERSION}\n`);
     return 0;
   }
+  const json = rest.includes('--json');
+  const jsonError = (code: 'usage' | 'internal', message: string) =>
+    io.stdout(`${JSON.stringify({ error: { code, message } }, null, 2)}\n`);
   try {
     return await command(rest, io);
   } catch (err) {
+    if (json) {
+      // --json promises JSON on stdout, errors included.
+      const usage = err instanceof UsageError;
+      jsonError(usage ? 'usage' : 'internal', err instanceof Error ? err.message : String(err));
+      return 2;
+    }
     if (err instanceof UsageError) {
       io.stderr(`overfull ${cmd}: ${safeMessage(err.message)}\n`);
       return 2;

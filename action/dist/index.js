@@ -14877,7 +14877,7 @@ function calculateSHA512(data, offset, length, mode384 = false) {
 function calculateSHA384(data, offset, length) {
   return calculateSHA512(data, offset, length, true);
 }
-function rotr(x, n) {
+function rotr2(x, n) {
   return x >>> n | x << 32 - n;
 }
 function calculate_sha256_ch(x, y, z) {
@@ -14887,16 +14887,16 @@ function calculate_sha256_maj(x, y, z) {
   return x & y ^ x & z ^ y & z;
 }
 function calculate_sha256_sigma(x) {
-  return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22);
+  return rotr2(x, 2) ^ rotr2(x, 13) ^ rotr2(x, 22);
 }
 function calculate_sha256_sigmaPrime(x) {
-  return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25);
+  return rotr2(x, 6) ^ rotr2(x, 11) ^ rotr2(x, 25);
 }
 function calculate_sha256_littleSigma(x) {
-  return rotr(x, 7) ^ rotr(x, 18) ^ x >>> 3;
+  return rotr2(x, 7) ^ rotr2(x, 18) ^ x >>> 3;
 }
 function calculate_sha256_littleSigmaPrime(x) {
-  return rotr(x, 17) ^ rotr(x, 19) ^ x >>> 10;
+  return rotr2(x, 17) ^ rotr2(x, 19) ^ x >>> 10;
 }
 function calculateSHA256(data, offset, length) {
   let h0 = 1779033703, h1 = 3144134277, h2 = 1013904242, h3 = 2773480762, h4 = 1359893119, h5 = 2600822924, h6 = 528734635, h7 = 1541459225;
@@ -21623,9 +21623,9 @@ var init_pdf_worker = __esm({
           kind
         } = imgData;
         const rgbaSize = width * height * 4;
-        const K = Math.ceil(Math.log2(rgbaSize / maxSize));
-        const newWidth = width >> K;
-        const newHeight = height >> K;
+        const K2 = Math.ceil(Math.log2(rgbaSize / maxSize));
+        const newWidth = width >> K2;
+        const newHeight = height >> K2;
         let rgbaData;
         let maxHeight = height;
         try {
@@ -21656,7 +21656,7 @@ var init_pdf_worker = __esm({
         const dest32 = new Uint32Array(newWidth * newHeight);
         let srcPos = 0;
         let newIndex = 0;
-        const lastRow = newHeight << K;
+        const lastRow = newHeight << K2;
         let row = 0;
         for (let y = 0; y < height; y += maxHeight) {
           const h = Math.min(maxHeight, height - y);
@@ -21671,10 +21671,10 @@ var init_pdf_worker = __esm({
             inverseDecode: this._isMask,
             srcPos
           }));
-          for (const end = Math.min(y + h, lastRow); row < end; row += 1 << K) {
+          for (const end = Math.min(y + h, lastRow); row < end; row += 1 << K2) {
             const buf = src32.subarray((row - y) * width);
             for (let j = 0; j < newWidth; j++) {
-              dest32[newIndex++] = buf[j << K];
+              dest32[newIndex++] = buf[j << K2];
             }
           }
         }
@@ -102998,9 +102998,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
           return false;
         }
         const diffD = d - this.#min_dist;
-        const K = diffD / d;
-        const shiftX = K * diffX;
-        const shiftY = K * diffY;
+        const K2 = diffD / d;
+        const shiftX = K2 * diffX;
+        const shiftY = K2 * diffY;
         let x0 = x1;
         let y0 = y1;
         x1 = x2;
@@ -108903,6 +108903,9 @@ function parseBibWithIssues(text2) {
   parser.run();
   return { entries: parser.entries, issues: parser.issues };
 }
+function parseBib(text2) {
+  return parseBibWithIssues(text2).entries;
+}
 
 // ../packages/core/src/types.ts
 var CHECK_IDS = ["build", "output", "references", "accessibility", "venue"];
@@ -110463,7 +110466,11 @@ var Parser2 = class {
     if (lines) data.lines = [Number(lines[1]), Number(lines[2] ?? lines[1])];
     const kind = m[1] === "Overfull" ? "overfull" : "underfull";
     const warning = this.warn(line, kind, "TeX", line.text, data, raw);
-    if (lines) warning.line = Number(lines[1]);
+    if (lines) {
+      const [from, to] = [Number(lines[1]), Number(lines[2] ?? lines[1])];
+      warning.line = Math.min(from, to);
+      if (from > to) data.spansFiles = true;
+    }
     warning.page = this.stack.page + 1;
   }
   missingChar(line) {
@@ -110542,6 +110549,10 @@ function isTerminationNotice(error) {
     error.message.trim()
   );
 }
+function paragraphEnd(error) {
+  const before = (error.source?.before ?? "").trim();
+  return before === "" || /^(?:\.\.\.)?\\(?:par|end)\b/.test(before);
+}
 function atEndDocument(error) {
   return /^\s*(?:\.\.\.)?\\end\s*\{document\}/.test(error.source?.before ?? "");
 }
@@ -110567,6 +110578,9 @@ function isFollower(error, rule, check2, group) {
     return atEndDocument(error);
   }
   if (atEndDocument(error) && check2 === problem2.check) return true;
+  if (rule === "missing-dollar" && problem2.rule === "missing-dollar" && paragraphEnd(error) && error.logLine > root.logLine) {
+    return true;
+  }
   if (error.file !== root.file || error.line === void 0 || root.line === void 0) return false;
   if (error.line === root.line) return true;
   if (check2 !== problem2.check) return false;
@@ -110783,7 +110797,7 @@ function overfullBoxes(list3, thresholdPt, errors) {
       message: vertical ? `Content is ${amount.toFixed(1)}pt too tall for the page${where ? ` (${where})` : ""}` : `Text sticks ${amount.toFixed(1)}pt into the margin${where ? ` (${where})` : ""}${others > 0 ? `; ${plural(others, "more overfull box")} in this file` : ""}`,
       location: location(worst.file, worst.line, worst.page),
       detail: vertical ? "A page or box holds more material than fits vertically." : `TeX could not break the line without exceeding the text width${text2 ? `: ${code2(text2)}` : ""}. Long URLs, code, file names and unhyphenated words are the usual cause.`,
-      fix: vertical ? "Shrink the float or table, allow it to break across pages, or move material." : "Rephrase or allow a break: use `\\url{}`/`\\path{}` for URLs and identifiers, `\\-` to suggest hyphenation, or `\\sloppy` for this paragraph. Wide tables and figures: scale them to `\\linewidth`.",
+      fix: vertical ? "Shrink the float or table, allow it to break across pages, or move material." : "Rephrase or allow a break: use `\\url{}`/`\\path{}` for URLs and identifiers, `\\-` to suggest hyphenation, or load `microtype` for finer spacing. Wide tables and figures: scale them to `\\linewidth`.",
       evidence: evidence([worst.raw]),
       data: compact({ amountPt: amount, box: worst.data.box, lines, others, thresholdPt })
     });
@@ -111027,6 +111041,61 @@ function analyzeLog(text2, opts = {}) {
     }
   };
   return { build: build2, output, parsed };
+}
+
+// ../packages/core/src/log/bibliography.ts
+function bblEntries(text2) {
+  const out = [];
+  const re = /\\(?:bibitem\s*(?:\[[^\]]*\])?\s*\{([^}]+)\}|entry\s*\{([^}]+)\})/g;
+  for (let m = re.exec(text2); m; m = re.exec(text2)) {
+    const key = (m[1] ?? m[2] ?? "").trim();
+    if (!key) continue;
+    out.push({ key, offset: m.index, line: text2.slice(0, m.index).split("\n").length });
+  }
+  return out;
+}
+function argumentSnippet(evidence2) {
+  const m = /^<argument> (.+)$/m.exec(evidence2 ?? "");
+  const text2 = m?.[1]?.replace(/[&_^#$%\\]+\s*$/, "").trim();
+  return text2 && text2.length >= 8 ? text2 : void 0;
+}
+var sameFile = (a, b) => a.replace(/^\.\//, "") === b.replace(/^\.\//, "") || a.split("/").pop() === b.split("/").pop();
+function attributeBibliography(problems, src) {
+  if (!src.bbl) return problems;
+  const entries = bblEntries(src.bbl.text);
+  if (!entries.length) return problems;
+  let bibIndex;
+  const bibLocation = (key) => {
+    if (!bibIndex) {
+      bibIndex = /* @__PURE__ */ new Map();
+      for (const b of src.bibs) {
+        for (const e of parseBib(b.text)) {
+          if (!bibIndex.has(e.key)) bibIndex.set(e.key, { file: b.file, line: e.line });
+        }
+      }
+    }
+    return bibIndex.get(key);
+  };
+  return problems.map((p) => {
+    if (p.data?.bibKey) return p;
+    let key;
+    const loc = p.location;
+    if (loc?.file && loc.line && sameFile(loc.file, src.bbl?.path ?? "")) {
+      key = [...entries].reverse().find((e) => e.line <= loc.line)?.key;
+    } else {
+      const snippet2 = argumentSnippet(p.evidence);
+      const at = snippet2 ? src.bbl?.text.indexOf(snippet2) ?? -1 : -1;
+      if (at >= 0) key = [...entries].reverse().find((e) => e.offset <= at)?.key;
+    }
+    if (!key) return p;
+    const where = bibLocation(key);
+    return {
+      ...p,
+      message: `${p.message} in the bibliography entry \`${key}\``,
+      ...where ? { location: { file: where.file, line: where.line } } : {},
+      data: { ...p.data ?? {}, bibKey: key, ...loc ? { reportedAt: loc } : {} }
+    };
+  });
 }
 
 // ../packages/core/src/venue/tex.ts
@@ -111382,9 +111451,9 @@ function accessibilityCheck(facts, opts = {}) {
     problems.push({
       rule: "verapdf-not-run",
       check: "accessibility",
-      severity: "info",
+      severity: level === "required" ? "warning" : "info",
       message: "veraPDF not found, full PDF/UA validation skipped",
-      fix: "Install veraPDF or run the check in the Overfull Docker image"
+      fix: "Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, or run `overfull check --engine docker` (uses the Overfull image), or run the check inside the Overfull Docker image"
     });
   } else if (opts.verapdf) {
     problems.push(...veraPdfProblems(opts.verapdf, sev));
@@ -112016,6 +112085,133 @@ async function cached(cache, key, compute, opts) {
   return value;
 }
 
+// ../packages/core/src/refs/sha256.ts
+var K = new Uint32Array([
+  1116352408,
+  1899447441,
+  3049323471,
+  3921009573,
+  961987163,
+  1508970993,
+  2453635748,
+  2870763221,
+  3624381080,
+  310598401,
+  607225278,
+  1426881987,
+  1925078388,
+  2162078206,
+  2614888103,
+  3248222580,
+  3835390401,
+  4022224774,
+  264347078,
+  604807628,
+  770255983,
+  1249150122,
+  1555081692,
+  1996064986,
+  2554220882,
+  2821834349,
+  2952996808,
+  3210313671,
+  3336571891,
+  3584528711,
+  113926993,
+  338241895,
+  666307205,
+  773529912,
+  1294757372,
+  1396182291,
+  1695183700,
+  1986661051,
+  2177026350,
+  2456956037,
+  2730485921,
+  2820302411,
+  3259730800,
+  3345764771,
+  3516065817,
+  3600352804,
+  4094571909,
+  275423344,
+  430227734,
+  506948616,
+  659060556,
+  883997877,
+  958139571,
+  1322822218,
+  1537002063,
+  1747873779,
+  1955562222,
+  2024104815,
+  2227730452,
+  2361852424,
+  2428436474,
+  2756734187,
+  3204031479,
+  3329325298
+]);
+var rotr = (x, n) => x >>> n | x << 32 - n;
+function sha256Hex(text2) {
+  const msg = new TextEncoder().encode(text2);
+  const bitLen = msg.length * 8;
+  const total = msg.length + 9 + 63 >> 6 << 6;
+  const buf = new Uint8Array(total);
+  buf.set(msg);
+  buf[msg.length] = 128;
+  const view = new DataView(buf.buffer);
+  view.setUint32(total - 8, Math.floor(bitLen / 4294967296));
+  view.setUint32(total - 4, bitLen >>> 0);
+  const h = new Uint32Array([
+    1779033703,
+    3144134277,
+    1013904242,
+    2773480762,
+    1359893119,
+    2600822924,
+    528734635,
+    1541459225
+  ]);
+  const w = new Uint32Array(64);
+  for (let off = 0; off < total; off += 64) {
+    for (let i = 0; i < 16; i++) w[i] = view.getUint32(off + i * 4);
+    for (let i = 16; i < 64; i++) {
+      const a2 = w[i - 15];
+      const b2 = w[i - 2];
+      const s0 = rotr(a2, 7) ^ rotr(a2, 18) ^ a2 >>> 3;
+      const s1 = rotr(b2, 17) ^ rotr(b2, 19) ^ b2 >>> 10;
+      w[i] = w[i - 16] + s0 + w[i - 7] + s1 >>> 0;
+    }
+    let [a, b, c, d, e, f, g, hh] = h;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch2 = e & f ^ ~e & g;
+      const t1 = hh + S1 + ch2 + K[i] + w[i] >>> 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj2 = a & b ^ a & c ^ b & c;
+      const t2 = S0 + maj2 >>> 0;
+      hh = g;
+      g = f;
+      f = e;
+      e = d + t1 >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = t1 + t2 >>> 0;
+    }
+    h[0] = h[0] + a >>> 0;
+    h[1] = h[1] + b >>> 0;
+    h[2] = h[2] + c >>> 0;
+    h[3] = h[3] + d >>> 0;
+    h[4] = h[4] + e >>> 0;
+    h[5] = h[5] + f >>> 0;
+    h[6] = h[6] + g >>> 0;
+    h[7] = h[7] + hh >>> 0;
+  }
+  return [...h].map((x) => x.toString(16).padStart(8, "0")).join("");
+}
+
 // ../packages/core/src/refs/entry.ts
 var DANGEROUS_MACROS = new Set(
   [
@@ -112075,9 +112271,32 @@ var DANGEROUS_MACROS = new Set(
   ].map((m) => m.toLowerCase())
 );
 var PROVENANCE_FIELD = "x-overfull";
+function provenanceCanonical(entry) {
+  const f = entry.fields;
+  const ws = (v) => (v ?? "").replace(/\s+/g, " ").trim();
+  return [
+    entry.type.toLowerCase(),
+    entry.key,
+    normalizeTitle(f.title ?? "", true),
+    ws(f.author),
+    ws(f.year ?? f.date),
+    ws(f.doi).toLowerCase(),
+    ws(f.eprint).toLowerCase()
+  ].join("");
+}
+function provenanceHash(entry) {
+  return sha256Hex(provenanceCanonical(entry)).slice(0, 12);
+}
 function provenanceOf(entry) {
-  const value = entry.fields[PROVENANCE_FIELD]?.trim();
-  return value && /^cite\b/i.test(value) ? value : void 0;
+  const value = entry.fields[PROVENANCE_FIELD]?.replace(/\s+/g, " ").trim();
+  const m = value ? /^cite\s+\S+\s+\d{4}-\d{2}-\d{2}\s+([0-9a-f]{12})$/i.exec(value) : null;
+  if (!m || m[1].toLowerCase() !== provenanceHash(entry)) return void 0;
+  return value;
+}
+function isAuthorProvided(entry) {
+  return /overfull\s*:\s*author-provided/i.test(
+    `${entry.fields.note ?? ""} ${entry.fields.annote ?? ""}`
+  );
 }
 
 // ../packages/core/src/refs/http.ts
@@ -112144,6 +112363,11 @@ var HttpClient = class {
     const downReason = this.down.get(host);
     if (downReason) throw new SourceUnavailableError(host, downReason);
     let res = await this.attempt(url, accept, host);
+    if (res.status === 429 && /daily|budget|quota|per day|credits/i.test(res.body)) {
+      const reason = `${host} answered HTTP 429: daily request budget used up`;
+      this.markDown(host, reason);
+      throw new SourceUnavailableError(host, reason);
+    }
     if (res.status === 429 || res.status >= 500) {
       await sleep(retryAfterMs(res.retryAfter, this.retryDelayMs), this.signal);
       res = await this.attempt(url, accept, host);
@@ -112677,7 +112901,7 @@ function fromOpenAlex(w) {
   if (w.doi) record.doi = w.doi.replace(/^https?:\/\/doi\.org\//i, "").toLowerCase();
   const url = w.primary_location?.landing_page_url;
   if (url) record.url = url;
-  if (w.type) record.type = w.type;
+  if (w.type && (venue2 || w.type !== "article")) record.type = w.type;
   if (typeof w.cited_by_count === "number") record.citations = w.cited_by_count;
   return record;
 }
@@ -112754,6 +112978,10 @@ async function titleSearch(ctx, q, visit) {
   const outcome = { searched: [], failures: [] };
   const cacheKey = titleCacheKey(q.title, q.year, q.isTex) + (q.hinted && q.firstAuthor ? `|author:${q.firstAuthor.toLowerCase()}` : "");
   for (const [source, run2] of titleSources(ctx, q)) {
+    if (ctx.deadline !== void 0 && Date.now() > ctx.deadline) {
+      outcome.failures.push({ source, reason: `${source} not asked: lookup time budget used up` });
+      continue;
+    }
     let records;
     try {
       records = await searchOne(ctx, cacheKey, source, run2);
@@ -112765,7 +112993,7 @@ async function titleSearch(ctx, q, visit) {
     outcome.searched.push(source);
     if (visit(records, source)) return outcome;
   }
-  if (!ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
+  if ((ctx.deadline === void 0 || Date.now() <= ctx.deadline) && !ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
     const plain2 = q.isTex ? texToPlain(q.title) : q.title;
     try {
       const records = await searchOne(
@@ -113025,12 +113253,16 @@ async function runPool(items, limit, worker) {
 }
 async function verifyEntries(entries, opts = {}) {
   if (opts.offline) {
-    return entries.map((e) => ({
-      key: e.key,
-      status: "unverifiable",
-      reason: "offline",
-      ...e.line ? { location: { line: e.line, ...e.file ? { file: e.file } : {} } } : {}
-    }));
+    const ignore2 = new Set(opts.ignore ?? []);
+    return entries.map((e) => {
+      const r = {
+        key: e.key,
+        status: "unverifiable",
+        reason: isSkipped(e, ignore2) ? "skipped by author" : "offline",
+        ...e.line ? { location: { line: e.line, ...e.file ? { file: e.file } : {} } } : {}
+      };
+      return opts.requireProvenance && isUnproven(e, r) ? { ...r, unproven: true } : r;
+    });
   }
   const ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
@@ -113041,10 +113273,13 @@ async function verifyEntries(entries, opts = {}) {
 }
 function isUnproven(entry, result) {
   if (result.status === "verified") return false;
+  if (result.reason === "skipped by author" || isAuthorProvided(entry)) return false;
+  return !hasValidProvenance(entry);
+}
+function hasValidProvenance(entry) {
   const f = entry.fields;
   const ids = identifiersOf(entry);
-  if (provenanceOf(entry) && (ids.doi || ids.arxivId || f.doi || f.eprint || f.url)) return false;
-  return entryKind(entry, identifiersOf(entry)) !== "not-indexed";
+  return Boolean(provenanceOf(entry) && (ids.doi || ids.arxivId || f.doi || f.eprint || f.url));
 }
 
 // ../packages/core/src/refs/check.ts
@@ -113079,13 +113314,41 @@ function unprovenProblem(r, entry) {
     severity: "error",
     message: `\`${r.key}\` was not added with \`overfull cite\` and could not be verified`,
     ...location2 ? { location: location2 } : {},
-    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ""}. The entry has no \`x-overfull = {cite \u2026}\` field with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
+    detail: `Status: ${r.status}${r.reason ? ` (${r.reason})` : ""}. The entry has no intact \`x-overfull = {cite \u2026 <hash>}\` marker (missing, hand-written, or the entry was edited after \`overfull cite\`) with a DOI, eprint or URL beside it, so nothing shows it came from real metadata.`,
     fix: "Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite",
     ...entry?.raw ? { evidence: entry.raw } : {},
     data: { key: r.key, status: r.status }
   };
 }
-function problemFor(r, entry) {
+function notReverifiedProblem(r, entry) {
+  const location2 = r.location ?? (entry?.line ? { line: entry.line, ...entry.file ? { file: entry.file } : {} } : void 0);
+  return {
+    rule: "reference-not-reverified",
+    check: "references",
+    severity: "warning",
+    message: `\`${r.key}\` was added with \`overfull cite\` but could not be re-verified${r.reason === "offline" ? " (offline)" : r.reason ? `: ${r.reason}` : ""}`,
+    ...location2 ? { location: location2 } : {},
+    fix: "Run the check again with network access; the entry\u2019s DOI or arXiv id lets doi.org or arXiv confirm it.",
+    data: { key: r.key, status: r.status }
+  };
+}
+function authorProvidedProblem(r, entry) {
+  const location2 = r.location ?? (entry?.line ? { line: entry.line, ...entry.file ? { file: entry.file } : {} } : void 0);
+  return {
+    rule: "reference-unverifiable",
+    check: "references",
+    severity: "info",
+    message: `\`${r.key}\` is marked \`overfull: author-provided\` and was not verified${r.reason ? ` (${r.reason})` : ""}`,
+    ...location2 ? { location: location2 } : {},
+    fix: "The author vouches for this entry; check it by hand before submission.",
+    data: { key: r.key, status: r.status, authorProvided: true }
+  };
+}
+function problemFor(r, entry, requireProvenance = false) {
+  if (r.status !== "verified" && r.status !== "mismatch" && entry && isAuthorProvided(entry))
+    return r.reason === "offline" || r.reason === "skipped by author" ? null : authorProvidedProblem(r, entry);
+  if (requireProvenance && entry && (r.reason === "offline" || r.status === "error") && hasValidProvenance(entry))
+    return notReverifiedProblem(r, entry);
   const location2 = r.location ?? (entry?.line ? { line: entry.line, ...entry.file ? { file: entry.file } : {} } : void 0);
   const data = { key: r.key, status: r.status };
   if (r.source) data.source = r.source;
@@ -113116,7 +113379,10 @@ function problemFor(r, entry) {
           rule: "reference-arxiv-wrong-work",
           severity: "error",
           message: `\`${r.key}\`: the arXiv id ${r.wrongWork.id} points to a different paper, \u201C${r.wrongWork.title}\u201D`,
-          detail: [`arXiv has \u201C${r.wrongWork.title}\u201D as ${r.wrongWork.id}, not the cited work`, ...others].join("; "),
+          detail: [
+            `arXiv has \u201C${r.wrongWork.title}\u201D as ${r.wrongWork.id}, not the cited work`,
+            ...others
+          ].join("; "),
           fix: `Find the correct arXiv id for the cited title, or re-add the entry with \`${citeHint(r, entry)}\`. Do not re-add it from this id: that would cite the unrelated paper.`
         };
       }
@@ -113216,9 +113482,8 @@ function refsCheck(results, opts = {}) {
   const problems = [
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...opts.extra ?? [],
-    ...results.map((r) => problemFor(r, byKey.get(r.key))).filter((p) => p !== null),
+    ...results.map((r) => problemFor(r, byKey.get(r.key), opts.requireProvenance)).filter((p) => p !== null),
     ...results.filter((r) => {
-      if (r.reason === "offline") return false;
       if (r.unproven) return true;
       const entry = byKey.get(r.key);
       return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
@@ -113227,7 +113492,7 @@ function refsCheck(results, opts = {}) {
   if (problems.some((p) => p.rule === "reference-unproven")) {
     stats.unproven = problems.filter((p) => p.rule === "reference-unproven").length;
   }
-  if (results.length > 0 && results.every((r) => r.reason === "offline")) {
+  if (results.some((r) => r.reason === "offline") && results.every((r) => r.reason === "offline" || r.reason === "skipped by author")) {
     const blocking = problems.filter((p) => p.rule !== "reference-unverifiable");
     return {
       check: "references",
@@ -113254,6 +113519,13 @@ function formatLocation(loc) {
   if (loc.file) return loc.line ? `${loc.file}:${loc.line}` : loc.file;
   if (loc.page) return `p.${loc.page}`;
   return "";
+}
+function sortProblems(problems) {
+  return problems.map((p, i) => ({ p, i })).sort((a, b) => {
+    const fa = a.p.location?.file;
+    const fb = b.p.location?.file;
+    return SEVERITY_ORDER[a.p.severity] - SEVERITY_ORDER[b.p.severity] || (fa === void 0 ? 1 : 0) - (fb === void 0 ? 1 : 0) || (fa ?? "").localeCompare(fb ?? "") || (a.p.location?.line ?? 0) - (b.p.location?.line ?? 0) || a.i - b.i;
+  }).map(({ p }) => p);
 }
 function sortedProblems(report) {
   const checkIndex = (c) => CHECK_IDS.indexOf(c);
@@ -113293,10 +113565,7 @@ function oneLine(s) {
 function safeLines(s) {
   return s.split(/\r\n|[\r\n\u0085\u2028\u2029]/).map(oneLine);
 }
-var COMMAND_AT_LINE_START = new RegExp(
-  `(^|[\\r\\n])(${RUNNER_WHITESPACE}*?)(::|##\\[)`,
-  "g"
-);
+var COMMAND_AT_LINE_START = new RegExp(`(^|[\\r\\n])(${RUNNER_WHITESPACE}*?)(::|##\\[)`, "g");
 function neutralizeWorkflowCommands(text2) {
   let prev;
   let out = text2;
@@ -113961,10 +114230,10 @@ var builtinProfiles = {
   paper: {
     id: "paper",
     name: "Paper",
-    description: "Conference or journal paper: AI-use disclosure and accessibility recommended.",
+    description: "Conference or journal paper: AI-use disclosure recommended, accessible (tagged) PDF required.",
     paper: "any",
     disclosure: "recommended",
-    accessibility: "recommended",
+    accessibility: "required",
     checks: ALL_CHECKS
   },
   arxiv: {
@@ -114681,7 +114950,9 @@ function requireRegularFile(path) {
   try {
     st = statSync(path);
   } catch (err) {
-    throw new UsageError(`Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`);
+    throw new UsageError(
+      `Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
   if (!st.isFile()) {
     throw new UsageError(
@@ -114761,6 +115032,14 @@ var skipped2 = (check2, reason) => ({
   problems: [],
   skippedReason: reason
 });
+function sourcesOf(inp) {
+  if (!inp.sources) {
+    const files = listFiles(inp.root);
+    const skipped3 = [];
+    inp.sources = { files, texFiles: readTexFiles(inp.root, files, skipped3), skipped: skipped3 };
+  }
+  return inp.sources;
+}
 var rel = (root, abs) => relative6(root, abs).split("\\").join("/") || ".";
 function checkImage(opts) {
   const env = opts.env ?? process.env;
@@ -114816,6 +115095,29 @@ function mergeOutput(output, pdfProblems) {
   const problems = [...output.problems, ...extra];
   return { ...output, status: statusOf(problems), problems };
 }
+function bibliographyAttribution(config, bib = config.bib) {
+  const root = config.root;
+  const bblRel = join5(config.build.auxDir, `${config.jobname}.bbl`).split("\\").join("/");
+  const bblAbs = insideRootOrUndefined(root, bblRel);
+  let bblText;
+  try {
+    bblText = bblAbs ? readIfExists(bblAbs) : void 0;
+  } catch {
+    bblText = void 0;
+  }
+  if (bblText === void 0) return (p) => p;
+  const bibs = [];
+  for (const file of bib) {
+    const abs = insideRootOrUndefined(root, file);
+    try {
+      const text2 = abs ? readIfExists(abs) : void 0;
+      if (text2 !== void 0) bibs.push({ file, text: text2 });
+    } catch {
+    }
+  }
+  const bbl = { path: bblRel.replace(/^\.\//, ""), text: bblText };
+  return (problems) => attributeBibliography(problems, { bbl, bibs });
+}
 function buildAndOutput(inp, wanted) {
   const out = [];
   if (inp.log === void 0) {
@@ -114834,7 +115136,10 @@ function buildAndOutput(inp, wanted) {
     }
     return out;
   }
-  const { build: build2, output } = analyzeLog(inp.log, { root: inp.root });
+  const analyzed = analyzeLog(inp.log, { root: inp.root });
+  const attribute = bibliographyAttribution(inp.config);
+  const build2 = { ...analyzed.build, problems: attribute(analyzed.build.problems) };
+  const output = { ...analyzed.output, problems: attribute(analyzed.output.problems) };
   if (wanted.has("build")) out.push(build2);
   if (wanted.has("output"))
     out.push(inp.facts ? mergeOutput(output, pdfOutputProblems(inp.facts)) : output);
@@ -114899,7 +115204,7 @@ async function references(inp, opts) {
   const extra = [
     ...outsideProblems,
     ...parseProblems,
-    ...keys ? missingKeys(keys, entries) : []
+    ...keys ? missingKeys(keys, entries, sourcesOf(inp).texFiles) : []
   ];
   for (const f of missingFiles) {
     extra.push({
@@ -114951,7 +115256,11 @@ async function references(inp, opts) {
   };
   const results = await verifyEntries(toVerify, refsOptions);
   cache?.save();
-  const result = refsCheck(results, { entries: toVerify, extra });
+  const result = refsCheck(results, {
+    entries: toVerify,
+    extra,
+    requireProvenance: config.references.requireCite
+  });
   if (!keys) {
     result.summary = `${result.summary ?? ""} \u2014 all entries checked (no .aux to tell which are cited)`.trim();
   }
@@ -114971,13 +115280,11 @@ async function accessibility(inp, opts) {
       ...inp.facts.pdfua !== void 0 ? { pdfuaPart: inp.facts.pdfua } : {},
       ...inp.docker ? { docker: inp.docker } : {}
     });
-  return accessibilityCheck(inp.facts, { verapdf, level });
+  return accessibilityCheck(inp.facts, { verapdf, level, texFiles: sourcesOf(inp).texFiles });
 }
 function venue(inp) {
-  const { config, root } = inp;
-  const files = listFiles(root);
-  const skippedFiles = [];
-  const texFiles = readTexFiles(root, files, skippedFiles);
+  const { config } = inp;
+  const { files, texFiles, skipped: skippedFiles } = sourcesOf(inp);
   const result = venueCheck(config.profile, {
     ...inp.facts ? { facts: inp.facts } : {},
     ...inp.aux !== void 0 ? { aux: inp.aux } : {},
@@ -115023,6 +115330,7 @@ async function runCheck(opts = {}) {
   if (wanted.has("accessibility")) results.push(await accessibility(inp, { ...opts, env }));
   if (wanted.has("venue")) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
+  for (const r of results) r.problems = sortProblems(r.problems);
   const target = existsSync4(join5(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
   return {
     tool: "overfull",

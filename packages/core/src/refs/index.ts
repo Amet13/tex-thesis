@@ -9,8 +9,11 @@ export {
 export {
   entryFromRecord,
   generateKey,
+  isAuthorProvided,
   markCited,
   PROVENANCE_FIELD,
+  provenanceCanonical,
+  provenanceHash,
   provenanceOf,
   sanitizeTexValue,
 } from './entry.js';

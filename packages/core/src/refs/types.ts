@@ -99,6 +99,16 @@ export interface RefsOptions {
   retryDelayMs?: number;
   /** Disambiguates title lookups: an author surname and/or publication year. */
   hint?: LookupHint;
+  /** `lookup` of a title: total time budget across sources in ms (default 10000). */
+  titleBudgetMs?: number;
+  /**
+   * `lookup` reports which indexes really answered and which failed (a bot
+   * wall or rate limit is a failure even when HTTP succeeded), once, at the end.
+   */
+  onSearch?: (outcome: {
+    searched: RefSource[];
+    failures: { source: RefSource; reason: string }[];
+  }) => void;
 }
 
 export interface LookupHint {

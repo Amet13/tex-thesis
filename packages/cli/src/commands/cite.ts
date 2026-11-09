@@ -81,6 +81,21 @@ const SOURCE_NAMES: Record<string, string> = {
 export class SourceTracker {
   private readonly ok = new Set<string>();
   private readonly failed = new Map<string, string>();
+  /** What core's lookup says answered: authoritative (a 202 bot wall is a failure there). */
+  private outcome:
+    | { searched: string[]; failures: { source: string; reason: string }[] }
+    | undefined;
+
+  /** Takes core's account of the search (RefsOptions.onSearch). */
+  report(o: { searched: string[]; failures: { source: string; reason: string }[] }): void {
+    this.outcome = {
+      searched: o.searched.map((s) => SOURCE_LABELS[s] ?? s),
+      failures: o.failures.map((f) => ({
+        source: SOURCE_LABELS[f.source] ?? f.source,
+        reason: f.reason,
+      })),
+    };
+  }
 
   /** Wraps `fetch` so every request is recorded by source. */
   wrap(base: typeof fetch): typeof fetch {
@@ -113,16 +128,27 @@ export class SourceTracker {
 
   /** Sources that answered at least once. */
   get searched(): string[] {
+    if (this.outcome) return this.outcome.searched;
     return [...this.ok];
   }
 
   /** Sources that never answered, with the first reason. */
   get failures(): { source: string; reason: string }[] {
+    if (this.outcome) return this.outcome.failures;
     return [...this.failed]
       .filter(([source]) => !this.ok.has(source))
       .map(([source, reason]) => ({ source, reason }));
   }
 }
+
+/** Core's source ids as shown to users (same names as SOURCE_NAMES). */
+const SOURCE_LABELS: Record<string, string> = {
+  crossref: 'CrossRef',
+  'doi.org': 'doi.org',
+  arxiv: 'arXiv',
+  dblp: 'dblp',
+  openalex: 'OpenAlex',
+};
 
 const list = (xs: string[]) =>
   xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
@@ -211,6 +237,7 @@ export async function citeCommand(
       ...(mailto ? { mailto } : {}),
       ...(openalexKey ? { openalexKey } : {}),
       ...(hint ? { hint } : {}),
+      onSearch: (o) => tracker.report(o),
     });
   } catch (error) {
     if (!(error instanceof AmbiguousLookupError)) {

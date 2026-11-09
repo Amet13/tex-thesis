@@ -59,10 +59,12 @@ describe('overfull init', () => {
 });
 
 describe('overfull doctor', () => {
-  it('lists tools, never fails', async () => {
+  it('lists tools; exits 1 only when nothing can build', async () => {
     const io = memIo(tempDir());
-    expect(await main(['doctor'], io)).toBe(0);
+    const code = await main(['doctor'], io);
     const text = io.stdoutText();
+    expect(code).toBe(text.includes('Ready to build.') ? 0 : 1);
+    if (code === 1) expect(text).toMatch(/^Cannot build/);
     for (const name of [
       'node',
       'latexmk',
@@ -82,10 +84,12 @@ describe('overfull doctor', () => {
     const dir = tempDir();
     writeFileSync(join(dir, 'overfull.yml'), 'mian: x.tex');
     const io = memIo(dir);
-    expect(await main(['doctor', '--json'], io)).toBe(0);
-    const { items } = JSON.parse(io.stdoutText()) as {
+    const code = await main(['doctor', '--json'], io);
+    const { items, canBuild } = JSON.parse(io.stdoutText()) as {
+      canBuild: boolean;
       items: { name: string; ok: boolean; detail: string }[];
     };
+    expect(code).toBe(canBuild ? 0 : 1);
     expect(items.find((i) => i.name === 'overfull.yml')).toMatchObject({ ok: false });
   });
 });
