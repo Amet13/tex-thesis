@@ -377,7 +377,8 @@ const explainExtraBrace: Explainer = (m, error) => {
 const explainRunaway: Explainer = (m, error) => {
   const command = m[2] ?? '';
   const arg = (error.runaway ?? '')
-    .replace(/\s*\\par\b.*$/, '')
+    .replace(/\\par\b.*$/, '')
+    .trimEnd()
     .replace(/\\ETC\.$/, '')
     .trim();
   const fileEnded = m[1]?.startsWith('File ended');
