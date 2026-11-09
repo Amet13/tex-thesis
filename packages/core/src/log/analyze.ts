@@ -215,7 +215,7 @@ function undefinedCitations(list: LogWarning[], notInBib: Set<string>): Problem[
       detail: missing
         ? `The key ${code(key)} is not in any loaded .bib file, so the PDF shows it in bold or as [?].`
         : `No bibliography entry has the key ${code(key)}, so the PDF shows it in bold or as [?].`,
-      fix: `Check the spelling of ${code(key)} against the .bib file, or add the entry (\`overfull cite <doi>\` can fetch it), then rebuild.`,
+      fix: `Check the spelling of ${code(key)} against the .bib file, or add the entry (\`overfull cite <doi>\` can fetch it), then rebuild; or remove the \`\\cite\` if the source is not known.`,
       evidence: evidence(items.map((w) => w.raw)),
       data: { key, count: items.length, occurrences: occurrences(items) },
     });

@@ -13,6 +13,30 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { format: 'directory' },
   devToolbar: { enabled: false },
+  // Strict Content-Security-Policy, emitted by Astro as a <meta> tag on every
+  // page with hashes for its own inline scripts and styles (no 'unsafe-inline'
+  // for scripts). The browser check only talks to the reference indexes.
+  security: {
+    csp: {
+      algorithm: 'SHA-256',
+      directives: [
+        "default-src 'self'",
+        "connect-src 'self' https://api.crossref.org https://doi.org https://data.crossref.org https://export.arxiv.org https://dblp.org https://api.openalex.org",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "worker-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ],
+      scriptDirective: { resources: ["'self'"] },
+      // Inline style attributes (e.g. widths set by the page) need 'unsafe-inline'
+      // on style-src-attr only; <style> elements are hashed.
+      styleDirective: {
+        resources: ["'self'", { resource: "'unsafe-inline'", kind: 'attribute' }],
+      },
+    },
+  },
   markdown: {
     shikiConfig: {
       theme: galleyTheme,

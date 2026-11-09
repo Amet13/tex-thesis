@@ -297,7 +297,7 @@ export const logRules: RuleInfo[] = [
     severity: 'error',
     title: 'Undefined citation',
     summary: 'A cited key has no bibliography entry, so the PDF shows the key or [?].',
-    fix: 'Fix the key or add the entry to the .bib file, then rebuild.',
+    fix: 'Fix the key or add the entry to the .bib file, then rebuild; or remove the `\\cite` if the source is not known.',
     corpus: 'biblatex-undefined-citation',
   },
   {

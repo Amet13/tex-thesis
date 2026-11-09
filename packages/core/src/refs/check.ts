@@ -1,5 +1,7 @@
 import type { BibEntry, BibParseIssue } from '../bib/parse.js';
 import { type CheckResult, type Problem, type RuleInfo, statusOf } from '../types.js';
+import { citeLocations } from '../venue/tex.js';
+import type { TexFile } from '../venue/types.js';
 import type { RefResult } from './types.js';
 import { sourceName } from './verify.js';
 
@@ -151,18 +153,22 @@ export function bibIssueProblems(issues: BibParseIssue[], file?: string): Proble
 }
 
 /** Cited keys that no .bib entry defines (rule `citation-key-missing`). Case-sensitive like BibTeX. */
-export function missingKeys(cited: string[], entries: BibEntry[]): Problem[] {
+export function missingKeys(cited: string[], entries: BibEntry[], texFiles?: TexFile[]): Problem[] {
   const defined = new Set(entries.map((e) => e.key));
-  return cited
-    .filter((k) => !defined.has(k))
-    .map((key) => ({
+  const missing = cited.filter((k) => !defined.has(k));
+  const where = texFiles?.length ? citeLocations(texFiles, missing) : undefined;
+  return missing.map((key) => {
+    const location = where?.get(key);
+    return {
       rule: 'citation-key-missing',
       check: 'references' as const,
       severity: 'error' as const,
       message: `\`${key}\` is cited but not defined in any .bib file`,
-      fix: `Add it with \`overfull cite <doi | arXiv:id | "title">\` (then use the key it prints), or fix the key in \`\\cite{${key}}\`.`,
+      ...(location ? { location } : {}),
+      fix: `Add it with \`overfull cite <doi | arXiv:id | "title">\` (then use the key it prints), fix the key in \`\\cite{${key}}\`, or remove the \`\\cite\` if the source is not known.`,
       data: { key },
-    }));
+    };
+  });
 }
 
 export interface RefsCheckOptions {

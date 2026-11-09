@@ -48,7 +48,7 @@ export interface CommandUse {
 }
 
 /** Line numbers for increasing offsets in one string, counted incrementally (linear overall). */
-function lineCounter(s: string): (index: number) => number {
+export function lineCounter(s: string): (index: number) => number {
   let pos = 0;
   let line = 1;
   return (index: number) => {
@@ -137,6 +137,48 @@ export function grepTex(
     for (let m = g.exec(src); m; m = g.exec(src)) {
       out.push({ file: f.path, line: lineAt(m.index), match: m[0] });
       if (m[0].length === 0) g.lastIndex++;
+    }
+  }
+  return out;
+}
+
+/** A `\cite`-like command (`\cite`, `\citep`, `\parencite`, `\textcite`, `\nocite`…). */
+const CITE_COMMAND = /\\([A-Za-z]{0,12}cite[A-Za-z]{0,8})\*?(?![A-Za-z@])/g;
+
+/**
+ * First source location of each key cited in `files` (comments ignored), for keys in
+ * `keys` (all keys when omitted). Handles up to two optional `[...]` arguments.
+ */
+export function citeLocations(
+  files: TexFile[],
+  keys?: Iterable<string>,
+): Map<string, { file: string; line: number }> {
+  const wanted = keys ? new Set(keys) : undefined;
+  const out = new Map<string, { file: string; line: number }>();
+  for (const f of files) {
+    const src = stripComments(f.content);
+    const lineAt = lineCounter(src);
+    CITE_COMMAND.lastIndex = 0;
+    for (let m = CITE_COMMAND.exec(src); m; m = CITE_COMMAND.exec(src)) {
+      let i = m.index + m[0].length;
+      for (let opt = 0; opt < 2; opt++) {
+        while (src[i] === ' ' || src[i] === '\n') i++;
+        if (src[i] !== '[') break;
+        const close = src.slice(i, i + MAX_OPTIONAL).indexOf(']');
+        if (close < 0) break;
+        i += close + 1;
+      }
+      while (src[i] === ' ' || src[i] === '\n') i++;
+      if (src[i] !== '{') continue;
+      const close = src.slice(i, i + MAX_OPTIONAL).indexOf('}');
+      if (close < 0) continue;
+      const body = src.slice(i + 1, i + close);
+      if (body.includes('{')) continue;
+      for (const raw of body.split(',')) {
+        const key = raw.trim();
+        if (!key || out.has(key) || (wanted && !wanted.has(key))) continue;
+        out.set(key, { file: f.path, line: lineAt(m.index) });
+      }
     }
   }
   return out;
