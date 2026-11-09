@@ -5,7 +5,7 @@
 **Write your paper with any AI agent, or by hand. Ship one that checks out.**
 
 [Website](https://amet13.github.io/overfull/) ·
-[Docs](https://amet13.github.io/overfull/docs/) ·
+[Guide](https://amet13.github.io/overfull/docs/) ·
 [Browser check](https://amet13.github.io/overfull/check/) ·
 [Rules](https://amet13.github.io/overfull/rules/)
 
@@ -15,20 +15,26 @@
 
 </div>
 
-Overfull is a free preflight kit for LaTeX papers and theses. It gives AI
-coding agents (Claude Code, Codex, Cursor, Copilot, Gemini CLI) the templates,
-rules and tools they need to produce a correct paper, and gives you a clear way
-to check the result. If you write LaTeX yourself, you get the same templates and
-the same checks, with no AI involved.
+Overfull is a free preflight kit for LaTeX papers and theses. It checks the
+build, the PDF, the references, accessibility and venue rules, and tells you in
+plain language what is wrong and where. It works the same whether you write
+LaTeX yourself or with a coding agent (Claude Code, Codex, Cursor, Copilot,
+Gemini CLI): the templates ship the instructions and skills an agent needs, and
+the checks need no AI at all.
 
 *Formerly **tex-thesis**. The name comes from LaTeX's `Overfull \hbox` warning
 and the black box draft mode draws past the margin.*
 
+> [!IMPORTANT]
+> **Pre-release.** v3.0.0 is not released yet: there is no Docker image on
+> ghcr.io, no release download and no `@v3` tag for the Action. Until then, run
+> Overfull [from a clone](#start-today-from-a-clone). The
+> [browser check](https://amet13.github.io/overfull/check/) works today.
+
 ## Why
 
-In 2026 most LaTeX gets written with AI help, inside Overleaf, OpenAI Prism or a
-coding agent. Agents write fluent LaTeX. They do not know whether a reference
-exists, what the PDF looks like, or what your thesis office requires. Overfull
+Whether you write LaTeX by hand or with an AI agent, the same things go wrong
+late: references that don't exist, `??` in the PDF, a page too many. Overfull
 checks exactly those things:
 
 | Check | Catches |
@@ -42,16 +48,48 @@ checks exactly those things:
 It never writes research content. It never calls a reference "fake": results are
 verified, metadata differs, not found, or can't be checked automatically.
 
-## Start
+## Start today, from a clone
+
+You need Git, Node.js 22.12+, pnpm and Docker. The first build makes a Docker
+image with TeX Live (about 3 GB), so allow a few minutes.
+
+```bash
+git clone https://github.com/amet13/overfull.git
+cd overfull
+pnpm install && pnpm build
+make image IMAGE=overfull:dev                     # TeX Live 2026, veraPDF, the CLI
+node packages/cli/dist/bin.js init paper ../my-paper
+
+cd ../my-paper
+make build IMAGE=overfull:dev                     # compile in Docker
+make check IMAGE=overfull:dev                     # the checks, in plain language
+```
+
+To call the CLI directly, use `node <clone>/packages/cli/dist/bin.js` wherever
+these docs say `overfull`, and set `OVERFULL_IMAGE=overfull:dev` so builds use
+your local image.
+
+## After v3.0.0
+
+The release adds two ways in that need no clone:
+
+- the Docker image `ghcr.io/amet13/overfull:3`, which contains TeX Live, veraPDF
+  and the `overfull` command, so Docker is all you install;
+- a single-file `overfull` download from GitHub Releases.
+
+```bash
+overfull init paper my-paper     # or click "Use this template" on a template repo
+cd my-paper
+make build    # compiles in Docker; nothing to install but Docker
+make check
+
+# without installing the CLI at all:
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3 overfull check
+```
 
 ### With an agent
 
-```bash
-npx overfull init paper my-paper
-cd my-paper
-# open the folder in your coding agent and ask it to work on the paper
-```
-
+Open the project folder in your coding agent and ask it to work on the paper.
 The template ships `AGENTS.md` and skills in `.agents/skills/` (linked from
 `.claude/skills/`). Your agent will:
 
@@ -61,27 +99,21 @@ The template ships `AGENTS.md` and skills in `.agents/skills/` (linked from
 
 ### By hand
 
-```bash
-npx overfull init thesis my-thesis   # or click "Use this template" on a template repo
-cd my-thesis
-make build    # compiles in Docker; nothing to install but Docker
-make check    # the same preflight, in plain language
-```
-
-Prefer not to install Node? Every command also runs from the Docker image:
-
-```bash
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:0.1 overfull check
-```
+Write LaTeX the way you always have. `make build` compiles in Docker and
+`make check` prints the report. See the
+[Guide](https://amet13.github.io/overfull/docs/by-hand/).
 
 ### In CI
 
+After v3.0.0:
+
 ```yaml
-- uses: amet13/overfull@v1
+- uses: amet13/overfull@v3
   with:
     checks: build,output,references,accessibility,venue
 ```
 
+Until then, pin a commit instead of `@v3` (`uses: amet13/overfull@<commit-sha>`).
 The Action reads the log, PDF and `.bib` your workflow already produces, then
 annotates pull requests and writes a summary. Each template also includes a
 workflow that builds in Docker, runs veraPDF and attaches a highlighted-changes
@@ -93,7 +125,7 @@ PDF to every pull request.
 | ---------- | ----- | ----------------------- |
 | [`thesis`](templates/thesis) | bachelor's, master's, PhD theses (A4, 14pt, 1.5 spacing) | yes, tagged PDF/UA-2 |
 | [`paper`](templates/paper) | research papers and preprints | yes, tagged PDF/UA-2 |
-| [`slides`](templates/slides) | defense and conference talks (Beamer) | see template README |
+| [`slides`](templates/slides) | defense and conference talks (Beamer) | no: Beamer slides cannot be tagged yet |
 
 All templates use LuaLaTeX, biblatex and TeX Live 2026 (the paper template also
 builds with pdfLaTeX for arXiv, with `make arxiv`), keep figures
@@ -105,7 +137,7 @@ owe nothing.
 ```text
 overfull init [thesis|paper|slides] [dir]   start from a template
 overfull build [main.tex]                   compile (local TeX or Docker)
-overfull check [--json|--markdown]          run the preflight (also --checks, --profile,
+overfull check [--json|--markdown]          run the checks (also --checks, --profile,
                                             --offline, --fail-on, --annotations, --no-verapdf)
 overfull cite <doi | arXiv:id | "title">    add a real reference to the .bib
                                             (--author, --year, --key, --dry-run, --json)
@@ -126,7 +158,7 @@ skills/          Agent Skills shared by every template
 corpus/          failing LaTeX documents that prove each log rule on TeX Live 2026
 docker/          the image: TeX Live 2026, fonts, poppler, veraPDF, latexdiff, Node, overfull
 site/            website and browser check (GitHub Pages)
-evals/           agent tasks scored by preflight
+evals/           agent tasks scored by overfull check
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
