@@ -89,7 +89,7 @@
     --code-constant: #9fc4f6;
     --code-punct: #a9b4ae;
     --code-error: #ff8a78;
-    --scroll-shade: #000000b3;
+    --scroll-shade: #e3e8e238;
   }
 }
 
@@ -122,7 +122,7 @@
   --code-constant: #9fc4f6;
   --code-punct: #a9b4ae;
   --code-error: #ff8a78;
-  --scroll-shade: #000000b3;
+  --scroll-shade: #e3e8e238;
 }
 
 /* ---------- Base ---------- */

@@ -24,7 +24,6 @@ import {
   pdfOutputProblems,
   type RefCache,
   type RefResult,
-  type RefSource,
   type RefsOptions,
   type Report,
   refsCheck,
@@ -397,7 +396,7 @@ export function initCheck(): void {
             // arXiv and DBLP refuse cross-origin requests from web pages, so
             // only the sources a browser can reach are asked. (Core calls
             // fetch detached from globalThis, so window.fetch needs no wrapper.)
-            const opts: RefsOptions & { sources?: RefSource[] } = {
+            const opts: RefsOptions = {
               sources: ['crossref', 'doi.org'],
               cache,
               signal,
