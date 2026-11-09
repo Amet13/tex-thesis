@@ -16,7 +16,23 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    name: Tag matches the package version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          want="${GITHUB_REF_NAME#v}"
+          for f in packages/cli/package.json packages/core/package.json action/package.json; do
+            got="$(jq -r .version "$f")"
+            [ "$got" = "$want" ] || { echo "::error file=$f::version $got, tag $GITHUB_REF_NAME (run scripts/bump-version.mjs)"; exit 1; }
+          done
+
   pdfs:
+    needs: version
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -31,7 +47,7 @@ jobs:
           target: overfull
           load: true
           tags: overfull:release
-          cache-from: type=gha
+          cache-from: type=gha,scope=overfull-linux-amd64
       - run: bash scripts/e2e-templates.sh overfull:release out
       - name: Collect PDFs
         run: |
@@ -44,6 +60,7 @@ jobs:
 
   cli:
     name: CLI (${{ matrix.target }})
+    needs: version
     strategy:
       fail-fast: false
       matrix:
@@ -107,7 +124,7 @@ jobs:
           path: assets
       - name: Checksums
         working-directory: assets
-        run: sha256sum * > SHA256SUMS
+        run: sha256sum -- * > SHA256SUMS
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: assets/*

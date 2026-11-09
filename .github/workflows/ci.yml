@@ -87,8 +87,9 @@ jobs:
           target: overfull
           load: true
           tags: overfull:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Same cache as image.yml's amd64 build: PRs reuse the layers from main.
+          cache-from: type=gha,scope=overfull-linux-amd64
+          cache-to: type=gha,scope=overfull-linux-amd64,mode=max
       - name: Corpus reproduces every rule on TeX Live 2026
         run: docker run --rm -v "$PWD:/repo" -w /repo -e OVERFULL_TEX_LOCAL=1 overfull:ci node scripts/corpus.mjs --verify
       - name: Templates build and pass their own preflight
