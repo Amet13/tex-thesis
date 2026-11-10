@@ -41,8 +41,7 @@ LaTeX project, and templates become one way in among several.
 - `overfull check` takes files as arguments, finds the main file without
   `overfull.yml`, says what it assumed, shows progress on a terminal, and has
   `--main`, `--refresh` and `--sarif`.
-- Action: `sarif` input and output, and an optional pull-request comment kept
-  up to date (`comment`, `github-token`).
+- Action: `sarif` input and output.
 - `ghcr.io/amet13/overfull:<version>-check`: the CLI, veraPDF and poppler
   without TeX Live. `ghcr.io/amet13/overfull:<version>-medium`: TeX Live's
   medium scheme plus the collections the templates need; CI builds the

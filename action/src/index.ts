@@ -15,7 +15,6 @@ import {
   sarifFallbackFile,
   stopCommands,
 } from 'overfull';
-import { upsertComment } from './comment.js';
 import { readInputs } from './inputs.js';
 import { escapeData, outputRecord } from './output.js';
 
@@ -50,16 +49,6 @@ async function main(): Promise<number> {
   }
   if (inputs.summary && env.GITHUB_STEP_SUMMARY) {
     appendFileSync(env.GITHUB_STEP_SUMMARY, `${formatMarkdown(report)}\n`);
-  }
-  if (inputs.comment) {
-    // formatMarkdown output is already neutralized; the comment is that text plus a marker.
-    await upsertComment({
-      env,
-      markdown: formatMarkdown(report),
-      token: inputs.githubToken,
-      notice: (m) =>
-        process.stdout.write(`::notice title=Overfull comment::${escapeData(oneLine(m))}\n`),
-    });
   }
   const reportPath = join(env.RUNNER_TEMP ?? tmpdir(), 'overfull-report.json');
   writeFileSync(reportPath, formatJson(report));

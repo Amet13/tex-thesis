@@ -109,8 +109,6 @@ Actions.
 | `annotations` | `true` | Write problems as file annotations. |
 | `summary` | `true` | Write a Markdown report to the job summary. |
 | `sarif` | empty (off) | Path to write a SARIF 2.1.0 file, relative to the workspace. See [Code scanning](#code-scanning-sarif). |
-| `comment` | `false` | On pull requests, create or update one comment with the Markdown report. See [Pull request comment](#pull-request-comment). |
-| `github-token` | `${{ github.token }}` | Token used to write that comment. |
 
 Inputs you leave out come from `overfull.yml` in `working-directory`, where
 present. Checks whose default inputs are missing are reported as `skipped`;
@@ -156,37 +154,6 @@ Code scanning shows a result only if it has a file and a line
 Problems that name no source file (PDF, venue and most reference findings) point at the
 main file, line 1. Each rule links to its page on this site. On the command
 line, `overfull check --sarif > overfull.sarif` writes the same file.
-
-### Pull request comment
-
-With `comment: true`, on `pull_request` events the Action creates one comment
-with the Markdown report and updates that same comment on every later run. The
-comment starts with a hidden `<!-- overfull-report -->` marker, which is how the
-Action finds it. The job needs `pull-requests: write`:
-
-```yaml
-permissions:
-  contents: read
-  pull-requests: write
-
-jobs:
-  check:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@v7
-      # ... build the document, then:
-      - uses: amet13/overfull@v3
-        with:
-          comment: 'true'
-```
-
-Text from your document is escaped in the comment the same way as in the job
-summary. A report longer than GitHub's comment limit (65,536 characters) is cut,
-with a note that points to the job summary. On pull requests from forks the
-token is read-only, so the Action logs a notice and writes no comment. If
-commenting fails for any other reason (a missing permission, a network error),
-it also logs a notice and the step carries on: a failed comment never fails the
-step. Outside pull requests, `comment` does nothing.
 
 ## The template workflow
 

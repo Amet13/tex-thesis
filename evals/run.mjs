@@ -11,7 +11,7 @@
 // The agent command runs on the host inside the working directory; {prompt} is shell-quoted.
 // Scoring runs `overfull build` and `overfull check` in the Docker image, so every variant is judged alike.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { prepare } from './lib/prepare.mjs';
@@ -210,30 +210,39 @@ const byVariant = variants.map((v) => ({
 }));
 
 mkdirSync(values.out, { recursive: true });
-let file = join(values.out, `${date.slice(0, 10)}-${values.label}.json`);
-for (let n = 2; existsSync(file); n++)
-  file = join(values.out, `${date.slice(0, 10)}-${values.label}-${n}.json`);
-writeFileSync(
-  file,
-  `${JSON.stringify(
-    {
-      schema: 1,
-      date,
-      label: values.label,
-      model: values.model ?? null,
-      agentCommand: values.agent,
-      image: values.image,
-      runsPerCell: runs,
-      variants,
-      tasks: tasks.map((t) => t.id),
-      summary,
-      byVariant,
-      results,
-    },
-    null,
-    2,
-  )}\n`,
-);
+// Never overwrite an earlier run: create the file exclusively ('wx'), and on a name
+// already taken try the next suffix (no existence check before the write).
+const resultsText = `${JSON.stringify(
+  {
+    schema: 1,
+    date,
+    label: values.label,
+    model: values.model ?? null,
+    agentCommand: values.agent,
+    image: values.image,
+    runsPerCell: runs,
+    variants,
+    tasks: tasks.map((t) => t.id),
+    summary,
+    byVariant,
+    results,
+  },
+  null,
+  2,
+)}\n`;
+let file;
+for (let n = 1; !file; n++) {
+  const candidate = join(
+    values.out,
+    `${date.slice(0, 10)}-${values.label}${n === 1 ? '' : `-${n}`}.json`,
+  );
+  try {
+    writeFileSync(candidate, resultsText, { flag: 'wx' });
+    file = candidate;
+  } catch (err) {
+    if (err.code !== 'EEXIST') throw err;
+  }
+}
 console.log(`\nwrote ${file}`);
 for (const b of byVariant)
   console.log(

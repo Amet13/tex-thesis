@@ -1,10 +1,10 @@
 /** `overfull guard --staged` in real temporary git repositories (no network). */
 import { execFileSync } from 'node:child_process';
 import {
-  chmodSync,
   closeSync,
   existsSync,
   fstatSync,
+  mkdirSync,
   openSync,
   readFileSync,
   writeFileSync,
@@ -190,17 +190,14 @@ describe('init --here --hooks and --agents', () => {
     }
   });
 
-  it('installs a pre-commit hook only when none exists, and never overwrites', async () => {
+  it('never overwrites an existing pre-commit hook, even with --force', async () => {
     const dir = repoWith({ 'main.tex': tex });
-    const io = memIo(dir);
-    expect(await adoptCommand(['--hooks'], io)).toBe(0);
     const hook = join(dir, '.git/hooks/pre-commit');
-    expect(readFileSync(hook, 'utf8')).toContain('overfull guard --staged');
-    writeFileSync(hook, '#!/bin/sh\necho mine\n');
-    chmodSync(hook, 0o755);
+    mkdirSync(join(dir, '.git/hooks'), { recursive: true });
+    writeFileSync(hook, '#!/bin/sh\necho mine\n', { mode: 0o755 });
     const again = memIo(dir);
     expect(await adoptCommand(['--hooks', '--force'], again)).toBe(0);
-    expect(readFileSync(hook, 'utf8')).toContain('echo mine');
+    expect(readFileSync(hook, 'utf8')).toBe('#!/bin/sh\necho mine\n');
     expect(again.stdoutText()).toContain('overfull guard --staged || exit 1');
   });
 

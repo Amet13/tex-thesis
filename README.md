@@ -61,8 +61,7 @@ workflow, agent instructions and a pre-commit hook; it never touches your
 
 **On every pull request.** The Action reads the log, PDF and `.bib` your
 workflow already produces, annotates the changes and writes a summary. It can
-also keep one comment on the pull request up to date and upload SARIF for code
-scanning.
+also write SARIF for code scanning.
 
 ```yaml
 - uses: amet13/overfull@v3

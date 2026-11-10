@@ -50,14 +50,6 @@ inputs:
     description: Path to write a SARIF 2.1.0 file, relative to the workspace (for github/codeql-action/upload-sarif). Empty means no file.
     required: false
     default: ''
-  comment:
-    description: On pull requests, create or update one comment with the Markdown report. Needs `pull-requests - write`. Skipped on forks.
-    required: false
-    default: 'false'
-  github-token:
-    description: Token used to write the comment.
-    required: false
-    default: ${{ github.token }}
 outputs:
   status:
     description: 'Overall status: pass, warn or fail.'
