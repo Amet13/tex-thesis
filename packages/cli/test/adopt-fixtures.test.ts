@@ -94,7 +94,7 @@ describe.each(FIXTURES)('init --here on the %s project', (name) => {
     const forced = memIo(dir);
     expect(await main(['init', '--here', '--agents', '--force'], forced)).toBe(0);
     expect(readFileSync(join(dir, 'overfull.yml'), 'utf8')).toContain('written by');
-    expect(readFileSync(join(dir, 'AGENTS.md'), 'utf8')).toContain('Layout');
+    expect(readFileSync(join(dir, 'AGENTS.md'), 'utf8')).toContain('Read `overfull.yml` first');
   });
 });
 

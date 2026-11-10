@@ -164,7 +164,7 @@ describe('adopt: generated files', () => {
 
   it('AGENTS.md does not assume the template layout', () => {
     const agents = readFileSync(join(repo, 'shared/agents/AGENTS.md'), 'utf8');
-    expect(agents).toContain('Read `overfull.yml` for the main file');
+    expect(agents).toContain('Read `overfull.yml` first: main file');
     expect(agents).not.toMatch(/^\| `main\.tex` \|/m);
   });
 });
