@@ -49,7 +49,6 @@ describe('guard --hook, Claude Code', () => {
     'claude-write-bib-lookalike.json',
     'claude-malformed.json',
     'claude-wrong-types.json',
-    'codex-apply-patch-bib.json',
   ];
   for (const name of allowed) {
     it(`allows ${name} (exit 0, no output)`, async () => {
@@ -191,5 +190,57 @@ describe('hook settings files', () => {
     expect(mergeHookSettings('{', claude).error).toContain('not valid JSON');
     expect(mergeHookSettings('[]', claude).error).toBeDefined();
     expect(mergeHookSettings('{"hooks":[]}', claude).error).toBeDefined();
+  });
+});
+
+describe('guard --hook, Codex CLI', () => {
+  const patch = (body: string) =>
+    JSON.stringify({
+      session_id: 's1',
+      cwd: '/work/paper',
+      hook_event_name: 'PreToolUse',
+      turn_id: 't1',
+      tool_name: 'apply_patch',
+      tool_use_id: 'u1',
+      tool_input: { command: `*** Begin Patch\n${body}\n*** End Patch` },
+    });
+
+  it('denies a patch that updates a .bib file, in the documented PreToolUse format', async () => {
+    for (const args of [[], ['codex']]) {
+      const r = await hook(args, fixture('codex-apply-patch-bib.json'));
+      expect(r.code).toBe(0);
+      const out = JSON.parse(r.out);
+      expect(out.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+      expect(out.hookSpecificOutput.permissionDecision).toBe('deny');
+      expect(out.hookSpecificOutput.permissionDecisionReason).toContain('overfull cite');
+    }
+  });
+
+  it('denies adding, deleting or moving a file to a .bib, anywhere in the patch', async () => {
+    for (const body of [
+      '*** Add File: refs/new.BIB\n+@misc{x}',
+      '*** Delete File: references.bib',
+      '*** Update File: main.tex\n@@\n-a\n+b\n*** Update File: notes.txt\n*** Move to: refs.bib',
+      '  *** Update File:   /abs/path/references.bib  ',
+    ]) {
+      const r = await hook(['codex'], patch(body));
+      expect(JSON.parse(r.out).hookSpecificOutput.permissionDecision).toBe('deny');
+    }
+  });
+
+  it('allows patches that touch no .bib file, and other tools', async () => {
+    for (const body of [
+      '*** Update File: main.tex\n@@\n-a\n+b',
+      '*** Add File: refs.bib.txt\n+x',
+    ]) {
+      expect(await hook(['codex'], patch(body))).toEqual({ code: 0, out: '', err: '' });
+    }
+    const bash = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      turn_id: 't',
+      tool_name: 'Bash',
+      tool_input: { command: 'echo >> refs.bib' },
+    });
+    expect(await hook([], bash)).toEqual({ code: 0, out: '', err: '' });
   });
 });

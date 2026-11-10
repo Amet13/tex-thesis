@@ -4,7 +4,7 @@
 //   node scripts/bump-version.mjs 3.1.0 --dry-run   show what would change
 //   node scripts/bump-version.mjs 3.1.0             change the files
 //
-// Updates the package.json of the CLI, core and Action, core's VERSION constant
+// Updates the package.json of the CLI, core and Action, gemini-extension.json, core's VERSION constant
 // and CITATION.cff (version, date-released). On a new major version it also moves
 // every `ghcr.io/amet13/overfull:<major>` image tag and `amet13/overfull@v<major>`
 // Action reference in tracked files (templates, docs, site, CLI defaults).
@@ -46,6 +46,7 @@ for (const rel of [
   'packages/cli/package.json',
   'packages/core/package.json',
   'action/package.json',
+  'gemini-extension.json',
 ]) {
   mustEdit(rel, /("version":\s*")[^"]+(")/, `$1${next}$2`);
 }

@@ -28,16 +28,26 @@
  *   allow: exit 0 and no output.
  *   Settings: .gemini/settings.json, hooks.BeforeTool[{ matcher, hooks: [{ name, type: "command", command, timeout }] }].
  *
+ * Codex CLI, https://developers.openai.com/codex/hooks (PreToolUse)
+ *   stdin: { hook_event_name: "PreToolUse", turn_id, tool_name, tool_input, cwd, ... }.
+ *   File edits arrive as tool_name "apply_patch" with the patch text in
+ *   tool_input.command. The patch grammar is the "official Lark grammar" in Codex's own
+ *   parser (github.com/openai/codex, codex-rs/apply-patch/src/parser.rs, read 2026-11-10):
+ *   files are named on "*** Add File: ", "*** Delete File: ", "*** Update File: " and
+ *   "*** Move to: " lines (the parser allows whitespace around markers).
+ *   deny: exit 0 with the same hookSpecificOutput shape as Claude Code.
+ *   Settings: <repo>/.codex/hooks.json, hooks.PreToolUse[{ matcher, hooks: [{ type, command }] }];
+ *   project hooks load only when the project's .codex/ layer is trusted.
+ *
  * Not implemented, because the documentation did not confirm a usable payload:
- * Codex CLI (https://developers.openai.com/codex/hooks): file edits arrive as tool_name
- * "apply_patch" with the patch text in tool_input.command, and the patch format is not
- * documented there. Cursor (https://cursor.com/docs/agent/hooks): preToolUse can deny
- * a "Write", but the page does not show Write's tool_input fields.
+ * Cursor (https://cursor.com/docs/agent/hooks, read 2026-11-10): preToolUse can deny a
+ * "Write", but the page does not show Write's tool_input fields; afterFileEdit names the
+ * file but runs after the edit and cannot block it.
  */
 
 import { extname, isAbsolute, resolve } from 'node:path';
 
-export const HOOK_HARNESSES = ['claude', 'gemini'] as const;
+export const HOOK_HARNESSES = ['claude', 'gemini', 'codex'] as const;
 export type HookHarness = (typeof HOOK_HARNESSES)[number];
 
 /** Payloads larger than this are not parsed (and are allowed). */
@@ -53,6 +63,8 @@ export type HookDecision = { allow: true } | { allow: false; reason: string };
 interface Adapter {
   /** Tool names that write a file, and the tool_input field holding the path. */
   writeTools: Record<string, string>;
+  /** Paths named by a tool call when they are not in one field (Codex patches). */
+  paths?: (tool: string, input: Record<string, unknown>) => string[];
   /** The harness's answer to a denied call (stdout; exit code 0). */
   deny(reason: string): unknown;
 }
@@ -77,7 +89,40 @@ const ADAPTERS: Record<HookHarness, Adapter> = {
     writeTools: { write_file: 'file_path', replace: 'file_path' },
     deny: (reason) => ({ decision: 'deny', reason }),
   },
+  codex: {
+    writeTools: { apply_patch: 'command' },
+    paths: (_tool, input) => (typeof input.command === 'string' ? patchPaths(input.command) : []),
+    deny: (reason) => ({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: reason,
+      },
+    }),
+  },
 };
+
+const PATCH_FILE_MARKERS = [
+  '*** Add File: ',
+  '*** Delete File: ',
+  '*** Update File: ',
+  '*** Move to: ',
+];
+
+/** Files a Codex apply_patch text adds, deletes, updates or moves to. */
+export function patchPaths(patch: string): string[] {
+  const out: string[] = [];
+  for (const raw of patch.split('\n')) {
+    const line = raw.trim();
+    for (const marker of PATCH_FILE_MARKERS) {
+      if (line.startsWith(marker)) {
+        const path = line.slice(marker.length).trim();
+        if (path) out.push(path);
+      }
+    }
+  }
+  return out;
+}
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -86,6 +131,8 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 export function detectHarness(payload: unknown): HookHarness | undefined {
   if (!isRecord(payload)) return undefined;
   if (payload.hook_event_name === 'BeforeTool') return 'gemini';
+  // Codex and Claude Code both send PreToolUse; Codex adds turn_id and names edits apply_patch.
+  if (payload.tool_name === 'apply_patch' || typeof payload.turn_id === 'string') return 'codex';
   if (payload.hook_event_name === 'PreToolUse') return 'claude';
   const tool = payload.tool_name;
   if (typeof tool === 'string') {
@@ -118,11 +165,14 @@ export function decide(
   const input = payload.tool_input;
   if (!isRecord(input)) return allow;
   const field = adapter.writeTools[tool] as string;
-  const target = input[field];
-  if (typeof target !== 'string' || target === '' || target.includes('\0')) return allow;
+  const targets = adapter.paths ? adapter.paths(tool, input) : [input[field]];
   const base = typeof payload.cwd === 'string' && isAbsolute(payload.cwd) ? payload.cwd : cwd;
-  const abs = isAbsolute(target) ? target : resolve(base, target);
-  return isBibPath(abs) ? { allow: false, reason: DENY_REASON } : allow;
+  for (const target of targets) {
+    if (typeof target !== 'string' || target === '' || target.includes('\0')) continue;
+    const abs = isAbsolute(target) ? target : resolve(base, target);
+    if (isBibPath(abs)) return { allow: false, reason: DENY_REASON };
+  }
+  return allow;
 }
 
 /**

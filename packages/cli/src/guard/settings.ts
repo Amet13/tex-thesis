@@ -18,7 +18,11 @@ import {
 import { dirname, resolve, sep } from 'node:path';
 
 /** Kit files that hold hook configuration and are merged, not overwritten. */
-export const HOOK_SETTINGS_FILES = new Set(['.claude/settings.json', '.gemini/settings.json']);
+export const HOOK_SETTINGS_FILES = new Set([
+  '.claude/settings.json',
+  '.gemini/settings.json',
+  '.codex/hooks.json',
+]);
 
 type Json = Record<string, unknown>;
 const isObject = (v: unknown): v is Json =>

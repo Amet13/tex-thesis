@@ -134,17 +134,20 @@ no hand-written bibliography entries. It works at two points.
 When the agent's file tools try to write or edit a `.bib` file, the hook denies
 the call and tells the agent to use `overfull cite`. Reading a `.bib` file, and
 every other tool and file, is allowed. The template ships the hook settings for
-two agents; the formats were read from their documentation on 2026-11-10.
+three agents; the formats were read from their documentation on 2026-11-10.
 
 | Agent | Settings file | Event and tools | Documentation |
 | --- | --- | --- | --- |
 | Claude Code | `.claude/settings.json` | `PreToolUse`: `Write`, `Edit`, `MultiEdit` | <https://code.claude.com/docs/en/hooks> |
 | Gemini CLI | `.gemini/settings.json` | `BeforeTool`: `write_file`, `replace` | <https://geminicli.com/docs/hooks/> |
+| Codex CLI | `.codex/hooks.json` | `PreToolUse`: `apply_patch` (files named in the patch) | <https://developers.openai.com/codex/hooks> |
 
-Codex CLI and Cursor have hooks too, but their documentation does not show the
-payload of a file edit (Codex sends a patch in `tool_input.command`; Cursor does
-not list the input of its `Write` tool), so there is no hook for them yet. They
-still get the rules in `AGENTS.md` and the pre-commit guard below.
+Codex loads project hooks only when you trust the project's `.codex/` folder.
+
+Cursor has hooks too, but its documentation does not list the input of its
+`Write` tool, and the hook that names the edited file runs after the edit and
+cannot block it, so there is no hook for Cursor yet. It still gets the rules in
+`AGENTS.md` and the pre-commit guard below.
 
 `overfull init --here --agents` writes these files. If one already exists, the
 Overfull hook is added and your other settings are kept; a file that is not
@@ -221,9 +224,21 @@ Or inside Claude Code:
 
 Plugin skills are namespaced, for example `/overfull:add-citation`. The plugin
 does not write `AGENTS.md` or `overfull.yml` into a project; run
-`overfull init --here` for that. Codex, Cursor and Gemini CLI also have
-extension formats, but they were not read for this release, so there is no
-package for them.
+`overfull init --here` for that.
+
+## Install as a Gemini CLI extension
+
+The repository is also a Gemini CLI extension (`gemini-extension.json`, format
+read from <https://geminicli.com/docs/extensions/reference/> on 2026-11-10). It
+adds the skills from `skills/` and the MCP server; the guard hook comes from the
+project's `.gemini/settings.json`, which `overfull init --here --agents` writes.
+
+```sh
+gemini extensions install https://github.com/amet13/overfull
+```
+
+Codex and Cursor package plugins differently; there is no package for them in
+this release. `overfull init --here --agents` sets up both.
 
 ## Agents without a shell
 

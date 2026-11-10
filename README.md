@@ -77,8 +77,8 @@ without TeX Live; `ghcr.io/amet13/overfull:3` also builds. See
 **With an agent.** Claude Code, Codex, Cursor, Copilot and Gemini CLI read the
 `AGENTS.md` and skills that `overfull init --here --agents` adds. The agent adds
 references only through `overfull cite`, runs `overfull check --json` after each
-change, and a hook stops it from editing `.bib` files by hand (Claude Code and
-Gemini CLI). In Claude Code, the plugin installs the skills, the hook and the
+change, and a hook stops it from editing `.bib` files by hand (Claude Code,
+Codex CLI and Gemini CLI). In Claude Code, the plugin installs the skills, the hook and the
 MCP server in one step:
 
 ```text

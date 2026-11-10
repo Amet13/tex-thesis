@@ -122,6 +122,7 @@ const AGENT_KIT_FILES = new Set([
   // Hook settings (guard): merged into an existing file by `init --here`, never overwritten.
   '.claude/settings.json',
   '.gemini/settings.json',
+  '.codex/hooks.json',
 ]);
 const AGENT_KIT_PREFIX = '.agents/skills/';
 

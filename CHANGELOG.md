@@ -20,12 +20,13 @@ LaTeX project, and templates become one way in among several.
   a git pre-commit hook. It never touches `.tex` or `.bib` files.
 - `overfull guard`: `--staged` refuses commits that add bibliography entries
   that neither came from `overfull cite`, carry an author note, nor verify;
-  `--hook` blocks direct `.bib` edits by Claude Code and Gemini CLI.
+  `--hook` blocks direct `.bib` edits by Claude Code, Codex CLI and Gemini CLI.
   `.pre-commit-hooks.yaml` for the pre-commit framework.
 - `overfull mcp`: a dependency-free Model Context Protocol server (stdio) with
   `check`, `cite`, `explain`, `pages` and `doctor`.
 - Claude Code plugin and marketplace manifests: skills, the guard hook and the
-  MCP server in one install.
+  MCP server in one install. Gemini CLI extension (`gemini-extension.json`):
+  skills and the MCP server.
 - Venue profiles as data (`venues/*.yml`, each with its sources and check
   date): NeurIPS 2026, ICLR 2027, ICML 2026, CVPR 2027, AAAI-27, ACL Rolling
   Review, EMNLP 2026, Springer LNCS, IEEE conferences (IEEEtran) and ACM

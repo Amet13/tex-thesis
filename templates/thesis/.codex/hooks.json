@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^apply_patch$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v overfull >/dev/null 2>&1 && overfull guard --hook codex || exit 0",
+            "timeout": 5,
+            "statusMessage": "Checking for hand-written .bib edits"
+          }
+        ]
+      }
+    ]
+  }
+}

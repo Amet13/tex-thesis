@@ -5,7 +5,7 @@ import { guardStaged } from '../guard/staged.js';
 import { type Io, UsageError } from '../io.js';
 
 export const guardHelp = `Usage: overfull guard --staged [--offline] [--json]
-       overfull guard --hook [claude|gemini]
+       overfull guard --hook [claude|gemini|codex]
 
 Blocks hand-written bibliography entries at the moment they happen.
 
@@ -21,7 +21,7 @@ Blocks hand-written bibliography entries at the moment they happen.
            stdin and denies direct writes and edits of .bib files by the agent's file
            tools, with a reason that points to \`overfull cite\`. Everything else is
            allowed. A payload that is not recognised is allowed (exit 0, no output).
-           Supported: claude (Claude Code), gemini (Gemini CLI). Without a name the
+           Supported: claude (Claude Code), gemini (Gemini CLI), codex (Codex CLI). Without a name the
            harness is detected from the payload. A shell command that writes a .bib
            file is not detected; the pre-commit guard and \`overfull check\` catch it.
 
