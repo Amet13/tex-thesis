@@ -407,16 +407,20 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
+  const semanticScholarKey = env.SEMANTIC_SCHOLAR_API_KEY;
   const refsOptions: Parameters<typeof verifyEntries>[1] = {
     ...(opts.fetch ? { fetch: opts.fetch } : {}),
     ...(mailto ? { mailto } : {}),
     ...(openalexKey ? { openalexKey } : {}),
+    ...(semanticScholarKey ? { semanticScholarKey } : {}),
     ...(cache ? { cache } : {}),
     ...(opts.refresh ? { refresh: true } : {}),
     ...(opts.progress ? { onProgress: opts.progress } : {}),
     offline: opts.offline ?? false,
     ignore: config.references.ignore,
     ...(config.references.requireCite ? { requireProvenance: true } : {}),
+    // The CLI asks CrossRef about retractions; the core library leaves it off by default.
+    checkRetractions: true,
   };
   const results = await verifyEntries(toVerify, refsOptions);
   cache?.save();
@@ -424,6 +428,9 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
     entries: toVerify,
     extra,
     requireProvenance: config.references.requireCite,
+    ...(config.references.reportUncited && keys && !citeAll
+      ? { reportUncited: true, citedKeys: keys }
+      : {}),
   });
   if (!keys) {
     result.summary =

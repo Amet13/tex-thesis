@@ -105,7 +105,8 @@ function duplicateKeys(entry: BibEntry): DuplicateKey[] {
   const year = bibYear(entry);
   const title = normalizeTitle(entry.fields.title ?? '', true);
   // A very short title ("Introduction") says nothing about which work is meant.
-  if (year !== undefined && title.length >= 12) keys.push({ kind: 'title', value: `${title}|${year}` });
+  if (year !== undefined && title.length >= 12)
+    keys.push({ kind: 'title', value: `${title}|${year}` });
   return keys;
 }
 

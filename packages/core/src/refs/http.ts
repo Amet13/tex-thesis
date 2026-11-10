@@ -97,11 +97,7 @@ export class HttpClient {
    * (callers decide what 404 means); throws SourceUnavailableError when no
    * definitive answer was obtained.
    */
-  async get(
-    url: string,
-    accept: string,
-    headers?: Record<string, string>,
-  ): Promise<HttpResponse> {
+  async get(url: string, accept: string, headers?: Record<string, string>): Promise<HttpResponse> {
     const host = new URL(url).host;
     const release = await this.acquire(host);
     try {

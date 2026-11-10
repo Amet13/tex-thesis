@@ -57,20 +57,22 @@ export interface Identifiers {
   pmcid?: string;
 }
 
+/** `\url{x}` → `x`; any other value as it is. Plain string tests, no pattern scan, bounded. */
+function unwrapUrl(value: string): string {
+  const v = value.trim().slice(0, 600);
+  return v.startsWith('\\url{') && v.endsWith('}') ? v.slice(5, -1).trim() : v;
+}
+
 /** ACL, PubMed and PubMed Central ids named by an entry's fields. */
 function otherIdentifiers(entry: BibEntry, doi: string | null): Identifiers {
   const f = entry.fields;
   const ids: Identifiers = {};
   const archive = (f.eprinttype ?? f.archiveprefix ?? '').toLowerCase();
   const acl = [f.url, f.howpublished, doi ?? undefined]
-    .map((v) => (v ? parseAclId(v.replace(/\\url\{([^}]*)\}/g, '$1').trim()) : null))
+    .map((v) => (v ? parseAclId(unwrapUrl(v)) : null))
     .find((v): v is string => Boolean(v));
   if (acl) ids.aclId = acl;
-  const pmid = [
-    f.pmid,
-    archive === 'pubmed' || archive === 'pmid' ? f.eprint : undefined,
-    f.url,
-  ]
+  const pmid = [f.pmid, archive === 'pubmed' || archive === 'pmid' ? f.eprint : undefined, f.url]
     .map((v) => (v ? parsePmid(/^\d+$/.test(v.trim()) ? `PMID:${v.trim()}` : v.trim()) : null))
     .find((v): v is string => Boolean(v));
   if (pmid) ids.pmid = pmid;

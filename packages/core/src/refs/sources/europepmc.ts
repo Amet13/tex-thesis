@@ -23,7 +23,12 @@ interface EpmcResult {
   title?: string;
   authorString?: string;
   authorList?: {
-    author?: { fullName?: string; firstName?: string; lastName?: string; collectiveName?: string }[];
+    author?: {
+      fullName?: string;
+      firstName?: string;
+      lastName?: string;
+      collectiveName?: string;
+    }[];
   };
   journalInfo?: {
     yearOfPublication?: number;
@@ -38,21 +43,29 @@ interface EpmcResponse {
   resultList?: { result?: EpmcResult[] };
 }
 
+const PMID_PREFIX = /^\s*PMID[\s:]+(\d{1,9})\s*$/i;
+const PMID_URL =
+  /^(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/(\d{1,9})\/?$/i;
+const PMCID_BARE = /^(PMC\d{1,9})\/?$/i;
+const PMCID_URL =
+  /^(?:https?:\/\/)?(?:(?:www\.)?ncbi\.nlm\.nih\.gov\/pmc\/articles|pmc\.ncbi\.nlm\.nih\.gov\/articles|europepmc\.org\/(?:article\/PMC|articles))\/(PMC\d{1,9})\/?$/i;
+
+/** Ids and URLs are short; a longer value is not one and is never scanned. */
+const MAX_ID_INPUT = 512;
+
 /** A PubMed id: `PMID:19872477`, `pmid 19872477` or a pubmed.ncbi.nlm.nih.gov URL. */
 export function parsePmid(input: string): string | null {
-  const m =
-    /^\s*(?:PMID\s*[:\s]\s*|(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/)(\d{1,9})\/?\s*$/i.exec(
-      input,
-    );
+  if (input.length > MAX_ID_INPUT) return null;
+  const s = input.trim();
+  const m = PMID_PREFIX.exec(s) ?? PMID_URL.exec(s);
   return m ? (m[1] as string) : null;
 }
 
 /** A PubMed Central id: `PMC2323736`, or a PMC / Europe PMC article URL. */
 export function parsePmcid(input: string): string | null {
-  const m =
-    /^\s*(?:(?:https?:\/\/)?(?:www\.|pmc\.)?(?:ncbi\.nlm\.nih\.gov\/pmc\/articles|europepmc\.org\/(?:article\/PMC|articles))\/|(?:https?:\/\/)?pmc\.ncbi\.nlm\.nih\.gov\/articles\/)?(PMC\d{1,9})\/?\s*$/i.exec(
-      input,
-    );
+  if (input.length > MAX_ID_INPUT) return null;
+  const s = input.trim();
+  const m = PMCID_BARE.exec(s) ?? PMCID_URL.exec(s);
   return m ? (m[1] as string).toUpperCase() : null;
 }
 
@@ -87,14 +100,20 @@ function authorsOf(r: EpmcResult): WorkRecord['authors'] {
   // No author list: "Hitchcock DI." / "Sholts SB, Esteban J." (family name, then initials).
   return (r.authorString ?? '')
     .replace(/\.$/, '')
-    .split(/,\s*/)
-    .map((s) => s.replace(/\s+[A-Z]{1,4}$/, '').trim())
+    .split(',')
+    .map((part) => {
+      const s = part.trim();
+      const at = s.lastIndexOf(' ');
+      // "Sholts SB": drop the trailing initials.
+      return at > 0 && /^[A-Z]{1,4}$/.test(s.slice(at + 1)) ? s.slice(0, at).trim() : s;
+    })
     .filter(Boolean)
     .map((family) => ({ family }));
 }
 
 export function fromEuropePmc(r: EpmcResult): WorkRecord | null {
-  const title = r.title?.replace(/\.\s*$/, '').trim();
+  const trimmed = r.title?.trim();
+  const title = trimmed?.endsWith('.') ? trimmed.slice(0, -1).trimEnd() : trimmed;
   if (!title) return null;
   const years = [
     Number(r.pubYear),
@@ -126,7 +145,10 @@ async function query(client: HttpClient, url: string): Promise<WorkRecord[]> {
 }
 
 /** The record for a PubMed id, or null when Europe PMC has none. */
-export async function europepmcByPmid(client: HttpClient, pmid: string): Promise<WorkRecord | null> {
+export async function europepmcByPmid(
+  client: HttpClient,
+  pmid: string,
+): Promise<WorkRecord | null> {
   return (await query(client, europepmcPmidUrl(pmid)))[0] ?? null;
 }
 

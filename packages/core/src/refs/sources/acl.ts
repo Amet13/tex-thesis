@@ -10,8 +10,8 @@
  * Identifier lookup only. There is no title-search endpoint.
  */
 
-import { parseBib } from '../../bib/parse.js';
 import { parseNames } from '../../bib/names.js';
+import { parseBib } from '../../bib/parse.js';
 import { texToPlain } from '../../bib/tex.js';
 import { type HttpClient, SourceUnavailableError } from '../http.js';
 import type { WorkRecord } from '../types.js';
@@ -19,8 +19,26 @@ import type { WorkRecord } from '../types.js';
 /** `2020.acl-main.1`, `2021.findings-emnlp.100`, `2020.iwclul-1.4`. */
 const NEW_ID = String.raw`\d{4}\.[a-z0-9]+(?:-[a-z0-9]+)+\.\d+`;
 /** `P19-1001`, `W12-3903`, `E91-1001`. */
-const OLD_ID = String.raw`[A-Z]\d{2}-\d{4}`;
+const OLD_ID = String.raw`[A-Za-z]\d{2}-\d{4}`;
 const ID = new RegExp(`^(?:${NEW_ID}|${OLD_ID})$`);
+const OLD_ONLY = new RegExp(`^${OLD_ID}$`);
+
+/** Drops a query or fragment, a trailing slash and a `.pdf`/`.bib`/`.xml` suffix (no regex scan). */
+function stripSuffixes(value: string): string {
+  let s = value;
+  for (const mark of ['?', '#']) {
+    const at = s.indexOf(mark);
+    if (at >= 0) s = s.slice(0, at);
+  }
+  if (s.endsWith('/')) s = s.slice(0, -1);
+  for (const ext of ['.pdf', '.bib', '.xml']) {
+    if (s.toLowerCase().endsWith(ext)) {
+      s = s.slice(0, -ext.length);
+      break;
+    }
+  }
+  return s.endsWith('/') ? s.slice(0, -1) : s;
+}
 
 /**
  * An ACL Anthology id as people write it: the bare id, `aclanthology.org/<id>` (with
@@ -28,19 +46,17 @@ const ID = new RegExp(`^(?:${NEW_ID}|${OLD_ID})$`);
  * `10.18653/v1/<id>`. Returns the id, or null.
  */
 export function parseAclId(input: string): string | null {
+  // Ids and URLs are short; a long value is not one (and is never scanned).
+  if (input.length > 512) return null;
   const s = input
     .trim()
-    .replace(
-      /^(?:https?:\/\/)?(?:www\.)?(?:aclanthology\.org|aclweb\.org\/anthology)\//i,
-      '',
-    )
+    .replace(/^(?:https?:\/\/)?(?:www\.)?(?:aclanthology\.org|aclweb\.org\/anthology)\//i, '')
     .replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)?10\.18653\/v1\//i, '')
-    .replace(/^ACL:\s*/i, '')
-    .replace(/[?#].*$/, '')
-    .replace(/\/$/, '')
-    .replace(/\.(?:pdf|bib|xml)$/i, '')
-    .replace(/\/$/, '');
-  return ID.test(s) ? s : null;
+    .replace(/^ACL:\s*/i, '');
+  const id = stripSuffixes(s);
+  if (!ID.test(id)) return null;
+  // Old ids are upper case (`P19-1001`); a lower-cased DOI carries them in lower case.
+  return OLD_ONLY.test(id) ? id.toUpperCase() : id;
 }
 
 export function aclBibUrl(id: string): string {

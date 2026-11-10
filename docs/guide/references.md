@@ -15,12 +15,20 @@ scholarly indexes.
 For each entry that your document cites (keys come from the `.aux` or `.bcf`; if
 neither exists, every entry is checked):
 
-1. If it has a DOI, resolve it through doi.org and CrossRef.
+1. If it has a DOI, resolve it through doi.org and CrossRef (DataCite DOIs for
+   datasets and software resolve through doi.org too).
 2. Else, if it has an arXiv id (`eprint` with `archivePrefix = {arXiv}`, or an
    arXiv URL), query the arXiv API.
-3. Else, search by title in CrossRef, then DBLP, then arXiv, then OpenAlex
-   (OpenAlex only if the `OPENALEX_API_KEY` environment variable is set).
-4. Compare the best candidate's title, authors and year with your entry.
+3. Else, if it names an ACL Anthology id or URL (`2020.acl-main.1`,
+   `aclanthology.org/P19-1001`), fetch the record from the ACL Anthology; if it
+   has a PubMed or PubMed Central id (`pmid`, `pmcid`, or a PubMed URL), fetch it
+   from Europe PMC.
+4. Else, search by title: CrossRef and DBLP at the same time, then arXiv (and
+   OpenAlex when the `OPENALEX_API_KEY` environment variable is set). When none
+   of them finds the work, Semantic Scholar and then Europe PMC are asked, one at
+   a time, and at most three title searches answer for one entry. When DBLP
+   cannot be reached and no OpenAlex key is set, OpenAlex is asked without a key.
+5. Compare the best candidate's title, authors and year with your entry.
 
 Entries that are websites, software, datasets, standards or manuals are not
 looked up. An entry with a DOI or arXiv id is judged by that identifier alone.
@@ -66,6 +74,15 @@ not read, so its entries were not checked; pass it with `--bib` from a project
 that contains it, or move it in), `reference-unproven` and
 `reference-not-reverified` (see [Provenance](#provenance)), and
 `refs-cache-ignored` (info, see [Configuration](./config.md#cache)).
+
+Four more rules look at the entries themselves:
+
+| Rule id | Severity | Meaning |
+| --- | --- | --- |
+| `reference-retracted` | error | CrossRef records the matched work as retracted or withdrawn (its `updated-by` data, which includes Retraction Watch). The message names the notice. Asked once per 40 DOIs; answers are kept for one day. |
+| `reference-published-version` | info | An arXiv entry whose arXiv record names a published DOI. Cite the published version with `overfull cite <doi>` if your venue prefers it. |
+| `reference-duplicate` | warning | Two entries with the same DOI, the same arXiv id, or the same title and year. Works offline. |
+| `reference-uncited` | info | No `\cite` uses the entry. Off by default: set `references.reportUncited: true`. Needs the cited keys from the `.aux`, `.bcf` or sources. |
 
 ## Why it never says "fake"
 
@@ -170,6 +187,7 @@ references:
   ignore: [rfc9110]
   requireCite: true         # unverified entries need an `overfull cite` marker or an author-provided note
   cache: user               # or `project`: .overfull/cache/refs.json (never read in CI)
+  reportUncited: false      # true: report entries that nothing cites (reference-uncited)
 ```
 
 `mailto` puts your requests in CrossRef's "polite pool", which is faster and more
@@ -178,6 +196,10 @@ reliable. You can also set it with the `OVERFULL_MAILTO` environment variable or
 OpenAlex on. OpenAlex title search runs only when the `OPENALEX_API_KEY`
 environment variable is set; it is not an `overfull.yml` key, so the key stays out
 of your repository.
+
+`SEMANTIC_SCHOLAR_API_KEY`, when set, is sent to Semantic Scholar for a higher
+rate limit; without it the shared public limit applies. Like the OpenAlex key,
+it is read from the environment only.
 
 ## Offline
 

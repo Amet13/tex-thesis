@@ -6,7 +6,7 @@
 //
 // Same mechanism as record.mjs, written to a sibling file (http-sources.json) that
 // fake-fetch.ts merges with http.json. Requests already in http.json are answered from
-// it (so the indexes that are rate-limited or bot-walled are not asked again); every
+// it and from an earlier http-sources.json (so the indexes that are rate-limited or bot-walled are not asked again); every
 // other request goes to the live service and is saved. Semantic Scholar answers HTTP 429
 // when its shared keyless pool is busy: such an answer is retried after a pause and only
 // the final answer is saved.
@@ -60,7 +60,7 @@ const EPMC_KEYS = [
   'bookOrReportDetails',
 ];
 
-function trimBody(url, contentType, body) {
+function trimBody(url, _contentType, body) {
   const host = new URL(url).host;
   if (body.includes('<feed')) {
     let n = 0;
@@ -82,7 +82,9 @@ function trimBody(url, contentType, body) {
         kept.authorList = {
           author: authors
             .slice(0, 100)
-            .map((a) => Object.fromEntries(EPMC_AUTHOR_KEYS.filter((k) => k in a).map((k) => [k, a[k]]))),
+            .map((a) =>
+              Object.fromEntries(EPMC_AUTHOR_KEYS.filter((k) => k in a).map((k) => [k, a[k]])),
+            ),
         };
       }
       if (kept.journalInfo?.journal) {
@@ -100,13 +102,22 @@ function trimBody(url, contentType, body) {
 }
 
 const out = join(here, 'http-sources.json');
-const store = { requests: {}, hostFallbacks: {} };
+// A re-run keeps what was recorded before (so one slow service can be topped up alone);
+// answers that were only a rate limit (429) are asked again.
+let store = { requests: {}, hostFallbacks: {} };
+try {
+  store = JSON.parse(readFileSync(out, 'utf8'));
+  for (const [k, v] of Object.entries(store.requests))
+    if (v.status === 429) delete store.requests[k];
+} catch {
+  // first run
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function recordingFetch(url, init = {}) {
   const accept = init.headers?.Accept ?? '*/*';
   const key = fixtureKey(url, accept);
-  const known = base.requests[key];
+  const known = base.requests[key] ?? store.requests[key];
   if (known) {
     return new Response(known.status === 204 ? null : known.body, {
       status: known.status,
@@ -122,7 +133,7 @@ async function recordingFetch(url, init = {}) {
     res = await fetch(url, rest);
     if (res.status !== 429 || host !== 'api.semanticscholar.org') break;
     await res.text();
-    await sleep(8000);
+    await sleep(15_000);
   }
   const body = await res.text();
   const contentType = res.headers.get('content-type') ?? '';
@@ -147,7 +158,9 @@ for (const { file, opts } of CASES) {
   const entries = parseBib(readFileSync(join(here, file), 'utf8'));
   const results = await verifyEntries(entries, { ...common, ...opts });
   for (const r of results) {
-    console.log(`${file}\t${JSON.stringify(opts)}\t${r.key}\t${r.status}\t${r.source ?? ''}\t${r.reason ?? ''}`);
+    console.log(
+      `${file}\t${JSON.stringify(opts)}\t${r.key}\t${r.status}\t${r.source ?? ''}\t${r.reason ?? ''}`,
+    );
   }
 }
 for (const q of LOOKUPS) {

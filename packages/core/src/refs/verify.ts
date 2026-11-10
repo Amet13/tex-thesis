@@ -10,6 +10,7 @@ import {
   notIndexedReason,
 } from './kind.js';
 import { type Assessment, assess, type BibFacts, bestAssessment, bibFacts } from './match.js';
+import { attachRetractions } from './retraction.js';
 import {
   aclByIdCached,
   arxivByIdCached,
@@ -21,7 +22,6 @@ import {
   sourceAllowed,
   titleSearch,
 } from './search.js';
-import { attachRetractions } from './retraction.js';
 import type { MatchedRecord, RefResult, RefSource, RefsOptions, WorkRecord } from './types.js';
 
 const SOURCE_NAMES: Record<RefSource, string> = {

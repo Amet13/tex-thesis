@@ -96,7 +96,8 @@ export async function findRetractions(
   for (const doi of [...new Set(dois)]) {
     // DOIs with a comma would split the filter; they are left unchecked.
     if (doi.includes(',')) continue;
-    const hit = cache && !ctx.opts.refresh ? ((await cache.get(`retraction:${doi}`)) as Stored) : null;
+    const hit =
+      cache && !ctx.opts.refresh ? ((await cache.get(`retraction:${doi}`)) as Stored) : null;
     if (hit && typeof hit === 'object' && isFresh(hit.cachedAt, false, maxAge)) {
       if (hit.notice) found.set(doi, hit.notice);
     } else todo.push(doi);
@@ -118,7 +119,11 @@ export async function findRetractions(
     for (const doi of chunk) {
       const notice = byDoi.get(doi);
       if (notice) found.set(doi, notice);
-      if (cache) await cache.set(`retraction:${doi}`, { ...(notice ? { notice } : {}), cachedAt: Date.now() });
+      if (cache)
+        await cache.set(`retraction:${doi}`, {
+          ...(notice ? { notice } : {}),
+          cachedAt: Date.now(),
+        });
     }
   }
   return found;
@@ -131,22 +136,21 @@ export async function findRetractions(
 export async function attachRetractions(ctx: Ctx, results: RefResult[]): Promise<void> {
   if (!ctx.opts.checkRetractions) return;
   if (ctx.opts.sources && !ctx.opts.sources.includes('crossref')) return;
-  const candidates = results.filter(
-    (r) =>
-      (r.status === 'verified' || r.status === 'mismatch') &&
-      !r.wrongWork &&
-      r.matched?.doi &&
-      !r.matched.doi.startsWith('10.48550/'),
-  );
+  const candidates: { r: RefResult; doi: string }[] = [];
+  for (const r of results) {
+    const doi = r.matched?.doi?.toLowerCase();
+    if ((r.status === 'verified' || r.status === 'mismatch') && !r.wrongWork && doi)
+      if (!doi.startsWith('10.48550/')) candidates.push({ r, doi });
+  }
   if (!candidates.length) return;
   try {
     const found = await findRetractions(
       ctx.client,
       ctx,
-      candidates.map((r) => (r.matched?.doi as string).toLowerCase()),
+      candidates.map((c) => c.doi),
     );
-    for (const r of candidates) {
-      const notice = found.get((r.matched?.doi as string).toLowerCase());
+    for (const { r, doi } of candidates) {
+      const notice = found.get(doi);
       if (notice) r.retraction = notice;
     }
   } catch (err) {

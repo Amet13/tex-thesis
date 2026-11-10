@@ -260,7 +260,10 @@ export async function titleSearch(
   // found nothing, so ask the next. Semantic Scholar first, then Europe PMC.
   const plainTitle = q.isTex ? texToPlain(q.title) : q.title;
   const fallbacks: [RefSource, () => Promise<WorkRecord[]>][] = [
-    ['semanticscholar', () => semanticScholarSearch(ctx.client, plainTitle, ctx.opts.semanticScholarKey)],
+    [
+      'semanticscholar',
+      () => semanticScholarSearch(ctx.client, plainTitle, ctx.opts.semanticScholarKey),
+    ],
     ['europepmc', () => europepmcSearch(ctx.client, plainTitle)],
   ];
   for (const [source, run] of fallbacks) {

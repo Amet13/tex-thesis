@@ -211,7 +211,9 @@ export async function citeCommand(
   }
   const query = positionals.join(' ').trim();
   if (!query)
-    throw new UsageError('Give a DOI, arXiv id, ACL Anthology id, PMID or title: `overfull cite 10.1145/359545.359563`');
+    throw new UsageError(
+      'Give a DOI, arXiv id, ACL Anthology id, PMID or title: `overfull cite 10.1145/359545.359563`',
+    );
   const explicitKey = str(values.key);
   if (explicitKey !== undefined && !SAFE_KEY.test(explicitKey)) {
     throw new UsageError(
