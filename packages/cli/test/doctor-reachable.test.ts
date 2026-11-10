@@ -11,7 +11,7 @@ describe('doctor network line', () => {
       const line = io
         .stdoutText()
         .split('\n')
-        .find((l) => l.includes('api.crossref.org'));
+        .find((l) => /(^|\s)api\.crossref\.org\s/.test(l));
       expect(line).toMatch(/api\.crossref\.org +reachable$/);
       expect(line).not.toContain('HTTP');
       const j = memIo(tempDir());

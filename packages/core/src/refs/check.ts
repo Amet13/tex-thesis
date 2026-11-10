@@ -312,7 +312,7 @@ function problemFor(r: RefResult, entry?: BibEntry, requireProvenance = false): 
       };
     }
     case 'unverifiable': {
-      const why = r.reason?.replace(/ \(lookup incomplete: .*\)$/, '');
+      const why = withoutLookupNote(r.reason);
       const lines = failureLines(r);
       return {
         ...common,
@@ -504,4 +504,15 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
     summary: summaryOf(results, stats),
     stats,
   };
+}
+
+/**
+ * Drops a trailing " (lookup incomplete: …)" note. Plain string search, not a
+ * regular expression: the reason contains text from the network, and
+ * `.*\)$` backtracks quadratically on a crafted one.
+ */
+function withoutLookupNote(reason: string | undefined): string | undefined {
+  if (!reason?.endsWith(')')) return reason;
+  const at = reason.indexOf(' (lookup incomplete: ');
+  return at < 0 ? reason : reason.slice(0, at);
 }
