@@ -10,6 +10,8 @@ export interface Io {
   stderrIsTTY?: boolean;
   /** Overrides `globalThis.fetch` (tests, proxies). */
   fetch?: typeof fetch;
+  /** Stops long-running commands (`check --watch`). The CLI wires it to Ctrl-C. */
+  signal?: AbortSignal;
 }
 
 export function processIo(): Io {

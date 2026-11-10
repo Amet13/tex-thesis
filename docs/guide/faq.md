@@ -87,3 +87,13 @@ notices.
 ## I used tex-thesis. Is it gone?
 
 It became Overfull. See [Migrate from tex-thesis](./migrate-from-tex-thesis.md).
+
+## Are the messages available in other languages?
+
+Not yet, and there is no plan to translate them in this project. Every problem
+has a stable rule id (`overfull explain --list`), and the English text for each
+rule lives in one place: the rule registry (`packages/core/src/*/rules.ts`) and
+the build-error explanations (`packages/core/src/log/explain-data.ts`). The
+JSON report (`--json`) carries the rule id with every message, so a translation
+can be layered on top by id. A contribution that adds a translation layer this
+way is welcome; open an issue first so the approach can be agreed.

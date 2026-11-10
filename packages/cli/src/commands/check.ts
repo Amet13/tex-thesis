@@ -1,3 +1,5 @@
+import { type Dirent, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   formatHuman,
   formatJson,
@@ -36,6 +38,9 @@ Options:
   --annotations       Print GitHub workflow annotations
   --sarif             Print a SARIF 2.1.0 log (GitHub code scanning upload)
   --verbose, -v       Show why and how to fix each problem
+  --watch             Check again whenever the log, PDF, .aux or a .bib file changes
+                      (references are looked up again only when a .bib changed);
+                      stop with Ctrl-C. Human output only.
   --pdf file          PDF to check (default <jobname>.pdf)
   --log file          Build log (default <jobname>.log)
   --aux file          .aux file (default <jobname>.aux)
@@ -118,6 +123,7 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
       annotations: { type: 'boolean' },
       sarif: { type: 'boolean' },
       verbose: { type: 'boolean', short: 'v' },
+      watch: { type: 'boolean' },
       main: { type: 'string' },
       pdf: { type: 'string' },
       log: { type: 'string' },
@@ -150,41 +156,133 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
   const files = classifyFiles(positionals, values);
   const checksArg = list(values.checks) ?? (files.onlyBib ? ['references'] : undefined);
   const machine = Boolean(values.json || values.markdown || values.annotations || values.sarif);
-  const progress = machine || isCI(io.env) ? undefined : progressLine(io, 'references');
-  const report = await runCheck({
-    cwd: io.cwd,
-    env: io.env,
-    ...(io.fetch ? { fetch: io.fetch } : {}),
-    ...(str(values.config) ? { config: str(values.config) } : {}),
-    ...(checksArg ? { checks: parseChecks(checksArg, '--checks', '--checks') } : {}),
-    ...(str(values.profile) ? { profile: str(values.profile) } : {}),
-    ...(files.main ? { main: files.main } : {}),
-    ...(files.pdf ? { pdf: files.pdf } : {}),
-    ...(files.log ? { log: files.log } : {}),
-    ...(files.aux ? { aux: files.aux } : {}),
-    ...(files.bib.length ? { bib: files.bib } : {}),
-    ...(str(values.mailto) ? { mailto: str(values.mailto) } : {}),
-    offline: values.offline === true,
-    ...(values.refresh ? { refresh: true } : {}),
-    ...(progress ? { progress } : {}),
-    verapdf: values['no-verapdf'] !== true,
-    engine: engine as 'auto' | 'local' | 'docker',
-    ...(str(values.image) ? { image: str(values.image) } : {}),
-  });
-  if (!machine && report.assumed) {
-    const a = report.assumed;
-    io.stderr(
-      `No overfull.yml: assuming main ${a.main}${a.mainSource === 'detected' ? ' (the only document here)' : ''}, profile ${a.profile}. Run \`overfull init --here\` to save these settings.\n`,
+  if (values.watch && machine)
+    throw new UsageError(
+      '--watch prints the human report; leave out --json, --markdown, --annotations and --sarif',
     );
+  const progress = machine || isCI(io.env) ? undefined : progressLine(io, 'references');
+  const runOnce = async (offline: boolean) => {
+    const report = await runCheck({
+      cwd: io.cwd,
+      env: io.env,
+      ...(io.fetch ? { fetch: io.fetch } : {}),
+      ...(str(values.config) ? { config: str(values.config) } : {}),
+      ...(checksArg ? { checks: parseChecks(checksArg, '--checks', '--checks') } : {}),
+      ...(str(values.profile) ? { profile: str(values.profile) } : {}),
+      ...(files.main ? { main: files.main } : {}),
+      ...(files.pdf ? { pdf: files.pdf } : {}),
+      ...(files.log ? { log: files.log } : {}),
+      ...(files.aux ? { aux: files.aux } : {}),
+      ...(files.bib.length ? { bib: files.bib } : {}),
+      ...(str(values.mailto) ? { mailto: str(values.mailto) } : {}),
+      offline,
+      ...(values.refresh ? { refresh: true } : {}),
+      ...(progress ? { progress } : {}),
+      verapdf: values['no-verapdf'] !== true,
+      engine: engine as 'auto' | 'local' | 'docker',
+      ...(str(values.image) ? { image: str(values.image) } : {}),
+    });
+    if (!machine && report.assumed) {
+      const a = report.assumed;
+      io.stderr(
+        `No overfull.yml: assuming main ${a.main}${a.mainSource === 'detected' ? ' (the only document here)' : ''}, profile ${a.profile}. Run \`overfull init --here\` to save these settings.\n`,
+      );
+    }
+    if (values.json) io.stdout(formatJson(report));
+    else if (values.markdown) io.stdout(formatMarkdown(report));
+    else if (values.sarif) {
+      const fallbackFile = sarifFallbackFile(io.cwd, io.env, str(values.config), files.main);
+      io.stdout(formatSarif(report, fallbackFile ? { fallbackFile } : {}));
+    } else if (values.annotations) {
+      const lines = githubAnnotations(report);
+      io.stdout(lines.length ? `${lines.join('\n')}\n` : '');
+    } else
+      io.stdout(formatHuman(report, { color: useColor(io), verbose: values.verbose === true }));
+    return exitCodeFor(report, failOn as 'error' | 'warning' | 'never');
+  };
+  const offline = values.offline === true;
+  if (!values.watch) return runOnce(offline);
+  return watch(io, runOnce, offline);
+}
+
+/** Files whose change starts a new check, as path → "mtime:size". */
+export function watchedState(root: string): Map<string, string> {
+  const out = new Map<string, string>();
+  const walk = (dir: string, depth: number) => {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+      const p = join(dir, e.name);
+      if (e.isDirectory()) {
+        if (depth < 3) walk(p, depth + 1);
+      } else if (e.isFile() && WATCHED.test(e.name)) {
+        try {
+          const st = statSync(p);
+          out.set(p, `${st.mtimeMs}:${st.size}`);
+        } catch {
+          /* vanished between listing and stat: not watched */
+        }
+      }
+    }
+  };
+  walk(root, 0);
+  return out;
+}
+
+const WATCHED = /\.(?:log|pdf|aux|bcf|bib)$/i;
+
+/** What changed between two states: anything, and whether a .bib file did. */
+export function changes(
+  before: Map<string, string>,
+  after: Map<string, string>,
+): { any: boolean; bib: boolean } {
+  let any = false;
+  let bib = false;
+  for (const key of new Set([...before.keys(), ...after.keys()])) {
+    if (before.get(key) === after.get(key)) continue;
+    any = true;
+    if (/\.bib$/i.test(key)) bib = true;
   }
-  if (values.json) io.stdout(formatJson(report));
-  else if (values.markdown) io.stdout(formatMarkdown(report));
-  else if (values.sarif) {
-    const fallbackFile = sarifFallbackFile(io.cwd, io.env, str(values.config), files.main);
-    io.stdout(formatSarif(report, fallbackFile ? { fallbackFile } : {}));
-  } else if (values.annotations) {
-    const lines = githubAnnotations(report);
-    io.stdout(lines.length ? `${lines.join('\n')}\n` : '');
-  } else io.stdout(formatHuman(report, { color: useColor(io), verbose: values.verbose === true }));
-  return exitCodeFor(report, failOn as 'error' | 'warning' | 'never');
+  return { any, bib };
+}
+
+async function watch(
+  io: Io,
+  runOnce: (offline: boolean) => Promise<number>,
+  offline: boolean,
+): Promise<number> {
+  const intervalMs = Number(io.env.OVERFULL_WATCH_INTERVAL_MS) || 1000;
+  // Ctrl-C ends the watch with the last exit code (only the real CLI has no signal).
+  let signal = io.signal;
+  if (!signal) {
+    const stop = new AbortController();
+    process.once('SIGINT', () => stop.abort());
+    signal = stop.signal;
+  }
+  let code = await runOnce(offline);
+  let state = watchedState(io.cwd);
+  io.stderr('Watching the log, PDF, .aux and .bib files. Press Ctrl-C to stop.\n');
+  while (!signal.aborted) {
+    await new Promise<void>((done) => {
+      const t = setTimeout(done, intervalMs);
+      signal.addEventListener('abort', () => {
+        clearTimeout(t);
+        done();
+      });
+    });
+    if (signal.aborted) break;
+    const next = watchedState(io.cwd);
+    const c = changes(state, next);
+    state = next;
+    if (!c.any) continue;
+    io.stderr(`\n— ${new Date().toLocaleTimeString()} —\n`);
+    // Reference lookups only when a bibliography changed; otherwise the cached answers stand.
+    code = await runOnce(offline || !c.bib);
+  }
+  return code;
 }
