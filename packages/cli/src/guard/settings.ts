@@ -12,6 +12,7 @@ import {
   fstatSync,
   mkdirSync,
   openSync,
+  realpathSync,
   writeSync,
 } from 'node:fs';
 import { dirname, resolve, sep } from 'node:path';
@@ -104,12 +105,16 @@ export function installGitHook(root: string, dryRun: boolean): GitHookResult {
   let gitDir: string;
   let hook: string;
   try {
-    gitDir = resolve(root, gitOut(['rev-parse', '--absolute-git-dir']));
-    hook = resolve(root, gitOut(['rev-parse', '--git-path', 'hooks/pre-commit']));
+    // Compare real paths: on macOS the temp folder is a symlink (/var → /private/var),
+    // and on Windows git prints long forward-slash paths where Node may hold short names.
+    const base = realpathSync.native(root);
+    gitDir = realpathSync.native(resolve(base, gitOut(['rev-parse', '--absolute-git-dir'])));
+    hook = resolve(base, gitOut(['rev-parse', '--git-path', 'hooks/pre-commit']));
   } catch {
     return { status: 'no-git' };
   }
-  if (!hook.startsWith(gitDir + sep))
+  const fold = (p: string) => (process.platform === 'win32' ? p.toLowerCase() : p);
+  if (!fold(hook).startsWith(fold(gitDir + sep)))
     return { status: 'elsewhere', path: hook, line: PRE_COMMIT_LINE };
   if (dryRun)
     return existsSync(hook)

@@ -142,7 +142,7 @@ describe('ACL Anthology: eight real papers from recordings', () => {
     const { f, o } = opts();
     const entries = parseBib(readFixture('sources-acl.bib')).slice(0, 1);
     await verifyEntries(entries, { ...o, sources: ['crossref', 'doi.org'] }).catch(() => []);
-    expect(f.calls.some((u) => u.includes('aclanthology.org'))).toBe(false);
+    expect(f.calls.some((u) => new URL(u).hostname === 'aclanthology.org')).toBe(false);
   });
 });
 

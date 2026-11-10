@@ -79,18 +79,28 @@ export function applyVariant(root, dir, task, variant) {
   return { notes, effective };
 }
 
+/** The file's text, or undefined when it does not exist (read once, no check first). */
+function readOrUndefined(path) {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch (err) {
+    if (err.code === 'ENOENT') return undefined;
+    throw err;
+  }
+}
+
 /** Applies setup (YAML merge), edits (literal replace, exactly once) and write (files) of a task. */
 export function applyTaskSetup(root, dir, task) {
   for (const [file, patch] of Object.entries(task.setup ?? {})) {
     const path = join(dir, file);
-    const current = existsSync(path) ? (parseYaml(readFileSync(path, 'utf8')) ?? {}) : {};
+    const current = parseYaml(readOrUndefined(path) ?? '') ?? {};
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, stringifyYaml(deepMerge(current, patch)));
   }
   for (const e of task.edits ?? []) {
     const path = join(dir, e.file);
-    if (!existsSync(path)) throw new Error(`edit: ${e.file} does not exist`);
-    const text = readFileSync(path, 'utf8');
+    const text = readOrUndefined(path);
+    if (text === undefined) throw new Error(`edit: ${e.file} does not exist`);
     const n = text.split(e.find).length - 1;
     if (n !== 1)
       throw new Error(

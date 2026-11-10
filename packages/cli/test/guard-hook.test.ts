@@ -1,6 +1,8 @@
 /** `overfull guard --hook`: payload fixtures per harness, fail-open behaviour, settings wiring. */
+
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { guardCommand } from '../src/commands/guard.js';
 import { detectHarness, MAX_PAYLOAD_BYTES, runHook } from '../src/guard/hook.js';
@@ -10,7 +12,7 @@ import { memIo } from './helpers.js';
 
 const fixture = (name: string) =>
   readFileSync(new URL(`./fixtures/guard/${name}`, import.meta.url), 'utf8');
-const repo = new URL('../../../', import.meta.url).pathname;
+const repo = fileURLToPath(new URL('../../../', import.meta.url));
 
 async function hook(args: string[], stdin: string) {
   const io = memIo('/work/paper');
