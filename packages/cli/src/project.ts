@@ -1,4 +1,14 @@
-import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import {
+  closeSync,
+  existsSync,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+} from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import type { TexFile } from '@overfull/core';
 import { UsageError } from './io.js';
@@ -181,13 +191,19 @@ export function detectMain(root: string, outputDirs: string[] = ['.']): MainDete
   for (const name of names) {
     if (!/\.tex$/i.test(name) || isDiffArtifact(name)) continue;
     const abs = join(root, name);
+    // Check and read through one descriptor, so the file cannot be swapped
+    // between the size check and the read.
+    let fd: number | undefined;
     try {
-      const st = statSync(abs);
+      fd = openSync(abs, 'r');
+      const st = fstatSync(fd);
       if (!st.isFile() || st.size > MAX_TEX_BYTES) continue;
-      const text = readFileSync(abs, 'utf8').replace(/(^|[^\\])%.*$/gm, '$1');
+      const text = readFileSync(fd, 'utf8').replace(/(^|[^\\])%.*$/gm, '$1');
       if (/\\documentclass\b/.test(text)) candidates.push(name);
     } catch {
       /* unreadable: not a candidate */
+    } finally {
+      if (fd !== undefined) closeSync(fd);
     }
   }
   if (candidates.length === 1)
