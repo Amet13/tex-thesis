@@ -112151,6 +112151,33 @@ function pageText(items) {
   }
   return text2;
 }
+function textBoxOf(items, view) {
+  const [x0 = 0, , , y1 = 0] = view;
+  let left = Number.POSITIVE_INFINITY;
+  let right = Number.NEGATIVE_INFINITY;
+  let top = Number.POSITIVE_INFINITY;
+  let bottom = Number.NEGATIVE_INFINITY;
+  for (const item of items) {
+    const s = pick(item, "str");
+    const t = pick(item, "transform");
+    const width = pick(item, "width");
+    if (typeof s !== "string" || !s.trim() || !Array.isArray(t) || typeof width !== "number")
+      continue;
+    if (/^\s*\d{1,5}\s*$/.test(s)) continue;
+    const [, , , d = 0, e = 0, f = 0] = t;
+    const height = Math.abs(
+      typeof pick(item, "height") === "number" ? pick(item, "height") : d
+    );
+    if (![e, f, width, height].every(Number.isFinite) || width <= 0) continue;
+    left = Math.min(left, e - x0);
+    right = Math.max(right, e - x0 + width);
+    top = Math.min(top, y1 - (f + height));
+    bottom = Math.max(bottom, y1 - f);
+  }
+  if (!Number.isFinite(left)) return void 0;
+  const mm = (v) => Math.round(v * PT_TO_MM * 10) / 10;
+  return { leftMm: mm(left), rightMm: mm(right), topMm: mm(top), bottomMm: mm(bottom) };
+}
 function collectFigures(node, page, out) {
   if (!node || typeof node !== "object") return;
   const n = node;
@@ -112185,11 +112212,13 @@ async function extractPdfFacts(data, pdfjs) {
       let h = Math.abs(y1 - y0) * PT_TO_MM;
       if ((page.rotate ?? 0) % 180 !== 0) [w, h] = [h, w];
       const content = await page.getTextContent();
+      const box = (page.rotate ?? 0) % 360 === 0 ? textBoxOf(content.items, page.view) : void 0;
       pages.push({
         number: i,
         text: pageText(content.items),
         widthMm: Math.round(w * 10) / 10,
-        heightMm: Math.round(h * 10) / 10
+        heightMm: Math.round(h * 10) / 10,
+        ...box ? { textBox: box } : {}
       });
       const tree = await page.getStructTree().catch(() => null);
       if (tree) {
@@ -113465,6 +113494,18 @@ var NOT_INDEXED = /* @__PURE__ */ new Set([
   "legal",
   "jurisdiction"
 ]);
+function parseOpenReviewId(value) {
+  let url;
+  try {
+    url = new URL(unwrapUrl(value));
+  } catch {
+    return null;
+  }
+  if (url.hostname !== "openreview.net" && url.hostname !== "www.openreview.net") return null;
+  if (url.pathname !== "/forum" && url.pathname !== "/pdf") return null;
+  const id = url.searchParams.get("id");
+  return id && /^[A-Za-z0-9_-]{5,40}$/.test(id) ? id : null;
+}
 function unwrapUrl(value) {
   const v = value.trim().slice(0, 600);
   return v.startsWith("\\url{") && v.endsWith("}") ? v.slice(5, -1).trim() : v;
@@ -113479,6 +113520,8 @@ function otherIdentifiers(entry, doi) {
   if (pmid) ids.pmid = pmid;
   const pmcid = [f.pmcid, archive === "pmc" || archive === "pmcid" ? f.eprint : void 0, f.url].map((v) => v ? parsePmcid(v.trim()) : null).find((v) => Boolean(v));
   if (pmcid) ids.pmcid = pmcid;
+  const openreview = [f.url, f.howpublished, f.note].map((v) => v ? parseOpenReviewId(v) : null).find((v) => Boolean(v));
+  if (openreview) ids.openreviewId = openreview;
   return ids;
 }
 function identifiersOf(entry) {
@@ -114475,6 +114518,13 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
       ...withSearched,
       status: "unverifiable",
       reason: `could not be checked here ${skippedNote}`
+    };
+  }
+  if (ids.openreviewId) {
+    return {
+      ...withSearched,
+      status: "unverifiable",
+      reason: `no index has it yet, and OpenReview (forum ${ids.openreviewId}) cannot be checked automatically; open the link to confirm`
     };
   }
   return {
@@ -115764,12 +115814,51 @@ function anonymityLinkProblems(ctx) {
   return out;
 }
 
+// ../packages/core/src/venue/margins.ts
+var TOLERANCE_MM = 2;
+function marginProblems(profile, ctx) {
+  const block = profile.textBlock;
+  if (!block || !ctx.facts) return [];
+  const out = [];
+  for (const page of ctx.facts.pages) {
+    const box = page.textBox;
+    if (!box) continue;
+    const left = block.leftMm ?? (page.widthMm - block.widthMm) / 2;
+    const right = left + block.widthMm;
+    const past = [];
+    const over = (mm) => Math.round(mm * 10) / 10;
+    if (box.leftMm < left - TOLERANCE_MM)
+      past.push(`${over(left - box.leftMm)} mm into the left margin`);
+    if (box.rightMm > right + TOLERANCE_MM)
+      past.push(`${over(box.rightMm - right)} mm into the right margin`);
+    if (block.topMm !== void 0 && block.heightMm !== void 0) {
+      const top = block.topMm;
+      const bottom = top + block.heightMm;
+      if (box.topMm < top - TOLERANCE_MM)
+        past.push(`${over(top - box.topMm)} mm into the top margin`);
+      if (box.bottomMm > bottom + TOLERANCE_MM)
+        past.push(`${over(box.bottomMm - bottom)} mm into the bottom margin`);
+    }
+    if (!past.length) continue;
+    out.push({
+      rule: "text-outside-block",
+      check: "venue",
+      severity: "warning",
+      message: `Text on page ${page.number} reaches ${past.join(" and ")} (text block ${block.widthMm} mm wide for ${profile.name})`,
+      location: { page: page.number },
+      fix: "Find the overfull line, table or figure on that page (`overfull pages` renders it) and make it fit; do not change the margins.",
+      data: { page: page.number, textBox: box, textBlock: block }
+    });
+  }
+  return out;
+}
+
 // ../packages/core/src/venue/pages.ts
 var PAPER = {
   a4: { w: 210, h: 297, label: "A4 (210 \xD7 297 mm)" },
   letter: { w: 215.9, h: 279.4, label: "US Letter (8.5 \xD7 11 in)" }
 };
-var TOLERANCE_MM = 3;
+var TOLERANCE_MM2 = 3;
 function mainTextPages(profile, ctx) {
   const endLabel = profile.pageLimit?.endLabel;
   if (!endLabel || !ctx.aux) return void 0;
@@ -115877,12 +115966,12 @@ function paperSizeProblems(profile, ctx) {
   if (!want || want === "any" || !ctx.facts) return [];
   const target = PAPER[want];
   const off = ctx.facts.pages.filter(
-    (p) => Math.abs(p.widthMm - target.w) > TOLERANCE_MM || Math.abs(p.heightMm - target.h) > TOLERANCE_MM
+    (p) => Math.abs(p.widthMm - target.w) > TOLERANCE_MM2 || Math.abs(p.heightMm - target.h) > TOLERANCE_MM2
   );
   const first2 = off[0];
   if (!first2) return [];
   const other = want === "a4" ? "letter" : "a4";
-  const isOther = Math.abs(first2.widthMm - PAPER[other].w) <= TOLERANCE_MM && Math.abs(first2.heightMm - PAPER[other].h) <= TOLERANCE_MM;
+  const isOther = Math.abs(first2.widthMm - PAPER[other].w) <= TOLERANCE_MM2 && Math.abs(first2.heightMm - PAPER[other].h) <= TOLERANCE_MM2;
   const size = isOther ? PAPER[other].label : `${first2.widthMm} \xD7 ${first2.heightMm} mm`;
   return [
     {
@@ -115961,6 +116050,7 @@ function venueCheck(profile, ctx) {
     ...profile.anonymous ? [...anonymityProblems(ctx), ...anonymityLinkProblems(ctx)] : [],
     ...styleFileProblems(profile, ctx.texFiles ?? []),
     ...layoutProblems(profile, ctx),
+    ...marginProblems(profile, ctx),
     ...disclosureProblems(profile.disclosure, ctx),
     ...profile.arxiv ? arxivProblems(ctx) : [],
     ...staleProfileProblems(profile, ctx.now ?? /* @__PURE__ */ new Date())
@@ -116009,7 +116099,10 @@ var venueProfileData = {
         sha256: "01990f8d3716f8e39c5b28a7478f3ac6e28630d1161de6105a7217f5e7f60e43"
       }
     ],
-    notes: "The submission PDF can have up to 9 pages, with pages 8 and 9 reserved for references. Acknowledgements are omitted from papers submitted for review. The author policy allows judicious use of generative AI tools; the pages read state no disclosure requirement. The hash is of aaai2027.sty (2027/10/21) from the AuthorKit27 archive downloaded on 2026-11-10. The AAAI-28 call page redirects to AAAI-26 content, so AAAI-27 is the latest published."
+    textBlock: {
+      widthMm: 177.8
+    },
+    notes: "The submission PDF can have up to 9 pages, with pages 8 and 9 reserved for references. Acknowledgements are omitted from papers submitted for review. The author policy allows judicious use of generative AI tools; the pages read state no disclosure requirement. The hash is of aaai2027.sty (2027/10/21) from the AuthorKit27 archive downloaded on 2026-11-10. The AAAI-28 call page redirects to AAAI-26 content, so AAAI-27 is the latest published. Text block: 7 in wide, centred on US Letter (aaai2027.sty)."
   },
   "acl-rolling-review": {
     id: "acl-rolling-review",
@@ -116035,6 +116128,27 @@ var venueProfileData = {
     anonymous: true,
     disclosure: "recommended",
     notes: "Short papers have 4 pages of content. Final versions of long papers get one more page (9). Missing a Limitations section is a desk-rejection reason. Use of generative AI for writing or coding must be disclosed in the Responsible NLP Checklist, with details in the Acknowledgements; some uses (language polishing, short-form input assistance) need no disclosure. The official style files are at https://github.com/acl-org/acl-style-files (not reachable from this session, so no file name or hash is recorded)."
+  },
+  "acm-sigconf": {
+    id: "acm-sigconf",
+    name: "ACM conference proceedings (acmart, sigconf format)",
+    extends: "paper",
+    year: "rolling",
+    source: [
+      "https://ctan.org/pkg/acmart",
+      "https://mirrors.ctan.org/macros/latex/contrib/acmart/acmart.dtx"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "letter",
+    styleFiles: [
+      {
+        name: "acmart.cls"
+      }
+    ],
+    textBlock: {
+      widthMm: 177.9
+    },
+    notes: "Each ACM conference sets its own page limit and review rules; set them in overfull.yml (`venue:`) from the call for papers, and use the class option `anonymous` for double-blind review. Layout from acmart v2.21 (2026/11/01): the sigconf format is US Letter with 54 pt inner and outer margins, so the text block is 8.5 in minus 108 pt wide. acmart.cls is generated from acmart.dtx, so no hash is recorded. ACM's own pages (acm.org/publications) could not be read from the build machine."
   },
   "cvpr-2027": {
     id: "cvpr-2027",
@@ -116064,7 +116178,10 @@ var venueProfileData = {
         sha256: "1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4"
       }
     ],
-    notes: 'Every submission needs a section titled "LLM Usage Statement" after the main text and before the references; it states "No LLMs or generative AI tools were used in this work" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10.'
+    textBlock: {
+      widthMm: 174.6
+    },
+    notes: 'Every submission needs a section titled "LLM Usage Statement" after the main text and before the references; it states "No LLMs or generative AI tools were used in this work" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10. Text block: 6.875 in wide, centred on US Letter (cvpr.sty).'
   },
   "emnlp-2026": {
     id: "emnlp-2026",
@@ -116121,7 +116238,10 @@ var venueProfileData = {
         sha256: "797deef41724e93761426ac0cbcca46279a91cc650dd1f0ce76a4f08d2098ea6"
       }
     ],
-    notes: "The page limit is 10 for the discussion phase and the camera-ready version. A mandatory AI use statement section does not count toward the limit. Style files are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded on 2026-11-10 (file dated 2026-07-28 in the archive)."
+    textBlock: {
+      widthMm: 139.7
+    },
+    notes: "The page limit is 10 for the discussion phase and the camera-ready version. A mandatory AI use statement section does not count toward the limit. Style files are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded on 2026-11-10 (file dated 2026-07-28 in the archive). Text block: 5.5 in wide with 1.5 in side margins (iclr2027_conference.sty)."
   },
   "icml-2026": {
     id: "icml-2026",
@@ -116152,7 +116272,35 @@ var venueProfileData = {
         sha256: "7cdcf90f6a59c5219e7f15c88f7ed09fcaf598dad91e6cdddc4dc3cb0e397a95"
       }
     ],
-    notes: "Final versions of accepted papers get one extra page for the main paper. The call allows generative AI tools and encourages authors to explain notable uses in their methodology; LLMs cannot be authors. The hash is of icml2026.sty (v2.0, 2025/10/29) from icml2026.zip downloaded on 2026-11-10. The ICML 2027 call page exists but has no content yet."
+    textBlock: {
+      widthMm: 171.5,
+      leftMm: 19.6
+    },
+    notes: "Final versions of accepted papers get one extra page for the main paper. The call allows generative AI tools and encourages authors to explain notable uses in their methodology; LLMs cannot be authors. The hash is of icml2026.sty (v2.0, 2025/10/29) from icml2026.zip downloaded on 2026-11-10. The ICML 2027 call page exists but has no content yet. Text block: 6.75 in wide, 0.77 in from the left edge (icml2026.sty)."
+  },
+  "ieee-conference": {
+    id: "ieee-conference",
+    name: "IEEE conference proceedings (IEEEtran, conference mode)",
+    extends: "paper",
+    year: "rolling",
+    source: [
+      "https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/authoring-tools-and-templates/",
+      "https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/meet-ieee-xplore-requirements/",
+      "https://conferences.ieeeauthorcenter.ieee.org/author-ethics/guidelines-and-policies/submission-policies/",
+      "https://ctan.org/pkg/ieeetran"
+    ],
+    checkedOn: "2026-11-10",
+    disclosure: "recommended",
+    styleFiles: [
+      {
+        name: "IEEEtran.cls",
+        sha256: "da751920a317ed318b7b5cd7fa585a6cc7d28502d457856382e9be24b10a3bd7"
+      }
+    ],
+    textBlock: {
+      widthMm: 181.4
+    },
+    notes: "Each IEEE conference sets its own page limit, paper size and review rules; set them in overfull.yml (`venue:`) from the call for papers. IEEE's submission policies ask authors to disclose AI-generated content in the acknowledgments (editing and grammar help excepted), so the disclosure is recommended rather than required. IEEE Xplore needs every font embedded. The hash is of IEEEtran.cls V1.8b (2015/08/26) as distributed on CTAN, the current release; IEEE's own template page could not be read from the build machine. The text block is the class's conference-mode width (43 pc, centred)."
   },
   "neurips-2026": {
     id: "neurips-2026",
@@ -116184,7 +116332,10 @@ var venueProfileData = {
         sha256: "c3fc2894e83d2517ca18b66741d6c595986d97957dc08ec08bb2125a7ec4555a"
       }
     ],
-    notes: "The handbook asks authors to describe agent or LLM use in the experimental setup only when it is an important, original or non-standard part of the method. Accepted papers get one additional content page for the camera-ready version. Paper size is from the letterpaper option in the official style file (the handbook does not state it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on 2026-11-10."
+    textBlock: {
+      widthMm: 139.7
+    },
+    notes: "The handbook asks authors to describe agent or LLM use in the experimental setup only when it is an important, original or non-standard part of the method. Accepted papers get one additional content page for the camera-ready version. Paper size is from the letterpaper option in the official style file (the handbook does not state it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on 2026-11-10. Text block: 5.5 in wide, centred on US Letter (geometry in neurips_2026.sty)."
   },
   "springer-lncs": {
     id: "springer-lncs",
@@ -116204,7 +116355,11 @@ var venueProfileData = {
         sha256: "04ec99046ad9867f6cd54ffd1ef8c47c767b327d1baec77536db0528cd492fa2"
       }
     ],
-    notes: "No page limit or paper size is set by Springer; the volume editors set the limit (full papers are typically 12-15 pages, short papers 6-11). Springer's instructions say proceedings contributions need alternative text for non-text content under WCAG; the level is recommended here because Overfull's accessibility check is about the PDF, not alt text. The hash is of llncs.cls v2.25 (2026/09/03) from the LaTeX2e template downloaded on 2026-11-10."
+    textBlock: {
+      widthMm: 122,
+      leftMm: 47.5
+    },
+    notes: "No page limit or paper size is set by Springer; the volume editors set the limit (full papers are typically 12-15 pages, short papers 6-11). Springer's instructions say proceedings contributions need alternative text for non-text content under WCAG; the level is recommended here because Overfull's accessibility check is about the PDF, not alt text. The hash is of llncs.cls v2.25 (2026/09/03) from the LaTeX2e template downloaded on 2026-11-10. Text block: 12.2 cm wide, 1 in + 63 pt from the left edge (llncs.cls)."
   }
 };
 
@@ -116325,6 +116480,14 @@ var venueRules = [
     title: "Page limit not checked",
     summary: "There was no PDF (or .aux label) to count pages from.",
     fix: "Build the document first (`overfull build`)."
+  },
+  {
+    id: "text-outside-block",
+    check: "venue",
+    severity: "warning",
+    title: "Text outside the text block",
+    summary: "Text on a page of the PDF reaches into the margin, measured against the text block of the venue's style file (2 mm tolerance). Only for venue profiles that record a text block.",
+    fix: "Find the line, table or figure that sticks out (`overfull pages <n>` renders the page) and make it fit. Changing the margins or the text block is usually against the rules."
   },
   {
     id: "paper-size-mismatch",
