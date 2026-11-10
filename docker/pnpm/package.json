@@ -1,0 +1,8 @@
+{
+  "name": "overfull-image-pnpm",
+  "private": true,
+  "description": "Pins pnpm for the Docker build stage by integrity hash (npm ci). Keep in step with packageManager in the root package.json.",
+  "dependencies": {
+    "pnpm": "12.18.0"
+  }
+}

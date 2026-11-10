@@ -99,9 +99,13 @@ RUN --mount=type=secret,id=build_ca,required=false \
 # ---------------------------------------------------------------------------
 FROM node AS builder
 
-ARG PNPM_VERSION=12.18.0
+# pnpm comes from docker/pnpm/package-lock.json: `npm ci` checks every
+# package against its integrity hash.
+COPY docker/pnpm/package.json docker/pnpm/package-lock.json /opt/pnpm/
 RUN --mount=type=secret,id=build_ca,required=false \
-    NODE_EXTRA_CA_CERTS=/run/secrets/build_ca npm install -g "pnpm@${PNPM_VERSION}" && pnpm --version
+    NODE_EXTRA_CA_CERTS=/run/secrets/build_ca npm ci --prefix /opt/pnpm --no-audit --no-fund \
+ && ln -s /opt/pnpm/node_modules/.bin/pnpm /usr/local/bin/pnpm \
+ && pnpm --version
 
 WORKDIR /src
 COPY . .
