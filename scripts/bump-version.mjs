@@ -95,9 +95,6 @@ Next:
   1. Add a "## [v${next}]" section to CHANGELOG.md.
   2. pnpm build && pnpm --filter overfull-action build   (action/dist embeds the version)
   3. pnpm lint && pnpm typecheck && pnpm test && pnpm templates:check
-  4. Commit, then: git tag v${next} && git push origin v${next}${
-    newMajor !== oldMajor
-      ? `\n  5. After the release: git tag -f v${newMajor} v${next} && git push -f origin v${newMajor}`
-      : ''
-  }`);
+  4. Merge to main. When CI is green: Actions → release → Run workflow on main,
+     with "publish" ticked. It tags v${next}, moves v${newMajor} and publishes everything.`);
 }

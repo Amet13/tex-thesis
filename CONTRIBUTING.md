@@ -66,13 +66,17 @@ not published to npm.
    `pnpm build && pnpm --filter overfull-action build` and the checks above.
 3. Optional dry run: run the `release` workflow manually on the branch
    (Actions → release → Run workflow). It builds every asset and publishes nothing.
-4. Commit, merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
-   `image.yml` publishes `ghcr.io/amet13/overfull:X.Y.Z`, `X.Y` and `X`;
-   `release.yml` publishes the executables, `overfull.cjs`, template PDFs,
-   `SHA256SUMS` and provenance attestations. Both refuse a tag that does not
-   match the package version.
-5. Move the Action's major tag: `git tag -f vX vX.Y.Z && git push -f origin vX`.
-   Only full `vX.Y.Z` tags trigger workflows.
+4. Merge to `main` and wait for CI to pass. Then open Actions → release →
+   Run workflow, pick `main`, tick **publish** and run it. No clone needed. It:
+   - refuses to run unless CI passed on that commit and `vX.Y.Z` is not
+     released yet;
+   - builds the executables, `overfull.cjs`, template PDFs, `SHA256SUMS` and
+     the signed provenance, then creates the `vX.Y.Z` tag and GitHub release;
+   - moves the Action's major tag (`vX`);
+   - publishes `ghcr.io/amet13/overfull:X.Y.Z`, `X.Y` and `X`.
+
+   Pushing a `vX.Y.Z` tag yourself does the same (the image is then built by
+   `image.yml` on the tag push).
 
 ## Code of conduct
 

@@ -3,6 +3,8 @@ name: image
 # ghcr.io/amet13/overfull, built natively for linux/amd64 and linux/arm64 and
 # merged into one multi-arch tag:
 #   tag vX.Y.Z → X.Y.Z, X.Y, X (what templates and the Makefiles use: :3)
+#   release.yml (workflow_call with `version`) → the same, for releases made
+#   with the "Run workflow" button
 #   main       → edge
 #   every push → sha-<short>
 # Each build is signed with a build provenance attestation.
@@ -26,12 +28,21 @@ on:
     # Release tags only: moving the major tag (v3) for the Action triggers nothing.
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   workflow_dispatch:
+  # release.yml calls this after it publishes a release: a tag created by a
+  # workflow's GITHUB_TOKEN does not start other workflows by itself.
+  workflow_call:
+    inputs:
+      version:
+        description: Release version (X.Y.Z) to tag the image with
+        type: string
+        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # A fixed prefix: when called from release.yml, github.workflow is "release".
+  group: image-${{ inputs.version || github.ref }}
   cancel-in-progress: false
 
 env:
@@ -57,17 +68,19 @@ jobs:
         with:
           persist-credentials: false
       - name: Tag matches the package version
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: test "${GITHUB_REF_NAME#v}" = "$(jq -r .version packages/cli/package.json)"
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.version
+        env:
+          WANT: ${{ inputs.version || github.ref_name }}
+        run: test "${WANT#v}" = "$(jq -r .version packages/cli/package.json)"
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=edge,branch=main
+            type=semver,pattern={{version}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
+            type=semver,pattern={{major}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
+            type=edge,branch=main,enable=${{ !inputs.version }}
             type=sha
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -128,10 +141,10 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=edge,branch=main
+            type=semver,pattern={{version}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
+            type=semver,pattern={{major}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
+            type=edge,branch=main,enable=${{ !inputs.version }}
             type=sha
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
