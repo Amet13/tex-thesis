@@ -67,13 +67,13 @@ irm https://amet13.github.io/overfull/install.ps1 | iex
 
 The installer prints a `PATH` line if the directory is not on your `PATH`.
 Set `OVERFULL_VERSION=v3.1.0` to install a specific release and
-`OVERFULL_INSTALL_DIR` to install somewhere else. There is no native build for
-Intel Macs and the arm64 build does not run under Rosetta; use `overfull.cjs`
-with Node.js 26, or Docker.
+`OVERFULL_INSTALL_DIR` to install somewhere else. Native builds exist for Linux
+(x64, arm64), macOS (Apple silicon and Intel) and Windows (x64); anywhere else,
+use `overfull.cjs` with Node.js 26, or Docker.
 
 To do it by hand, download your file from
 [GitHub Releases](https://github.com/amet13/overfull/releases)
-(`overfull-linux-x64`, `overfull-linux-arm64`, `overfull-darwin-arm64`,
+(`overfull-linux-x64`, `overfull-linux-arm64`, `overfull-darwin-arm64`, `overfull-darwin-x64`,
 `overfull-win-x64.exe`), check it with `sha256sum -c --ignore-missing SHA256SUMS`,
 rename it to `overfull`, and make it executable.
 

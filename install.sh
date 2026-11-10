@@ -32,7 +32,8 @@ case "$os" in
   Darwin)
     case "$cpu" in
       arm64) asset="overfull-darwin-arm64" ;;
-      *) err "no native build for Intel Macs, and the arm64 build does not run under Rosetta. Use overfull.cjs with Node.js 26 or Docker (ghcr.io/amet13/overfull): https://github.com/$repo/releases" ;;
+      x86_64) asset="overfull-darwin-x64" ;;
+      *) err "no macOS build for $cpu. Use overfull.cjs with Node.js 26 or Docker (ghcr.io/amet13/overfull): https://github.com/$repo/releases" ;;
     esac
     ;;
   *) err "unsupported system $os. On Windows use install.ps1. Otherwise use overfull.cjs with Node.js 26 or Docker." ;;

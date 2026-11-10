@@ -16,6 +16,7 @@ case "$(uname -s)-$(uname -m)" in
   Linux-x86_64 | Linux-amd64) asset=overfull-linux-x64 ;;
   Linux-aarch64 | Linux-arm64) asset=overfull-linux-arm64 ;;
   Darwin-arm64) asset=overfull-darwin-arm64 ;;
+  Darwin-x86_64) asset=overfull-darwin-x64 ;;
   *) echo "test-install: unsupported platform, skipped"; exit 0 ;;
 esac
 

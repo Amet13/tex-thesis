@@ -8,6 +8,7 @@ export default defineConfig({
       'site/tests/**/*.test.ts',
       'bench/refs/test/**/*.test.ts',
       'evals/test/**/*.test.ts',
+      'packaging/*.test.ts',
     ],
     testTimeout: 20000,
   },
