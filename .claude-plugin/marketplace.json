@@ -1,0 +1,12 @@
+{
+  "name": "overfull",
+  "description": "Overfull: preflight for LaTeX papers and theses",
+  "owner": { "name": "Amet Umierov", "url": "https://github.com/amet13" },
+  "plugins": [
+    {
+      "name": "overfull",
+      "source": "./",
+      "description": "The Overfull skills (add-citation, fix-build, fit-page-limit, ...) and a hook that blocks direct .bib edits. Needs the overfull CLI on PATH."
+    }
+  ]
+}

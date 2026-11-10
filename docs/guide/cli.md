@@ -23,6 +23,7 @@ overfull diff [--base ref] [--main file] [--out file] [--engine auto|local|docke
 overfull explain <rule> [--json]
 overfull explain --list [--json]
 overfull doctor [--json] [--config file]
+overfull mcp [--cwd dir]
 ```
 
 `overfull --version` prints the version (3.0.0). `overfull <command> --help` (or
@@ -56,7 +57,7 @@ To add Overfull to a project you already have, run `overfull init --here` in
 its folder (alias `overfull adopt`). It detects the main file, engine,
 bibliography and venue style file, writes `overfull.yml`, and never touches a
 `.tex` or `.bib` file. Options: `--main <file>`, `--agents`, `--ci`, `--make`,
-`--all`, `--force`, `--dry-run`; `--json` prints `{detected, written, skipped}`.
+`--hooks`, `--all`, `--force`, `--dry-run`; `--json` prints `{detected, written, skipped}`.
 See [Add Overfull to an existing project](./existing-project.md).
 
 ## build
@@ -292,6 +293,51 @@ document: no local TeX Live (`latexmk`) and no usable Docker image. Other missin
 tools only limit what can run, and the exit code stays 0. `--json` prints
 `{"canBuild", "message", "items": [{"name", "ok", "detail", "needFor"?, "status"?}]}`.
 `--config file` checks a different config file.
+
+## guard
+
+```sh
+overfull guard --staged            # git pre-commit hook
+overfull guard --staged --offline
+overfull guard --hook              # agent pre-tool-use hook, reads JSON on stdin
+```
+
+Blocks hand-written bibliography entries when they happen. `--staged` reads the
+staged changes to `.bib` files and checks each entry that was added or changed.
+An entry passes when it has a valid `overfull cite` marker, carries
+`note = {overfull: author-provided}` or `overfull: skip`, or is found in the
+indexes. Removed entries and whitespace or field-order changes pass. Otherwise
+the commit is refused and the file, key and the `overfull cite` command to use
+are printed. It works before the first commit. `--hook` answers an AI agent's
+hook and denies direct writes to `.bib` files by the agent's file tools; anything
+it does not recognise is allowed. See [Guard](./with-an-agent.md#guard).
+
+| Flag | Effect |
+| --- | --- |
+| `--staged` | Check the staged `.bib` changes. |
+| `--hook [claude\|gemini]` | Answer a hook payload from stdin. Without a name, the harness is detected from the payload. |
+| `--offline` | With `--staged`: do not ask the indexes. |
+| `--json` | With `--staged`: print `{status, files, checked, passed, blocked}`. |
+
+Exit codes: 0 pass, 1 blocked, 2 usage or internal error. `--hook` always exits 0.
+
+## mcp
+
+```sh
+overfull mcp
+overfull mcp --cwd /path/to/project
+```
+
+Runs Overfull as a Model Context Protocol server on stdin and stdout, for AI
+tools that have no shell. An MCP client starts it; you do not run it by hand.
+It offers the tools `check`, `cite`, `explain`, `pages` and `doctor`, with the
+same results as the commands' `--json` output. It works on the folder it was
+started in, or on `--cwd`, and never on a folder or an output path chosen by the
+client. See [Using Overfull over MCP](./mcp.md).
+
+| Flag | Effect |
+| --- | --- |
+| `--cwd dir` | The project folder. Default: the current directory. |
 
 ## Exit codes
 

@@ -1,6 +1,7 @@
 export { arxivCacheKey, doiCacheKey, titleCacheKey } from './cache.js';
 export {
   bibIssueProblems,
+  citeHint,
   missingKeys,
   type RefsCheckOptions,
   refsCheck,
@@ -26,8 +27,11 @@ export {
   queryKind,
 } from './lookup.js';
 export { normalizeTitle, titleSimilarity } from './normalize.js';
+export { findRetractions, retractionOf } from './retraction.js';
+export { parseAclBib, parseAclId } from './sources/acl.js';
 export { parseArxivFeed, parseArxivId } from './sources/arxiv.js';
 export { parseDoi } from './sources/doi.js';
+export { parsePmcid, parsePmid } from './sources/europepmc.js';
 export type {
   LookupCandidate,
   LookupHint,
@@ -39,6 +43,7 @@ export type {
   RefSource,
   RefStatus,
   RefsOptions,
+  RetractionNotice,
   WorkRecord,
 } from './types.js';
-export { verifyEntries } from './verify.js';
+export { hasValidProvenance, verifyEntries } from './verify.js';

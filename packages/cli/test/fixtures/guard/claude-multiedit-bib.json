@@ -1,0 +1,1 @@
+{"session_id":"abc123","cwd":"/work/paper","hook_event_name":"PreToolUse","tool_name":"MultiEdit","tool_input":{"file_path":"/work/paper/references.bib","edits":[{"old_string":"a","new_string":"b"}]},"tool_use_id":"toolu_01D"}

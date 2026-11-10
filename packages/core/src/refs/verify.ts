@@ -11,14 +11,17 @@ import {
 } from './kind.js';
 import { type Assessment, assess, type BibFacts, bestAssessment, bibFacts } from './match.js';
 import {
+  aclByIdCached,
   arxivByIdCached,
   type Ctx,
+  europepmcByIdCached,
   failureReason,
   resolveDoiCached,
   type SourceFailure,
   sourceAllowed,
   titleSearch,
 } from './search.js';
+import { attachRetractions } from './retraction.js';
 import type { MatchedRecord, RefResult, RefSource, RefsOptions, WorkRecord } from './types.js';
 
 const SOURCE_NAMES: Record<RefSource, string> = {
@@ -27,6 +30,9 @@ const SOURCE_NAMES: Record<RefSource, string> = {
   dblp: 'dblp',
   arxiv: 'arXiv',
   openalex: 'OpenAlex',
+  semanticscholar: 'Semantic Scholar',
+  acl: 'ACL Anthology',
+  europepmc: 'Europe PMC',
 };
 
 /** Sources whose answer is needed before "no match" may become `not-found`. */
@@ -143,6 +149,73 @@ async function checkArxiv(
     ev.failures.push({ source: 'arxiv', reason: failureReason(err) });
     return null;
   }
+}
+
+/**
+ * The entry's ACL Anthology, PubMed or PubMed Central id. The record found is final
+ * like for a DOI. An id the index does not know is no evidence either way: the search
+ * goes on by title, and `not-found` needs the usual indexes to agree.
+ */
+async function checkOtherId(
+  ctx: Ctx,
+  source: 'acl' | 'europepmc',
+  label: string,
+  fetchRecord: () => Promise<WorkRecord | null>,
+  facts: BibFacts,
+  ev: Evidence,
+): Promise<Assessment | null> {
+  ev.queries.push(label);
+  try {
+    const record = await fetchRecord();
+    ev.searched.add(source);
+    if (!record) return null;
+    const a = assess(facts, record, true);
+    ev.assessments.push(a);
+    return a;
+  } catch (err) {
+    if (ctx.opts.signal?.aborted) throw err;
+    ev.failures.push({ source, reason: failureReason(err) });
+    return null;
+  }
+}
+
+async function checkOtherIds(
+  ctx: Ctx,
+  ids: Identifiers,
+  facts: BibFacts,
+  ev: Evidence,
+): Promise<Assessment | null> {
+  if (ids.aclId && sourceAllowed(ctx.opts, 'acl')) {
+    const id = ids.aclId;
+    const a = await checkOtherId(ctx, 'acl', `acl:${id}`, () => aclByIdCached(ctx, id), facts, ev);
+    if (a) return a;
+  }
+  if (sourceAllowed(ctx.opts, 'europepmc')) {
+    if (ids.pmid) {
+      const pmid = ids.pmid;
+      const a = await checkOtherId(
+        ctx,
+        'europepmc',
+        `pmid:${pmid}`,
+        () => europepmcByIdCached(ctx, { pmid }),
+        facts,
+        ev,
+      );
+      if (a) return a;
+    }
+    if (ids.pmcid) {
+      const pmcid = ids.pmcid;
+      return checkOtherId(
+        ctx,
+        'europepmc',
+        `pmcid:${pmcid}`,
+        () => europepmcByIdCached(ctx, { pmcid }),
+        facts,
+        ev,
+      );
+    }
+  }
+  return null;
 }
 
 async function searchByTitle(
@@ -332,7 +405,8 @@ export async function verifyEntry(
       : null) ??
     (ids.arxivId && sourceAllowed(ctx.opts, 'arxiv')
       ? await checkArxiv(ctx, ids.arxivId, facts, ev)
-      : null);
+      : null) ??
+    (await checkOtherIds(ctx, ids, facts, ev));
   const withQuery = (r: RefResult): RefResult => ({ ...r, query: ev.queries[0] ?? '' });
   if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
 
@@ -384,11 +458,13 @@ export async function verifyEntries(
   const ctx: Ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
   let done = 0;
-  return runPool(entries, opts.concurrency ?? 4, async (e) => {
+  const results = await runPool(entries, opts.concurrency ?? 4, async (e) => {
     const result = await verifyEntry(e, ctx, ignore);
     opts.onProgress?.(++done, entries.length);
     return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
   });
+  await attachRetractions(ctx, results);
+  return results;
 }
 
 /**

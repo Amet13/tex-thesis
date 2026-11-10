@@ -8,11 +8,14 @@ import {
   titleCacheKey,
 } from './cache.js';
 import { type HttpClient, SourceUnavailableError } from './http.js';
+import { aclById } from './sources/acl.js';
 import { arxivById, arxivSearch } from './sources/arxiv.js';
 import { crossrefSearch } from './sources/crossref.js';
 import { dblpSearch } from './sources/dblp.js';
 import { type DoiResolution, resolveDoi } from './sources/doi.js';
+import { europepmcByPmcid, europepmcByPmid, europepmcSearch } from './sources/europepmc.js';
 import { openalexSearch } from './sources/openalex.js';
+import { semanticScholarSearch } from './sources/semanticscholar.js';
 import type { RefCache, RefSource, RefsOptions, WorkRecord } from './types.js';
 
 export interface Ctx {
@@ -74,6 +77,48 @@ export async function arxivByIdCached(ctx: Ctx, id: string): Promise<WorkRecord 
     ctx.opts.cache,
     arxivCacheKey(id),
     async () => ({ record: await arxivById(ctx.client, id) }),
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true,
+    },
+  );
+  return value.record;
+}
+
+/** Most sources that answer a title search for one entry before the fallbacks stop. */
+export const MAX_TITLE_ANSWERS = 3;
+
+/** An ACL Anthology paper by id (cached); null when the Anthology has no such paper. */
+export async function aclByIdCached(ctx: Ctx, id: string): Promise<WorkRecord | null> {
+  const value = await cached(
+    ctx.opts.cache,
+    `acl:${id}`,
+    async () => ({ record: await aclById(ctx.client, id) }),
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true,
+    },
+  );
+  return value.record;
+}
+
+/** A Europe PMC record by PubMed id or PubMed Central id (cached); null when it has none. */
+export async function europepmcByIdCached(
+  ctx: Ctx,
+  id: { pmid: string } | { pmcid: string },
+): Promise<WorkRecord | null> {
+  const key = 'pmid' in id ? `pmid:${id.pmid}` : `pmcid:${id.pmcid}`;
+  const value = await cached(
+    ctx.opts.cache,
+    key,
+    async () => ({
+      record:
+        'pmid' in id
+          ? await europepmcByPmid(ctx.client, id.pmid)
+          : await europepmcByPmcid(ctx.client, id.pmcid),
+    }),
     {
       isNegative: (v) => !v.record,
       maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
@@ -204,10 +249,32 @@ export async function titleSearch(
         openalexSearch(ctx.client, plain, undefined, ctx.opts.mailto),
       );
       outcome.searched.push('openalex');
-      visit(records, 'openalex');
+      if (visit(records, 'openalex')) return outcome;
     } catch (err) {
       if (ctx.opts.signal?.aborted) throw err;
       outcome.failures.push({ source: 'openalex', reason: failureReason(err) });
+    }
+  }
+  // Fallbacks, one at a time and only while fewer than MAX_TITLE_ANSWERS sources have
+  // answered (a source that failed does not use up a slot): the indexes that were reachable
+  // found nothing, so ask the next. Semantic Scholar first, then Europe PMC.
+  const plainTitle = q.isTex ? texToPlain(q.title) : q.title;
+  const fallbacks: [RefSource, () => Promise<WorkRecord[]>][] = [
+    ['semanticscholar', () => semanticScholarSearch(ctx.client, plainTitle, ctx.opts.semanticScholarKey)],
+    ['europepmc', () => europepmcSearch(ctx.client, plainTitle)],
+  ];
+  for (const [source, run] of fallbacks) {
+    if (outcome.searched.length >= MAX_TITLE_ANSWERS) break;
+    if (ctx.deadline !== undefined && Date.now() > ctx.deadline) break;
+    if (!sourceAllowed(ctx.opts, source)) continue;
+    try {
+      const records = await searchOne(ctx, cacheKey, source, run);
+      outcome.searched.push(source);
+      if (visit(records, source)) return outcome;
+    } catch (err) {
+      if (ctx.opts.signal?.aborted) throw err;
+      // These two are extras: when one cannot answer, the lookup is exactly as complete as it
+      // was without it, so its failure is not reported as a reason for `error`.
     }
   }
   return outcome;

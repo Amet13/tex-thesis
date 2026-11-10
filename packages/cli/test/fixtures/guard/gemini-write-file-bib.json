@@ -1,0 +1,1 @@
+{"session_id":"s1","transcript_path":"/home/u/.gemini/tmp/s1/chats/c.json","cwd":"/work/paper","hook_event_name":"BeforeTool","timestamp":"2026-11-10T10:00:00Z","tool_name":"write_file","tool_input":{"file_path":"/work/paper/references.bib","content":"@article{x, title={Invented}}"}}

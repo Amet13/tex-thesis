@@ -34,8 +34,8 @@ opt-in is ignored in CI and when the cache path goes through a symlink.
 
 A found record is reused for 30 days and a "not found" answer for 1 day (new
 DOIs and new indexing appear quickly). A timeout, a server error or a bot wall
-is never cached. Pass `refresh: true` to the core API (the `--refresh` flag of
-the CLI, once wired) to ask the indexes again and store the new answers.
+is never cached. Run `overfull check --refresh` (`refresh: true` in the core API) to
+ignore stored answers, ask the indexes again and store the new ones.
 
 An index that times out or answers with a server error twice in a row is
 skipped for the rest of the run, so one slow service cannot stall the check. A

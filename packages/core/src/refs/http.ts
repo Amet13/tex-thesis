@@ -80,7 +80,11 @@ export class HttpClient {
     this.firstByteMs = Math.min(FIRST_BYTE_TIMEOUT_MS, this.timeoutMs);
     this.retryDelayMs = opts.retryDelayMs ?? 1000;
     this.signal = opts.signal;
-    this.intervals = { 'export.arxiv.org': opts.arxivIntervalMs ?? 3000 };
+    this.intervals = {
+      'export.arxiv.org': opts.arxivIntervalMs ?? 3000,
+      // Semantic Scholar's key allows 1 request per second; keyless requests share a pool.
+      ...(opts.semanticScholarKey ? { 'api.semanticscholar.org': 1100 } : {}),
+    };
   }
 
   /** Marks a host as unusable for the rest of this run (e.g. a bot challenge). */
@@ -93,18 +97,27 @@ export class HttpClient {
    * (callers decide what 404 means); throws SourceUnavailableError when no
    * definitive answer was obtained.
    */
-  async get(url: string, accept: string): Promise<HttpResponse> {
+  async get(
+    url: string,
+    accept: string,
+    headers?: Record<string, string>,
+  ): Promise<HttpResponse> {
     const host = new URL(url).host;
     const release = await this.acquire(host);
     try {
-      return await this.getOnce(url, accept, host);
+      return await this.getOnce(url, accept, host, headers);
     } finally {
       release();
     }
   }
 
-  private async getOnce(url: string, accept: string, host: string): Promise<HttpResponse> {
-    let res = await this.attempt(url, accept, host);
+  private async getOnce(
+    url: string,
+    accept: string,
+    host: string,
+    headers?: Record<string, string>,
+  ): Promise<HttpResponse> {
+    let res = await this.attempt(url, accept, host, headers);
     if (res.status === 429 && /daily|budget|quota|per day|credits/i.test(res.body)) {
       // A used-up daily budget does not come back after a retry: fail fast for the run.
       const reason = `${host} answered HTTP 429: daily request budget used up`;
@@ -116,7 +129,7 @@ export class HttpClient {
       const downReason = this.down.get(host);
       if (downReason) throw new SourceUnavailableError(host, downReason);
       await sleep(retryAfterMs(res.retryAfter, this.retryDelayMs), this.signal);
-      res = await this.attempt(url, accept, host);
+      res = await this.attempt(url, accept, host, headers);
     }
     if (res.status === 429 || res.status >= 500) {
       const reason = `${host} answered HTTP ${res.status}`;
@@ -176,6 +189,7 @@ export class HttpClient {
     url: string,
     accept: string,
     host: string,
+    headers?: Record<string, string>,
   ): Promise<HttpResponse & { retryAfter: string | null }> {
     if (this.signal?.aborted) throw this.signal.reason ?? new Error('aborted');
     await this.throttle(host);
@@ -190,7 +204,7 @@ export class HttpClient {
     }, this.timeoutMs);
     try {
       const res = await this.fetchFn(url, {
-        headers: { Accept: accept },
+        headers: { Accept: accept, ...(headers ?? {}) },
         redirect: 'follow',
         signal: controller.signal,
       });
@@ -227,8 +241,9 @@ export async function getJson<T>(
   client: HttpClient,
   url: string,
   accept = 'application/json',
+  headers?: Record<string, string>,
 ): Promise<{ status: number; data: T | null }> {
-  const res = await client.get(url, accept);
+  const res = await client.get(url, accept, headers);
   if (res.status === 404 || res.status === 410) return { status: res.status, data: null };
   const host = new URL(url).host;
   if (res.status < 200 || res.status >= 300) {

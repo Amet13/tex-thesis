@@ -15,6 +15,7 @@ import {
 import { dirname, join } from 'node:path';
 import { profilesForStyleFile } from '@overfull/core';
 import { DEFAULT_IMAGE, latexmkrcDirs } from './config.js';
+import { HOOK_SETTINGS_FILES, mergeHookSettings } from './guard/settings.js';
 import { UsageError } from './io.js';
 import { ambiguousMainError, detectMain, listFiles, MAX_TEX_BYTES } from './project.js';
 import { insideRootForWrite, safeJobname, safeRelPath } from './safety.js';
@@ -505,6 +506,8 @@ export interface Parts {
   agents: boolean;
   ci: boolean;
   make: boolean;
+  /** A git pre-commit hook (`--hooks`); installed by the caller, not part of the plan. */
+  hooks?: boolean;
 }
 
 export interface PlannedFile {
@@ -514,6 +517,8 @@ export interface PlannedFile {
   note: string;
   /** A Makefile is never overwritten, even with --force. */
   neverOverwrite?: boolean;
+  /** Hook settings: when the file exists, the hook entry is merged in and other keys are kept. */
+  mergeHooks?: boolean;
 }
 
 export interface Plan {
@@ -542,7 +547,13 @@ export function planAdopt(d: Detected, parts: Parts, root: string): Plan {
       throw new UsageError(
         'The agent files are not bundled with this overfull install (no template found). Reinstall overfull.',
       );
-    for (const f of kit) files.push({ path: f.path, content: f.content, note: 'agent files' });
+    for (const f of kit)
+      files.push({
+        path: f.path,
+        content: f.content,
+        note: 'agent files',
+        ...(HOOK_SETTINGS_FILES.has(f.path) ? { mergeHooks: true } : {}),
+      });
     link = { path: '.claude/skills', target: '../.agents/skills', copyFrom: '.agents/skills' };
   }
   if (parts.ci)
@@ -620,6 +631,23 @@ export function applyPlan(
       );
       if (same) {
         result.skipped.push({ path: f.path, reason: 'already there, unchanged' });
+        continue;
+      }
+      if (f.mergeHooks) {
+        const merged = mergeHookSettings(
+          readFileSync(p, 'utf8'),
+          typeof f.content === 'string' ? f.content : f.content.toString('utf8'),
+        );
+        if (merged.error) result.skipped.push({ path: f.path, reason: merged.error });
+        else if (merged.text === undefined)
+          result.skipped.push({ path: f.path, reason: 'already has the Overfull hook' });
+        else {
+          if (!opts.dryRun) writeFileSync(p, merged.text);
+          result.written.push({
+            path: f.path,
+            note: 'Overfull hook added; your other settings are kept',
+          });
+        }
         continue;
       }
       if (f.neverOverwrite) {

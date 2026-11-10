@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "name": "overfull-guard",
+            "type": "command",
+            "command": "command -v overfull >/dev/null 2>&1 && overfull guard --hook gemini || exit 0",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

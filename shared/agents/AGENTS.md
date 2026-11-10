@@ -97,6 +97,8 @@ References:
 
 - Add references only with `overfull cite <doi | arXiv:id | "title">`. Never
   write or edit BibTeX from memory.
+- A guard blocks direct edits of `.bib` files (agent hook) and commits of hand-written
+  entries (pre-commit). If it blocks you, use `overfull cite`; do not work around it.
 - Never cite a key you did not add with `overfull cite` and the author did not
   provide. Never cite a key that `check` reports as `reference-not-found`
   or `citation-key-missing`.

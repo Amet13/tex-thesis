@@ -4,7 +4,15 @@ import type { Location } from '../types.js';
 export type RefStatus = 'verified' | 'mismatch' | 'not-found' | 'unverifiable' | 'error';
 
 /** Where a record came from. */
-export type RefSource = 'doi.org' | 'crossref' | 'dblp' | 'arxiv' | 'openalex';
+export type RefSource =
+  | 'doi.org'
+  | 'crossref'
+  | 'dblp'
+  | 'arxiv'
+  | 'openalex'
+  | 'semanticscholar'
+  | 'acl'
+  | 'europepmc';
 
 export interface MatchedRecord {
   title: string;
@@ -14,6 +22,20 @@ export interface MatchedRecord {
   doi?: string;
   url?: string;
   type?: string;
+}
+
+/** One retraction or withdrawal recorded in CrossRef's `updated-by` field of a work. */
+export interface RetractionNotice {
+  /** CrossRef's update type: `retraction` or `withdrawal`. */
+  kind: 'retraction' | 'withdrawal';
+  /** DOI of the work this notice belongs to. */
+  doi: string;
+  /** DOI of the notice itself, when CrossRef gives one. */
+  noticeDoi?: string;
+  /** `YYYY-MM-DD` of the notice, when CrossRef gives it. */
+  date?: string;
+  /** Who asserted it: CrossRef's `source`, e.g. `retraction-watch` or `publisher`. */
+  assertedBy?: string;
 }
 
 export interface RefDifference {
@@ -49,6 +71,11 @@ export interface RefResult {
   failures?: { source: RefSource; reason: string }[];
   /** Sources that answered definitively (searched and found / did not find). */
   searched?: RefSource[];
+  /**
+   * CrossRef (publisher and Retraction Watch data) records the matched work as retracted or
+   * withdrawn (rule `reference-retracted`). Set only for a work matched by DOI.
+   */
+  retraction?: RetractionNotice;
   location?: Location;
 }
 
@@ -68,6 +95,12 @@ export interface RefsOptions {
    * asked (keyless, per-IP daily budget) when dblp could not answer.
    */
   openalexKey?: string;
+  /**
+   * Optional Semantic Scholar API key (sent as `x-api-key`). Without one Semantic Scholar
+   * still answers, from a rate limit shared by all keyless users; with one, requests to it
+   * are spaced 1.1 s apart (the key's limit is 1 request per second).
+   */
+  semanticScholarKey?: string;
   cache?: RefCache;
   /**
    * How long cached answers stay valid, in days. A number sets both; defaults:
@@ -100,6 +133,12 @@ export interface RefsOptions {
    * `overfull cite` cannot add, are exempt.
    */
   requireProvenance?: boolean;
+  /**
+   * Ask CrossRef whether matched works are retracted or withdrawn (rule `reference-retracted`):
+   * one extra request per 40 DOIs after the entries are verified, answers kept 1 day. Off by
+   * default, so library users see no new request. A failed request leaves results unchanged.
+   */
+  checkRetractions?: boolean;
   /** Citation keys not to check. */
   ignore?: string[];
   signal?: AbortSignal;

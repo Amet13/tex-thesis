@@ -1,0 +1,1 @@
+{"session_id":"s1","cwd":"/work/paper","hook_event_name":"BeforeTool","tool_name":"write_file","tool_input":{"file_path":"/work/paper/main.tex","content":"\\documentclass{article}"}}

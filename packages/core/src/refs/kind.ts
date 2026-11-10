@@ -6,8 +6,10 @@
  */
 
 import type { BibEntry } from '../bib/parse.js';
+import { parseAclId } from './sources/acl.js';
 import { parseArxivId } from './sources/arxiv.js';
 import { parseDoi } from './sources/doi.js';
+import { parsePmcid, parsePmid } from './sources/europepmc.js';
 
 export type EntryKind =
   /** Journal/conference/collection papers: indexes are expected to have them. */
@@ -47,6 +49,36 @@ const NOT_INDEXED = new Set([
 export interface Identifiers {
   doi?: string;
   arxivId?: string;
+  /** ACL Anthology id (`2020.acl-main.1`), from the `url` or an ACL DOI. */
+  aclId?: string;
+  /** PubMed id, from `pmid`, `eprint` with `eprinttype = {pubmed}`, or a PubMed URL. */
+  pmid?: string;
+  /** PubMed Central id (`PMC…`), from `pmcid`, `eprint` or a PMC URL. */
+  pmcid?: string;
+}
+
+/** ACL, PubMed and PubMed Central ids named by an entry's fields. */
+function otherIdentifiers(entry: BibEntry, doi: string | null): Identifiers {
+  const f = entry.fields;
+  const ids: Identifiers = {};
+  const archive = (f.eprinttype ?? f.archiveprefix ?? '').toLowerCase();
+  const acl = [f.url, f.howpublished, doi ?? undefined]
+    .map((v) => (v ? parseAclId(v.replace(/\\url\{([^}]*)\}/g, '$1').trim()) : null))
+    .find((v): v is string => Boolean(v));
+  if (acl) ids.aclId = acl;
+  const pmid = [
+    f.pmid,
+    archive === 'pubmed' || archive === 'pmid' ? f.eprint : undefined,
+    f.url,
+  ]
+    .map((v) => (v ? parsePmid(/^\d+$/.test(v.trim()) ? `PMID:${v.trim()}` : v.trim()) : null))
+    .find((v): v is string => Boolean(v));
+  if (pmid) ids.pmid = pmid;
+  const pmcid = [f.pmcid, archive === 'pmc' || archive === 'pmcid' ? f.eprint : undefined, f.url]
+    .map((v) => (v ? parsePmcid(v.trim()) : null))
+    .find((v): v is string => Boolean(v));
+  if (pmcid) ids.pmcid = pmcid;
+  return ids;
 }
 
 /** DOI and arXiv id from doi/eprint/archiveprefix/journal/url/howpublished/note fields. */
@@ -82,7 +114,7 @@ export function identifiersOf(entry: BibEntry): Identifiers {
     }
   }
   if (doi && !doi.startsWith('10.48550/')) ids.doi = doi;
-  return ids;
+  return { ...ids, ...otherIdentifiers(entry, doi) };
 }
 
 /** Entry types a standard is filed under. Journal and conference papers never are. */
@@ -129,7 +161,8 @@ function isWebOnly(entry: BibEntry): boolean {
 }
 
 export function entryKind(entry: BibEntry, ids: Identifiers): EntryKind {
-  if (ids.doi || ids.arxivId) return SCHOLARLY.has(entry.type) ? 'scholarly' : 'maybe-indexed';
+  if (ids.doi || ids.arxivId || ids.aclId || ids.pmid || ids.pmcid)
+    return SCHOLARLY.has(entry.type) ? 'scholarly' : 'maybe-indexed';
   if (NOT_INDEXED.has(entry.type) || isStandard(entry) || isWebOnly(entry)) return 'not-indexed';
   if (SCHOLARLY.has(entry.type)) return 'scholarly';
   return 'maybe-indexed';

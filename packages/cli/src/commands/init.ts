@@ -2,6 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { applyPlan, detectProject, planAdopt } from '../adopt.js';
 import { parse, str } from '../args.js';
+import { type GitHookResult, installGitHook } from '../guard/settings.js';
 import { type Io, UsageError } from '../io.js';
 import { insideRootForWrite, isDanglingSymlink } from '../safety.js';
 import {
@@ -81,10 +82,15 @@ Options for --here (existing project, current folder):
   --ci            Also write .github/workflows/overfull.yml
   --make          Also write a Makefile; an existing Makefile is not touched and
                   the lines to add are printed
-  --all           --agents --ci --make
+  --hooks         Also install a git pre-commit hook that blocks hand-written .bib
+                  entries (\`overfull guard --staged\`), only if .git/hooks/pre-commit
+                  does not exist; otherwise the line to add is printed. With --agents
+                  the hook settings for Claude Code and Gemini CLI are written too
+                  (merged into an existing .claude/settings.json or .gemini/settings.json).
+  --all           --agents --ci --make --hooks
   --force         Overwrite files that exist and differ (never a Makefile)
   --dry-run       Write nothing; print what would be written
-On a terminal, with none of --agents/--ci/--make/--all, each part is asked about.
+On a terminal, with none of --agents/--ci/--make/--hooks/--all, agents, ci and make are asked about.
 Existing files are never overwritten without --force. Safe to run again.
 `;
 
@@ -106,6 +112,7 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
       agents: { type: 'boolean' },
       ci: { type: 'boolean' },
       make: { type: 'boolean' },
+      hooks: { type: 'boolean' },
       all: { type: 'boolean' },
       'dry-run': { type: 'boolean' },
     },
@@ -116,7 +123,7 @@ export async function initCommand(args: string[], io: Io): Promise<number> {
     return 0;
   }
   if (values.here === true) return adoptHere(values, positionals, io);
-  for (const flag of ['main', 'agents', 'ci', 'make', 'all', 'dry-run'])
+  for (const flag of ['main', 'agents', 'ci', 'make', 'hooks', 'all', 'dry-run'])
     if (values[flag] !== undefined)
       throw new UsageError(
         `--${flag} works only with --here (adding Overfull to the current folder).`,
@@ -199,11 +206,17 @@ async function adoptHere(
   const main = str(values.main);
   const detected = detectProject(root, main !== undefined ? { main } : {});
   const all = values.all === true;
-  const flagged = all || values.agents === true || values.ci === true || values.make === true;
+  const flagged =
+    all ||
+    values.agents === true ||
+    values.ci === true ||
+    values.make === true ||
+    values.hooks === true;
   const parts = {
     agents: all || values.agents === true,
     ci: all || values.ci === true,
     make: all || values.make === true,
+    hooks: all || values.hooks === true,
   };
   if (!flagged && io.isTTY && values.json !== true) {
     io.stdout(
@@ -216,6 +229,14 @@ async function adoptHere(
   const dryRun = values['dry-run'] === true;
   const plan = planAdopt(detected, parts, root);
   const result = applyPlan(root, plan, detected, { force: values.force === true, dryRun });
+  const gitHook: GitHookResult | undefined = parts.hooks ? installGitHook(root, dryRun) : undefined;
+  if (gitHook?.status === 'written' || gitHook?.status === 'would-write')
+    result.written.push({
+      path: relative(root, gitHook.path as string)
+        .split('\\')
+        .join('/'),
+      note: 'git pre-commit hook: blocks hand-written .bib entries',
+    });
   if (values.json) {
     io.stdout(
       `${JSON.stringify(
@@ -225,6 +246,7 @@ async function adoptHere(
           skipped: result.skipped,
           dryRun,
           ...(result.makefileLines ? { makefileLines: result.makefileLines } : {}),
+          ...(gitHook ? { gitHook } : {}),
         },
         null,
         2,
@@ -259,6 +281,17 @@ async function adoptHere(
     lines.push('', 'Your Makefile was not changed. To add the check, put these lines in it:', '');
     for (const l of result.makefileLines.trimEnd().split('\n')) lines.push(`  ${l}`);
   }
+  if (gitHook?.status === 'no-git')
+    lines.push('', 'No git repository here, so no pre-commit hook was installed.');
+  else if (gitHook?.line)
+    lines.push(
+      '',
+      gitHook.status === 'exists'
+        ? 'A pre-commit hook already exists and was not changed. To block hand-written .bib entries, add this line to it:'
+        : 'The git hooks directory is outside this repository, so no pre-commit hook was installed. Add this line to your pre-commit hook:',
+      '',
+      `  ${gitHook.line}`,
+    );
   lines.push('', '.tex and .bib files were not touched.');
   if (!dryRun && result.written.length > 0)
     lines.push('Next: `overfull build` (or `latexmk`), then `overfull check`.');

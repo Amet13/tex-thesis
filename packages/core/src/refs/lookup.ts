@@ -8,15 +8,19 @@ import { entryFromPublisherBibtex, entryFromRecord } from './entry.js';
 import { HttpClient } from './http.js';
 import { foldName, namesMatch, titleSimilarity } from './normalize.js';
 import {
+  aclByIdCached,
   arxivByIdCached,
   type Ctx,
+  europepmcByIdCached,
   failureReason,
   resolveDoiCached,
   type SearchOutcome,
   titleSearch,
 } from './search.js';
+import { parseAclId } from './sources/acl.js';
 import { parseArxivId } from './sources/arxiv.js';
 import { fetchDoiBibtex, parseDoi } from './sources/doi.js';
+import { parsePmcid, parsePmid } from './sources/europepmc.js';
 import type {
   LookupCandidate,
   LookupHint,
@@ -49,7 +53,7 @@ const PUBLISHED_TYPES = new Set([
   'Books and Theses',
 ]);
 
-export type QueryKind = 'doi' | 'arxiv' | 'title';
+export type QueryKind = 'doi' | 'arxiv' | 'acl' | 'pmid' | 'pmcid' | 'title';
 
 /**
  * Thrown when a title query matches several distinct works (for example two
@@ -123,6 +127,12 @@ export function queryKind(query: string): { kind: QueryKind; value: string } {
   if (arxiv) return { kind: 'arxiv', value: arxiv };
   const doi = parseDoi(query);
   if (doi) return { kind: 'doi', value: doi };
+  const acl = parseAclId(query);
+  if (acl) return { kind: 'acl', value: acl };
+  const pmid = parsePmid(query);
+  if (pmid) return { kind: 'pmid', value: pmid };
+  const pmcid = parsePmcid(query);
+  if (pmcid) return { kind: 'pmcid', value: pmcid };
   return { kind: 'title', value: query.trim() };
 }
 
@@ -225,6 +235,37 @@ async function lookupArxiv(ctx: Ctx, id: string): Promise<LookupResult | null> {
   return record ? { entry: entryFromRecord(record), source: 'arxiv', confidence: 1 } : null;
 }
 
+/**
+ * An entry for a record found by an identifier of its own index (ACL Anthology, Europe PMC):
+ * the publisher's BibTeX from doi.org when the record has a DOI and that DOI names the same
+ * title, else an entry built from the record.
+ */
+async function entryFromIdRecord(ctx: Ctx, record: WorkRecord): Promise<LookupResult> {
+  if (record.doi && !record.doi.startsWith('10.48550/')) {
+    const viaDoi = await lookupDoi(ctx, record.doi).catch(() => null);
+    if (
+      viaDoi &&
+      titleSimilarity(record.title, viaDoi.entry.fields.title ?? '') >= LOOKUP_TITLE_THRESHOLD
+    ) {
+      return { ...viaDoi, source: record.source, confidence: 1 };
+    }
+  }
+  return { entry: entryFromRecord(record), source: record.source, confidence: 1 };
+}
+
+async function lookupAcl(ctx: Ctx, id: string): Promise<LookupResult | null> {
+  const record = await tracked(ctx, 'acl', () => aclByIdCached(ctx, id));
+  return record ? entryFromIdRecord(ctx, record) : null;
+}
+
+async function lookupEuropePmc(
+  ctx: Ctx,
+  id: { pmid: string } | { pmcid: string },
+): Promise<LookupResult | null> {
+  const record = await tracked(ctx, 'europepmc', () => europepmcByIdCached(ctx, id));
+  return record ? entryFromIdRecord(ctx, record) : null;
+}
+
 /** Total time a title lookup may spend across sources before it reports (ms). */
 export const TITLE_LOOKUP_BUDGET_MS = 10_000;
 
@@ -275,7 +316,8 @@ async function lookupTitle(
 
 /**
  * Looks up a DOI (bare or doi.org URL), an arXiv id (`arXiv:2401.12345`,
- * `2401.12345v2`) or a title. Returns null when nothing confident is found;
+ * `2401.12345v2`), an ACL Anthology id (`2020.acl-main.1`, an aclanthology.org URL), a
+ * PubMed id (`PMID:19872477`), a PubMed Central id (`PMC2323736`) or a title. Returns null when nothing confident is found;
  * throws `AmbiguousLookupError` when a title matches several works, and a plain
  * Error when no source could be reached at all.
  */
@@ -286,6 +328,9 @@ export async function lookup(query: string, opts: RefsOptions = {}): Promise<Loo
   try {
     if (kind === 'doi') return await lookupDoi(ctx, value);
     if (kind === 'arxiv') return await lookupArxiv(ctx, value);
+    if (kind === 'acl') return await lookupAcl(ctx, value);
+    if (kind === 'pmid') return await lookupEuropePmc(ctx, { pmid: value });
+    if (kind === 'pmcid') return await lookupEuropePmc(ctx, { pmcid: value });
     return await lookupTitle(ctx, value, opts.hint);
   } finally {
     const o = track(ctx);

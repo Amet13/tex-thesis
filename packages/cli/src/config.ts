@@ -47,6 +47,8 @@ export interface Config {
     cache: 'user' | 'project';
     /** Require every entry to carry `x-overfull = {cite …}` provenance. */
     requireCite: boolean;
+    /** Report bibliography entries that nothing cites (`reference-uncited`, info). Off by default. */
+    reportUncited: boolean;
   };
   build: {
     engine: Engine;
@@ -327,13 +329,16 @@ export function loadConfig(
 
   const refs = raw.references ?? {};
   if (!isObj(refs)) throw new ConfigError(f, '`references` must be a mapping');
-  checkKeys(refs, ['mailto', 'ignore', 'cache', 'requireCite'], 'references.', f);
+  checkKeys(refs, ['mailto', 'ignore', 'cache', 'requireCite', 'reportUncited'], 'references.', f);
   const cache = refs.cache ?? 'user';
   if (cache !== 'user' && cache !== 'project')
     throw new ConfigError(f, '`references.cache` must be user or project');
   if (refs.requireCite !== undefined && typeof refs.requireCite !== 'boolean')
     throw new ConfigError(f, '`references.requireCite` must be true or false');
   const requireCite = refs.requireCite === true;
+  if (refs.reportUncited !== undefined && typeof refs.reportUncited !== 'boolean')
+    throw new ConfigError(f, '`references.reportUncited` must be true or false');
+  const reportUncited = refs.reportUncited === true;
   const mailto = (typeof refs.mailto === 'string' ? refs.mailto : undefined) ?? env.OVERFULL_MAILTO;
   const ignore = refs.ignore !== undefined ? stringList(refs.ignore, 'references.ignore', f) : [];
 
@@ -373,7 +378,7 @@ export function loadConfig(
     profile,
     venue: inline,
     checks,
-    references: { ...(mailto ? { mailto } : {}), ignore, cache, requireCite },
+    references: { ...(mailto ? { mailto } : {}), ignore, cache, requireCite, reportUncited },
     build: { engine, image, outDir, auxDir, outDirFromConfig: build.outDir !== undefined },
   };
   if (file) config.file = file;

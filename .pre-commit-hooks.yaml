@@ -1,0 +1,9 @@
+# Hooks for the pre-commit framework (https://pre-commit.com).
+# Needs the `overfull` command on PATH; blocks hand-written .bib entries.
+- id: overfull-guard
+  name: overfull guard
+  description: Block hand-written bibliography entries (use `overfull cite`).
+  entry: overfull guard --staged
+  language: system
+  files: \.bib$
+  pass_filenames: false

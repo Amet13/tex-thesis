@@ -1,0 +1,1 @@
+{"session_id":"abc123","transcript_path":"/home/u/.claude/projects/p/abc123.jsonl","cwd":"/work/paper","permission_mode":"default","hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"/work/paper/references.bib","content":"@article{x, title={Invented}}"},"tool_use_id":"toolu_01A"}
