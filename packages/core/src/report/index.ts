@@ -7,6 +7,7 @@ export {
 export { formatHuman, type HumanOptions } from './human.js';
 export { formatJson } from './json.js';
 export { escapeMarkdown, formatMarkdown } from './markdown.js';
+export { formatSarif, type SarifOptions } from './sarif.js';
 export {
   formatLocation,
   neutralizeWorkflowCommands,

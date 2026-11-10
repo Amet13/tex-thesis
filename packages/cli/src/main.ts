@@ -5,7 +5,7 @@ import { citeCommand } from './commands/cite.js';
 import { diffCommand } from './commands/diff.js';
 import { doctorCommand } from './commands/doctor.js';
 import { explainCommand } from './commands/explain.js';
-import { initCommand } from './commands/init.js';
+import { adoptCommand, initCommand } from './commands/init.js';
 import { pagesCommand } from './commands/pages.js';
 import { closest } from './config.js';
 import { type Io, UsageError } from './io.js';
@@ -18,6 +18,7 @@ Usage: overfull <command> [options]
 
 Commands:
   init [thesis|paper|slides] [dir]   Create a project from a template
+  adopt                              Add Overfull to the LaTeX project in this folder (init --here)
   build [main.tex]                   Compile with latexmk (local or Docker) and check the log
   check                              Check log, PDF, references, accessibility, venue rules
   cite <doi | arXiv:id | "title">    Add a verified BibTeX entry; prints its key
@@ -33,6 +34,7 @@ type Command = (args: string[], io: Io) => Promise<number>;
 
 const COMMANDS: Record<string, Command> = {
   init: initCommand,
+  adopt: adoptCommand,
   build: buildCommand,
   check: checkCommand,
   cite: (args, io) => citeCommand(args, io),

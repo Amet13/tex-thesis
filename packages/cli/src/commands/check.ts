@@ -1,8 +1,15 @@
-import { formatHuman, formatJson, formatMarkdown, githubAnnotations } from '@overfull/core';
+import {
+  formatHuman,
+  formatJson,
+  formatMarkdown,
+  formatSarif,
+  githubAnnotations,
+} from '@overfull/core';
 import { list, type Parsed, parse, str } from '../args.js';
-import { exitCodeFor, runCheck } from '../check.js';
+import { exitCodeFor, runCheck, sarifFallbackFile } from '../check.js';
 import { parseChecks } from '../config.js';
-import { type Io, UsageError, useColor } from '../io.js';
+import { type Io, progressLine, UsageError, useColor } from '../io.js';
+import { isCI } from '../safety.js';
 
 export const checkHelp = `Usage: overfull check [file...] [options]
 
@@ -21,10 +28,13 @@ Options:
   --checks a,b        Only these checks (build, output, references, accessibility, venue)
   --profile name      Venue profile: generic, thesis, paper, arxiv, double-blind
   --offline           Do not look references up online
+  --refresh           Ignore cached reference answers and look everything up again
+                      (the new answers are still cached)
   --fail-on level     error (default), warning or never
   --json              Print the report as JSON (stable, for agents and scripts)
   --markdown          Print a Markdown summary (GitHub job summary / PR comment)
   --annotations       Print GitHub workflow annotations
+  --sarif             Print a SARIF 2.1.0 log (GitHub code scanning upload)
   --verbose, -v       Show why and how to fix each problem
   --pdf file          PDF to check (default <jobname>.pdf)
   --log file          Build log (default <jobname>.log)
@@ -101,10 +111,12 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
       checks: { type: 'string' },
       profile: { type: 'string' },
       offline: { type: 'boolean' },
+      refresh: { type: 'boolean' },
       'fail-on': { type: 'string' },
       json: { type: 'boolean' },
       markdown: { type: 'boolean' },
       annotations: { type: 'boolean' },
+      sarif: { type: 'boolean' },
       verbose: { type: 'boolean', short: 'v' },
       main: { type: 'string' },
       pdf: { type: 'string' },
@@ -127,7 +139,7 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
   if (!['error', 'warning', 'never'].includes(failOn)) {
     throw new UsageError(`--fail-on must be error, warning or never, got "${failOn}"`);
   }
-  const formats = ['json', 'markdown', 'annotations'].filter((f) => values[f]);
+  const formats = ['json', 'markdown', 'annotations', 'sarif'].filter((f) => values[f]);
   if (formats.length > 1)
     throw new UsageError(
       `Choose one output format, not ${formats.map((f) => `--${f}`).join(' and ')}`,
@@ -137,6 +149,8 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
     throw new UsageError(`--engine must be auto, local or docker, got "${engine}"`);
   const files = classifyFiles(positionals, values);
   const checksArg = list(values.checks) ?? (files.onlyBib ? ['references'] : undefined);
+  const machine = Boolean(values.json || values.markdown || values.annotations || values.sarif);
+  const progress = machine || isCI(io.env) ? undefined : progressLine(io, 'references');
   const report = await runCheck({
     cwd: io.cwd,
     env: io.env,
@@ -151,11 +165,13 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
     ...(files.bib.length ? { bib: files.bib } : {}),
     ...(str(values.mailto) ? { mailto: str(values.mailto) } : {}),
     offline: values.offline === true,
+    ...(values.refresh ? { refresh: true } : {}),
+    ...(progress ? { progress } : {}),
     verapdf: values['no-verapdf'] !== true,
     engine: engine as 'auto' | 'local' | 'docker',
     ...(str(values.image) ? { image: str(values.image) } : {}),
   });
-  if (!values.json && !values.markdown && !values.annotations && report.assumed) {
+  if (!machine && report.assumed) {
     const a = report.assumed;
     io.stderr(
       `No overfull.yml: assuming main ${a.main}${a.mainSource === 'detected' ? ' (the only document here)' : ''}, profile ${a.profile}. Run \`overfull init --here\` to save these settings.\n`,
@@ -163,7 +179,10 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
   }
   if (values.json) io.stdout(formatJson(report));
   else if (values.markdown) io.stdout(formatMarkdown(report));
-  else if (values.annotations) {
+  else if (values.sarif) {
+    const fallbackFile = sarifFallbackFile(io.cwd, io.env, str(values.config), files.main);
+    io.stdout(formatSarif(report, fallbackFile ? { fallbackFile } : {}));
+  } else if (values.annotations) {
     const lines = githubAnnotations(report);
     io.stdout(lines.length ? `${lines.join('\n')}\n` : '');
   } else io.stdout(formatHuman(report, { color: useColor(io), verbose: values.verbose === true }));

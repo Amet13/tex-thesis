@@ -108,6 +108,9 @@ Actions.
 | `mailto` | `references.mailto`, else `$OVERFULL_MAILTO` | Contact address for CrossRef's polite pool. |
 | `annotations` | `true` | Write problems as file annotations. |
 | `summary` | `true` | Write a Markdown report to the job summary. |
+| `sarif` | empty (off) | Path to write a SARIF 2.1.0 file, relative to the workspace. See [Code scanning](#code-scanning-sarif). |
+| `comment` | `false` | On pull requests, create or update one comment with the Markdown report. See [Pull request comment](#pull-request-comment). |
+| `github-token` | `${{ github.token }}` | Token used to write that comment. |
 
 Inputs you leave out come from `overfull.yml` in `working-directory`, where
 present. Checks whose default inputs are missing are reported as `skipped`;
@@ -119,6 +122,71 @@ an input you give explicitly that points to a missing file fails the step.
 | --- | --- |
 | `status` | `pass`, `warn` or `fail`. |
 | `report` | Path to the JSON report file, written to `$RUNNER_TEMP`. The content has the same schema as `overfull check --json`. |
+| `sarif` | Path to the SARIF file. Set only when the `sarif` input is set. |
+
+### Code scanning (SARIF)
+
+Set `sarif` to a path and the Action writes a SARIF 2.1.0 file there. Upload it
+with `github/codeql-action/upload-sarif` and the problems appear under the
+repository's Security tab and as annotations on pull requests:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      # ... build the document, then:
+      - uses: amet13/overfull@v3
+        with:
+          sarif: overfull.sarif
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: always()
+        with:
+          sarif_file: overfull.sarif
+```
+
+Use `if: always()` so the upload also runs when Overfull fails the step.
+Code scanning shows a result only if it has a file and a line
+([SARIF requirements](https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning)).
+Problems that name no source file (PDF, venue and most reference findings) point at the
+main file, line 1. Each rule links to its page on this site. On the command
+line, `overfull check --sarif > overfull.sarif` writes the same file.
+
+### Pull request comment
+
+With `comment: true`, on `pull_request` events the Action creates one comment
+with the Markdown report and updates that same comment on every later run. The
+comment starts with a hidden `<!-- overfull-report -->` marker, which is how the
+Action finds it. The job needs `pull-requests: write`:
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      # ... build the document, then:
+      - uses: amet13/overfull@v3
+        with:
+          comment: 'true'
+```
+
+Text from your document is escaped in the comment the same way as in the job
+summary. A report longer than GitHub's comment limit (65,536 characters) is cut,
+with a note that points to the job summary. On pull requests from forks the
+token is read-only, so the Action logs a notice and writes no comment. If
+commenting fails for any other reason (a missing permission, a network error),
+it also logs a notice and the step carries on: a failed comment never fails the
+step. Outside pull requests, `comment` does nothing.
 
 ## The template workflow
 
@@ -151,3 +219,22 @@ search, pass the key as an environment variable on the step:
 
 For forks or restricted networks, set `offline: true` and run reference checks
 locally.
+
+### Cache the lookups
+
+Lookups are cached in `~/.cache/overfull` on the runner. Keep that folder
+between runs with `actions/cache` and most runs make no reference requests at
+all:
+
+```yaml
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/overfull
+          key: overfull-refs-${{ hashFiles('**/*.bib') }}
+          restore-keys: overfull-refs-
+      - uses: amet13/overfull@v3
+```
+
+A found record is reused for 30 days and a "not found" answer for 1 day. To
+look everything up again, run `overfull check --refresh` (the Action has no
+refresh input: change the cache `key` instead).

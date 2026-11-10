@@ -6,6 +6,8 @@ export interface Io {
   stderr: (s: string) => void;
   /** True when stdout is an interactive terminal. */
   isTTY: boolean;
+  /** True when stderr is an interactive terminal (progress lines). Absent means no. */
+  stderrIsTTY?: boolean;
   /** Overrides `globalThis.fetch` (tests, proxies). */
   fetch?: typeof fetch;
 }
@@ -17,6 +19,7 @@ export function processIo(): Io {
     stdout: (s) => process.stdout.write(s),
     stderr: (s) => process.stderr.write(s),
     isTTY: Boolean(process.stdout.isTTY),
+    stderrIsTTY: Boolean(process.stderr.isTTY),
   };
 }
 
@@ -32,4 +35,18 @@ export function useColor(io: Io): boolean {
   if (io.env.NO_COLOR !== undefined && io.env.NO_COLOR !== '') return false;
   if (io.env.FORCE_COLOR && io.env.FORCE_COLOR !== '0') return true;
   return io.isTTY;
+}
+
+/**
+ * A one-line progress writer for stderr, or undefined when stderr is not a
+ * terminal. The line is rewritten in place and cleared when the work is done.
+ */
+export function progressLine(
+  io: Io,
+  label: string,
+): ((done: number, total: number) => void) | undefined {
+  if (!io.stderrIsTTY) return undefined;
+  return (done, total) => {
+    io.stderr(done >= total ? '\r\u001b[K' : `\r${label} ${done}/${total}`);
+  };
 }

@@ -58,6 +58,10 @@ export interface CheckOptions {
   verapdf?: boolean;
   /** Cache reference lookups (default true): in the user cache dir, or `.overfull/cache` with `references.cache: project`. */
   cache?: boolean;
+  /** Skip cached reference answers and ask the indexes again; fresh answers are still stored (`--refresh`). */
+  refresh?: boolean;
+  /** Called after each entry is looked up. The CLI passes it only on an interactive stderr. */
+  progress?: (done: number, total: number) => void;
   /**
    * Where veraPDF and pdffonts run when not installed locally: `auto` (default)
    * uses the Overfull image if Docker has it, `docker` always may (pulling it),
@@ -408,6 +412,8 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
     ...(mailto ? { mailto } : {}),
     ...(openalexKey ? { openalexKey } : {}),
     ...(cache ? { cache } : {}),
+    ...(opts.refresh ? { refresh: true } : {}),
+    ...(opts.progress ? { onProgress: opts.progress } : {}),
     offline: opts.offline ?? false,
     ignore: config.references.ignore,
     ...(config.references.requireCite ? { requireProvenance: true } : {}),
@@ -549,6 +555,24 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
     status: reportStatus(results),
     checks: results,
   };
+}
+
+/**
+ * The file SARIF results without a source file point at: the project's main
+ * file when it exists (GitHub shows only results that have a location).
+ */
+export function sarifFallbackFile(
+  cwd: string,
+  env: Record<string, string | undefined>,
+  configPath?: string,
+  main?: string,
+): string | undefined {
+  try {
+    const cfg = loadConfig(cwd, configPath, env, main ? { main } : {});
+    return existsSync(join(cfg.root, cfg.main)) ? cfg.main : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Exit code for a report: 1 when it fails the `failOn` threshold. */

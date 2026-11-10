@@ -13,15 +13,18 @@ bibliography, the venue profile and the venue rules for this project.
 
 ## Layout
 
+Read `overfull.yml` for the main file, the output name and the bibliography.
+Other files vary by project; these are the usual places:
+
 | Path | What it holds |
 | --- | --- |
-| `main.tex` | Entry point. Preamble, `\DocumentMetadata`, includes. |
-| `metadata.tex` | Title, authors, affiliations, keywords, PDF metadata. |
-| `chapters/` or `sections/` | The text, one file per chapter or section. |
-| `figures/` | Figures. Plot data lives in `figures/data/`. |
-| `notes/` | The author's notes, outlines, results, reviewer comments. Source of truth for content. |
-| `references.bib` | Bibliography. Add entries only through `overfull cite`. |
-| `overfull.yml` | Project config: profile, checks, venue rules. |
+| `overfull.yml` | Project config: main file, bibliography, profile, checks, venue rules. |
+| The `main:` file | Entry point. Preamble, includes. |
+| Files it includes | The text, usually one file per chapter or section (`chapters/`, `sections/`). |
+| The `bib:` files | Bibliography. Add entries only through `overfull cite`. |
+| `figures/` | Figures, if the project has such a folder. Keep plot data next to the figures. |
+| `notes/` | The author's notes, outlines, results, reviewer comments, if present. Source of truth for content. |
+| `metadata.tex` | Title, authors, affiliations, PDF metadata, in projects from the Overfull templates. |
 | `.agents/skills/` | Task instructions for you (also linked as `.claude/skills/`). |
 
 ## Build

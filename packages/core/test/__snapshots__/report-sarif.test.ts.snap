@@ -1,0 +1,184 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`formatSarif > matches the snapshot 1`] = `
+"{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "overfull",
+          "version": "3.1.0",
+          "informationUri": "https://amet13.github.io/overfull/",
+          "rules": [
+            {
+              "id": "undefined-control-sequence",
+              "name": "undefined-control-sequence",
+              "shortDescription": {
+                "text": "Unknown command"
+              },
+              "fullDescription": {
+                "text": "The document uses a command that no loaded package defines: a typo, a missing package, or a command from another citation package."
+              },
+              "help": {
+                "text": "Fix the spelling or load the package that defines the command."
+              },
+              "helpUri": "https://amet13.github.io/overfull/rules/undefined-control-sequence/",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "build"
+                ]
+              }
+            },
+            {
+              "id": "overfull-hbox",
+              "name": "overfull-hbox",
+              "shortDescription": {
+                "text": "Overfull \\\\hbox (3pt too wide)"
+              },
+              "helpUri": "https://amet13.github.io/overfull/rules/overfull-hbox/",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "build"
+                ]
+              }
+            },
+            {
+              "id": "pdf-unresolved-reference",
+              "name": "pdf-unresolved-reference",
+              "shortDescription": {
+                "text": "Unresolved reference in the PDF"
+              },
+              "fullDescription": {
+                "text": "The PDF shows \\"??\\" where a figure, table, section or equation number belongs."
+              },
+              "help": {
+                "text": "Make sure every \`\\\\ref\` has a matching \`\\\\label\` (same spelling), then rebuild with latexmk."
+              },
+              "helpUri": "https://amet13.github.io/overfull/rules/pdf-unresolved-reference/",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "output"
+                ]
+              }
+            },
+            {
+              "id": "made-up-rule",
+              "name": "made-up-rule",
+              "shortDescription": {
+                "text": "No location"
+              },
+              "helpUri": "https://amet13.github.io/overfull/rules/made-up-rule/",
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "venue"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "undefined-control-sequence",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Undefined control sequence \\\\foo ::error::injected Fix: Define \`\\\\foo\` or load its package"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "sections/intro.tex",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 12
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "overfull-hbox",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Overfull \\\\hbox (3pt too wide)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.tex",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "pdf-unresolved-reference",
+          "ruleIndex": 2,
+          "level": "note",
+          "message": {
+            "text": "Page 3: \\"??\\" printed"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.tex",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "made-up-rule",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "No location"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.tex",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+"
+`;

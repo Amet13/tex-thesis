@@ -9,8 +9,9 @@ section: Reference
 overfull init [thesis|paper|slides] [dir] [--force] [--no-git] [--json]
 overfull build [main.tex] [--engine auto|local|docker] [--image name] [--verbose] [--force]
                [--json] [--config file]
-overfull check [file...] [--main file] [--checks a,b] [--profile p] [--offline] [--fail-on error|warning|never]
-               [--json | --markdown | --annotations] [--verbose]
+overfull check [file...] [--main file] [--checks a,b] [--profile p] [--offline] [--refresh]
+               [--fail-on error|warning|never]
+               [--json | --markdown | --annotations | --sarif] [--verbose]
                [--pdf file] [--log file] [--aux file] [--bib a.bib,b.bib]
                [--mailto address] [--no-verapdf] [--engine auto|local|docker] [--image name]
                [--config file]
@@ -50,6 +51,13 @@ creates the thesis template in `my-thesis`. Each template includes
 | `--force` | Copy into a directory that is not empty. Existing files are overwritten. |
 | `--no-git` | Do not run `git init`. By default a new project outside a Git repository gets `git init -b main` and, when `user.name` and `user.email` are set, an initial commit. |
 | `--json` | Print `{template, dir, git}`. |
+
+To add Overfull to a project you already have, run `overfull init --here` in
+its folder (alias `overfull adopt`). It detects the main file, engine,
+bibliography and venue style file, writes `overfull.yml`, and never touches a
+`.tex` or `.bib` file. Options: `--main <file>`, `--agents`, `--ci`, `--make`,
+`--all`, `--force`, `--dry-run`; `--json` prints `{detected, written, skipped}`.
+See [Add Overfull to an existing project](./existing-project.md).
 
 ## build
 
@@ -127,10 +135,12 @@ those files. Any other extension is a usage error (exit 2).
 | `--checks a,b` | Run only these checks: `build`, `output`, `references`, `accessibility`, `venue`. |
 | `--profile p` | Use this venue profile instead of the one in `overfull.yml`: `generic`, `thesis`, `paper`, `arxiv`, `double-blind`. |
 | `--offline` | Do not look references up online. The references check is skipped. Missing keys and `.bib` syntax errors are still reported. |
+| `--refresh` | Ignore cached reference answers and look every reference up again. The new answers are still written to the cache. |
 | `--fail-on level` | `error` (default), `warning` or `never`. |
 | `--json` | Print the report as JSON (schema below). |
 | `--markdown` | Print a Markdown summary, for PR comments and job summaries. |
 | `--annotations` | Print GitHub workflow annotations. |
+| `--sarif` | Print a SARIF 2.1.0 log, for GitHub code scanning (see [the Action](./action.md#code-scanning-sarif)). Problems without a source file point at the main file, line 1. |
 | `--verbose`, `-v` | Show why each problem happened and how to fix it. |
 | `--pdf file` | PDF to check (default `<jobname>.pdf`). |
 | `--log file` | Build log (default `<jobname>.log`). |
@@ -142,7 +152,11 @@ those files. Any other extension is a usage error (exit 2).
 | `--image name` | Docker image for veraPDF and `pdffonts`. Default: `$OVERFULL_IMAGE`, else `ghcr.io/amet13/overfull:3`. |
 | `--config file` | Config file (default `overfull.yml`). |
 
-Use only one of `--json`, `--markdown` and `--annotations`. If `verapdf` is on
+Use only one of `--json`, `--markdown`, `--annotations` and `--sarif`; combining them is a usage error (exit 2). The exit code is the same for every format.
+
+On an interactive terminal, the references check shows one updating line (`references 12/31`) on stderr. It is not shown in CI, when stderr is redirected, or with `--json`, `--markdown`, `--annotations` or `--sarif`.
+
+If `verapdf` is on
 the `PATH`, the accessibility check runs it (PDF/UA-2, falling back to PDF/UA-1
 for PDFs older than 2.0). Without it, the check reports `verapdf-not-run` as
 `info`.
