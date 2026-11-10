@@ -1,7 +1,7 @@
 ---
 title: Use with Overleaf
 description: Check an Overleaf project in your browser from its source zip, or run Overfull on every change through Overleaf's GitHub sync and the GitHub Action.
-order: 3
+order: 5
 section: Start
 ---
 

@@ -112991,7 +112991,11 @@ var HttpClient = class {
     this.firstByteMs = Math.min(FIRST_BYTE_TIMEOUT_MS, this.timeoutMs);
     this.retryDelayMs = opts.retryDelayMs ?? 1e3;
     this.signal = opts.signal;
-    this.intervals = { "export.arxiv.org": opts.arxivIntervalMs ?? 3e3 };
+    this.intervals = {
+      "export.arxiv.org": opts.arxivIntervalMs ?? 3e3,
+      // Semantic Scholar's key allows 1 request per second; keyless requests share a pool.
+      ...opts.semanticScholarKey ? { "api.semanticscholar.org": 1100 } : {}
+    };
   }
   /** Marks a host as unusable for the rest of this run (e.g. a bot challenge). */
   markDown(host, reason) {
@@ -113002,17 +113006,17 @@ var HttpClient = class {
    * (callers decide what 404 means); throws SourceUnavailableError when no
    * definitive answer was obtained.
    */
-  async get(url, accept) {
+  async get(url, accept, headers) {
     const host = new URL(url).host;
     const release = await this.acquire(host);
     try {
-      return await this.getOnce(url, accept, host);
+      return await this.getOnce(url, accept, host, headers);
     } finally {
       release();
     }
   }
-  async getOnce(url, accept, host) {
-    let res = await this.attempt(url, accept, host);
+  async getOnce(url, accept, host, headers) {
+    let res = await this.attempt(url, accept, host, headers);
     if (res.status === 429 && /daily|budget|quota|per day|credits/i.test(res.body)) {
       const reason = `${host} answered HTTP 429: daily request budget used up`;
       this.markDown(host, reason);
@@ -113023,7 +113027,7 @@ var HttpClient = class {
       const downReason = this.down.get(host);
       if (downReason) throw new SourceUnavailableError(host, downReason);
       await sleep(retryAfterMs(res.retryAfter, this.retryDelayMs), this.signal);
-      res = await this.attempt(url, accept, host);
+      res = await this.attempt(url, accept, host, headers);
     }
     if (res.status === 429 || res.status >= 500) {
       const reason = `${host} answered HTTP ${res.status}`;
@@ -113075,7 +113079,7 @@ var HttpClient = class {
     this.nextSlot.set(host, slot + interval);
     await sleep(slot - now, this.signal);
   }
-  async attempt(url, accept, host) {
+  async attempt(url, accept, host, headers) {
     if (this.signal?.aborted) throw this.signal.reason ?? new Error("aborted");
     await this.throttle(host);
     const controller = new AbortController();
@@ -113089,7 +113093,7 @@ var HttpClient = class {
     }, this.timeoutMs);
     try {
       const res = await this.fetchFn(url, {
-        headers: { Accept: accept },
+        headers: { Accept: accept, ...headers ?? {} },
         redirect: "follow",
         signal: controller.signal
       });
@@ -113115,8 +113119,8 @@ var HttpClient = class {
     }
   }
 };
-async function getJson(client, url, accept = "application/json") {
-  const res = await client.get(url, accept);
+async function getJson(client, url, accept = "application/json", headers) {
+  const res = await client.get(url, accept, headers);
   if (res.status === 404 || res.status === 410) return { status: res.status, data: null };
   const host = new URL(url).host;
   if (res.status < 200 || res.status >= 300) {
@@ -113131,13 +113135,82 @@ async function getJson(client, url, accept = "application/json") {
   }
 }
 
+// ../packages/core/src/refs/sources/acl.ts
+var NEW_ID = String.raw`\d{4}\.[a-z0-9]+(?:-[a-z0-9]+)+\.\d+`;
+var OLD_ID = String.raw`[A-Za-z]\d{2}-\d{4}`;
+var ID = new RegExp(`^(?:${NEW_ID}|${OLD_ID})$`);
+var OLD_ONLY = new RegExp(`^${OLD_ID}$`);
+function stripSuffixes(value) {
+  let s = value;
+  for (const mark of ["?", "#"]) {
+    const at = s.indexOf(mark);
+    if (at >= 0) s = s.slice(0, at);
+  }
+  if (s.endsWith("/")) s = s.slice(0, -1);
+  for (const ext of [".pdf", ".bib", ".xml"]) {
+    if (s.toLowerCase().endsWith(ext)) {
+      s = s.slice(0, -ext.length);
+      break;
+    }
+  }
+  return s.endsWith("/") ? s.slice(0, -1) : s;
+}
+function parseAclId(input2) {
+  if (input2.length > 512) return null;
+  const s = input2.trim().replace(/^(?:https?:\/\/)?(?:www\.)?(?:aclanthology\.org|aclweb\.org\/anthology)\//i, "").replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)?10\.18653\/v1\//i, "").replace(/^ACL:\s*/i, "");
+  const id = stripSuffixes(s);
+  if (!ID.test(id)) return null;
+  return OLD_ONLY.test(id) ? id.toUpperCase() : id;
+}
+function aclBibUrl(id) {
+  return `https://aclanthology.org/${id}.bib`;
+}
+var TYPES = {
+  inproceedings: "proceedings-article",
+  article: "journal-article",
+  book: "book",
+  incollection: "book-chapter",
+  phdthesis: "dissertation"
+};
+function parseAclBib(bib) {
+  const entry = parseBib(bib)[0];
+  const f = entry?.fields;
+  if (!entry || !f?.title) return null;
+  const authors = parseNames(f.author).filter((n) => !n.corporate).map((n) => n.given ? { given: n.given, family: n.family } : { family: n.family });
+  const year = Number(/\b(\d{4})\b/.exec(f.year ?? "")?.[1]);
+  const record = {
+    source: "acl",
+    title: texToPlain(f.title).replace(/\s+/g, " ").trim(),
+    authors,
+    years: Number.isInteger(year) ? [year] : []
+  };
+  const venue2 = f.booktitle ?? f.journal;
+  if (venue2) record.venue = texToPlain(venue2).replace(/\s+/g, " ").trim();
+  if (f.doi) record.doi = f.doi.toLowerCase();
+  if (f.url) record.url = f.url;
+  const type = TYPES[entry.type.toLowerCase()];
+  if (type) record.type = type;
+  return record;
+}
+async function aclById(client, id) {
+  const res = await client.get(aclBibUrl(id), "text/plain");
+  if (res.status === 404 || res.status === 410) return null;
+  if (res.status !== 200 || !/^\s*@/.test(res.body)) {
+    throw new SourceUnavailableError(
+      "aclanthology.org",
+      `aclanthology.org answered HTTP ${res.status} without BibTeX`
+    );
+  }
+  return parseAclBib(res.body);
+}
+
 // ../packages/core/src/refs/sources/arxiv.ts
 var API = "https://export.arxiv.org/api/query";
-var NEW_ID = /^(\d{4}\.\d{4,5})(v\d+)?$/;
-var OLD_ID = /^([a-z-]+(?:\.[A-Z]{2})?\/\d{7})(v\d+)?$/;
+var NEW_ID2 = /^(\d{4}\.\d{4,5})(v\d+)?$/;
+var OLD_ID2 = /^([a-z-]+(?:\.[A-Z]{2})?\/\d{7})(v\d+)?$/;
 function parseArxivId(input2) {
   const s = input2.trim().replace(/^(?:https?:\/\/)?(?:www\.|export\.)?arxiv\.org\/(?:abs|pdf)\//i, "").replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.48550\/arxiv\./i, "").replace(/^arxiv:\s*/i, "").replace(/\.pdf$/i, "");
-  const m = NEW_ID.exec(s) ?? OLD_ID.exec(s);
+  const m = NEW_ID2.exec(s) ?? OLD_ID2.exec(s);
   return m ? m[1] : null;
 }
 var XML_ENTITIES = {
@@ -113280,6 +113353,91 @@ async function resolveDoi(client, doi) {
   return { kind: "found", record };
 }
 
+// ../packages/core/src/refs/sources/europepmc.ts
+var PMID_PREFIX = /^\s*PMID[\s:]+(\d{1,9})\s*$/i;
+var PMID_URL = /^(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/(\d{1,9})\/?$/i;
+var PMCID_BARE = /^(PMC\d{1,9})\/?$/i;
+var PMCID_URL = /^(?:https?:\/\/)?(?:(?:www\.)?ncbi\.nlm\.nih\.gov\/pmc\/articles|pmc\.ncbi\.nlm\.nih\.gov\/articles|europepmc\.org\/(?:article\/PMC|articles))\/(PMC\d{1,9})\/?$/i;
+var MAX_ID_INPUT = 512;
+function parsePmid(input2) {
+  if (input2.length > MAX_ID_INPUT) return null;
+  const s = input2.trim();
+  const m = PMID_PREFIX.exec(s) ?? PMID_URL.exec(s);
+  return m ? m[1] : null;
+}
+function parsePmcid(input2) {
+  if (input2.length > MAX_ID_INPUT) return null;
+  const s = input2.trim();
+  const m = PMCID_BARE.exec(s) ?? PMCID_URL.exec(s);
+  return m ? m[1].toUpperCase() : null;
+}
+function searchUrl(query3) {
+  const params = new URLSearchParams({
+    query: query3,
+    format: "json",
+    resultType: "core",
+    pageSize: "5"
+  });
+  return `https://www.ebi.ac.uk/europepmc/webservices/rest/search?${params}`;
+}
+var europepmcPmidUrl = (pmid) => searchUrl(`EXT_ID:${pmid} AND SRC:MED`);
+var europepmcPmcidUrl = (pmcid) => searchUrl(`PMCID:${pmcid}`);
+function europepmcTitleUrl(title) {
+  const words2 = title.replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return searchUrl(`TITLE:"${words2}"`);
+}
+function authorsOf(r) {
+  const list3 = r.authorList?.author ?? [];
+  const named = list3.map((a) => {
+    if (a.lastName) return { family: a.lastName, ...a.firstName ? { given: a.firstName } : {} };
+    return { family: (a.collectiveName ?? a.fullName ?? "").trim() };
+  }).filter((a) => a.family);
+  if (named.length) return named;
+  return (r.authorString ?? "").replace(/\.$/, "").split(",").map((part) => {
+    const s = part.trim();
+    const at = s.lastIndexOf(" ");
+    return at > 0 && /^[A-Z]{1,4}$/.test(s.slice(at + 1)) ? s.slice(0, at).trim() : s;
+  }).filter(Boolean).map((family) => ({ family }));
+}
+function fromEuropePmc(r) {
+  const trimmed = r.title?.trim();
+  const title = trimmed?.endsWith(".") ? trimmed.slice(0, -1).trimEnd() : trimmed;
+  if (!title) return null;
+  const years = [
+    Number(r.pubYear),
+    r.journalInfo?.yearOfPublication,
+    Number(r.firstPublicationDate?.slice(0, 4)),
+    r.bookOrReportDetails?.yearOfPublication
+  ].filter((y) => typeof y === "number" && Number.isInteger(y) && y > 0);
+  const record = {
+    source: "europepmc",
+    title,
+    authors: authorsOf(r),
+    years: [...new Set(years)]
+  };
+  const venue2 = r.journalInfo?.journal?.title ?? r.journalInfo?.journal?.medlineAbbreviation;
+  if (venue2) record.venue = venue2;
+  if (r.doi) record.doi = r.doi.toLowerCase();
+  if (r.source && r.id) record.url = `https://europepmc.org/article/${r.source}/${r.id}`;
+  if (r.source === "PPR") record.type = "preprint";
+  else if (r.journalInfo) record.type = "journal-article";
+  else if (r.bookOrReportDetails) record.type = "book";
+  return record;
+}
+async function query2(client, url) {
+  const { data } = await getJson(client, url);
+  return (data?.resultList?.result ?? []).map(fromEuropePmc).filter((r) => r !== null);
+}
+async function europepmcByPmid(client, pmid) {
+  return (await query2(client, europepmcPmidUrl(pmid)))[0] ?? null;
+}
+async function europepmcByPmcid(client, pmcid) {
+  return (await query2(client, europepmcPmcidUrl(pmcid)))[0] ?? null;
+}
+async function europepmcSearch(client, title) {
+  return query2(client, europepmcTitleUrl(title));
+}
+
 // ../packages/core/src/refs/kind.ts
 var SCHOLARLY = /* @__PURE__ */ new Set(["article", "inproceedings", "conference", "incollection"]);
 var NOT_INDEXED = /* @__PURE__ */ new Set([
@@ -113307,6 +113465,22 @@ var NOT_INDEXED = /* @__PURE__ */ new Set([
   "legal",
   "jurisdiction"
 ]);
+function unwrapUrl(value) {
+  const v = value.trim().slice(0, 600);
+  return v.startsWith("\\url{") && v.endsWith("}") ? v.slice(5, -1).trim() : v;
+}
+function otherIdentifiers(entry, doi) {
+  const f = entry.fields;
+  const ids = {};
+  const archive = (f.eprinttype ?? f.archiveprefix ?? "").toLowerCase();
+  const acl = [f.url, f.howpublished, doi ?? void 0].map((v) => v ? parseAclId(unwrapUrl(v)) : null).find((v) => Boolean(v));
+  if (acl) ids.aclId = acl;
+  const pmid = [f.pmid, archive === "pubmed" || archive === "pmid" ? f.eprint : void 0, f.url].map((v) => v ? parsePmid(/^\d+$/.test(v.trim()) ? `PMID:${v.trim()}` : v.trim()) : null).find((v) => Boolean(v));
+  if (pmid) ids.pmid = pmid;
+  const pmcid = [f.pmcid, archive === "pmc" || archive === "pmcid" ? f.eprint : void 0, f.url].map((v) => v ? parsePmcid(v.trim()) : null).find((v) => Boolean(v));
+  if (pmcid) ids.pmcid = pmcid;
+  return ids;
+}
 function identifiersOf(entry) {
   const f = entry.fields;
   const ids = {};
@@ -113332,7 +113506,7 @@ function identifiersOf(entry) {
     }
   }
   if (doi && !doi.startsWith("10.48550/")) ids.doi = doi;
-  return ids;
+  return { ...ids, ...otherIdentifiers(entry, doi) };
 }
 var STANDARD_TYPES = /* @__PURE__ */ new Set(["techreport", "report", "standard", "manual", "misc"]);
 var STANDARDS_BODY = /^(?:the\s+)?(?:ISO|IEC|ISO\/IEC|IETF|Internet Engineering Task Force|RFC Editor|W3C|World Wide Web Consortium|ANSI|American National Standards Institute|NIST|National Institute of Standards and Technology|ETSI|European Telecommunications Standards Institute|ITU|ITU-T|ITU-R|International Telecommunication Union|International Organization for Standardization|International Electrotechnical Commission|DIN|BSI|British Standards Institution|CEN|CENELEC|Ecma International|ECMA|Unicode Consortium|The Unicode Consortium|OASIS|IEEE Standards Association|IEEE-SA|3GPP|WHATWG|Khronos Group)\b/i;
@@ -113355,7 +113529,8 @@ function isWebOnly(entry) {
   return !!(f.url || f.howpublished?.includes("\\url")) && !f.author && !hasVenue;
 }
 function entryKind(entry, ids) {
-  if (ids.doi || ids.arxivId) return SCHOLARLY.has(entry.type) ? "scholarly" : "maybe-indexed";
+  if (ids.doi || ids.arxivId || ids.aclId || ids.pmid || ids.pmcid)
+    return SCHOLARLY.has(entry.type) ? "scholarly" : "maybe-indexed";
   if (NOT_INDEXED.has(entry.type) || isStandard(entry) || isWebOnly(entry)) return "not-indexed";
   if (SCHOLARLY.has(entry.type)) return "scholarly";
   return "maybe-indexed";
@@ -113504,6 +113679,228 @@ function bestAssessment(list3) {
   return [...list3].filter((a) => a.verdict !== "none").sort((a, b) => rank(b) - rank(a) || b.score - a.score)[0];
 }
 
+// ../packages/core/src/refs/extra.ts
+function locationOf(r, entry) {
+  return r?.location ?? (entry?.line ? { line: entry.line, ...entry.file ? { file: entry.file } : {} } : void 0);
+}
+var ASSERTED_BY = {
+  "retraction-watch": "Retraction Watch",
+  publisher: "the publisher"
+};
+function retractedProblems(results, byKey) {
+  const problems = [];
+  for (const r of results) {
+    const n = r.retraction;
+    if (!n) continue;
+    const entry = byKey.get(r.key);
+    const location2 = locationOf(r, entry);
+    const word = n.kind === "withdrawal" ? "withdrawn" : "retracted";
+    const who = n.assertedBy ? ASSERTED_BY[n.assertedBy] ?? n.assertedBy : void 0;
+    const notice = n.noticeDoi ? `https://doi.org/${n.noticeDoi}` : void 0;
+    problems.push({
+      rule: "reference-retracted",
+      check: "references",
+      severity: "error",
+      message: `\`${r.key}\` is recorded as ${word} (DOI ${n.doi})`,
+      ...location2 ? { location: location2 } : {},
+      detail: [
+        `CrossRef lists a ${n.kind} for ${n.doi}${n.date ? `, dated ${n.date}` : ""}${who ? `, asserted by ${who}` : ""}.`,
+        notice ? `Notice: ${notice}` : void 0
+      ].filter(Boolean).join(" "),
+      fix: `Read the notice${notice ? ` (${notice})` : ""}. Do not cite the work as sound evidence: replace it with a work that stands, or cite it only to say it was ${word}, together with the notice.`,
+      ...entry?.raw ? { evidence: entry.raw } : {},
+      data: {
+        key: r.key,
+        doi: n.doi,
+        kind: n.kind,
+        ...n.noticeDoi ? { noticeDoi: n.noticeDoi } : {},
+        ...n.date ? { date: n.date } : {},
+        ...n.assertedBy ? { assertedBy: n.assertedBy } : {}
+      }
+    });
+  }
+  return problems;
+}
+function publishedVersionProblems(results, byKey) {
+  const problems = [];
+  for (const r of results) {
+    const entry = byKey.get(r.key);
+    const doi = r.matched?.doi;
+    if (r.source !== "arxiv" || !entry || !doi || doi.startsWith("10.48550/")) continue;
+    if (r.status !== "verified" && r.status !== "mismatch") continue;
+    if (identifiersOf(entry).doi || entry.fields.doi) continue;
+    const location2 = locationOf(r, entry);
+    problems.push({
+      rule: "reference-published-version",
+      check: "references",
+      severity: "info",
+      message: `\`${r.key}\` is an arXiv preprint whose arXiv record names a published version (DOI ${doi})`,
+      ...location2 ? { location: location2 } : {},
+      detail: "The arXiv record of this paper gives a DOI for the published article. If you read the published version, cite that; if you read the preprint, keep this entry.",
+      fix: `Run \`overfull cite ${doi}\`, use the key it prints in \`\\cite{}\`, and remove this entry if nothing else cites it.`,
+      ...entry.raw ? { evidence: entry.raw } : {},
+      data: { key: r.key, doi, ...r.matched?.title ? { title: r.matched.title } : {} }
+    });
+  }
+  return problems;
+}
+function duplicateKeys(entry) {
+  const ids = identifiersOf(entry);
+  const keys = [];
+  if (ids.doi) keys.push({ kind: "doi", value: ids.doi.toLowerCase() });
+  if (ids.arxivId) keys.push({ kind: "arxiv", value: ids.arxivId.toLowerCase() });
+  const year = bibYear(entry);
+  const title = normalizeTitle(entry.fields.title ?? "", true);
+  if (year !== void 0 && title.length >= 12)
+    keys.push({ kind: "title", value: `${title}|${year}` });
+  return keys;
+}
+var WHAT = {
+  doi: "the same DOI",
+  arxiv: "the same arXiv id",
+  title: "the same title and year"
+};
+function duplicateProblems(entries) {
+  const first2 = /* @__PURE__ */ new Map();
+  const problems = [];
+  for (const entry of entries) {
+    let reported = false;
+    for (const k of duplicateKeys(entry)) {
+      const id = `${k.kind}:${k.value}`;
+      const earlier = first2.get(id);
+      if (!earlier) {
+        first2.set(id, entry);
+        continue;
+      }
+      if (reported || earlier === entry) continue;
+      reported = true;
+      const location2 = locationOf(void 0, entry);
+      problems.push({
+        rule: "reference-duplicate",
+        check: "references",
+        severity: "warning",
+        message: `\`${entry.key}\` and \`${earlier.key}\` are the same work (${WHAT[k.kind]})`,
+        ...location2 ? { location: location2 } : {},
+        detail: `Both entries have ${WHAT[k.kind]}${k.kind === "title" ? "" : `: ${k.value}`}. \`${earlier.key}\` comes first${earlier.line ? ` (line ${earlier.line}${earlier.file ? ` of ${earlier.file}` : ""})` : ""}.`,
+        fix: `Keep one entry, use its key in every \`\\cite{}\`, and delete the other. If they are two different works (for example two editions), give them different titles or years.`,
+        ...entry.raw ? { evidence: entry.raw } : {},
+        data: { key: entry.key, duplicateOf: earlier.key, by: k.kind }
+      });
+    }
+  }
+  return problems;
+}
+function uncitedProblems(entries, cited) {
+  const used = new Set(cited);
+  return entries.filter((e) => !used.has(e.key)).map((entry) => {
+    const location2 = locationOf(void 0, entry);
+    return {
+      rule: "reference-uncited",
+      check: "references",
+      severity: "info",
+      message: `\`${entry.key}\` is in the bibliography but no \`\\cite\` uses it`,
+      ...location2 ? { location: location2 } : {},
+      fix: "Cite it where it belongs, or remove the entry if you do not need it.",
+      data: { key: entry.key }
+    };
+  });
+}
+
+// ../packages/core/src/refs/retraction.ts
+var BATCH = 40;
+function dateOf(u) {
+  const [y, m, d] = u.updated?.["date-parts"]?.[0] ?? [];
+  if (!y) return void 0;
+  return [y, m, d].filter((n) => typeof n === "number").map((n, i) => String(n).padStart(i === 0 ? 4 : 2, "0")).join("-");
+}
+function retractionOf(work) {
+  const updates = work["updated-by"] ?? [];
+  const pick2 = updates.find((u) => u.type === "retraction") ?? updates.find((u) => u.type === "withdrawal");
+  if (!pick2 || !work.DOI) return void 0;
+  const notice = {
+    kind: pick2.type === "withdrawal" ? "withdrawal" : "retraction",
+    doi: work.DOI.toLowerCase()
+  };
+  if (pick2.DOI) notice.noticeDoi = pick2.DOI.toLowerCase();
+  const date = dateOf(pick2);
+  if (date) notice.date = date;
+  if (pick2.source) notice.assertedBy = pick2.source;
+  return notice;
+}
+function crossrefUpdatesUrl(dois, mailto) {
+  const params = new URLSearchParams({
+    filter: dois.map((d) => `doi:${d}`).join(","),
+    select: "DOI,updated-by",
+    rows: String(dois.length)
+  });
+  if (mailto) params.set("mailto", mailto);
+  return `https://api.crossref.org/works?${params}`;
+}
+async function findRetractions(client, ctx, dois) {
+  const { cache: cache2 } = ctx.opts;
+  const found = /* @__PURE__ */ new Map();
+  const maxAge = { ...cacheMaxAge(ctx.opts.cacheMaxAgeDays) };
+  maxAge.negative = Math.min(maxAge.negative, 1);
+  maxAge.positive = Math.min(maxAge.positive, 1);
+  const todo = [];
+  for (const doi of [...new Set(dois)]) {
+    if (doi.includes(",")) continue;
+    const hit = cache2 && !ctx.opts.refresh ? await cache2.get(`retraction:${doi}`) : null;
+    if (hit && typeof hit === "object" && isFresh(hit.cachedAt, false, maxAge)) {
+      if (hit.notice) found.set(doi, hit.notice);
+    } else todo.push(doi);
+  }
+  for (let i = 0; i < todo.length; i += BATCH) {
+    const chunk = todo.slice(i, i + BATCH);
+    const { data } = await getJson(
+      client,
+      crossrefUpdatesUrl(chunk, ctx.opts.mailto)
+    );
+    const items = data?.message?.items;
+    if (!Array.isArray(items)) continue;
+    const byDoi = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      const notice = retractionOf(item);
+      if (notice) byDoi.set(notice.doi, notice);
+    }
+    for (const doi of chunk) {
+      const notice = byDoi.get(doi);
+      if (notice) found.set(doi, notice);
+      if (cache2)
+        await cache2.set(`retraction:${doi}`, {
+          ...notice ? { notice } : {},
+          cachedAt: Date.now()
+        });
+    }
+  }
+  return found;
+}
+async function attachRetractions(ctx, results) {
+  if (!ctx.opts.checkRetractions) return;
+  if (ctx.opts.sources && !ctx.opts.sources.includes("crossref")) return;
+  const candidates = [];
+  for (const r of results) {
+    const doi = r.matched?.doi?.toLowerCase();
+    if ((r.status === "verified" || r.status === "mismatch") && !r.wrongWork && doi) {
+      if (!doi.startsWith("10.48550/")) candidates.push({ r, doi });
+    }
+  }
+  if (!candidates.length) return;
+  try {
+    const found = await findRetractions(
+      ctx.client,
+      ctx,
+      candidates.map((c) => c.doi)
+    );
+    for (const { r, doi } of candidates) {
+      const notice = found.get(doi);
+      if (notice) r.retraction = notice;
+    }
+  } catch (err) {
+    if (ctx.opts.signal?.aborted) throw err;
+  }
+}
+
 // ../packages/core/src/refs/sources/crossref.ts
 var SELECT = [
   "DOI",
@@ -113601,6 +113998,52 @@ async function openalexSearch(client, title, apiKey, mailto) {
   return (data?.results ?? []).map(fromOpenAlex).filter((r) => r !== null);
 }
 
+// ../packages/core/src/refs/sources/semanticscholar.ts
+var FIELDS = "title,authors,year,venue,externalIds,publicationTypes,journal,citationCount";
+function semanticScholarSearchUrl(title) {
+  const params = new URLSearchParams({ query: title, limit: "5", fields: FIELDS });
+  return `https://api.semanticscholar.org/graph/v1/paper/search?${params}`;
+}
+var TYPES2 = {
+  JournalArticle: "journal-article",
+  Conference: "proceedings-article",
+  Book: "book",
+  BookSection: "book-chapter"
+};
+function fromSemanticScholar(p) {
+  const title = p.title?.trim();
+  if (!title) return null;
+  const authors = (p.authors ?? []).map((a) => parseNames(a.name ?? "")[0]).filter((n) => n !== void 0).map((n) => n.given ? { given: n.given, family: n.family } : { family: n.family });
+  const record = {
+    source: "semanticscholar",
+    title,
+    authors,
+    years: typeof p.year === "number" ? [p.year] : []
+  };
+  const arxivId = p.externalIds?.ArXiv;
+  const venue2 = (p.venue || p.journal?.name || "").trim();
+  const isPreprint = /^(arxiv|corr)\b/i.test(venue2);
+  if (venue2 && !isPreprint) record.venue = venue2;
+  const doi = p.externalIds?.DOI;
+  if (doi) record.doi = doi.toLowerCase();
+  if (arxivId) record.arxivId = arxivId.replace(/v\d+$/, "");
+  if (p.paperId) record.url = `https://www.semanticscholar.org/paper/${p.paperId}`;
+  const kind = (p.publicationTypes ?? []).map((t) => TYPES2[t]).find((t) => t !== void 0);
+  if (isPreprint && arxivId) record.type = "preprint";
+  else if (kind) record.type = kind;
+  if (typeof p.citationCount === "number") record.citations = p.citationCount;
+  return record;
+}
+async function semanticScholarSearch(client, title, apiKey) {
+  const { data } = await getJson(
+    client,
+    semanticScholarSearchUrl(title),
+    "application/json",
+    apiKey ? { "x-api-key": apiKey } : void 0
+  );
+  return (data?.data ?? []).map(fromSemanticScholar).filter((r) => r !== null);
+}
+
 // ../packages/core/src/refs/search.ts
 function sourceAllowed(opts, source) {
   return !opts.sources || opts.sources.includes(source);
@@ -113620,6 +114063,36 @@ async function arxivByIdCached(ctx, id) {
     ctx.opts.cache,
     arxivCacheKey(id),
     async () => ({ record: await arxivById(ctx.client, id) }),
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true
+    }
+  );
+  return value.record;
+}
+var MAX_TITLE_ANSWERS = 3;
+async function aclByIdCached(ctx, id) {
+  const value = await cached(
+    ctx.opts.cache,
+    `acl:${id}`,
+    async () => ({ record: await aclById(ctx.client, id) }),
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true
+    }
+  );
+  return value.record;
+}
+async function europepmcByIdCached(ctx, id) {
+  const key = "pmid" in id ? `pmid:${id.pmid}` : `pmcid:${id.pmcid}`;
+  const value = await cached(
+    ctx.opts.cache,
+    key,
+    async () => ({
+      record: "pmid" in id ? await europepmcByPmid(ctx.client, id.pmid) : await europepmcByPmcid(ctx.client, id.pmcid)
+    }),
     {
       isNegative: (v) => !v.record,
       maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
@@ -113716,10 +114189,30 @@ async function titleSearch(ctx, q, visit) {
         () => openalexSearch(ctx.client, plain2, void 0, ctx.opts.mailto)
       );
       outcome.searched.push("openalex");
-      visit(records, "openalex");
+      if (visit(records, "openalex")) return outcome;
     } catch (err) {
       if (ctx.opts.signal?.aborted) throw err;
       outcome.failures.push({ source: "openalex", reason: failureReason(err) });
+    }
+  }
+  const plainTitle = q.isTex ? texToPlain(q.title) : q.title;
+  const fallbacks = [
+    [
+      "semanticscholar",
+      () => semanticScholarSearch(ctx.client, plainTitle, ctx.opts.semanticScholarKey)
+    ],
+    ["europepmc", () => europepmcSearch(ctx.client, plainTitle)]
+  ];
+  for (const [source, run2] of fallbacks) {
+    if (outcome.searched.length >= MAX_TITLE_ANSWERS) break;
+    if (ctx.deadline !== void 0 && Date.now() > ctx.deadline) break;
+    if (!sourceAllowed(ctx.opts, source)) continue;
+    try {
+      const records = await searchOne(ctx, cacheKey, source, run2);
+      outcome.searched.push(source);
+      if (visit(records, source)) return outcome;
+    } catch (err) {
+      if (ctx.opts.signal?.aborted) throw err;
     }
   }
   return outcome;
@@ -113731,7 +114224,10 @@ var SOURCE_NAMES = {
   crossref: "CrossRef",
   dblp: "dblp",
   arxiv: "arXiv",
-  openalex: "OpenAlex"
+  openalex: "OpenAlex",
+  semanticscholar: "Semantic Scholar",
+  acl: "ACL Anthology",
+  europepmc: "Europe PMC"
 };
 var REQUIRED_FOR_NOT_FOUND = ["crossref", "dblp"];
 function sourceName(s) {
@@ -113820,6 +114316,54 @@ async function checkArxiv(ctx, id, facts, ev) {
     ev.failures.push({ source: "arxiv", reason: failureReason(err) });
     return null;
   }
+}
+async function checkOtherId(ctx, source, label, fetchRecord, facts, ev) {
+  ev.queries.push(label);
+  try {
+    const record = await fetchRecord();
+    ev.searched.add(source);
+    if (!record) return null;
+    const a = assess(facts, record, true);
+    ev.assessments.push(a);
+    return a;
+  } catch (err) {
+    if (ctx.opts.signal?.aborted) throw err;
+    ev.failures.push({ source, reason: failureReason(err) });
+    return null;
+  }
+}
+async function checkOtherIds(ctx, ids, facts, ev) {
+  if (ids.aclId && sourceAllowed(ctx.opts, "acl")) {
+    const id = ids.aclId;
+    const a = await checkOtherId(ctx, "acl", `acl:${id}`, () => aclByIdCached(ctx, id), facts, ev);
+    if (a) return a;
+  }
+  if (sourceAllowed(ctx.opts, "europepmc")) {
+    if (ids.pmid) {
+      const pmid = ids.pmid;
+      const a = await checkOtherId(
+        ctx,
+        "europepmc",
+        `pmid:${pmid}`,
+        () => europepmcByIdCached(ctx, { pmid }),
+        facts,
+        ev
+      );
+      if (a) return a;
+    }
+    if (ids.pmcid) {
+      const pmcid = ids.pmcid;
+      return checkOtherId(
+        ctx,
+        "europepmc",
+        `pmcid:${pmcid}`,
+        () => europepmcByIdCached(ctx, { pmcid }),
+        facts,
+        ev
+      );
+    }
+  }
+  return null;
 }
 async function searchByTitle(ctx, facts, kind, ev) {
   if (!facts.title) return;
@@ -113957,7 +114501,7 @@ async function verifyEntry(entry, ctx, ignore) {
     arxivMissing: false,
     queries: []
   };
-  const viaId = (ids.doi && sourceAllowed(ctx.opts, "doi.org") ? await checkDoi(ctx, ids.doi, facts, ev) : null) ?? (ids.arxivId && sourceAllowed(ctx.opts, "arxiv") ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null);
+  const viaId = (ids.doi && sourceAllowed(ctx.opts, "doi.org") ? await checkDoi(ctx, ids.doi, facts, ev) : null) ?? (ids.arxivId && sourceAllowed(ctx.opts, "arxiv") ? await checkArxiv(ctx, ids.arxivId, facts, ev) : null) ?? await checkOtherIds(ctx, ids, facts, ev);
   const withQuery = (r) => ({ ...r, query: ev.queries[0] ?? "" });
   if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
   await searchByTitle(ctx, facts, kind, ev);
@@ -113993,11 +114537,13 @@ async function verifyEntries(entries, opts = {}) {
   const ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
   let done = 0;
-  return runPool(entries, opts.concurrency ?? 4, async (e) => {
+  const results = await runPool(entries, opts.concurrency ?? 4, async (e) => {
     const result = await verifyEntry(e, ctx, ignore);
     opts.onProgress?.(++done, entries.length);
     return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
   });
+  await attachRetractions(ctx, results);
+  return results;
 }
 function isUnproven(entry, result) {
   if (result.status === "verified") return false;
@@ -114100,6 +114646,38 @@ var refsRules = [
     title: "Cited entry could not be re-verified",
     summary: "The entry was added with `overfull cite` (its `x-overfull` marker is intact), but this run could not confirm it again: the check ran offline or the indexes could not be reached.",
     fix: "Run `overfull check` again with network access. If an index stays unreachable, the DOI or arXiv id in the entry lets doi.org or arXiv confirm it."
+  },
+  {
+    id: "reference-retracted",
+    check: "references",
+    severity: "error",
+    title: "Cited work is retracted or withdrawn",
+    summary: "CrossRef records a retraction or withdrawal for the work this entry matched (publisher notices and Retraction Watch data). Citing it as sound evidence misleads readers. Needs the lookup to find the work by DOI; entries without a DOI are not checked for this.",
+    fix: "Read the retraction notice. Replace the work with one that stands, or cite it only to say it was retracted, together with the notice."
+  },
+  {
+    id: "reference-published-version",
+    check: "references",
+    severity: "info",
+    title: "Preprint has a published version",
+    summary: "The entry is an arXiv preprint, and its arXiv record names a DOI for the published article.",
+    fix: "If you read the published version, run `overfull cite <doi>` and cite that; if you read the preprint, keep the entry."
+  },
+  {
+    id: "reference-duplicate",
+    check: "references",
+    severity: "warning",
+    title: "Two entries for the same work",
+    summary: "Two entries have the same DOI, the same arXiv id, or the same title and year. The reference list may show the work twice, under two keys. Checked offline, from the .bib file alone.",
+    fix: "Keep one entry, use its key in every `\\cite{}`, and delete the other."
+  },
+  {
+    id: "reference-uncited",
+    check: "references",
+    severity: "info",
+    title: "Bibliography entry that nothing cites",
+    summary: "No `\\cite` in the document uses this entry. Off by default; turn it on with `references.reportUncited: true` in overfull.yml. Needs the cited keys (from the .aux or .bcf, or the .tex sources).",
+    fix: "Cite it where it belongs, or remove the entry."
   },
   {
     id: "bib-parse-error",
@@ -114378,7 +114956,11 @@ function refsCheck(results, opts = {}) {
       if (r.unproven) return true;
       const entry = byKey.get(r.key);
       return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
-    }).map((r) => unprovenProblem(r, byKey.get(r.key)))
+    }).map((r) => unprovenProblem(r, byKey.get(r.key))),
+    ...retractedProblems(results, byKey),
+    ...publishedVersionProblems(results, byKey),
+    ...opts.entries ? duplicateProblems(opts.entries) : [],
+    ...opts.reportUncited && opts.entries && opts.citedKeys ? uncitedProblems(opts.entries, opts.citedKeys) : []
   ];
   collapseNetworkFailures(problems, results);
   if (problems.some((p) => p.rule === "reference-unproven")) {
@@ -116622,13 +117204,16 @@ function loadConfig(cwd, explicit, env = {}, opts = {}) {
   const checks = raw.checks !== void 0 ? parseChecks(raw.checks, f) : profile.checks ?? [...CHECK_IDS];
   const refs = raw.references ?? {};
   if (!isObj2(refs)) throw new ConfigError(f, "`references` must be a mapping");
-  checkKeys(refs, ["mailto", "ignore", "cache", "requireCite"], "references.", f);
+  checkKeys(refs, ["mailto", "ignore", "cache", "requireCite", "reportUncited"], "references.", f);
   const cache2 = refs.cache ?? "user";
   if (cache2 !== "user" && cache2 !== "project")
     throw new ConfigError(f, "`references.cache` must be user or project");
   if (refs.requireCite !== void 0 && typeof refs.requireCite !== "boolean")
     throw new ConfigError(f, "`references.requireCite` must be true or false");
   const requireCite = refs.requireCite === true;
+  if (refs.reportUncited !== void 0 && typeof refs.reportUncited !== "boolean")
+    throw new ConfigError(f, "`references.reportUncited` must be true or false");
+  const reportUncited = refs.reportUncited === true;
   const mailto = (typeof refs.mailto === "string" ? refs.mailto : void 0) ?? env.OVERFULL_MAILTO;
   const ignore = refs.ignore !== void 0 ? stringList(refs.ignore, "references.ignore", f) : [];
   const build2 = raw.build ?? {};
@@ -116660,7 +117245,7 @@ function loadConfig(cwd, explicit, env = {}, opts = {}) {
     profile,
     venue: inline2,
     checks,
-    references: { ...mailto ? { mailto } : {}, ignore, cache: cache2, requireCite },
+    references: { ...mailto ? { mailto } : {}, ignore, cache: cache2, requireCite, reportUncited },
     build: { engine, image, outDir, auxDir, outDirFromConfig: build2.outDir !== void 0 }
   };
   if (file) config.file = file;
@@ -116866,7 +117451,7 @@ async function runVeraPdf(pdf, env, opts = {}) {
 }
 
 // ../packages/cli/src/version.ts
-var VERSION = true ? "3.0.0" : readVersion();
+var VERSION = true ? "3.1.0" : readVersion();
 
 // ../packages/cli/src/check.ts
 var skipped2 = (check2, reason) => ({
@@ -117117,23 +117702,28 @@ async function references(inp, opts) {
   }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
+  const semanticScholarKey = env.SEMANTIC_SCHOLAR_API_KEY;
   const refsOptions = {
     ...opts.fetch ? { fetch: opts.fetch } : {},
     ...mailto ? { mailto } : {},
     ...openalexKey ? { openalexKey } : {},
+    ...semanticScholarKey ? { semanticScholarKey } : {},
     ...cache2 ? { cache: cache2 } : {},
     ...opts.refresh ? { refresh: true } : {},
     ...opts.progress ? { onProgress: opts.progress } : {},
     offline: opts.offline ?? false,
     ignore: config.references.ignore,
-    ...config.references.requireCite ? { requireProvenance: true } : {}
+    ...config.references.requireCite ? { requireProvenance: true } : {},
+    // The CLI asks CrossRef about retractions; the core library leaves it off by default.
+    checkRetractions: true
   };
   const results = await verifyEntries(toVerify, refsOptions);
   cache2?.save();
   const result = refsCheck(results, {
     entries: toVerify,
     extra,
-    requireProvenance: config.references.requireCite
+    requireProvenance: config.references.requireCite,
+    ...config.references.reportUncited && keys && !citeAll ? { reportUncited: true, citedKeys: keys } : {}
   });
   if (!keys) {
     result.summary = `${result.summary ?? ""} \u2014 all entries checked (no .aux to tell which are cited)`.trim();
@@ -117266,6 +117856,19 @@ function exitCodeFor(report, failOn) {
 import { basename as basename3, dirname as dirname5, join as join6, relative as relative7 } from "node:path";
 var DIFF_DIR = join6(".overfull", "diff");
 
+// ../packages/cli/src/guard/hook.ts
+var MAX_PAYLOAD_BYTES = 1024 * 1024;
+
+// ../packages/cli/src/guard/staged.ts
+var MAX_BLOB_BYTES = 32 * 1024 * 1024;
+
+// ../packages/cli/src/mcp/protocol.ts
+var LEGACY_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+var LEGACY_LATEST = LEGACY_VERSIONS[0];
+
+// ../packages/cli/src/mcp/stdio.ts
+var MAX_MESSAGE_BYTES = 4 * 1024 * 1024;
+
 // ../packages/cli/src/main.ts
 var mainHelp = `overfull ${VERSION} \u2014 preflight for LaTeX papers and theses
 
@@ -117281,6 +117884,8 @@ Commands:
   diff [--base ref]                  Build a PDF marking changes since a git revision
   explain <rule>                     What a rule means and how to fix it
   doctor                             Show which tools are available
+  guard --staged | --hook            Block hand-written .bib entries (git pre-commit, agent hooks)
+  mcp                                Run as an MCP server on stdio (for agents without a shell)
 
 Run \`overfull <command> --help\` for options. Docs: https://amet13.github.io/overfull/
 `;

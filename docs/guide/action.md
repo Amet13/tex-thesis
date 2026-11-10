@@ -1,8 +1,8 @@
 ---
 title: GitHub Action
 description: Run Overfull checks in GitHub Actions with amet13/overfull@v3, its inputs and outputs, and how it differs from the template workflow that builds in Docker.
-order: 42
-section: Reference
+order: 4
+section: Start
 ---
 
 There are three ways to run Overfull in GitHub Actions. Pick the lightest one

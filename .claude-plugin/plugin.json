@@ -1,7 +1,7 @@
 {
   "name": "overfull",
   "displayName": "Overfull",
-  "description": "Skills and a guard for LaTeX papers and theses: add verified citations, fix the build, fit page limits, make the PDF accessible. Needs the overfull CLI on PATH.",
+  "description": "Skills, a guard and an MCP server for LaTeX papers and theses: add verified citations, fix the build, fit page limits, make the PDF accessible. Needs the overfull CLI on PATH.",
   "author": {
     "name": "Amet Umierov",
     "url": "https://github.com/amet13"
@@ -22,5 +22,11 @@
         ]
       }
     ]
+  },
+  "mcpServers": {
+    "overfull": {
+      "command": "overfull",
+      "args": ["mcp"]
+    }
   }
 }

@@ -1,7 +1,7 @@
 ---
 title: Add Overfull to an existing project
 description: Run overfull init --here in a LaTeX folder you already have. It detects the main file, engine, bibliography and venue style file, writes overfull.yml, and never touches a .tex or .bib file.
-order: 4
+order: 3
 section: Start
 ---
 
