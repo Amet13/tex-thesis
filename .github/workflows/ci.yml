@@ -34,6 +34,12 @@ jobs:
       - run: pnpm test
       - name: Templates are in sync with skills/ and shared/
         run: pnpm templates:check
+      - name: The image pins the same pnpm as packageManager
+        run: |
+          want="$(jq -r .packageManager package.json)"
+          got="pnpm@$(jq -r .dependencies.pnpm docker/pnpm/package.json)"
+          [ "$want" = "$got" ] || { echo "::error file=docker/pnpm/package.json::$got, packageManager is $want"; exit 1; }
+          jq -e --arg v "${want#pnpm@}" '.packages["node_modules/pnpm"].version == $v' docker/pnpm/package-lock.json > /dev/null
       - name: Version bump script still finds every version
         run: node scripts/bump-version.mjs 99.0.0 --dry-run > /dev/null
       - name: Bundled Action is up to date

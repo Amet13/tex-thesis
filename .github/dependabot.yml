@@ -17,7 +17,7 @@ updates:
       docker:
         patterns: ["*"]
   - package-ecosystem: "npm"
-    directory: "/"
+    directories: ["/", "/docker/pnpm"]
     schedule:
       interval: "weekly"
       day: "monday"

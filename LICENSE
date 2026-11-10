@@ -20,9 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
-
-The templates (templates/), the Agent Skills (skills/) and the shared agent
-instructions (shared/) are licensed separately under MIT No Attribution
-(MIT-0), so documents built from them carry no obligations. See the LICENSE
-file in each of those directories.
