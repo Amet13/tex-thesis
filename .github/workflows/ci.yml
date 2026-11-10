@@ -16,7 +16,7 @@ concurrency:
 jobs:
   node:
     name: Lint, types, unit tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -25,7 +25,7 @@ jobs:
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, windows-2025]
+        os: [macos-26, windows-2025]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -58,7 +58,7 @@ jobs:
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -72,9 +72,42 @@ jobs:
           test -f "$RUNNER_TEMP/sa-paper/main.tex"
           test -f "$RUNNER_TEMP/sa-paper/.agents/skills/add-citation/SKILL.md"
 
+  changes:
+    name: What changed
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    outputs:
+      tex: ${{ steps.diff.outputs.tex }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # The TeX job builds a 3 GB image and every template (about 10 minutes).
+      # Pull requests that touch only the website or prose skip it; pushes to
+      # main always run it.
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          tex=true
+          if [ "$EVENT" = pull_request ]; then
+            files="$(git diff --name-only "$BASE...$HEAD")"
+            echo "$files"
+            if [ -n "$files" ] && ! grep -qvE '^(site/|docs/|evals/|\.github/ISSUE_TEMPLATE/|[^/]+\.md$)' <<< "$files"; then
+              tex=false
+            fi
+          fi
+          echo "tex=$tex" >> "$GITHUB_OUTPUT"
+          echo "TeX job: $tex"
+
   tex:
     name: Image, corpus, templates, Action
-    runs-on: ubuntu-24.04
+    needs: changes
+    if: needs.changes.outputs.tex == 'true'
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -116,7 +149,7 @@ jobs:
 
   site:
     name: Website
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -125,10 +158,11 @@ jobs:
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @overfull/core build
+      - run: pnpm --filter site check
       - run: pnpm --filter site build
       - run: pnpm --filter site exec playwright install --with-deps chromium
       - run: pnpm --filter site test:e2e

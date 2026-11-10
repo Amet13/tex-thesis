@@ -10,6 +10,19 @@ name: image
 on:
   push:
     branches: [main]
+    # On main, only changes that reach the image rebuild it (path filters do
+    # not apply to tag pushes, so releases always build).
+    paths:
+      - "docker/**"
+      - "packages/**"
+      - "templates/**"
+      - "skills/**"
+      - "shared/**"
+      - "scripts/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/image.yml"
     # Release tags only: moving the major tag (v3) for the Action triggers nothing.
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   workflow_dispatch:
@@ -32,8 +45,8 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - { platform: linux/amd64, runner: ubuntu-24.04, pair: linux-amd64 }
-          - { platform: linux/arm64, runner: ubuntu-24.04-arm, pair: linux-arm64 }
+          - { platform: linux/amd64, runner: ubuntu-26.04, pair: linux-amd64 }
+          - { platform: linux/arm64, runner: ubuntu-26.04-arm, pair: linux-arm64 }
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     permissions:
@@ -95,7 +108,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read

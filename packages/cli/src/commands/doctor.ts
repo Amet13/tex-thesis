@@ -78,10 +78,11 @@ export async function doctorCommand(args: string[], io: Io): Promise<number> {
   const env = io.env;
   const items: Item[] = [];
   const major = Number(process.versions.node.split('.')[0]);
+  const nodeOk = major >= 26;
   items.push({
     name: 'node',
-    ok: major >= 22,
-    detail: `v${process.versions.node}${major >= 22 ? '' : ' (need 22.12 or newer)'}`,
+    ok: nodeOk,
+    detail: `v${process.versions.node}${nodeOk ? '' : ' (need 26 or newer)'}`,
   });
   items.push({ name: 'overfull', ok: true, detail: VERSION });
 

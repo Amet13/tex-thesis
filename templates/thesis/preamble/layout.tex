@@ -32,8 +32,9 @@
 \renewcommand{\labelenumi}{\arabic{enumi})}
 \renewcommand{\labelenumii}{\alph{enumii})}
 % At 1.5 line spacing the default gaps between list items look loose; the
-% kernel's enumitem emulation (\setlist) removes them.
-\setlist{itemsep=0pt, parsep=0pt, topsep=0.25\baselineskip, partopsep=0pt}
+% kernel's enumitem emulation (\setlist) removes them. Use plain lengths here:
+% LaTeX 2026-11-01 rejects expressions like 0.25\baselineskip in these keys.
+\setlist{itemsep=0pt, parsep=0pt, topsep=6pt, partopsep=0pt}
 
 % Total page count, e.g. "\pageref{LastPage} pages" in the abstract.
 \usepackage{lastpage}

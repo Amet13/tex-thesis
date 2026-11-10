@@ -20,10 +20,6 @@ required; a local TeX Live 2026 works too.
 compressed and 9–10 GB on disk, so allow a few minutes. After that, builds take
 seconds.
 
-Before Overfull v3.0.0 is released the image is not on ghcr.io yet: build it
-from a clone of the Overfull repository with `make image IMAGE=overfull:dev`,
-then pass `IMAGE=overfull:dev` to `make` here (`make build IMAGE=overfull:dev`).
-
 ## Commands
 
 ```sh

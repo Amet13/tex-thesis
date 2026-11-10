@@ -46,7 +46,7 @@ docker build -f docker/Dockerfile -t ghcr.io/amet13/overfull:dev .
 docker build -f docker/Dockerfile --target tex -t overfull-tex:dev .   # TeX + veraPDF only, no CLI
 ```
 
-Stages: `tex` (TeX Live, fonts, poppler, qpdf, veraPDF), `node` (+ Node 24),
+Stages: `tex` (TeX Live, fonts, poppler, qpdf, veraPDF), `node` (+ Node 26),
 `builder` (pnpm 12 builds the monorepo and deploys the CLI with production
 dependencies), `overfull` (final, default target).
 

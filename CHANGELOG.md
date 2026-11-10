@@ -40,9 +40,9 @@ as `templates/thesis`.
   ships `AGENTS.md`, ten Agent Skills, pointers for Claude Code, Codex,
   Cursor, Copilot and Gemini CLI, a Dev Container and a CI workflow.
 - Docker image `ghcr.io/amet13/overfull:3` for linux/amd64 and linux/arm64
-  (TeX Live 2026, poppler, veraPDF, latexdiff, Node 24, the CLI), with build
+  (TeX Live 2026, poppler, veraPDF, latexdiff, Node 26, the CLI), with build
   provenance.
-- Standalone CLI on every GitHub release: `overfull.cjs` (Node 22+) and native
+- Standalone CLI on every GitHub release: `overfull.cjs` (Node 26+) and native
   executables for Linux (x64, arm64), macOS (arm64) and Windows (x64), with
   checksums and provenance. Overfull is not published to npm.
 - Website with docs, a rule reference built from the corpus, and a

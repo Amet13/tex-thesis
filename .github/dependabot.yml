@@ -21,6 +21,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    ignore:
+      # astro check (site) does not support TypeScript 7 yet; review majors by hand.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       npm:
         patterns: ["*"]
