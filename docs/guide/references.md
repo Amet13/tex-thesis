@@ -30,6 +30,11 @@ neither exists, every entry is checked):
    cannot be reached and no OpenAlex key is set, OpenAlex is asked without a key.
 5. Compare the best candidate's title, authors and year with your entry.
 
+OpenReview is not asked: it answers automated requests with a browser check.
+A paper that no index has yet but whose entry links to its OpenReview page
+(`openreview.net/forum?id=…`) is reported as "could not be checked", not as
+not found; open the link to confirm it.
+
 Entries that are websites, software, datasets, standards or manuals are not
 looked up. An entry with a DOI or arXiv id is judged by that identifier alone.
 

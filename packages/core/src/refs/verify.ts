@@ -367,6 +367,15 @@ function noMatch(
       reason: `could not be checked here ${skippedNote}`,
     };
   }
+  // A paper known only from its OpenReview page (often under review or just accepted) may
+  // not be indexed yet, and OpenReview cannot be asked automatically: it is not "not found".
+  if (ids.openreviewId) {
+    return {
+      ...withSearched,
+      status: 'unverifiable',
+      reason: `no index has it yet, and OpenReview (forum ${ids.openreviewId}) cannot be checked automatically; open the link to confirm`,
+    };
+  }
   return {
     ...withSearched,
     status: 'not-found',

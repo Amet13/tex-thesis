@@ -55,6 +55,25 @@ export interface Identifiers {
   pmid?: string;
   /** PubMed Central id (`PMC…`), from `pmcid`, `eprint` or a PMC URL. */
   pmcid?: string;
+  /**
+   * OpenReview forum id, from an openreview.net URL. Not looked up: OpenReview answers
+   * automated requests with a browser challenge (HTTP 403, checked 2026-11-10).
+   */
+  openreviewId?: string;
+}
+
+/** The forum id of an openreview.net `forum?id=` or `pdf?id=` URL, or null. */
+export function parseOpenReviewId(value: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(unwrapUrl(value));
+  } catch {
+    return null;
+  }
+  if (url.hostname !== 'openreview.net' && url.hostname !== 'www.openreview.net') return null;
+  if (url.pathname !== '/forum' && url.pathname !== '/pdf') return null;
+  const id = url.searchParams.get('id');
+  return id && /^[A-Za-z0-9_-]{5,40}$/.test(id) ? id : null;
 }
 
 /** `\url{x}` → `x`; any other value as it is. Plain string tests, no pattern scan, bounded. */
@@ -80,6 +99,10 @@ function otherIdentifiers(entry: BibEntry, doi: string | null): Identifiers {
     .map((v) => (v ? parsePmcid(v.trim()) : null))
     .find((v): v is string => Boolean(v));
   if (pmcid) ids.pmcid = pmcid;
+  const openreview = [f.url, f.howpublished, f.note]
+    .map((v) => (v ? parseOpenReviewId(v) : null))
+    .find((v): v is string => Boolean(v));
+  if (openreview) ids.openreviewId = openreview;
   return ids;
 }
 
