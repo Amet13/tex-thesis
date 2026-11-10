@@ -26,7 +26,7 @@ overfull doctor [--json] [--config file]
 overfull mcp [--cwd dir]
 ```
 
-`overfull --version` prints the version (3.0.0). `overfull <command> --help` (or
+`overfull --version` prints the version (for example `3.1.0`). `overfull <command> --help` (or
 `-h`) prints the options of one command.
 
 Every command takes `--json` and then prints JSON on stdout. See
@@ -379,7 +379,7 @@ is stable; fields may be added, never renamed.
 ```json
 {
   "tool": "overfull",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "target": "paper.pdf",
   "status": "fail",
   "checks": [
