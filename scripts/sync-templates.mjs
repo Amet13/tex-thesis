@@ -135,9 +135,19 @@ for (const t of templates) {
 // The Claude Code plugin (repository root) declares the same hook as the template settings.
 const pluginManifest = join(root, '.claude-plugin', 'plugin.json');
 const claudeSettings = join(agentsDir, '.claude', 'settings.json');
-if (existsSync(pluginManifest) && existsSync(claudeSettings)) {
-  const plugin = JSON.parse(readFileSync(pluginManifest, 'utf8'));
-  const wanted = JSON.parse(readFileSync(claudeSettings, 'utf8')).hooks ?? {};
+// Read both without checking first: a missing file is simply skipped.
+const readJson = (file) => {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    if (err.code === 'ENOENT') return undefined;
+    throw err;
+  }
+};
+const plugin = readJson(pluginManifest);
+const settings = readJson(claudeSettings);
+if (plugin && settings) {
+  const wanted = settings.hooks ?? {};
   if (JSON.stringify(plugin.hooks) !== JSON.stringify(wanted)) {
     drift.push(
       `changed: ${rel(pluginManifest)} (hooks differ from shared/agents/.claude/settings.json)`,

@@ -111,8 +111,12 @@ export function installGitHook(root: string, dryRun: boolean): GitHookResult {
   }
   if (!hook.startsWith(gitDir + sep))
     return { status: 'elsewhere', path: hook, line: PRE_COMMIT_LINE };
-  if (existsSync(hook)) return { status: 'exists', path: hook, line: PRE_COMMIT_LINE };
-  if (dryRun) return { status: 'would-write', path: hook };
+  if (dryRun)
+    return existsSync(hook)
+      ? { status: 'exists', path: hook, line: PRE_COMMIT_LINE }
+      : { status: 'would-write', path: hook };
+  // No existence check before the write: O_EXCL below fails with EEXIST when
+  // a hook is already there, so nothing can slip in between.
   try {
     mkdirSync(dirname(hook), { recursive: true });
     const fs = openSync(hook, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL, 0o755);

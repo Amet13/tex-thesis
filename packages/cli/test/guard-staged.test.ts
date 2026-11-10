@@ -1,6 +1,14 @@
 /** `overfull guard --staged` in real temporary git repositories (no network). */
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  closeSync,
+  existsSync,
+  fstatSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { formatBibEntry, markCited, parseBib } from '@overfull/core';
 import { describe, expect, it } from 'vitest';
@@ -175,7 +183,12 @@ describe('init --here --hooks and --agents', () => {
     expect(await adoptCommand(['--hooks'], io)).toBe(0);
     const hook = join(dir, '.git/hooks/pre-commit');
     expect(readFileSync(hook, 'utf8')).toContain('overfull guard --staged');
-    expect(statSync(hook).mode & 0o111).not.toBe(0);
+    const fd = openSync(hook, 'r');
+    try {
+      expect(fstatSync(fd).mode & 0o111).not.toBe(0);
+    } finally {
+      closeSync(fd);
+    }
     writeFileSync(hook, '#!/bin/sh\necho mine\n');
     chmodSync(hook, 0o755);
     const again = memIo(dir);
