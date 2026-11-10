@@ -5,7 +5,28 @@ order: 42
 section: Reference
 ---
 
-There are two ways to run Overfull in GitHub Actions.
+There are three ways to run Overfull in GitHub Actions. Pick the lightest one
+that does what you need.
+
+- **No image: the Action alone.** Fastest to start. It checks the log, PDF
+  and bibliography your workflow built. veraPDF is not installed on the
+  runner, so the accessibility check reports `verapdf-not-run` unless you
+  install it.
+- **The `-check` image** (`ghcr.io/amet13/overfull:3-check`). The CLI, veraPDF
+  and poppler without TeX Live. Use it as a job container, or with
+  `docker run`, when you build the PDF elsewhere but want the full
+  accessibility check. It cannot build a document.
+- **The full image** (`ghcr.io/amet13/overfull:3`). Adds TeX Live 2026, so it
+  also builds the PDF. This is what the template workflow uses.
+
+```yaml
+    steps:
+      - uses: actions/checkout@v7
+      # ... build paper.pdf elsewhere ...
+      - run: docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3-check overfull check
+```
+
+The rest of this page covers the Action and the template workflow.
 
 - **The Action** (`amet13/overfull@v3`) checks files your workflow already
   produced: the log, the PDF, the bibliography. Use it to add Overfull to an

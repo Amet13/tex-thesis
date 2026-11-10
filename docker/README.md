@@ -10,6 +10,23 @@ version, which matches the image tag.
 
 The image is about 3 GB to download (compressed) and takes 9–10 GB on disk.
 
+## The check-only image
+
+`ghcr.io/amet13/overfull:3-check` (also `3.1-check`, `3.1.0-check`,
+`edge-check`) holds the `overfull` CLI, Node.js, veraPDF with its Java
+runtime, poppler-utils and git, and no TeX Live. It is much smaller and starts
+fast, and it is for checking a PDF, log and bibliography that something else
+built. It cannot compile a document (`overfull build`, `latexmk`, `latexdiff`
+are not in it). It has the same platforms and attestation as the full image.
+
+```sh
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3-check overfull check
+```
+
+Which one to use: the Action with no image when the runner only needs the log
+and PDF checks; the `-check` image when you also want veraPDF or a container
+job; the full image when you build the PDF with it.
+
 ## What is inside
 
 | Component | Version / source |
@@ -44,11 +61,13 @@ The build context is the repository root:
 ```sh
 docker build -f docker/Dockerfile -t ghcr.io/amet13/overfull:dev .
 docker build -f docker/Dockerfile --target tex -t overfull-tex:dev .   # TeX + veraPDF only, no CLI
+docker build -f docker/Dockerfile --target check -t overfull-check:dev .  # CLI + veraPDF, no TeX Live
 ```
 
 Stages: `tex` (TeX Live, fonts, poppler, qpdf, veraPDF), `node` (+ Node 26),
 `builder` (pnpm 12 builds the monorepo and deploys the CLI with production
-dependencies), `overfull` (final, default target).
+dependencies), `check` (Debian slim, no TeX Live), `overfull` (final, default
+target).
 
 Behind a TLS-intercepting proxy, pass its CA certificate as a build secret;
 it is trusted only during download steps and never stored in the image:

@@ -11,7 +11,7 @@ them run the same checks.
 | You have | Use |
 | --- | --- |
 | Docker only | The Docker image and the template Makefile |
-| No Docker, no Node | The single-file `overfull` download from GitHub Releases; builds then need a local TeX Live |
+| No Docker, no Node | The [one-line installer](#one-line-install) or the single-file download from GitHub Releases; builds then need a local TeX Live |
 | Git, Node.js 26+, pnpm and Docker | [From source](#from-source), to work on Overfull itself |
 | VS Code + Docker | The Dev Container |
 | Overleaf | Git sync to a local or GitHub copy |
@@ -45,6 +45,37 @@ docker run --rm -v "$PWD":/work -w /work ghcr.io/amet13/overfull:3 overfull chec
 
 The image tag matches the Overfull major version. The template pins it in
 `overfull.yml` under `build.image`.
+
+## One-line install
+
+Installs the single-file `overfull` for your system, checks it against the
+release's `SHA256SUMS`, and puts it in `~/.local/bin` (Windows:
+`%LOCALAPPDATA%\overfull\bin`). No `sudo`, no Node.js. If the checksum does not
+match, nothing is installed.
+
+Linux (x64, arm64) and macOS (Apple silicon):
+
+```sh
+curl -fsSL https://amet13.github.io/overfull/install.sh | sh
+```
+
+Windows (x64), in PowerShell:
+
+```powershell
+irm https://amet13.github.io/overfull/install.ps1 | iex
+```
+
+The installer prints a `PATH` line if the directory is not on your `PATH`.
+Set `OVERFULL_VERSION=v3.1.0` to install a specific release and
+`OVERFULL_INSTALL_DIR` to install somewhere else. There is no native build for
+Intel Macs and the arm64 build does not run under Rosetta; use `overfull.cjs`
+with Node.js 26, or Docker.
+
+To do it by hand, download your file from
+[GitHub Releases](https://github.com/amet13/overfull/releases)
+(`overfull-linux-x64`, `overfull-linux-arm64`, `overfull-darwin-arm64`,
+`overfull-win-x64.exe`), check it with `sha256sum -c --ignore-missing SHA256SUMS`,
+rename it to `overfull`, and make it executable.
 
 ## Release download
 
