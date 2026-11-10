@@ -42,6 +42,7 @@ const KEYS = [
   'accessibility',
   'arxiv',
   'styleFiles',
+  'textBlock',
   'notes',
 ];
 const REQUIRED = ['id', 'name', 'year', 'source', 'checkedOn'];
@@ -163,6 +164,24 @@ export function validateProfile(raw, file) {
         }
         return o;
       });
+    }
+  }
+  if (raw.textBlock !== undefined) {
+    const tb = raw.textBlock;
+    const num = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0 && v < 1000;
+    if (!isObj(tb) || !num(tb.widthMm)) {
+      err('"textBlock" must be a mapping with a positive "widthMm" (millimetres)');
+    } else {
+      const o = { widthMm: tb.widthMm };
+      for (const k of Object.keys(tb)) {
+        if (!['widthMm', 'heightMm', 'leftMm', 'topMm'].includes(k))
+          err(`unknown textBlock field "${k}"`);
+        else if (k !== 'widthMm') {
+          if (!num(tb[k])) err(`"textBlock.${k}" must be a positive number of millimetres`);
+          else o[k] = tb[k];
+        }
+      }
+      data.textBlock = o;
     }
   }
   if (raw.notes !== undefined) {

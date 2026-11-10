@@ -82,6 +82,34 @@ function pageText(items: unknown[]): string {
   return text;
 }
 
+/** Text extent in mm from the left and top edges of the page box (unrotated pages only). */
+function textBoxOf(items: unknown[], view: number[]): PdfPage['textBox'] | undefined {
+  const [x0 = 0, , , y1 = 0] = view;
+  let left = Number.POSITIVE_INFINITY;
+  let right = Number.NEGATIVE_INFINITY;
+  let top = Number.POSITIVE_INFINITY;
+  let bottom = Number.NEGATIVE_INFINITY;
+  for (const item of items) {
+    const s = pick(item, 'str');
+    const t = pick(item, 'transform');
+    const width = pick(item, 'width');
+    if (typeof s !== 'string' || !s.trim() || !Array.isArray(t) || typeof width !== 'number')
+      continue;
+    const [, , , d = 0, e = 0, f = 0] = t as number[];
+    const height = Math.abs(
+      typeof pick(item, 'height') === 'number' ? (pick(item, 'height') as number) : d,
+    );
+    if (![e, f, width, height].every(Number.isFinite) || width <= 0) continue;
+    left = Math.min(left, e - x0);
+    right = Math.max(right, e - x0 + width);
+    top = Math.min(top, y1 - (f + height));
+    bottom = Math.max(bottom, y1 - f);
+  }
+  if (!Number.isFinite(left)) return undefined;
+  const mm = (v: number) => Math.round(v * PT_TO_MM * 10) / 10;
+  return { leftMm: mm(left), rightMm: mm(right), topMm: mm(top), bottomMm: mm(bottom) };
+}
+
 function collectFigures(node: unknown, page: number, out: PdfFigure[]): void {
   if (!node || typeof node !== 'object') return;
   const n = node as PdfjsStructNode;
@@ -123,11 +151,13 @@ export async function extractPdfFacts(data: Uint8Array, pdfjs: PdfjsLike): Promi
       let h = Math.abs(y1 - y0) * PT_TO_MM;
       if ((page.rotate ?? 0) % 180 !== 0) [w, h] = [h, w];
       const content = await page.getTextContent();
+      const box = (page.rotate ?? 0) % 360 === 0 ? textBoxOf(content.items, page.view) : undefined;
       pages.push({
         number: i,
         text: pageText(content.items),
         widthMm: Math.round(w * 10) / 10,
         heightMm: Math.round(h * 10) / 10,
+        ...(box ? { textBox: box } : {}),
       });
       const tree = await page.getStructTree().catch(() => null);
       if (tree) {

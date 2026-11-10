@@ -27,8 +27,21 @@ export interface VenueProfile {
   checkedOn?: string;
   /** Style or class files the venue requires, with the SHA-256 of the official copy when known. */
   styleFiles?: StyleFile[];
+  /**
+   * The venue's text block, in mm, from the official style file. Text printed outside it
+   * (with 2 mm of tolerance) is `text-outside-block`. Without `leftMm` the block is taken as
+   * centred horizontally; without `topMm` (or `heightMm`) only the width is checked.
+   */
+  textBlock?: TextBlock;
   /** Free-text notes shown in the docs. */
   notes?: string;
+}
+
+export interface TextBlock {
+  widthMm: number;
+  heightMm?: number;
+  leftMm?: number;
+  topMm?: number;
 }
 
 export interface StyleFile {

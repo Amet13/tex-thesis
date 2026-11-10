@@ -32,6 +32,10 @@ accessibility: recommended  # required | recommended | off
 styleFiles:                 # style or class files the venue requires
   - name: example_2027.sty
     sha256: <64 hex digits of the official file, only if you computed it from the official kit>
+textBlock:                  # from the official style file, in millimetres (optional)
+  widthMm: 139.7            # \textwidth
+  heightMm: 228.6           # \textheight (with topMm: also checks top and bottom)
+  topMm: 25.4               # distance from the top edge of the page
 notes: Free text.
 ```
 

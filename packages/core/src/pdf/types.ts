@@ -11,6 +11,11 @@ export interface PdfPage {
   text: string;
   widthMm: number;
   heightMm: number;
+  /**
+   * Extent of the page's visible text, in mm from the page's left and top edges.
+   * Absent on pages without text and on rotated pages.
+   */
+  textBox?: { leftMm: number; rightMm: number; topMm: number; bottomMm: number };
 }
 
 export interface PdfFigure {

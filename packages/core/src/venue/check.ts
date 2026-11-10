@@ -4,6 +4,7 @@ import { arxivProblems } from './arxiv.js';
 import { disclosureProblems } from './disclosure.js';
 import { layoutProblems } from './layout.js';
 import { anonymityLinkProblems } from './links.js';
+import { marginProblems } from './margins.js';
 import { pageLimitProblems, pageLimitText, paperSizeProblems } from './pages.js';
 import { staleProfileProblems } from './stale.js';
 import { styleFileProblems } from './style-file.js';
@@ -25,6 +26,7 @@ export function venueCheck(profile: VenueProfile, ctx: VenueContext): CheckResul
     ...(profile.anonymous ? [...anonymityProblems(ctx), ...anonymityLinkProblems(ctx)] : []),
     ...styleFileProblems(profile, ctx.texFiles ?? []),
     ...layoutProblems(profile, ctx),
+    ...marginProblems(profile, ctx),
     ...disclosureProblems(profile.disclosure, ctx),
     ...(profile.arxiv ? arxivProblems(ctx) : []),
     ...staleProfileProblems(profile, ctx.now ?? new Date()),

@@ -28,6 +28,15 @@ export const venueRules: RuleInfo[] = [
     fix: 'Build the document first (`overfull build`).',
   },
   {
+    id: 'text-outside-block',
+    check: 'venue',
+    severity: 'warning',
+    title: 'Text outside the text block',
+    summary:
+      "Text on a page of the PDF reaches into the margin, measured against the text block of the venue's style file (2 mm tolerance). Only for venue profiles that record a text block.",
+    fix: 'Find the line, table or figure that sticks out (`overfull pages <n>` renders the page) and make it fit. Changing the margins or the text block is usually against the rules.',
+  },
+  {
     id: 'paper-size-mismatch',
     check: 'venue',
     severity: 'warning',

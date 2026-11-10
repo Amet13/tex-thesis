@@ -58,6 +58,7 @@ Each file records where its values came from, so you can check them:
 | `anonymous` | Double-blind review. |
 | `disclosure`, `accessibility` | `required`, `recommended` or `off`. |
 | `styleFiles` | Required style or class file names, each with an optional `sha256` of the official file. |
+| `textBlock` | The text block from the official style file, in millimetres: `widthMm`, and optionally `heightMm`, `leftMm`, `topMm`. Without `leftMm` the block is centred; without `topMm` and `heightMm` only the width is checked. |
 | `notes` | Free text. |
 
 The files are checked and compiled into the generated module
@@ -150,8 +151,8 @@ breaks the venue's formatting rules and can get a paper desk-rejected. The
 
 ## Style files and layout
 
-Two checks guard the venue's formatting rules. They work on the source and run
-without a PDF.
+Three checks guard the venue's formatting rules. The first two work on the
+source and run without a PDF; the third measures the PDF.
 
 `style-file-modified` (warning) compares the project's copy of a style file the
 profile names with the SHA-256 recorded for the official file. It runs only for
@@ -172,6 +173,12 @@ page limit, with file and line:
 - when the profile names a style file: `\textheight`, `\textwidth`,
   `\columnsep`, margin lengths or `geometry` options, and a changed base font
   size (class option such as `10pt`, `\normalsize` redefined).
+
+`text-outside-block` (warning) measures where the text sits on every page of the
+PDF and reports a page whose text reaches past the venue's text block by more
+than 2 mm, with how far and on which side. It runs only for profiles that
+record a `textBlock`. Render the page with `overfull pages <n>` to find the
+line, table or figure that sticks out.
 
 Each message ends with "check that your venue allows this": the check does not
 know your venue's rules, and some venues allow some of these. It runs only for
