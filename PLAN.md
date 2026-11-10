@@ -51,6 +51,47 @@ Ground rules. They apply to every task:
     `node scripts/bump-version.mjs <version>`, merge that, then the owner runs
     Actions → release → Run workflow with "publish". You cannot push tags.
 
+## 1a. Amendments after review (these override the tasks below)
+
+The plan was reviewed against what can be built and verified in one pull
+request. Changes:
+
+- **One pull request, version 3.1.0.** All phases land together on
+  `claude/epic-einstein-gzd8sa`. Ignore the per-phase release targets.
+- **Implementers do not commit.** Each implementer edits only the files it was
+  given, runs the targeted tests and type check, and reports. The coordinator
+  commits. Do not edit `CHANGELOG.md`, `PLAN.md` or `action/dist`; put a
+  changelog line in your report instead. Do not run `pnpm -r build`; several
+  implementers share one working tree.
+- **A7:** moved tests go into new, topic-named files; do not append to test
+  files other implementers may be editing.
+- **B4:** only `install.sh` and `install.ps1`. No `darwin-x64` build, no
+  Homebrew or Scoop files (deferred).
+- **C1:** add a source only if its live responses could be recorded here for
+  the fixtures. A source that cannot be reached from this machine is left out
+  and listed in the report.
+- **C3:** ship the harness, a dataset built from entries that were looked up
+  (not written from memory), the scheduled workflow and a site page that
+  renders only from a committed results file. Publish no number that was not
+  measured. The 300-entry size and the 2% target are goals for the scheduled
+  run, not for this pull request.
+- **D2:** a venue ships only if its official page was read during
+  implementation; fields that could not be confirmed are omitted.
+- **D3:** drop the PDF `margins` rule. `style-file-modified` ships only for
+  style files whose official hash was obtained; otherwise the mechanism ships
+  without data.
+- **E1:** Claude Code hooks first; other harnesses only when their hook format
+  was confirmed from official documentation.
+- **E3:** a small dependency-free stdio server (JSON-RPC: `initialize`,
+  `tools/list`, `tools/call`), tested with the official client as a dev
+  dependency only. No runtime dependency is added to the single-file builds.
+- **E4:** tasks, scoring, variants and the results page; no measured numbers
+  in this pull request.
+- **E5:** trim only text that is duplicated or enforced by the guard; do not
+  chase the word targets at the cost of a rule.
+- **G:** only G2 (SARIF) and G3 (sticky pull-request comment). G1, G4 and G5
+  are deferred.
+
 ## 2. What the audit found
 
 ### 2.1 What is good and must stay
