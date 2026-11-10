@@ -118053,114 +118053,6 @@ Commands:
 Run \`overfull <command> --help\` for options. Docs: https://amet13.github.io/overfull/
 `;
 
-// src/comment.ts
-import { readFileSync as readFileSync5 } from "node:fs";
-var COMMENT_MARKER = "<!-- overfull-report -->";
-var COMMENT_LIMIT = 65e3;
-var TRUNCATED = "\n\n</details>\n\n_The report was cut to fit GitHub's comment size limit. The full report is in the job summary and the `report` output._\n";
-function commentBody(markdown) {
-  const full = `${COMMENT_MARKER}
-${markdown}`;
-  if (full.length <= COMMENT_LIMIT) return full;
-  const room = COMMENT_LIMIT - TRUNCATED.length;
-  let cut = full.slice(0, room);
-  const nl = cut.lastIndexOf("\n");
-  if (nl > COMMENT_MARKER.length) cut = cut.slice(0, nl);
-  return `${cut}${TRUNCATED}`;
-}
-function pullRequestNumber(env) {
-  let event;
-  try {
-    if (env.GITHUB_EVENT_PATH) event = JSON.parse(readFileSync5(env.GITHUB_EVENT_PATH, "utf8"));
-  } catch {
-  }
-  const fromEvent = event?.pull_request?.number ?? event?.number;
-  if (Number.isInteger(fromEvent) && fromEvent > 0) return fromEvent;
-  const m = /^refs\/pull\/(\d+)\//.exec(env.GITHUB_REF ?? "");
-  return m ? Number(m[1]) : void 0;
-}
-function isFork(env) {
-  try {
-    if (!env.GITHUB_EVENT_PATH) return false;
-    const pr = JSON.parse(readFileSync5(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
-    const head = pr?.head?.repo?.full_name;
-    const base = pr?.base?.repo?.full_name;
-    return Boolean(head && base && head !== base);
-  } catch {
-    return false;
-  }
-}
-async function upsertComment(o) {
-  const { env } = o;
-  const event = env.GITHUB_EVENT_NAME;
-  if (event !== "pull_request" && event !== "pull_request_target") {
-    o.notice("Not a pull request event: no comment written.");
-    return "skipped";
-  }
-  const number = pullRequestNumber(env);
-  const repo = env.GITHUB_REPOSITORY;
-  if (!number || !repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
-    o.notice("Could not tell which pull request this is: no comment written.");
-    return "skipped";
-  }
-  if (!o.token) {
-    o.notice("No github-token: no comment written.");
-    return "skipped";
-  }
-  if (event === "pull_request" && isFork(env)) {
-    o.notice(
-      "This pull request comes from a fork, so the token cannot write comments: no comment written. The job summary has the report."
-    );
-    return "skipped";
-  }
-  const doFetch = o.fetch ?? globalThis.fetch;
-  const api = (env.GITHUB_API_URL || "https://api.github.com").replace(/\/+$/, "");
-  const headers = {
-    Authorization: `Bearer ${o.token}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "overfull-action",
-    "Content-Type": "application/json"
-  };
-  const base = `${api}/repos/${repo}/issues`;
-  const body = commentBody(o.markdown);
-  try {
-    let existing;
-    for (let page = 1; page <= 50 && !existing; page++) {
-      const res2 = await doFetch(`${base}/${number}/comments?per_page=100&page=${page}`, {
-        headers
-      });
-      if (!res2.ok) throw new Error(`listing comments failed: HTTP ${res2.status}`);
-      const batch = await res2.json();
-      existing = batch.find((c) => typeof c.body === "string" && c.body.includes(COMMENT_MARKER));
-      if (batch.length < 100) break;
-    }
-    if (existing) {
-      if (existing.body === body) return "unchanged";
-      const res2 = await doFetch(`${base}/comments/${existing.id}`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ body })
-      });
-      if (!res2.ok) throw new Error(`updating the comment failed: HTTP ${res2.status}`);
-      return "updated";
-    }
-    const res = await doFetch(`${base}/${number}/comments`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ body })
-    });
-    if (!res.ok) throw new Error(`creating the comment failed: HTTP ${res.status}`);
-    return "created";
-  } catch (err) {
-    const why2 = err instanceof Error ? err.message : String(err);
-    o.notice(
-      `Could not write the pull request comment (${why2}). The step continues. Commenting needs \`pull-requests: write\`.`
-    );
-    return "failed";
-  }
-}
-
 // src/inputs.ts
 import { isAbsolute as isAbsolute4, resolve as resolve3 } from "node:path";
 function input(env, name) {
@@ -118206,8 +118098,6 @@ function readInputs(env, workspace) {
     annotations: boolInput(env, "annotations", true),
     summary: boolInput(env, "summary", true),
     sarif: input(env, "sarif"),
-    comment: boolInput(env, "comment", false),
-    githubToken: input(env, "github-token"),
     check: check2
   };
 }
@@ -118253,15 +118143,6 @@ async function main2() {
   if (inputs.summary && env.GITHUB_STEP_SUMMARY) {
     appendFileSync(env.GITHUB_STEP_SUMMARY, `${formatMarkdown(report)}
 `);
-  }
-  if (inputs.comment) {
-    await upsertComment({
-      env,
-      markdown: formatMarkdown(report),
-      token: inputs.githubToken,
-      notice: (m) => process.stdout.write(`::notice title=Overfull comment::${escapeData2(oneLine(m))}
-`)
-    });
   }
   const reportPath = join7(env.RUNNER_TEMP ?? tmpdir(), "overfull-report.json");
   writeFileSync2(reportPath, formatJson(report));
