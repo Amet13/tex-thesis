@@ -9,15 +9,19 @@
  *    no horizontal overflow, axe-core with zero serious/critical violations;
  *  - checks every internal link (and #fragment) resolves;
  *  - runs the browser check with a sample log and a sample .bib, offline;
+ *  - drops a project .zip (built here from packages/cli/test/fixtures/project)
+ *    and a folder, and checks the main file and .bib are found, a choice is
+ *    offered when the main file is ambiguous, and bad zips are explained;
  *  - writes screenshots to test-screenshots/ (git-ignored).
  *
  * Env: SITE_BASE (default /overfull), PORT (default 4391), E2E_FULL_AXE=1 to
  * scan every rule page in every variant (default: the main pages only).
  */
-import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { deflateRawSync } from 'node:zlib';
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
 
@@ -31,6 +35,62 @@ const base = rawBase === '/' ? '/' : `/${rawBase.replace(/^\/+|\/+$/g, '')}/`;
 const port = Number(process.env.PORT ?? 4391);
 const origin = `http://127.0.0.1:${port}`;
 const root = origin + base;
+
+// A minimal ZIP writer (deflate), so the tests need no binary fixture.
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (const b of buf) {
+    c ^= b;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
+function makeZip(entries, flags = 0) {
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  for (const [name, data] of entries) {
+    const raw = Buffer.from(data);
+    const body = deflateRawSync(raw);
+    const nm = Buffer.from(name);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(flags, 6);
+    local.writeUInt16LE(8, 8);
+    local.writeUInt32LE(crc32(raw), 14);
+    local.writeUInt32LE(body.length, 18);
+    local.writeUInt32LE(raw.length, 22);
+    local.writeUInt16LE(nm.length, 26);
+    parts.push(local, nm, body);
+    const c = Buffer.alloc(46);
+    c.writeUInt32LE(0x02014b50, 0);
+    c.writeUInt16LE(20, 4);
+    c.writeUInt16LE(20, 6);
+    c.writeUInt16LE(flags, 8);
+    c.writeUInt16LE(8, 10);
+    c.writeUInt32LE(crc32(raw), 16);
+    c.writeUInt32LE(body.length, 20);
+    c.writeUInt32LE(raw.length, 24);
+    c.writeUInt16LE(nm.length, 28);
+    c.writeUInt32LE(offset, 42);
+    central.push(c, nm);
+    offset += 30 + nm.length + body.length;
+  }
+  const cd = Buffer.concat(central);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(entries.length, 8);
+  eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(cd.length, 12);
+  eocd.writeUInt32LE(offset, 16);
+  return Buffer.concat([...parts, cd, eocd]);
+}
+const projectDir = join(here, '..', '..', 'packages', 'cli', 'test', 'fixtures', 'project');
+const projectFiles = () =>
+  readdirSync(projectDir)
+    .filter((f) => statSync(join(projectDir, f)).isFile())
+    .map((f) => [`my-paper/${f}`, readFileSync(join(projectDir, f))]);
 
 const failures = [];
 const fail = (msg) => {
@@ -345,6 +405,131 @@ try {
     // Keyboard: the drop zone's button is reachable and labelled
     const chooseVisible = await page.isVisible('#choose');
     if (!chooseVisible) fail('check page: "Choose files" button not visible');
+
+    // A project .zip (Overleaf "Download source"): offline, so assert on what
+    // needs no network: detection of the files, and that the report renders.
+    const waitDone = () =>
+      page.waitForFunction(
+        () => /Done\./.test(document.querySelector('#progress')?.textContent ?? ''),
+        null,
+        {
+          timeout: 20000,
+        },
+      );
+    await page.evaluate(() => {
+      document.querySelector('#progress').textContent = '';
+    });
+    await page.setInputFiles('#file-input', {
+      name: 'my-paper.zip',
+      mimeType: 'application/zip',
+      buffer: makeZip([
+        ...projectFiles(),
+        ['my-paper/__MACOSX/._main.tex', 'junk'],
+        ['my-paper/.git/config', 'junk'],
+        ['my-paper/../escape.tex', 'bad'],
+      ]),
+    });
+    await waitDone();
+    const zipNotice = (await page.textContent('#notice')) ?? '';
+    if (!/main file main\.tex/.test(zipNotice) || !/1 \.bib file/.test(zipNotice))
+      fail(`check page zip: main file or .bib not reported: ${zipNotice}`);
+    const listed = (await page.$$eval('#files .name', (n) => n.map((x) => x.textContent))).sort();
+    for (const want of ['main.tex', 'references.bib', 'thesis.log', 'thesis.pdf', 'thesis.aux'])
+      if (!listed.includes(want)) fail(`check page zip: ${want} not listed (got ${listed})`);
+    if (listed.some((n) => /escape|MACOSX|\.git/.test(n ?? '')))
+      fail(`check page zip: unsafe or hidden file listed: ${listed}`);
+    const zipChecks = await page.$$eval('#sheet-view .sheet-check', (c) => c.length);
+    if (zipChecks !== 5) fail(`check page zip: expected 5 checks, got ${zipChecks}`);
+    const zipTarget = (await page.textContent('#sheet-view .sheet-target')) ?? '';
+    if (!/my-paper\.zip/.test(zipTarget) || !/main\.tex/.test(zipTarget))
+      fail(`check page zip: report target is ${zipTarget}`);
+    const zipRefs =
+      (await page.textContent('#sheet-view section[aria-labelledby="sheet-references"]')) ?? '';
+    if (!/ghost2020/.test(zipRefs)) fail('check page zip: missing citation ghost2020 not reported');
+    await page.screenshot({
+      path: join(shots, `check-zip-${v.width}-${v.scheme}.png`),
+      fullPage: true,
+    });
+
+    // A file dropped after the zip joins the project
+    await page.evaluate(() => {
+      document.querySelector('#progress').textContent = '';
+    });
+    await page.setInputFiles('#file-input', {
+      name: 'thesis.pdf',
+      mimeType: 'application/pdf',
+      buffer: readFileSync(join(projectDir, 'thesis.pdf')),
+    });
+    await waitDone();
+    if (!/my-paper\.zip/.test((await page.textContent('#sheet-view .sheet-target')) ?? ''))
+      fail('check page zip: a file added after the zip left the project');
+
+    // The same project as a folder (input with webkitdirectory)
+    if (await page.evaluate(() => 'webkitdirectory' in document.querySelector('#folder-input'))) {
+      if (!(await page.isVisible('#choose-folder')))
+        fail('check page: "Choose a folder" button not visible');
+      await page.evaluate(() => {
+        document.querySelector('#progress').textContent = '';
+      });
+      await page.setInputFiles('#folder-input', projectDir);
+      await waitDone();
+      const folderNotice = (await page.textContent('#notice')) ?? '';
+      if (!/main file main\.tex/.test(folderNotice) || !/1 \.bib file/.test(folderNotice))
+        fail(`check page folder: main file or .bib not reported: ${folderNotice}`);
+    }
+
+    // Several candidate main files: the page asks, and runs after the choice
+    await page.evaluate(() => {
+      document.querySelector('#progress').textContent = '';
+    });
+    await page.setInputFiles('#file-input', {
+      name: 'two-mains.zip',
+      mimeType: 'application/zip',
+      buffer: makeZip([
+        ['a.tex', '\\documentclass{article}\\begin{document}A\\end{document}'],
+        ['b.tex', '\\documentclass{article}\\begin{document}B\\end{document}'],
+      ]),
+    });
+    await page.waitForSelector('#main-pick:not([hidden])', { timeout: 10000 });
+    const options = await page.$$eval('#main-select option', (o) => o.map((x) => x.value));
+    if (options.join() !== ',a.tex,b.tex')
+      fail(`check page zip: main file choices are ${options.join('|')}`);
+    await page.selectOption('#main-select', 'b.tex');
+    await waitDone();
+    const chosenTarget = (await page.textContent('#sheet-view .sheet-target')) ?? '';
+    if (!/main file: b\.tex/.test(chosenTarget))
+      fail(`check page zip: chosen main file not used: ${chosenTarget}`);
+
+    // Encrypted and non-zip archives are explained
+    await page.setInputFiles('#file-input', {
+      name: 'locked.zip',
+      mimeType: 'application/zip',
+      buffer: makeZip([['main.tex', 'x']], 1),
+    });
+    await page.waitForFunction(
+      () => /password-protected/.test(document.querySelector('#notice')?.textContent ?? ''),
+      null,
+      { timeout: 10000 },
+    );
+    await page.setInputFiles('#file-input', {
+      name: 'broken.zip',
+      mimeType: 'application/zip',
+      buffer: Buffer.from('this is not a zip file at all'),
+    });
+    await page.waitForFunction(
+      () => /not a readable \.zip/.test(document.querySelector('#notice')?.textContent ?? ''),
+      null,
+      { timeout: 10000 },
+    );
+    const axeZip = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    for (const x of axeZip.violations.filter(
+      (x) => x.impact === 'serious' || x.impact === 'critical',
+    ))
+      fail(`check page zip (${v.width}-${v.scheme}): axe ${x.impact} ${x.id}`);
+    if (external.length)
+      fail(`check page zip made external requests: ${external.slice(0, 3).join(', ')}`);
     await ctx.close();
   }
 } catch (err) {

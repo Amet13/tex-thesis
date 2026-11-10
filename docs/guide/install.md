@@ -109,7 +109,7 @@ GitHub Codespaces uses the same configuration, so you can work in a browser.
 
 You can keep writing in Overleaf and run Overfull on a Git copy of the project.
 Overleaf's Git integration and GitHub sync are paid features; check Overleaf's
-current plans. See [Migrate from Overleaf](./migrate-from-overleaf.md) for the
+current plans. See [Use with Overleaf](./migrate-from-overleaf.md) for the
 steps and for moving builds to GitHub Actions.
 
 ## From source

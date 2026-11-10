@@ -1,6 +1,7 @@
 /**
- * The browser check. Everything runs here, in the page: files are read with
- * the File API and analysed by @overfull/core. The only network requests are
+ * The browser check. Everything runs here, in the page: files (also a project
+ * .zip or a dropped folder, unpacked by ./zip) are read with the File API and
+ * analysed by @overfull/core. The only network requests are
  * reference lookups (CrossRef and doi.org; arXiv and DBLP refuse browser
  * requests) when the user leaves "Verify references online" on. pdf.js is
  * loaded only when a PDF is checked.
@@ -35,6 +36,8 @@ import {
   verifyEntries,
 } from '@overfull/core';
 import { esc, renderSheet } from '../lib/sheet';
+import { chooseMain, type ProjectFile, projectKindOf, selectForMain } from './project';
+import { readZip, selectPaths, ZIP_LIMITS, ZipError } from './zip';
 
 type Kind = 'log' | 'bib' | 'aux' | 'pdf' | 'tex';
 
@@ -130,7 +133,14 @@ export function initCheck(): void {
   const copyStatus = must('#copy-status');
   const notice = must('#notice');
 
+  const folderInput = must<HTMLInputElement>('#folder-input');
+  const chooseFolder = must<HTMLButtonElement>('#choose-folder');
+  const mainPick = must('#main-pick');
+  const mainSelect = must<HTMLSelectElement>('#main-select');
+
   let report: Report | null = null;
+  /** The last unpacked project (.zip or folder), while its files are in use. */
+  let project: { name: string; all: ProjectFile[]; main?: string } | null = null;
   /** Files the last drop or pick could not use; shown until the files change. */
   let skippedMsg = '';
   let controller: AbortController | null = null;
@@ -169,10 +179,268 @@ export function initCheck(): void {
     renderFiles();
   }
 
+  function clearSamples() {
+    for (const b of samples.length
+      ? document.querySelectorAll<HTMLButtonElement>('[data-sample]')
+      : [])
+      b.setAttribute('aria-pressed', 'false');
+  }
+
+  function resetProject() {
+    project = null;
+    mainPick.hidden = true;
+  }
+
+  /** Puts the files of the chosen main file into the list and runs the check. */
+  function applyMain(main: string | undefined, intro: string) {
+    if (!project) return;
+    project.main = main;
+    const chosen = selectForMain(project.all, main);
+    files.length = 0;
+    add(
+      chosen.map((f) => ({
+        name: f.path,
+        kind: f.kind,
+        ...(f.data ? { data: f.data } : { text: f.text ?? '' }),
+      })),
+    );
+    const count = (k: string) => chosen.filter((f) => f.kind === k).length;
+    const bibs = count('bib');
+    const found = [
+      main ? `main file ${main}` : 'no main .tex file with a \\documentclass',
+      `${bibs} .bib file${bibs === 1 ? '' : 's'}`,
+      count('log') ? 'a build log' : 'no build log',
+      count('pdf') ? 'a PDF' : 'no PDF',
+      count('aux') ? 'an .aux or .bcf file' : 'no .aux or .bcf file',
+    ].join(', ');
+    skippedMsg = [`${project.name}: ${found}.`, intro].filter(Boolean).join(' ');
+    note(skippedMsg);
+    if (chosen.length) void run();
+    else say(`${project.name}: no .tex, .bib, .log, .aux, .bcf or .pdf files found.`);
+  }
+
+  /** Takes the files of a project, picks the main file (or asks) and runs. */
+  function loadProject(name: string, all: ProjectFile[], notes: string[]) {
+    files.length = 0;
+    renderFiles();
+    tools.hidden = true;
+    clearSamples();
+    project = { name, all };
+    const choice = chooseMain(all);
+    const intro = notes.join(' ');
+    if (choice.candidates.length > 1) {
+      mainSelect.innerHTML = [
+        `<option value="">Choose the main file…</option>`,
+        ...choice.candidates.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`),
+      ].join('');
+      mainSelect.value = choice.main ?? '';
+      mainPick.hidden = false;
+      if (choice.main) {
+        applyMain(choice.main, intro);
+      } else {
+        skippedMsg = [
+          `${name}: ${choice.candidates.length} files could be the main file. Choose one below.`,
+          intro,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        note(skippedMsg);
+        say('Choose the main file to run the check.');
+      }
+      return;
+    }
+    mainPick.hidden = true;
+    applyMain(choice.main, intro);
+  }
+
+  const skippedNotes = (list: { path: string; reason: string }[]) =>
+    list.length
+      ? [
+          `Left out: ${list
+            .slice(0, 5)
+            .map((s) => `${s.path} (${s.reason})`)
+            .join(', ')}${list.length > 5 ? `, and ${list.length - 5} more` : ''}.`,
+        ]
+      : [];
+
+  /** Loose files dropped with (or after) a project, by extension; names are the paths. */
+  async function readLoose(list: File[]): Promise<{ all: ProjectFile[]; skipped: string[] }> {
+    const all: ProjectFile[] = [];
+    const skipped: string[] = [];
+    for (const file of list) {
+      const kind = projectKindOf(file.name);
+      if (!kind) {
+        skipped.push(file.name);
+        continue;
+      }
+      const data = new Uint8Array(await file.arrayBuffer());
+      all.push(
+        kind === 'pdf'
+          ? { path: file.name, kind, data }
+          : { path: file.name, kind, text: new TextDecoder('utf-8').decode(data) },
+      );
+    }
+    return { all, skipped };
+  }
+
+  const mergeFiles = (base: ProjectFile[], extra: ProjectFile[]) => [
+    ...base.filter((f) => !extra.some((x) => x.path === f.path)),
+    ...extra,
+  ];
+
+  async function readZipFile(file: File, others: File[]) {
+    say(`Unpacking ${file.name} in your browser…`);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      const zip = await readZip(buf, { filter: (p) => projectKindOf(p) !== null });
+      const all: ProjectFile[] = [];
+      for (const f of zip.files) {
+        const kind = projectKindOf(f.path);
+        if (!kind) continue;
+        all.push(
+          kind === 'pdf'
+            ? { path: f.path, kind, data: f.data }
+            : { path: f.path, kind, text: new TextDecoder('utf-8').decode(f.data) },
+        );
+      }
+      const loose = await readLoose(others);
+      const notes = [
+        ...skippedNotes(zip.skipped),
+        ...(loose.skipped.length
+          ? [
+              `Skipped ${loose.skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`,
+            ]
+          : []),
+      ];
+      loadProject(file.name, mergeFiles(all, loose.all), notes);
+    } catch (err) {
+      const msg =
+        err instanceof ZipError
+          ? err.message
+          : `Could not read ${file.name}: ${err instanceof Error ? err.message : String(err)}`;
+      skippedMsg = msg;
+      note(msg);
+      say(msg);
+    }
+  }
+
+  /** A folder: files with a path relative to the folder's parent. */
+  async function readFolder(items: { path: string; file: File }[], fallbackName: string) {
+    say('Reading the folder in your browser…');
+    try {
+      const sel = selectPaths(items.map((i) => i.path));
+      if (sel.kept.length + sel.skipped.length > ZIP_LIMITS.maxEntries)
+        throw new Error(
+          `This folder has ${sel.kept.length} files; the limit is ${ZIP_LIMITS.maxEntries}. Choose the project’s source folder only.`,
+        );
+      const total = sel.kept.reduce((n, k) => n + (items[k.index]?.file.size ?? 0), 0);
+      if (total > ZIP_LIMITS.maxTotalBytes)
+        throw new Error(
+          `This folder is ${Math.ceil(total / 1048576)} MB; the limit is ${Math.round(ZIP_LIMITS.maxTotalBytes / 1048576)} MB. Choose the project’s source folder only.`,
+        );
+      const skipped = [...sel.skipped];
+      const all: ProjectFile[] = [];
+      for (const k of sel.kept) {
+        const kind = projectKindOf(k.path);
+        const file = items[k.index]?.file;
+        if (!kind || !file) continue;
+        if (file.size > ZIP_LIMITS.maxEntryBytes) {
+          skipped.push({ path: k.path, reason: 'file is too large' });
+          continue;
+        }
+        const data = new Uint8Array(await file.arrayBuffer());
+        all.push(
+          kind === 'pdf'
+            ? { path: k.path, kind, data }
+            : { path: k.path, kind, text: new TextDecoder('utf-8').decode(data) },
+        );
+      }
+      const root = items[0]?.path.split('/')[0];
+      loadProject(
+        items.every((i) => i.path.split('/')[0] === root) && root ? root : fallbackName,
+        all,
+        skippedNotes(skipped),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      skippedMsg = msg;
+      note(msg);
+      say(msg);
+    }
+  }
+
+  /** Walks dropped file-system entries (needs webkitGetAsEntry). */
+  async function readDropped(entries: FileSystemEntry[]) {
+    const out: { path: string; file: File }[] = [];
+    let seen = 0;
+    const readAll = async (dir: FileSystemDirectoryEntry) => {
+      const reader = dir.createReader();
+      const all: FileSystemEntry[] = [];
+      for (;;) {
+        const batch = await new Promise<FileSystemEntry[]>((res, rej) =>
+          reader.readEntries(res, rej),
+        );
+        if (!batch.length) return all;
+        all.push(...batch);
+      }
+    };
+    const walk = async (entry: FileSystemEntry, prefix: string): Promise<void> => {
+      if (entry.name.startsWith('.') || entry.name === '__MACOSX') return;
+      if (++seen > ZIP_LIMITS.maxEntries * 4)
+        throw new Error(
+          `This folder has too many files; the limit is ${ZIP_LIMITS.maxEntries}. Choose the project’s source folder only.`,
+        );
+      if (entry.isDirectory) {
+        for (const child of await readAll(entry as FileSystemDirectoryEntry))
+          await walk(child, `${prefix}${entry.name}/`);
+      } else {
+        const file = await new Promise<File>((res, rej) =>
+          (entry as FileSystemFileEntry).file(res, rej),
+        );
+        out.push({ path: `${prefix}${entry.name}`, file });
+      }
+    };
+    try {
+      say('Reading the folder in your browser…');
+      for (const e of entries) await walk(e, '');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      skippedMsg = msg;
+      note(msg);
+      say(msg);
+      return;
+    }
+    await readFolder(out, entries[0]?.name ?? 'folder');
+  }
+
   async function readFiles(list: FileList | File[]) {
+    const picked = Array.from(list);
+    const zip = picked.find((f) => /\.zip$/i.test(f.name));
+    if (zip) {
+      await readZipFile(
+        zip,
+        picked.filter((f) => f !== zip),
+      );
+      return;
+    }
+    if (project) {
+      // Files added to an unpacked project (its PDF or log, say) join it.
+      const loose = await readLoose(picked);
+      project.all = mergeFiles(project.all, loose.all);
+      const notes = loose.skipped.length
+        ? [`Skipped ${loose.skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`]
+        : [];
+      if (!mainPick.hidden && !mainSelect.value) {
+        note(notes.join(' '));
+        return;
+      }
+      applyMain(mainPick.hidden ? project.main : mainSelect.value, notes.join(' '));
+      return;
+    }
+    resetProject();
     const out: Loaded[] = [];
     const skipped: string[] = [];
-    for (const file of Array.from(list)) {
+    for (const file of picked) {
       const buf = new Uint8Array(await file.arrayBuffer());
       const head = new TextDecoder('latin1').decode(buf.subarray(0, 2048));
       const kind = kindOf(file.name, head);
@@ -183,13 +451,10 @@ export function initCheck(): void {
       if (kind === 'pdf') out.push({ name: file.name, kind, data: buf });
       else out.push({ name: file.name, kind, text: new TextDecoder('utf-8').decode(buf) });
     }
-    for (const b of samples.length
-      ? document.querySelectorAll<HTMLButtonElement>('[data-sample]')
-      : [])
-      b.setAttribute('aria-pressed', 'false');
+    clearSamples();
     add(out);
     skippedMsg = skipped.length
-      ? `Skipped ${skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex or .pdf file.`
+      ? `Skipped ${skipped.join(', ')}: not a .log, .bib, .aux, .bcf, .tex, .pdf or .zip file.`
       : '';
     note(skippedMsg);
     if (out.length) void run();
@@ -200,6 +465,21 @@ export function initCheck(): void {
   input.addEventListener('change', () => {
     if (input.files?.length) void readFiles(input.files);
     input.value = '';
+  });
+  folderInput.webkitdirectory = true;
+  chooseFolder.hidden = !('webkitdirectory' in folderInput);
+  chooseFolder.addEventListener('click', () => folderInput.click());
+  folderInput.addEventListener('change', () => {
+    const picked = Array.from(folderInput.files ?? []);
+    folderInput.value = '';
+    if (!picked.length) return;
+    void readFolder(
+      picked.map((file) => ({ path: file.webkitRelativePath || file.name, file })),
+      'folder',
+    );
+  });
+  mainSelect.addEventListener('change', () => {
+    if (mainSelect.value) applyMain(mainSelect.value, '');
   });
   for (const ev of ['dragenter', 'dragover'] as const) {
     drop.addEventListener(ev, (e) => {
@@ -215,7 +495,13 @@ export function initCheck(): void {
   }
   drop.addEventListener('drop', (e) => {
     const dt = (e as DragEvent).dataTransfer;
-    if (dt?.files.length) void readFiles(dt.files);
+    if (!dt) return;
+    // Entries must be taken now: the items are gone once the handler returns.
+    const entries = Array.from(dt.items ?? [])
+      .map((i) => (i.kind === 'file' ? i.webkitGetAsEntry?.() : null))
+      .filter((x): x is FileSystemEntry => !!x);
+    if (entries.some((x) => x.isDirectory)) void readDropped(entries);
+    else if (dt.files.length) void readFiles(dt.files);
   });
   // Dropping outside the zone should not navigate away to the file.
   window.addEventListener('dragover', (e) => e.preventDefault());
@@ -228,6 +514,7 @@ export function initCheck(): void {
       return;
     }
     skippedMsg = '';
+    resetProject();
     add([{ name: 'pasted.log', kind: 'log', text }]);
     void run();
   });
@@ -243,6 +530,7 @@ export function initCheck(): void {
   $<HTMLButtonElement>('#clear')?.addEventListener('click', () => {
     files.length = 0;
     renderFiles();
+    resetProject();
     skippedMsg = '';
     note('');
     tools.hidden = true;
@@ -257,6 +545,7 @@ export function initCheck(): void {
       if (!s) return;
       files.length = 0;
       skippedMsg = '';
+      resetProject();
       for (const b of document.querySelectorAll<HTMLButtonElement>('[data-sample]'))
         b.setAttribute('aria-pressed', String(b === btn));
       add(
@@ -471,10 +760,12 @@ export function initCheck(): void {
     report = {
       tool: 'overfull',
       version: VERSION,
-      target: files
-        .filter((f) => f.kind !== 'pdf' || f === pdfs[0])
-        .map((f) => f.name)
-        .join(', '),
+      target: project
+        ? `${project.name}${project.main ? ` (main file: ${project.main})` : ''}`
+        : files
+            .filter((f) => f.kind !== 'pdf' || f === pdfs[0])
+            .map((f) => f.name)
+            .join(', '),
       status: reportStatus(checks),
       checks,
     };

@@ -1,10 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { resolveProfile, type TexFile, venueCheck } from '../src/venue/index.js';
 
-const templates = new URL('../../../templates/', import.meta.url).pathname;
+const templates = fileURLToPath(new URL('../../../templates/', import.meta.url));
 const NEW_RULES = [
   'style-file-modified',
   'layout-tampering',

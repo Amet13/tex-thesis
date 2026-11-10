@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   profilesForStyleFile,
@@ -12,8 +13,8 @@ import {
   venueCheck,
 } from '../src/venue/index.js';
 
-const script = new URL('../../../scripts/build-venues.mjs', import.meta.url).pathname;
-const fixtures = new URL('./fixtures/venue/', import.meta.url).pathname;
+const script = fileURLToPath(new URL('../../../scripts/build-venues.mjs', import.meta.url));
+const fixtures = fileURLToPath(new URL('./fixtures/venue/', import.meta.url));
 
 function load(dir: string): Record<string, VenueProfileData> {
   const out = execFileSync('node', [script, '--print', '--dir', dir], { encoding: 'utf8' });

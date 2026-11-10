@@ -1,12 +1,14 @@
 import {
+  closeSync,
   cpSync,
   existsSync,
+  fstatSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
   readlinkSync,
-  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -74,13 +76,18 @@ function readSources(root: string): { path: string; raw: string; text: string }[
   const out: { path: string; raw: string; text: string }[] = [];
   for (const path of listFiles(root)) {
     if (!/\.tex$/i.test(path)) continue;
+    // Size check and read go through one descriptor, so the file cannot be
+    // swapped in between.
+    let fd: number | undefined;
     try {
-      const abs = join(root, path);
-      if (statSync(abs).size > MAX_TEX_BYTES) continue;
-      const raw = readFileSync(abs, 'utf8');
+      fd = openSync(join(root, path), 'r');
+      if (fstatSync(fd).size > MAX_TEX_BYTES) continue;
+      const raw = readFileSync(fd, 'utf8');
       out.push({ path, raw, text: raw.replace(/(^|[^\\])%.*$/gm, '$1') });
     } catch {
       /* unreadable: ignored */
+    } finally {
+      if (fd !== undefined) closeSync(fd);
     }
     if (out.length >= 400) break;
   }

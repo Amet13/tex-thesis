@@ -151,7 +151,7 @@ RUN --mount=type=secret,id=build_ca,required=false \
     apt-get update; \
     apt-get install --no-install-recommends -y ca-certificates curl unzip xz-utils; \
     if [ -s /run/secrets/build_ca ]; then cp /run/secrets/build_ca /usr/local/share/ca-certificates/zz-build-ca.crt && update-ca-certificates >/dev/null; fi; \
-    apt-get install --no-install-recommends -y default-jre-headless poppler-utils git; \
+    apt-get install --no-install-recommends -y default-jre-headless poppler-utils git libatomic1; \
     arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
     case "$arch" in \
       amd64) node_arch=x64;   sum="${NODE_SHA256_AMD64}" ;; \

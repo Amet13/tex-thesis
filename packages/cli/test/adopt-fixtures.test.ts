@@ -1,12 +1,5 @@
 import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  lstatSync,
-  readdirSync,
-  readFileSync,
-  readlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, readdirSync, readFileSync, readlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { main } from '../src/main.js';
@@ -18,7 +11,7 @@ function snapshot(dir: string, base = dir): Record<string, string> {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     const rel = p.slice(base.length + 1);
-    if (lstatSync(p).isSymbolicLink()) out[rel] = `link:${readlinkSync(p)}`;
+    if (e.isSymbolicLink()) out[rel] = `link:${readlinkSync(p)}`;
     else if (e.isDirectory()) Object.assign(out, snapshot(p, base));
     else out[rel] = createHash('sha256').update(readFileSync(p)).digest('hex');
   }

@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { detectProject, renderConfig, renderMakefile, renderWorkflow } from '../src/adopt.js';
 import { loadConfig } from '../src/config.js';
@@ -7,7 +8,7 @@ import { main } from '../src/main.js';
 import { agentKit } from '../src/templates.js';
 import { memIo, tempCopy, tempDir } from './helpers.js';
 
-const repo = new URL('../../../', import.meta.url).pathname;
+const repo = fileURLToPath(new URL('../../../', import.meta.url));
 
 function tree(dir: string, base = dir): string[] {
   const out: string[] = [];
