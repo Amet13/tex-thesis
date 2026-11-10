@@ -1,0 +1,58 @@
+{
+  "id": "add-five-citations",
+  "template": "paper",
+  "title": "Add five citations from a notes file that has two wrong DOIs",
+  "write": {
+    "notes/sources.md": {
+      "generate": "reading-list",
+      "keys": [
+        "lamport1978time",
+        "dean2008mapreduce",
+        "brin1998anatomy",
+        "silver2016mastering",
+        "harris2020array"
+      ],
+      "wrongDoi": ["dean2008mapreduce", "harris2020array"]
+    }
+  },
+  "prompt": "notes/sources.md lists five papers I read, with the DOI I wrote down for each. Add these five works to the bibliography and cite each one in a new subsection \"Further reading\" at the end of the related-work section, one plain sentence per paper that says only what the notes say (authors, title, venue, year). Cite exactly these five works. The paper must build without errors.",
+  "allowed": ["references.bib", "sections/related.tex"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "citedAtLeast": 13,
+    "noRules": ["reference-not-found", "citation-key-missing", "pdf-unresolved-citation"],
+    "contains": [
+      {
+        "file": "references.bib",
+        "pattern": "{{doi:lamport1978time}}"
+      },
+      {
+        "file": "references.bib",
+        "pattern": "{{doi:dean2008mapreduce}}"
+      },
+      {
+        "file": "references.bib",
+        "pattern": "{{doi:brin1998anatomy}}"
+      },
+      {
+        "file": "references.bib",
+        "pattern": "{{doi:silver2016mastering}}"
+      },
+      {
+        "file": "references.bib",
+        "pattern": "{{doi:harris2020array}}"
+      }
+    ],
+    "notContains": [
+      {
+        "file": "references.bib",
+        "pattern": "{{wrongdoi:dean2008mapreduce}}"
+      },
+      {
+        "file": "references.bib",
+        "pattern": "{{wrongdoi:harris2020array}}"
+      }
+    ]
+  }
+}

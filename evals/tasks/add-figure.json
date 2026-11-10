@@ -1,11 +1,25 @@
 {
   "id": "add-figure",
   "template": "paper",
-  "title": "Add a data-driven figure with alt text",
-  "prompt": "Add a figure to the results section that plots median latency (ms) against cluster size for these measurements: 3 nodes 4.1 ms, 5 nodes 5.3 ms, 7 nodes 7.9 ms, 9 nodes 11.2 ms. Reference the figure from the text. The paper must build without errors.",
+  "title": "Add a figure from a data file",
+  "write": {
+    "figures/data/latency.csv": "nodes,median_latency_ms\n3,4.1\n5,5.3\n7,7.9\n9,11.2\n"
+  },
+  "prompt": "figures/data/latency.csv holds the median latency (ms) for different cluster sizes. Add a figure to the results section that plots it from that file, with accurate alt text, and refer to the figure from the text. Do not change the data. The paper must build without errors.",
+  "allowed": ["sections/results.tex", "figures/**"],
   "expect": {
     "status": ["pass", "warn"],
     "maxErrors": 0,
-    "noRules": ["figure-missing-alt", "pdf-unresolved-reference", "undefined-reference"]
+    "noRules": ["figure-missing-alt", "pdf-unresolved-reference", "undefined-reference"],
+    "contains": [
+      {
+        "file": "figures/data/latency.csv",
+        "pattern": "9,11\\.2"
+      },
+      {
+        "file": "sections/results.tex",
+        "pattern": "latency"
+      }
+    ]
   }
 }

@@ -1,0 +1,45 @@
+{
+  "id": "switch-to-published-version",
+  "template": "paper",
+  "title": "Switch a citation to its published version",
+  "write": {
+    "references.bib": {
+      "generate": "fixture-entry",
+      "append": true,
+      "from": "evals/fixtures/preprint.bib",
+      "key": "preprint",
+      "as": "hoang2026towards",
+      "drop": ["doi", "x-fixture"]
+    }
+  },
+  "edits": [
+    {
+      "file": "sections/related.tex",
+      "find": "Our work differs in that [\\dots].",
+      "replace": "Our work differs in that [\\dots]. A related line of work on a different problem is~\\cite{hoang2026towards}."
+    }
+  ],
+  "prompt": "references.bib cites the work with key hoang2026towards as an arXiv preprint. It has since been published. Change that entry to the published version, using a verified source, and keep the citation key so that the text needs no change.",
+  "allowed": ["references.bib"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": ["reference-not-found", "citation-key-missing"],
+    "contains": [
+      {
+        "file": "references.bib",
+        "pattern": "10\\.21437/interspeech\\.2026-1060"
+      },
+      {
+        "file": "references.bib",
+        "pattern": "@inproceedings\\{hoang2026towards"
+      }
+    ],
+    "notContains": [
+      {
+        "file": "references.bib",
+        "pattern": "arxiv\\.org/abs"
+      }
+    ]
+  }
+}

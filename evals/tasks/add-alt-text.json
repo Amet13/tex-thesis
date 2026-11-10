@@ -1,0 +1,24 @@
+{
+  "id": "add-alt-text",
+  "template": "paper",
+  "title": "Add alt text to figures",
+  "edits": [
+    {
+      "file": "sections/method.tex",
+      "find": ", alt={Placeholder image standing in\n    for a diagram of the method pipeline}",
+      "replace": ""
+    },
+    {
+      "file": "sections/appendix.tex",
+      "find": "\\Cref{tab:hyper} lists the hyperparameters used in \\cref{sec:results}.",
+      "replace": "\\Cref{tab:hyper} lists the hyperparameters used in \\cref{sec:results}.\n\n\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.45\\linewidth]{sample-photo}\n  \\caption{An additional example image.}\\label{fig:extra}\n\\end{figure}"
+    }
+  ],
+  "prompt": "The accessibility check reports figures without alt text. Give every figure that lacks it accurate alt text, based on what the image file really shows (look at it). If an image is purely decorative, mark it as an artifact instead. Do not change anything else.",
+  "allowed": ["sections/method.tex", "sections/appendix.tex", "sections/results.tex"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": ["figure-missing-alt", "missing-figure"]
+  }
+}

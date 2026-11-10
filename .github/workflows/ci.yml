@@ -36,6 +36,8 @@ jobs:
         run: pnpm templates:check
       - name: Venue profiles are valid and the generated module is current
         run: pnpm venues:check
+      - name: Every eval task and variant can be prepared
+        run: node evals/run.mjs --dry-run
       - name: The image pins the same pnpm as packageManager
         run: |
           want="$(jq -r .packageManager package.json)"

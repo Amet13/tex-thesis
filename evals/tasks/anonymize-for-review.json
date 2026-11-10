@@ -1,0 +1,47 @@
+{
+  "id": "anonymize-for-review",
+  "template": "paper",
+  "title": "Anonymize for double-blind review",
+  "setup": {
+    "overfull.yml": {
+      "venue": {
+        "anonymous": true
+      }
+    }
+  },
+  "edits": [
+    {
+      "file": "sections/conclusion.tex",
+      "find": "The main limitation is [\\dots]; future work will [\\dots].",
+      "replace": "The main limitation is [\\dots]; future work will [\\dots].\n\n\\section*{Acknowledgments}\nWe thank our colleagues at Your Institution for their feedback."
+    },
+    {
+      "file": "sections/introduction.tex",
+      "find": "released code and data following the FAIR principles~\\cite{wilkinson2016fair}.",
+      "replace": "released code and data following the FAIR principles~\\cite{wilkinson2016fair} at \\url{https://github.com/first-author/generic-paper}."
+    }
+  ],
+  "prompt": "Prepare this paper for double-blind review. Nothing in the PDF or the source that is submitted may identify the authors. The camera-ready version will need what you remove, so put it in notes/camera-ready.md. Do not change the research content.",
+  "allowed": ["metadata.tex", "main.tex", "sections/**", "notes/**"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": [
+      "anonymity-pdf-author",
+      "anonymity-author-named",
+      "anonymity-acknowledgments",
+      "anonymity-link"
+    ],
+    "files": ["notes/camera-ready.md"],
+    "notContains": [
+      {
+        "file": "sections/introduction.tex",
+        "pattern": "github\\.com/first-author"
+      },
+      {
+        "file": "sections/conclusion.tex",
+        "pattern": "Acknowledg"
+      }
+    ]
+  }
+}

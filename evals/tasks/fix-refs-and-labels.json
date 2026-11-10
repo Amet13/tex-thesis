@@ -1,0 +1,24 @@
+{
+  "id": "fix-refs-and-labels",
+  "template": "paper",
+  "title": "Fix an undefined reference and a duplicate label",
+  "edits": [
+    {
+      "file": "sections/results.tex",
+      "find": "\\Cref{tab:main} summarizes the final epoch.",
+      "replace": "\\Cref{tab:mian} summarizes the final epoch."
+    },
+    {
+      "file": "sections/conclusion.tex",
+      "find": "\\section{Conclusion}\\label{sec:conclusion}",
+      "replace": "\\section{Conclusion}\\label{sec:results}"
+    }
+  ],
+  "prompt": "The build log reports an undefined reference and a label that is defined twice. Fix both so that every reference points at the thing it was meant to. Do not rename labels that are fine.",
+  "allowed": ["sections/results.tex", "sections/conclusion.tex"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": ["undefined-reference", "duplicate-label", "pdf-unresolved-reference"]
+  }
+}

@@ -1,0 +1,27 @@
+% Both forms of one reference, for the eval task switch-to-published-version.
+% Found with `evals/fixtures/collect-preprint.mjs` on 2026-11-10: arXiv 2610.19492 names the published DOI 10.21437/Interspeech.2026-1060 in its own record.
+% preprint = arXiv lookup; published = doi.org lookup of that DOI.
+
+@misc{preprint,
+  author        = {Hoang, Kiet Anh and Le, Khanh and Nguyen, Bao and Pham, Linh and Vo, Dung and Tran, Thai and Nguyen, Mai and Nguyen, Tri and Le, Vu},
+  title         = {Towards Efficient Simultaneous Inverse Text Normalization with Pretrained Text-to-Text Language Model and Read-Tag-Write Policy},
+  year          = {2026},
+  doi           = {10.21437/interspeech.2026-1060},
+  url           = {https://arxiv.org/abs/2610.19492},
+  eprint        = {2610.19492},
+  archiveprefix = {arXiv},
+  x-fixture     = {arXiv lookup 2026-11-10},
+}
+
+@inproceedings{published,
+  author     = {Hoang, Kiet Anh and Le, Khanh and Nguyen, Bao and Pham, Linh and Vo, Dung and Tran, Thai and Nguyen, Mai and Nguyen, Tri and Le, Vu},
+  title      = {Towards Efficient Simultaneous Inverse Text Normalization with Pretrained Text-to-Text Language Model and Read-Tag-Write Policy},
+  booktitle  = {Interspeech 2026},
+  year       = {2026},
+  pages      = {660--668},
+  publisher  = {ISCA},
+  doi        = {10.21437/interspeech.2026-1060},
+  collection = {interspeech\_2026},
+  series     = {interspeech\_2026},
+  x-fixture  = {doi.org lookup 2026-11-10},
+}
