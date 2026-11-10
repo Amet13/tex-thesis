@@ -42,15 +42,11 @@ jobs:
           git diff --exit-code -- action/dist
 
   cross-os:
-    name: Unit tests (${{ matrix.os }}, Node ${{ matrix.node }})
+    name: Unit tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { os: macos-26, node: 26 }
-          - { os: windows-2025, node: 26 }
-          # The oldest Node.js that package.json "engines" accepts.
-          - { os: ubuntu-26.04, node: "22.13" }
+        os: [macos-26, windows-2025]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -62,7 +58,7 @@ jobs:
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build

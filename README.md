@@ -57,7 +57,7 @@ docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3 overfull chec
 **Single file.** Download a native executable from
 [GitHub Releases](https://github.com/amet13/overfull/releases/latest)
 (`overfull-linux-x64`, `overfull-linux-arm64`, `overfull-darwin-arm64`,
-`overfull-win-x64.exe`), or `overfull.cjs` for any OS with Node.js 22.13+.
+`overfull-win-x64.exe`), or `overfull.cjs` for any OS with Node.js 26+.
 Each release lists `SHA256SUMS` and build provenance. There is no npm package.
 
 ```bash

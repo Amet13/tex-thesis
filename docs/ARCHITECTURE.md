@@ -40,7 +40,7 @@ scripts/            corpus runner, template sync, e2e, standalone build, version
 
 ## Tooling (2026)
 
-Node ≥22.13 (CI on 26, unit tests also on 22), pnpm 12 workspaces, TypeScript 7, Vitest 5, Biome 2,
+Node 26 LTS (the GitHub Action runs on Node 24, the newest Actions runtime), pnpm 12 workspaces, TypeScript 7, Vitest 5, Biome 2,
 Astro 7, pdf.js 6. ESM only. Tests live in `packages/*/test/*.test.ts`.
 
 ## The result model

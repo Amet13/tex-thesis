@@ -1,7 +1,7 @@
 name: release
 
 # Tag vX.Y.Z → GitHub release with:
-#   - overfull.cjs                      single-file CLI, runs with Node ≥ 22.13 on any OS
+#   - overfull.cjs                      single-file CLI, runs with Node ≥ 26 on any OS
 #   - overfull-<os>-<arch>[.exe]        native executables (Node single executable):
 #                                       linux-x64, linux-arm64, darwin-arm64, win-x64
 #   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
@@ -81,8 +81,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-      # The executables embed this Node.js. Node 26 (LTS) builds them in one step
-      # with `--build-sea`; older Node would need postject from the npm registry.
+      # The executables embed this Node.js (26 LTS), which builds them in one
+      # step with `--build-sea`.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26

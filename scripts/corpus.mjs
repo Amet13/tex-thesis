@@ -6,7 +6,7 @@
 //                                               expected rules fire (and fixed.tex is clean)
 //   node scripts/corpus.mjs --check   [id...]   check the committed main.log files only (no Docker)
 //
-// The TeX Live image can be overridden with OVERFULL_TEX_IMAGE. Runs with plain `node` (>= 22.18):
+// The TeX Live image can be overridden with OVERFULL_TEX_IMAGE. Runs with plain `node` (26 or newer):
 // the TypeScript sources of @overfull/core are loaded through Node's built-in type stripping.
 
 import { spawn } from 'node:child_process';

@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@12.18.0",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=26"
   },
   "scripts": {
     "build": "pnpm --filter @overfull/core build && pnpm --filter overfull build && pnpm --filter overfull-action build",

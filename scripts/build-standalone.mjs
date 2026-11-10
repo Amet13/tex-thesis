@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 // Builds the standalone `overfull` CLI that GitHub Releases ship (no npm needed):
 //
-//   node scripts/build-standalone.mjs            → dist-standalone/overfull.cjs (runs with Node ≥ 22.13)
+//   node scripts/build-standalone.mjs            → dist-standalone/overfull.cjs (runs with Node ≥ 26)
 //   node scripts/build-standalone.mjs --sea      → also dist-standalone/overfull[.exe], a single
 //                                                   executable for the current OS/arch (Node SEA,
 //                                                   embeds the Node.js that runs this script)
 //
+// Needs Node.js 26 or newer.
+//
 // The bundle embeds the templates, so `overfull init` works offline from the single file.
 import { execFileSync } from 'node:child_process';
 import {
-  copyFileSync,
   lstatSync,
   mkdirSync,
   readdirSync,
@@ -55,7 +56,7 @@ await build({
   platform: 'node',
   // CommonJS: Node single executable applications load a CommonJS entry.
   format: 'cjs',
-  target: 'node22',
+  target: 'node26',
   minify: true,
   legalComments: 'none',
   logLevel: 'warning',
@@ -83,29 +84,9 @@ if (sea) {
   const exe = join(out, process.platform === 'win32' ? 'overfull.exe' : 'overfull');
   const config = join(out, 'sea-config.json');
   const seaOptions = { main: bundle, disableExperimentalSEAWarning: true };
-  const [major, minor] = process.versions.node.split('.').map(Number);
-  if (major > 25 || (major === 25 && minor >= 5)) {
-    // Node ≥ 25.5 (the release workflow uses Node 26 LTS): one step, no external injector.
-    writeFileSync(config, JSON.stringify({ ...seaOptions, output: exe }));
-    execFileSync(process.execPath, ['--build-sea', config], { stdio: 'inherit' });
-  } else {
-    // Older Node (22/24): write the preparation blob and inject it with postject.
-    const blob = join(out, 'sea-prep.blob');
-    writeFileSync(config, JSON.stringify({ ...seaOptions, output: blob }));
-    execFileSync(process.execPath, ['--experimental-sea-config', config], { stdio: 'inherit' });
-    copyFileSync(process.execPath, exe);
-    if (process.platform === 'darwin') {
-      execFileSync('codesign', ['--remove-signature', exe], { stdio: 'inherit' });
-    }
-    const postject = ['postject@1.0.0-alpha.6', exe, 'NODE_SEA_BLOB', blob];
-    postject.push('--sentinel-fuse', 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2');
-    if (process.platform === 'darwin') postject.push('--macho-segment-name', 'NODE_SEA');
-    execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['-y', ...postject], {
-      stdio: 'inherit',
-      shell: process.platform === 'win32',
-    });
-    rmSync(blob);
-  }
+  // Node 26 builds the executable in one step, with no external injector.
+  writeFileSync(config, JSON.stringify({ ...seaOptions, output: exe }));
+  execFileSync(process.execPath, ['--build-sea', config], { stdio: 'inherit' });
   // macOS refuses to run a modified binary without a (here ad-hoc) signature.
   if (process.platform === 'darwin') {
     execFileSync('codesign', ['--sign', '-', exe], { stdio: 'inherit' });
