@@ -1,0 +1,66 @@
+# Opens one issue per workflow when a run on main (or a scheduled or automation run)
+# fails, so a broken update, image build, release or benchmark is not missed; closes it
+# when the same workflow next succeeds there. Runs on pull requests are not reported:
+# their authors see them.
+name: watchdog
+
+on:
+  workflow_run:
+    workflows:
+      - ci
+      - codeql
+      - image
+      - pages
+      - release
+      - bench
+      - update-pins
+      - regenerate
+      - autorelease
+      - venues-watch
+      - automerge
+      - OpenSSF Scorecard
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    if: >-
+      github.event.workflow_run.event != 'pull_request' &&
+      (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.event == 'schedule' ||
+       startsWith(github.event.workflow_run.head_branch, 'automation/'))
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          URL: ${{ github.event.workflow_run.html_url }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT: ${{ github.event.workflow_run.event }}
+        run: |
+          : > "$RUNNER_TEMP/body.md"
+          case "$CONCLUSION" in
+            failure|timed_out|startup_failure)
+              {
+                echo "The **$NAME** workflow failed ($EVENT on \`$BRANCH\`)."
+                echo
+                echo "Run: $URL"
+                echo
+                echo "This issue closes itself when $NAME next succeeds."
+              } > "$RUNNER_TEMP/body.md" ;;
+            success) ;;
+            *) echo "Conclusion $CONCLUSION: nothing to do."; exit 0 ;;
+          esac
+          bash .github/scripts/issue.sh "Automation failed: $NAME" "$RUNNER_TEMP/body.md"

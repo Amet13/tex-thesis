@@ -1,0 +1,108 @@
+# Releases on its own:
+#   - monthly, when shipped files changed since the last release (dependency, TeX Live
+#     and tool updates merged by automerge.yml), it opens a "Release vX.Y.Z+1" pull request
+#     (version bump, CHANGELOG section from the commit subjects, rebuilt action/dist);
+#     automerge.yml merges it when CI passes;
+#   - daily, when the version in package.json has no tag yet and ci passed on main's head,
+#     it starts release.yml with publish (tag, GitHub release, images).
+name: autorelease
+
+on:
+  schedule:
+    - cron: "53 6 1 * *"
+    - cron: "29 7 * * *"
+  workflow_dispatch:
+    inputs:
+      step:
+        description: propose (open a release pull request) or publish (release an untagged version)
+        type: choice
+        options: [propose, publish]
+        default: propose
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autorelease
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    if: github.event.schedule == '53 6 1 * *' || inputs.step == 'propose'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: need
+        name: Is a release due?
+        run: |
+          v="$(jq -r .version packages/cli/package.json)"
+          if ! git rev-parse -q --verify "refs/tags/v$v" > /dev/null; then
+            echo "v$v is not released yet; the publish step handles it."; echo "due=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if git diff --quiet "v$v" HEAD -- packages templates skills shared docker action action.yml venues scripts package.json pnpm-lock.yaml; then
+            echo "Nothing shipped changed since v$v."; echo "due=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "due=true" >> "$GITHUB_OUTPUT"
+      - if: steps.need.outputs.due == 'true'
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - if: steps.need.outputs.due == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - if: steps.need.outputs.due == 'true'
+        name: Bump the version and write the changelog
+        id: bump
+        run: |
+          pnpm install --frozen-lockfile
+          next="$(node scripts/release-notes.mjs --write)"
+          node scripts/bump-version.mjs "$next"
+          pnpm build
+          node scripts/sync-templates.mjs
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+      - if: steps.need.outputs.due == 'true'
+        name: Open the release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT: ${{ steps.bump.outputs.next }}
+        run: |
+          {
+            echo "Monthly maintenance release v$NEXT. After this merges, the daily publish step"
+            echo "tags v$NEXT and runs release.yml (executables, template PDFs, images)."
+          } > "$RUNNER_TEMP/body.md"
+          bash .github/scripts/automation-pr.sh release "Release v$NEXT" "$RUNNER_TEMP/body.md"
+
+  publish:
+    if: github.event.schedule == '29 7 * * *' || inputs.step == 'publish'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Publish an untagged version once ci passed on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="$(jq -r .version packages/cli/package.json)"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$v" > /dev/null 2>&1; then
+            echo "v$v is already released."; exit 0
+          fi
+          ok="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')"
+          if [ "$ok" -eq 0 ]; then echo "ci has not passed on $GITHUB_SHA yet; trying again tomorrow."; exit 0; fi
+          running="$(gh run list --workflow release.yml --json status --jq '[.[] | select(.status != "completed")] | length')"
+          if [ "$running" -gt 0 ]; then echo "A release is already running."; exit 0; fi
+          gh workflow run release.yml --ref main -f publish=true
+          echo "Started release.yml for v$v."

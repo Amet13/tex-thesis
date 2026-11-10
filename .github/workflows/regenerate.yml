@@ -1,0 +1,52 @@
+# Rebuilds what is generated and committed (action/dist, the agent files in the templates,
+# the venue module) and opens a pull request when anything changed: Dependabot updates
+# the dependencies but cannot rebuild the bundled Action. automerge.yml starts this after
+# every automatic merge; it also runs weekly.
+name: regenerate
+
+on:
+  schedule:
+    - cron: "47 5 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regenerate
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Rebuild
+        run: |
+          pnpm build
+          node scripts/sync-templates.mjs
+          node scripts/build-venues.mjs
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git status --short
+          {
+            echo "Rebuilt generated files that are committed to the repository:"
+            echo
+            git status --short | sed 's/^/    /'
+          } > "$RUNNER_TEMP/body.md"
+          bash .github/scripts/automation-pr.sh regenerate "Regenerate generated files" "$RUNNER_TEMP/body.md"

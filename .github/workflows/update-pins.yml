@@ -1,0 +1,46 @@
+# Weekly: updates the pins Dependabot cannot (Node.js and veraPDF in docker/Dockerfile,
+# pnpm in packageManager and docker/pnpm) and opens a pull request that automerge.yml
+# merges when CI, including the image and template builds, passes.
+name: update-pins
+
+on:
+  schedule:
+    - cron: "37 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-pins
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+      - name: Update the pins
+        run: node scripts/update-pins.mjs | tee "$RUNNER_TEMP/changes.txt"
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Updates the pins Dependabot cannot update:"
+            echo
+            sed 's/^/- /' "$RUNNER_TEMP/changes.txt"
+            echo
+            echo "Hashes come from nodejs.org's SHASUMS256.txt and from the veraPDF download itself."
+          } > "$RUNNER_TEMP/body.md"
+          bash .github/scripts/automation-pr.sh pins "Update pinned tools" "$RUNNER_TEMP/body.md"

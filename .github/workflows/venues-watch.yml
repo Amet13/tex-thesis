@@ -1,0 +1,38 @@
+# Monthly: checks every venue profile's official pages and looks for the next edition's
+# call. Findings go into one issue ("Venue profiles need a look"), closed again when a
+# later run finds nothing. Venue rules are never changed automatically: a person reads the
+# official pages and updates the profile (CONTRIBUTING.md, "Adding a venue").
+name: venues-watch
+
+on:
+  schedule:
+    - cron: "11 6 5 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check the venues' official pages
+        run: node scripts/venues-watch.mjs | tee "$RUNNER_TEMP/report.md"
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/issue.sh "Venue profiles need a look" "$RUNNER_TEMP/report.md"

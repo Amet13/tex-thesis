@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Weekly on main, so a change outside the repository (runner images, a registry, a
+  # TeX Live package) is noticed even without commits; watchdog.yml reports a failure.
+  schedule:
+    - cron: "23 4 * * 0"
 
 permissions:
   contents: read
@@ -46,7 +50,10 @@ jobs:
           jq -e --arg v "${want#pnpm@}" '.packages["node_modules/pnpm"].version == $v' docker/pnpm/package-lock.json > /dev/null
       - name: Version bump script still finds every version
         run: node scripts/bump-version.mjs 99.0.0 --dry-run > /dev/null
+      # Dependabot cannot rebuild action/dist; after its PR merges, regenerate.yml opens a
+      # PR with the rebuilt bundle. Every other change must commit the rebuilt bundle.
       - name: Bundled Action is up to date
+        if: github.actor != 'dependabot[bot]'
         run: |
           pnpm --filter overfull-action build
           git diff --exit-code -- action/dist
