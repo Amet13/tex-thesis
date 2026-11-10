@@ -31,7 +31,10 @@ export const venueProfileData: Record<string, VenueProfileData> = {
         sha256: "01990f8d3716f8e39c5b28a7478f3ac6e28630d1161de6105a7217f5e7f60e43",
       },
     ],
-    notes: "The submission PDF can have up to 9 pages, with pages 8 and 9 reserved for references. Acknowledgements are omitted from papers submitted for review. The author policy allows judicious use of generative AI tools; the pages read state no disclosure requirement. The hash is of aaai2027.sty (2027/10/21) from the AuthorKit27 archive downloaded on 2026-11-10. The AAAI-28 call page redirects to AAAI-26 content, so AAAI-27 is the latest published.",
+    textBlock: {
+      widthMm: 177.8,
+    },
+    notes: "The submission PDF can have up to 9 pages, with pages 8 and 9 reserved for references. Acknowledgements are omitted from papers submitted for review. The author policy allows judicious use of generative AI tools; the pages read state no disclosure requirement. The hash is of aaai2027.sty (2027/10/21) from the AuthorKit27 archive downloaded on 2026-11-10. The AAAI-28 call page redirects to AAAI-26 content, so AAAI-27 is the latest published. Text block: 7 in wide, centred on US Letter (aaai2027.sty).",
   },
   "acl-rolling-review": {
     id: "acl-rolling-review",
@@ -57,6 +60,27 @@ export const venueProfileData: Record<string, VenueProfileData> = {
     anonymous: true,
     disclosure: "recommended",
     notes: "Short papers have 4 pages of content. Final versions of long papers get one more page (9). Missing a Limitations section is a desk-rejection reason. Use of generative AI for writing or coding must be disclosed in the Responsible NLP Checklist, with details in the Acknowledgements; some uses (language polishing, short-form input assistance) need no disclosure. The official style files are at https://github.com/acl-org/acl-style-files (not reachable from this session, so no file name or hash is recorded).",
+  },
+  "acm-sigconf": {
+    id: "acm-sigconf",
+    name: "ACM conference proceedings (acmart, sigconf format)",
+    extends: "paper",
+    year: "rolling",
+    source: [
+      "https://ctan.org/pkg/acmart",
+      "https://mirrors.ctan.org/macros/latex/contrib/acmart/acmart.dtx",
+    ],
+    checkedOn: "2026-11-10",
+    paper: "letter",
+    styleFiles: [
+      {
+        name: "acmart.cls",
+      },
+    ],
+    textBlock: {
+      widthMm: 177.9,
+    },
+    notes: "Each ACM conference sets its own page limit and review rules; set them in overfull.yml (`venue:`) from the call for papers, and use the class option `anonymous` for double-blind review. Layout from acmart v2.21 (2026/11/01): the sigconf format is US Letter with 54 pt inner and outer margins, so the text block is 8.5 in minus 108 pt wide. acmart.cls is generated from acmart.dtx, so no hash is recorded. ACM's own pages (acm.org/publications) could not be read from the build machine.",
   },
   "cvpr-2027": {
     id: "cvpr-2027",
@@ -86,7 +110,10 @@ export const venueProfileData: Record<string, VenueProfileData> = {
         sha256: "1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4",
       },
     ],
-    notes: "Every submission needs a section titled \"LLM Usage Statement\" after the main text and before the references; it states \"No LLMs or generative AI tools were used in this work\" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10.",
+    textBlock: {
+      widthMm: 174.6,
+    },
+    notes: "Every submission needs a section titled \"LLM Usage Statement\" after the main text and before the references; it states \"No LLMs or generative AI tools were used in this work\" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10. Text block: 6.875 in wide, centred on US Letter (cvpr.sty).",
   },
   "emnlp-2026": {
     id: "emnlp-2026",
@@ -143,7 +170,10 @@ export const venueProfileData: Record<string, VenueProfileData> = {
         sha256: "797deef41724e93761426ac0cbcca46279a91cc650dd1f0ce76a4f08d2098ea6",
       },
     ],
-    notes: "The page limit is 10 for the discussion phase and the camera-ready version. A mandatory AI use statement section does not count toward the limit. Style files are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded on 2026-11-10 (file dated 2026-07-28 in the archive).",
+    textBlock: {
+      widthMm: 139.7,
+    },
+    notes: "The page limit is 10 for the discussion phase and the camera-ready version. A mandatory AI use statement section does not count toward the limit. Style files are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded on 2026-11-10 (file dated 2026-07-28 in the archive). Text block: 5.5 in wide with 1.5 in side margins (iclr2027_conference.sty).",
   },
   "icml-2026": {
     id: "icml-2026",
@@ -174,7 +204,35 @@ export const venueProfileData: Record<string, VenueProfileData> = {
         sha256: "7cdcf90f6a59c5219e7f15c88f7ed09fcaf598dad91e6cdddc4dc3cb0e397a95",
       },
     ],
-    notes: "Final versions of accepted papers get one extra page for the main paper. The call allows generative AI tools and encourages authors to explain notable uses in their methodology; LLMs cannot be authors. The hash is of icml2026.sty (v2.0, 2025/10/29) from icml2026.zip downloaded on 2026-11-10. The ICML 2027 call page exists but has no content yet.",
+    textBlock: {
+      widthMm: 171.5,
+      leftMm: 19.6,
+    },
+    notes: "Final versions of accepted papers get one extra page for the main paper. The call allows generative AI tools and encourages authors to explain notable uses in their methodology; LLMs cannot be authors. The hash is of icml2026.sty (v2.0, 2025/10/29) from icml2026.zip downloaded on 2026-11-10. The ICML 2027 call page exists but has no content yet. Text block: 6.75 in wide, 0.77 in from the left edge (icml2026.sty).",
+  },
+  "ieee-conference": {
+    id: "ieee-conference",
+    name: "IEEE conference proceedings (IEEEtran, conference mode)",
+    extends: "paper",
+    year: "rolling",
+    source: [
+      "https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/authoring-tools-and-templates/",
+      "https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/meet-ieee-xplore-requirements/",
+      "https://conferences.ieeeauthorcenter.ieee.org/author-ethics/guidelines-and-policies/submission-policies/",
+      "https://ctan.org/pkg/ieeetran",
+    ],
+    checkedOn: "2026-11-10",
+    disclosure: "recommended",
+    styleFiles: [
+      {
+        name: "IEEEtran.cls",
+        sha256: "da751920a317ed318b7b5cd7fa585a6cc7d28502d457856382e9be24b10a3bd7",
+      },
+    ],
+    textBlock: {
+      widthMm: 181.4,
+    },
+    notes: "Each IEEE conference sets its own page limit, paper size and review rules; set them in overfull.yml (`venue:`) from the call for papers. IEEE's submission policies ask authors to disclose AI-generated content in the acknowledgments (editing and grammar help excepted), so the disclosure is recommended rather than required. IEEE Xplore needs every font embedded. The hash is of IEEEtran.cls V1.8b (2015/08/26) as distributed on CTAN, the current release; IEEE's own template page could not be read from the build machine. The text block is the class's conference-mode width (43 pc, centred).",
   },
   "neurips-2026": {
     id: "neurips-2026",
@@ -206,7 +264,10 @@ export const venueProfileData: Record<string, VenueProfileData> = {
         sha256: "c3fc2894e83d2517ca18b66741d6c595986d97957dc08ec08bb2125a7ec4555a",
       },
     ],
-    notes: "The handbook asks authors to describe agent or LLM use in the experimental setup only when it is an important, original or non-standard part of the method. Accepted papers get one additional content page for the camera-ready version. Paper size is from the letterpaper option in the official style file (the handbook does not state it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on 2026-11-10.",
+    textBlock: {
+      widthMm: 139.7,
+    },
+    notes: "The handbook asks authors to describe agent or LLM use in the experimental setup only when it is an important, original or non-standard part of the method. Accepted papers get one additional content page for the camera-ready version. Paper size is from the letterpaper option in the official style file (the handbook does not state it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on 2026-11-10. Text block: 5.5 in wide, centred on US Letter (geometry in neurips_2026.sty).",
   },
   "springer-lncs": {
     id: "springer-lncs",
@@ -226,6 +287,10 @@ export const venueProfileData: Record<string, VenueProfileData> = {
         sha256: "04ec99046ad9867f6cd54ffd1ef8c47c767b327d1baec77536db0528cd492fa2",
       },
     ],
-    notes: "No page limit or paper size is set by Springer; the volume editors set the limit (full papers are typically 12-15 pages, short papers 6-11). Springer's instructions say proceedings contributions need alternative text for non-text content under WCAG; the level is recommended here because Overfull's accessibility check is about the PDF, not alt text. The hash is of llncs.cls v2.25 (2026/09/03) from the LaTeX2e template downloaded on 2026-11-10.",
+    textBlock: {
+      widthMm: 122,
+      leftMm: 47.5,
+    },
+    notes: "No page limit or paper size is set by Springer; the volume editors set the limit (full papers are typically 12-15 pages, short papers 6-11). Springer's instructions say proceedings contributions need alternative text for non-text content under WCAG; the level is recommended here because Overfull's accessibility check is about the PDF, not alt text. The hash is of llncs.cls v2.25 (2026/09/03) from the LaTeX2e template downloaded on 2026-11-10. Text block: 12.2 cm wide, 1 in + 63 pt from the left edge (llncs.cls).",
   },
 };

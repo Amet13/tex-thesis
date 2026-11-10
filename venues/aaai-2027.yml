@@ -18,6 +18,8 @@ anonymous: true
 styleFiles:
   - name: aaai2027.sty
     sha256: 01990f8d3716f8e39c5b28a7478f3ac6e28630d1161de6105a7217f5e7f60e43
+textBlock:
+  widthMm: 177.8
 notes: >-
   The submission PDF can have up to 9 pages, with pages 8 and 9 reserved for
   references. Acknowledgements are omitted from papers submitted for review. The author
@@ -25,3 +27,4 @@ notes: >-
   requirement. The hash is of aaai2027.sty (2027/10/21) from the AuthorKit27 archive
   downloaded on 2026-11-10. The AAAI-28 call page redirects to AAAI-26 content, so
   AAAI-27 is the latest published.
+  Text block: 7 in wide, centred on US Letter (aaai2027.sty).

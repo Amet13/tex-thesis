@@ -95,6 +95,8 @@ function textBoxOf(items: unknown[], view: number[]): PdfPage['textBox'] | undef
     const width = pick(item, 'width');
     if (typeof s !== 'string' || !s.trim() || !Array.isArray(t) || typeof width !== 'number')
       continue;
+    // Line numbers of review versions (lineno, the CVPR ruler) sit in the margin on purpose.
+    if (/^\s*\d{1,5}\s*$/.test(s)) continue;
     const [, , , d = 0, e = 0, f = 0] = t as number[];
     const height = Math.abs(
       typeof pick(item, 'height') === 'number' ? (pick(item, 'height') as number) : d,

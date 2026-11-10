@@ -101,3 +101,38 @@ describe('text-outside-block', () => {
     expect(problem?.message).toMatch(/bottom margin/);
   });
 });
+
+describe('line numbers in the margin', () => {
+  it('do not count toward the text extent', async () => {
+    const { extractPdfFacts: extract } = await import('../src/pdf/index.js');
+    const item = (str: string, x: number, width: number) => ({
+      str,
+      transform: [10, 0, 0, 10, x, 700],
+      width,
+      height: 10,
+    });
+    const page = {
+      view: [0, 0, 612, 792],
+      rotate: 0,
+      getTextContent: async () => ({
+        items: [item('12', 20, 10), item('The text of the paper.', 108, 300), item('13', 580, 10)],
+      }),
+      getStructTree: async () => null,
+    };
+    const pdfjs = {
+      getDocument: () => ({
+        promise: Promise.resolve({
+          numPages: 1,
+          getMetadata: async () => ({ info: {}, metadata: null }),
+          getMarkInfo: async () => null,
+          getPage: async () => page,
+          destroy: async () => {},
+        }),
+      }),
+    } as unknown as PdfjsLike;
+    const f = await extract(new Uint8Array([1]), pdfjs);
+    const box = f.pages[0]?.textBox;
+    expect(box?.leftMm).toBeCloseTo(108 * (25.4 / 72), 0);
+    expect(box?.rightMm).toBeCloseTo(408 * (25.4 / 72), 0);
+  });
+});

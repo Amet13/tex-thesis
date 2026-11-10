@@ -17,8 +17,11 @@ disclosure: required
 styleFiles:
   - name: iclr2027_conference.sty
     sha256: 797deef41724e93761426ac0cbcca46279a91cc650dd1f0ce76a4f08d2098ea6
+textBlock:
+  widthMm: 139.7
 notes: >-
   The page limit is 10 for the discussion phase and the camera-ready version. A
   mandatory AI use statement section does not count toward the limit. Style files
   are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded
   on 2026-11-10 (file dated 2026-07-28 in the archive).
+  Text block: 5.5 in wide with 1.5 in side margins (iclr2027_conference.sty).

@@ -17,9 +17,13 @@ disclosure: recommended
 styleFiles:
   - name: icml2026.sty
     sha256: 7cdcf90f6a59c5219e7f15c88f7ed09fcaf598dad91e6cdddc4dc3cb0e397a95
+textBlock:
+  widthMm: 171.5
+  leftMm: 19.6
 notes: >-
   Final versions of accepted papers get one extra page for the main paper. The call
   allows generative AI tools and encourages authors to explain notable uses in their
   methodology; LLMs cannot be authors. The hash is of icml2026.sty (v2.0, 2025/10/29)
   from icml2026.zip downloaded on 2026-11-10. The ICML 2027 call page exists but has no
   content yet.
+  Text block: 6.75 in wide, 0.77 in from the left edge (icml2026.sty).

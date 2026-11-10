@@ -102,6 +102,8 @@ fields the venue's pages did not state are left out.
 | `acl-rolling-review` | ACL Rolling Review (long papers) | rolling | 2026-11-10 |
 | `emnlp-2026` | EMNLP main conference | 2026 | 2026-11-10 |
 | `springer-lncs` | Springer LNCS and related proceedings series | rolling | 2026-11-10 |
+| `ieee-conference` | IEEE conference proceedings (IEEEtran, conference mode) | rolling | 2026-11-10 |
+| `acm-sigconf` | ACM conference proceedings (acmart, sigconf) | rolling | 2026-11-10 |
 
 ## Venue fields
 
@@ -176,8 +178,9 @@ page limit, with file and line:
 
 `text-outside-block` (warning) measures where the text sits on every page of the
 PDF and reports a page whose text reaches past the venue's text block by more
-than 2 mm, with how far and on which side. It runs only for profiles that
-record a `textBlock`. Render the page with `overfull pages <n>` to find the
+than 2 mm, with how far and on which side. Bare numbers (the line numbers of
+review versions) do not count. It runs only for profiles that record a
+`textBlock`. Render the page with `overfull pages <n>` to find the
 line, table or figure that sticks out.
 
 Each message ends with "check that your venue allows this": the check does not

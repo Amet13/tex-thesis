@@ -18,6 +18,8 @@ disclosure: recommended
 styleFiles:
   - name: neurips_2026.sty
     sha256: c3fc2894e83d2517ca18b66741d6c595986d97957dc08ec08bb2125a7ec4555a
+textBlock:
+  widthMm: 139.7
 notes: >-
   The handbook asks authors to describe agent or LLM use in the experimental setup
   only when it is an important, original or non-standard part of the method. Accepted
@@ -25,3 +27,4 @@ notes: >-
   from the letterpaper option in the official style file (the handbook does not state
   it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on
   2026-11-10.
+  Text block: 5.5 in wide, centred on US Letter (geometry in neurips_2026.sty).

@@ -28,8 +28,11 @@ LaTeX project, and templates become one way in among several.
   MCP server in one install.
 - Venue profiles as data (`venues/*.yml`, each with its sources and check
   date): NeurIPS 2026, ICLR 2027, ICML 2026, CVPR 2027, AAAI-27, ACL Rolling
-  Review, EMNLP 2026, Springer LNCS. New rules `style-file-modified`,
-  `layout-tampering`, `anonymity-link`, `venue-profile-stale`.
+  Review, EMNLP 2026, Springer LNCS, IEEE conferences (IEEEtran) and ACM
+  conferences (acmart sigconf). New rules `style-file-modified`,
+  `layout-tampering`, `anonymity-link`, `venue-profile-stale`, and
+  `text-outside-block` (text in the margin, measured on the PDF against the
+  style file's text block).
 - Reference sources: Semantic Scholar, ACL Anthology (ids and URLs), Europe
   PMC (PMID, PMCID), keyless OpenAlex when DBLP cannot be reached. New rules
   `reference-retracted`, `reference-published-version`, `reference-duplicate`,

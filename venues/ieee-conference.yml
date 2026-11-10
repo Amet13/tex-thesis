@@ -1,0 +1,24 @@
+id: ieee-conference
+name: IEEE conference proceedings (IEEEtran, conference mode)
+year: rolling
+source:
+  - https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/authoring-tools-and-templates/
+  - https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/meet-ieee-xplore-requirements/
+  - https://conferences.ieeeauthorcenter.ieee.org/author-ethics/guidelines-and-policies/submission-policies/
+  - https://ctan.org/pkg/ieeetran
+checkedOn: 2026-11-10
+extends: paper
+disclosure: recommended
+styleFiles:
+  - name: IEEEtran.cls
+    sha256: da751920a317ed318b7b5cd7fa585a6cc7d28502d457856382e9be24b10a3bd7
+textBlock:
+  widthMm: 181.4
+notes: >-
+  Each IEEE conference sets its own page limit, paper size and review rules; set them in
+  overfull.yml (`venue:`) from the call for papers. IEEE's submission policies ask authors to
+  disclose AI-generated content in the acknowledgments (editing and grammar help excepted),
+  so the disclosure is recommended rather than required. IEEE Xplore needs every font
+  embedded. The hash is of IEEEtran.cls V1.8b (2015/08/26) as distributed on CTAN, the
+  current release; IEEE's own template page could not be read from the build machine. The
+  text block is the class's conference-mode width (43 pc, centred).
