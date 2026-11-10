@@ -15,7 +15,7 @@ function tree(dir: string, base = dir): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) out.push(...tree(p, base));
-    else out.push(p.slice(base.length + 1));
+    else out.push(p.slice(base.length + 1).split('\\').join('/'));
   }
   return out.sort();
 }
