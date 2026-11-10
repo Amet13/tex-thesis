@@ -7,35 +7,73 @@ name: release
 #   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
 #   - SHA256SUMS                        checksums, plus build provenance attestations
 #   - overfull.intoto.sigstore.json     the signed provenance (Sigstore bundle) for every file
-# The Docker image is published by image.yml on the same tag.
+#
+# Two ways to release the version in package.json (bump it first with
+# scripts/bump-version.mjs):
+#   - Actions → release → Run workflow on main, with "publish" ticked. It checks
+#     that CI passed on that commit, builds everything, creates the vX.Y.Z tag
+#     and release, moves the major tag (v3) and publishes the Docker image.
+#   - Or push a vX.Y.Z tag; image.yml then publishes the image itself.
+# Run workflow without "publish" is a dry run from any branch: every asset is
+# built and kept as a workflow artifact, nothing is published.
 
 on:
   push:
     # Release tags only: moving the major tag (v3) for the Action triggers nothing.
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
-  # Dry run from any branch: builds and uploads every asset as a workflow
-  # artifact, publishes nothing. Do this before tagging a release.
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the release (main only). Unticked = dry run.
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
   version:
-    name: Tag matches the package version
+    name: Version and release checks
     runs-on: ubuntu-26.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - if: startsWith(github.ref, 'refs/tags/v')
+      - id: v
+        name: Every package has the same version (and it matches the tag)
         run: |
-          want="${GITHUB_REF_NAME#v}"
-          for f in packages/cli/package.json packages/core/package.json action/package.json; do
+          version="$(jq -r .version packages/cli/package.json)"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]] && [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME, package version $version (run scripts/bump-version.mjs)"; exit 1
+          fi
+          for f in packages/core/package.json action/package.json; do
             got="$(jq -r .version "$f")"
-            [ "$got" = "$want" ] || { echo "::error file=$f::version $got, tag $GITHUB_REF_NAME (run scripts/bump-version.mjs)"; exit 1; }
+            [ "$got" = "$version" ] || { echo "::error file=$f::version $got, expected $version (run scripts/bump-version.mjs)"; exit 1; }
           done
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Publishing is allowed
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          [ "$GITHUB_REF" = refs/heads/main ] || { echo "::error::publish only from main (this run is on $GITHUB_REF_NAME)"; exit 1; }
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$VERSION" > /dev/null 2>&1; then
+            echo "::error::v$VERSION is already released; bump the version first (scripts/bump-version.mjs)"; exit 1
+          fi
+          ci="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&event=push" --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')"
+          [ "$ci" -gt 0 ] || { echo "::error::ci has not passed on $GITHUB_SHA yet; wait for it, then run again"; exit 1; }
+          echo "Publishing v$VERSION from $GITHUB_SHA"
 
   pdfs:
     needs: version
@@ -115,8 +153,8 @@ jobs:
           path: assets/*
 
   github-release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [pdfs, cli]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+    needs: [version, pdfs, cli]
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
@@ -144,5 +182,35 @@ jobs:
         run: cp "$BUNDLE" assets/overfull.intoto.sigstore.json
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
+          # Creates the tag at this commit when the release comes from Run workflow.
+          tag_name: v${{ needs.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
+          make_latest: true
           files: assets/*
+      - name: "Move the major tag (v3) that `uses: amet13/overfull@v3` reads"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          major="v${VERSION%%.*}"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$major" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$major" -f sha="$GITHUB_SHA" -F force=true > /dev/null
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$major" -f sha="$GITHUB_SHA" > /dev/null
+          fi
+          echo "$major → $GITHUB_SHA"
+
+  # A tag pushed by hand starts image.yml itself; a release made with Run
+  # workflow calls it here.
+  image:
+    if: inputs.publish
+    needs: [version, github-release]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/image.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
