@@ -191,7 +191,8 @@ describe('MCP tools', () => {
       return JSON.parse(out.join('')) as unknown;
     })();
     expect(report).toEqual(cli);
-  });
+    // Reads the PDF with pdf.js twice; slow on shared Windows runners.
+  }, 60_000);
 
   it('check rejects bad arguments as tool errors, not protocol errors', async () => {
     const { call } = await ready(tempCopy('project'));

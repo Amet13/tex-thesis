@@ -100,7 +100,11 @@ describe('commands quoted in the docs', () => {
       const help = helps.get(u.command) as string;
       for (const f of u.flags) {
         if (f === '--help' || f === '-h' || f === '--json') continue;
-        if (!new RegExp(`(^|[\\s,\\[|])${f.replace(/[-]/g, '\\-')}\\b`, 'm').test(help))
+        if (
+          !new RegExp(`(^|[\\s,\\[|])${f.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}\\b`, 'm').test(
+            help,
+          )
+        )
           wrong.push(`${u.file}:${u.line} \`overfull ${u.command}\` has no ${f}: ${u.text}`);
       }
     }

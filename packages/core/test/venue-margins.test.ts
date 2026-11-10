@@ -42,7 +42,7 @@ describe('text extents from the PDF', () => {
       new Uint8Array(readFileSync(new URL('./fixtures/pdf/untagged.pdf', import.meta.url))),
       await loadPdfjs(),
     );
-  });
+  }, 60_000);
 
   it('measures where the text sits on the page', () => {
     const box = real.pages[0]?.textBox;

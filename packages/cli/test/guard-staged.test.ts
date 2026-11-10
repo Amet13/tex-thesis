@@ -177,18 +177,25 @@ describe('guard --staged', () => {
 describe('init --here --hooks and --agents', () => {
   const tex = '\\documentclass{article}\\begin{document}x\\end{document}\n';
 
+  it('installs an executable pre-commit hook', async () => {
+    const dir = repoWith({ 'main.tex': tex });
+    expect(await adoptCommand(['--hooks'], memIo(dir))).toBe(0);
+    const fd = openSync(join(dir, '.git/hooks/pre-commit'), 'r');
+    try {
+      expect(readFileSync(fd, 'utf8')).toContain('overfull guard --staged');
+      // Windows has no execute bits; git for Windows runs hooks regardless.
+      if (process.platform !== 'win32') expect(fstatSync(fd).mode & 0o111).not.toBe(0);
+    } finally {
+      closeSync(fd);
+    }
+  });
+
   it('installs a pre-commit hook only when none exists, and never overwrites', async () => {
     const dir = repoWith({ 'main.tex': tex });
     const io = memIo(dir);
     expect(await adoptCommand(['--hooks'], io)).toBe(0);
     const hook = join(dir, '.git/hooks/pre-commit');
     expect(readFileSync(hook, 'utf8')).toContain('overfull guard --staged');
-    const fd = openSync(hook, 'r');
-    try {
-      expect(fstatSync(fd).mode & 0o111).not.toBe(0);
-    } finally {
-      closeSync(fd);
-    }
     writeFileSync(hook, '#!/bin/sh\necho mine\n');
     chmodSync(hook, 0o755);
     const again = memIo(dir);

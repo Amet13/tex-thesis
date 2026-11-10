@@ -57,7 +57,8 @@ describe('extractPdfFacts', () => {
     tagged = await extractPdfFacts(new Uint8Array(read('tagged.pdf')), pdfjs);
     noalt = await extractPdfFacts(new Uint8Array(read('noalt.pdf')), pdfjs);
     untagged = await extractPdfFacts(new Uint8Array(read('untagged.pdf')), pdfjs);
-  });
+    // Loading pdf.js and reading three PDFs takes longer on shared Windows runners.
+  }, 60_000);
 
   it('reads metadata, tagging, language and PDF/UA claim of a tagged PDF', () => {
     expect(tagged.pageCount).toBe(1);
