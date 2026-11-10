@@ -7,6 +7,7 @@ name: release
 #   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
 #   - SHA256SUMS                        checksums, plus build provenance attestations
 #   - overfull.intoto.sigstore.json     the signed provenance (Sigstore bundle) for every file
+#   - overfull.intoto.jsonl             the same provenance as an in-toto DSSE envelope (SLSA)
 #
 # Two ways to release the version in package.json (bump it first with
 # scripts/bump-version.mjs):
@@ -189,7 +190,12 @@ jobs:
       - name: Attach the provenance bundle
         env:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
-        run: cp "$BUNDLE" assets/overfull.intoto.sigstore.json
+        run: |
+          cp "$BUNDLE" assets/overfull.intoto.sigstore.json
+          # The in-toto envelope on its own line, the format SLSA tooling and OpenSSF
+          # Scorecard (Signed-Releases) recognise as provenance.
+          jq -c '.dsseEnvelope' "$BUNDLE" > assets/overfull.intoto.jsonl
+          test -s assets/overfull.intoto.jsonl
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           # Creates the tag at this commit when the release comes from Run workflow.
