@@ -27,6 +27,25 @@ Which one to use: the Action with no image when the runner only needs the log
 and PDF checks; the `-check` image when you also want veraPDF or a container
 job; the full image when you build the PDF with it.
 
+## The medium image
+
+`ghcr.io/amet13/overfull:3-medium` (also `3.1-medium`, `3.1.0-medium`,
+`edge-medium`) builds on TeX Live's medium scheme instead of the full one, plus
+the collections the templates, the venue classes and the tools need
+(`latexextra`, `bibtexextra`, `pictures`, `publishers`, `binextra`,
+`mathscience`, the Inconsolata and Fira fonts, biber, latexdiff, latexmk). It
+leaves out most of the large font and language collections, so it is smaller
+to download; the package page shows the size of each tag. CI builds the three templates in it
+on every change to the image. If your document uses a package outside those
+collections, use the full image `ghcr.io/amet13/overfull:3`, or set
+`build.image` in `overfull.yml`.
+
+Build it from a clone:
+
+```bash
+docker build -f docker/Dockerfile --build-arg TEX_FLAVOR=medium -t overfull:medium .
+```
+
 ## What is inside
 
 | Component | Version / source |

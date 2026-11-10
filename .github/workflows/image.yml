@@ -9,7 +9,8 @@ name: image
 #   every push → sha-<short>
 # A second, much smaller image without TeX Live (CLI, veraPDF, poppler, git)
 # gets the same tags with a "-check" suffix: 3.1.0-check, 3.1-check, 3-check,
-# edge-check, sha-<short>-check.
+# edge-check, sha-<short>-check. A third builds on TeX Live's medium scheme plus
+# the collections the templates need: "-medium" (3.1.0-medium, 3-medium, ...).
 # Each build is signed with a build provenance attestation.
 
 on:
@@ -59,10 +60,12 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - { target: overfull, suffix: "", platform: linux/amd64, runner: ubuntu-26.04, pair: overfull-linux-amd64 }
-          - { target: overfull, suffix: "", platform: linux/arm64, runner: ubuntu-26.04-arm, pair: overfull-linux-arm64 }
-          - { target: check, suffix: -check, platform: linux/amd64, runner: ubuntu-26.04, pair: check-linux-amd64 }
-          - { target: check, suffix: -check, platform: linux/arm64, runner: ubuntu-26.04-arm, pair: check-linux-arm64 }
+          - { target: overfull, flavor: full, suffix: "", platform: linux/amd64, runner: ubuntu-26.04, pair: overfull-linux-amd64 }
+          - { target: overfull, flavor: full, suffix: "", platform: linux/arm64, runner: ubuntu-26.04-arm, pair: overfull-linux-arm64 }
+          - { target: check, flavor: full, suffix: -check, platform: linux/amd64, runner: ubuntu-26.04, pair: check-linux-amd64 }
+          - { target: check, flavor: full, suffix: -check, platform: linux/arm64, runner: ubuntu-26.04-arm, pair: check-linux-arm64 }
+          - { target: overfull, flavor: medium, suffix: -medium, platform: linux/amd64, runner: ubuntu-26.04, pair: medium-linux-amd64 }
+          - { target: overfull, flavor: medium, suffix: -medium, platform: linux/arm64, runner: ubuntu-26.04-arm, pair: medium-linux-arm64 }
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     permissions:
@@ -103,7 +106,9 @@ jobs:
           target: ${{ matrix.target }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ steps.meta.outputs.version }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            TEX_FLAVOR=${{ matrix.flavor }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.pair }}
           cache-to: type=gha,scope=${{ matrix.pair }},mode=max
@@ -141,14 +146,15 @@ jobs:
           retention-days: 1
 
   publish:
-    name: Publish (${{ matrix.target }})
+    name: Publish (${{ matrix.name }})
     needs: build
     strategy:
       fail-fast: true
       matrix:
         include:
-          - { target: overfull, suffix: "" }
-          - { target: check, suffix: -check }
+          - { name: overfull, suffix: "" }
+          - { name: check, suffix: -check }
+          - { name: medium, suffix: -medium }
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
@@ -159,7 +165,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: digests-${{ matrix.target }}-*
+          pattern: digests-${{ matrix.name }}-*
           merge-multiple: true
           path: ${{ runner.temp }}/digests
       - id: meta

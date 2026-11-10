@@ -6,9 +6,13 @@
 #   docker build -f docker/Dockerfile -t ghcr.io/amet13/overfull:dev .
 #   docker build -f docker/Dockerfile --target tex -t overfull-tex:dev .   # TeX toolchain only
 #   docker build -f docker/Dockerfile --target check -t overfull-check:dev .  # no TeX Live
+#   docker build -f docker/Dockerfile --build-arg TEX_FLAVOR=medium -t overfull:medium .
 #
 # Stages:
-#   tex       TeX Live 2026 (pinned digest), MS core fonts, poppler-utils, qpdf, veraPDF
+#   texbase-full    TeX Live 2026, scheme-full (pinned digest)
+#   texbase-medium  TeX Live 2026, scheme-medium plus the collections the templates,
+#                   the corpus and the venue classes need (a smaller image)
+#   tex       texbase-$TEX_FLAVOR (default full) + MS core fonts, poppler-utils, qpdf, veraPDF
 #   node      tex + Node.js 26 LTS (official binary, checksum-verified)
 #   builder   node + pnpm: builds the monorepo and deploys the CLI to /opt/overfull
 #   check     Debian slim + Node + veraPDF + poppler + git + CLI, no TeX Live
@@ -23,7 +27,21 @@
 # ---------------------------------------------------------------------------
 # Pinned by digest (multi-arch index: linux/amd64, linux/arm64). Written inline,
 # not as an ARG, so Dependabot can propose digest updates.
-FROM texlive/texlive:latest@sha256:07e8062637249c4f780ca59f42cc2ed592bc2dc1db4320769406aee3f98aa70e AS tex
+ARG TEX_FLAVOR=full
+FROM texlive/texlive:latest@sha256:07e8062637249c4f780ca59f42cc2ed592bc2dc1db4320769406aee3f98aa70e AS texbase-full
+
+FROM texlive/texlive:latest-medium@sha256:2f4fb17e828b6e7005a011a69a150698851a542ceca004aa7a40744a46d7d249 AS texbase-medium
+# scheme-medium lacks packages the templates (biblatex-ieee, tocloft, fontsize, pgfplots),
+# the venue classes (IEEEtran, acmart, llncs) and the tools (biber, latexdiff) use.
+RUN set -eux; \
+    tlmgr install \
+      collection-latexextra collection-bibtexextra collection-pictures \
+      collection-publishers collection-binextra collection-mathscience \
+      inconsolata fira biber latexdiff latexmk; \
+    tlmgr path add; \
+    rm -rf /usr/local/texlive/*/tlpkg/backups/* /usr/local/texlive/*/texmf-var/web2c/tlmgr.log
+
+FROM texbase-${TEX_FLAVOR} AS tex
 
 ARG VERAPDF_VERSION=1.30.4
 ARG VERAPDF_SHA256=04415ef3f149526a3048b9889723e81320ddf013bd891bcc7f0f297f3eadcc23

@@ -152,6 +152,18 @@ jobs:
             overfull:ci-check overfull check --offline || code=$?
           echo "overfull check exit code: $code"
           test "$code" -le 1
+      - name: Build the medium image (TeX Live medium scheme)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: overfull
+          build-args: TEX_FLAVOR=medium
+          load: true
+          tags: overfull:ci-medium
+          cache-from: type=gha,scope=medium-linux-amd64
+      - name: Templates build and pass their own preflight in the medium image
+        run: bash scripts/e2e-templates.sh overfull:ci-medium out-medium
       - name: Corpus reproduces every rule on TeX Live 2026
         run: docker run --rm -v "$PWD:/repo" -w /repo -e OVERFULL_TEX_LOCAL=1 overfull:ci node scripts/corpus.mjs --verify
       - name: Templates build and pass their own preflight

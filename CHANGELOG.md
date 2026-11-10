@@ -44,7 +44,21 @@ LaTeX project, and templates become one way in among several.
 - Action: `sarif` input and output, and an optional pull-request comment kept
   up to date (`comment`, `github-token`).
 - `ghcr.io/amet13/overfull:<version>-check`: the CLI, veraPDF and poppler
-  without TeX Live.
+  without TeX Live. `ghcr.io/amet13/overfull:<version>-medium`: TeX Live's
+  medium scheme plus the collections the templates need; CI builds the
+  templates in it.
+- `overfull check --watch` checks again whenever the log, PDF, `.aux` or a
+  `.bib` file changes.
+- A native build for Intel Macs (`overfull-darwin-x64`). Each release
+  attaches a Homebrew formula and a Scoop manifest generated from its
+  checksums (`packaging/`).
+- References: an entry that links to its OpenReview page and that no index
+  has yet is "could not be checked", not "not found".
+- Guide pages: How it compares (other reference checkers, from their own
+  pages), How accurate is the reference check, Does it help agents; the last
+  two render measured results once they are committed.
+- A test checks that every `overfull` command quoted in the docs exists and
+  uses real flags.
 - `install.sh` and `install.ps1`, served from the website; they verify the
   download against `SHA256SUMS` and need no administrator rights.
 - The browser check accepts a project `.zip` (such as Overleaf's source
@@ -63,7 +77,8 @@ LaTeX project, and templates become one way in among several.
 - `page-limit-label-missing` is reported only when pages were counted.
 - `overfull doctor` reports the CrossRef API as reachable instead of showing
   an HTTP status.
-- `AGENTS.md` no longer assumes the template layout.
+- `AGENTS.md` no longer assumes the template layout, and is shorter (1,477 to
+  842 words) with every rule kept.
 - Guide: existing project, CI and Overleaf come first; new pages on existing
   projects, MCP, accuracy and evals.
 
