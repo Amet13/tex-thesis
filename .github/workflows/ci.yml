@@ -133,6 +133,23 @@ jobs:
           # Same cache as image.yml's amd64 build: PRs reuse the layers from main.
           cache-from: type=gha,scope=overfull-linux-amd64
           cache-to: type=gha,scope=overfull-linux-amd64,mode=max
+      - name: Build the check-only image (no TeX Live)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: check
+          load: true
+          tags: overfull:ci-check
+          cache-from: type=gha,scope=check-linux-amd64
+      - name: The check-only image checks a built project and has no TeX
+        run: |
+          docker run --rm overfull:ci-check sh -c 'overfull --version && verapdf --version && ! command -v lualatex'
+          code=0
+          docker run --rm -v "$PWD/packages/cli/test/fixtures/project:/work" -w /work \
+            overfull:ci-check overfull check --offline || code=$?
+          echo "overfull check exit code: $code"
+          test "$code" -le 1
       - name: Corpus reproduces every rule on TeX Live 2026
         run: docker run --rm -v "$PWD:/repo" -w /repo -e OVERFULL_TEX_LOCAL=1 overfull:ci node scripts/corpus.mjs --verify
       - name: Templates build and pass their own preflight
