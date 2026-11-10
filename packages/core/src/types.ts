@@ -61,6 +61,15 @@ export interface Report {
   version: string;
   /** What was checked, e.g. `thesis.pdf`. */
   target?: string;
+  /** Present when there was no overfull.yml: what the run assumed. */
+  assumed?: {
+    main: string;
+    /** How the main file was chosen: `--main`, `main.tex`, `detected` (the only or the built document) or `default`. */
+    mainSource: string;
+    jobname: string;
+    profile: string;
+    bib: string[];
+  };
   status: Exclude<CheckStatus, 'skipped'>;
   checks: CheckResult[];
 }

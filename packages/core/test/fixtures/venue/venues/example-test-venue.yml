@@ -1,0 +1,20 @@
+# TEST FIXTURE ONLY. Not a real venue; the values mean nothing. Real profiles live in venues/.
+id: example-test-venue
+name: Example Test Venue (test fixture, not a real venue)
+year: 2027
+source:
+  - https://example.invalid/test-fixture
+checkedOn: 2026-01-15
+extends: double-blind
+paper: letter
+pageLimit:
+  max: 9
+  endLabel: overfull:main-end
+  counts: Test text
+  excludes: [References]
+anonymous: true
+disclosure: required
+styleFiles:
+  - name: exampletest.sty
+    sha256: f93b5d57bad6b403310e5408b31896fbd8d5015709c3eac6e0a4383054307508
+notes: Used by packages/core/test/venue-data.test.ts.

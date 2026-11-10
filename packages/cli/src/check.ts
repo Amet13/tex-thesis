@@ -30,7 +30,7 @@ import {
   verifyEntries,
 } from '@overfull/core';
 import { FileCache, MemoryCache, refsCachePath, symlinkOnPath } from './cache.js';
-import { type Config, DEFAULT_IMAGE, loadConfig } from './config.js';
+import { type Config, DEFAULT_IMAGE, loadConfig, requireMain } from './config.js';
 import { UsageError } from './io.js';
 import { readPdfFacts } from './pdf.js';
 import { listFiles, readAux, readIfExists, readTexFiles, requireRegularFile } from './project.js';
@@ -46,6 +46,8 @@ export interface CheckOptions {
   config?: string;
   checks?: CheckId[];
   profile?: string;
+  /** Main .tex file (overrides overfull.yml and detection). */
+  main?: string;
   pdf?: string;
   log?: string;
   aux?: string;
@@ -506,7 +508,7 @@ function venue(inp: Inputs): CheckResult {
 export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   const cwd = opts.cwd ?? process.cwd();
   const env = opts.env ?? process.env;
-  const config = loadConfig(cwd, opts.config, env);
+  const config = loadConfig(cwd, opts.config, env, opts.main ? { main: opts.main } : {});
   if (opts.profile) {
     try {
       config.profile = resolveProfile({ ...config.venue, extends: opts.profile });
@@ -517,6 +519,8 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   }
   const selected = opts.checks ?? config.checks;
   const wanted = new Set(selected);
+  // A references-only run reads .bib files and does not need to know the main file.
+  if (selected.some((c) => c !== 'references')) requireMain(config);
   const needPdf = ['output', 'accessibility', 'venue'].some((c) => wanted.has(c as CheckId));
   const inp = await gather({ ...opts, env }, config, needPdf);
   const results: CheckResult[] = [...buildAndOutput(inp, wanted)];
@@ -531,6 +535,17 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
     tool: 'overfull',
     version: VERSION,
     target,
+    ...(config.file
+      ? {}
+      : {
+          assumed: {
+            main: config.main,
+            mainSource: config.mainSource,
+            jobname: config.jobname,
+            profile: config.profile.id,
+            bib: config.bib,
+          },
+        }),
     status: reportStatus(results),
     checks: results,
   };

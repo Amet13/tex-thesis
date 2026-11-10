@@ -10,6 +10,7 @@ import {
 } from '@overfull/core';
 import { parse as parseYaml } from 'yaml';
 import { UsageError } from './io.js';
+import { ambiguousMainError, detectMain } from './project.js';
 import { safeImage, safeJobname, safeRelPath } from './safety.js';
 
 export const DEFAULT_IMAGE = 'ghcr.io/amet13/overfull:3';
@@ -23,6 +24,10 @@ export interface Config {
   /** Absolute path of the config file, when one was loaded. */
   file?: string;
   main: string;
+  /** Where `main` comes from, for messages and the report's `assumed` object. */
+  mainSource: 'overfull.yml' | '--main' | 'main.tex' | 'detected' | 'default';
+  /** Several possible main files and none chosen (`main` is then the default main.tex). Commands that need a main file call `requireMain`. */
+  mainCandidates?: string[];
   jobname: string;
   bib: string[];
   /** True when `bib` was found in the main file (`\\bibliography`, `\\addbibresource`), not configured. */
@@ -240,6 +245,7 @@ export function loadConfig(
   cwd: string,
   explicit?: string,
   env: Record<string, string | undefined> = {},
+  opts: { main?: string } = {},
 ): Config {
   let file: string | undefined;
   if (explicit) {
@@ -270,10 +276,32 @@ export function loadConfig(
   const f = file ?? join(root, CONFIG_FILE);
   if (raw.main !== undefined && typeof raw.main !== 'string')
     throw new ConfigError(f, '`main` must be a file name');
-  const main = safeRelPath((raw.main as string | undefined) ?? 'main.tex');
   if (raw.jobname !== undefined && typeof raw.jobname !== 'string')
     throw new ConfigError(f, '`jobname` must be a string');
   const rc = latexmkrcDirs(root);
+  let main: string;
+  let mainSource: Config['mainSource'];
+  let mainCandidates: string[] | undefined;
+  if (opts.main !== undefined) {
+    main = safeRelPath(opts.main);
+    mainSource = '--main';
+    if (!existsSync(join(root, main))) throw new UsageError(`Main file not found: ${opts.main}`);
+  } else if (raw.main !== undefined) {
+    main = safeRelPath(raw.main as string);
+    mainSource = 'overfull.yml';
+  } else {
+    const found = detectMain(root, [
+      ...new Set(['.', rc.outDir ?? '.', rc.auxDir ?? rc.outDir ?? '.']),
+    ]);
+    if (found.main) {
+      main = found.main;
+      mainSource = found.how === 'main.tex' ? 'main.tex' : 'detected';
+    } else {
+      main = 'main.tex';
+      mainSource = 'default';
+      if (found.candidates.length > 1) mainCandidates = found.candidates;
+    }
+  }
   const jobnameSource: Config['jobnameSource'] =
     raw.jobname !== undefined ? 'overfull.yml' : rc.jobname ? '.latexmkrc' : 'main file';
   const jobname = safeJobname(
@@ -335,6 +363,8 @@ export function loadConfig(
   const config: Config = {
     root,
     main,
+    mainSource,
+    ...(mainCandidates ? { mainCandidates } : {}),
     jobname,
     bib,
     bibDiscovered: raw.bib === undefined,
@@ -348,6 +378,11 @@ export function loadConfig(
   };
   if (file) config.file = file;
   return config;
+}
+
+/** Throws a usage error when several .tex files could be the main file and none was chosen. */
+export function requireMain(config: Config): void {
+  if (config.mainCandidates) throw ambiguousMainError(config.mainCandidates);
 }
 
 export { closest };

@@ -38,6 +38,29 @@ TeX Live changes.
 Edit `skills/` or `shared/agents/`, never the copies inside `templates/*/.agents`.
 Then run `pnpm templates:sync`. CI fails if templates drift.
 
+## Adding a venue
+
+A venue profile is one YAML file in `venues/`, named `<id>.yml` (for example
+`venues/neurips-2027.yml`). Format and field list: [venues/README.md](venues/README.md).
+
+1. Open the venue's official call for papers or author kit. Copy each value from
+   there: page limit and what it counts, paper size, anonymity, AI-use disclosure,
+   style file names. Leave a field out if you cannot confirm it; a wrong value is
+   worse than none.
+2. Put the official page URLs under `source` and the day you read them under
+   `checkedOn` (`YYYY-MM-DD`). Both are required. Add `sha256` for a style file
+   only if you computed it from the official kit (`sha256sum neurips_2027.sty`).
+3. Run `node scripts/build-venues.mjs`. It validates every file and rewrites
+   `packages/core/src/venue/venues.generated.ts`; commit that file. Never edit it by hand.
+4. Try it on a real paper: `profile: <id>` in `overfull.yml`, then `overfull check`.
+5. Add a test in `packages/core/test/` if the profile needs behaviour that is not
+   data. Run `pnpm venues:check` and `pnpm test`.
+
+CI runs `pnpm venues:check`, which fails on an invalid file, a missing `source` or
+`checkedOn`, or a stale generated module. Profiles older than 14 months show a
+"may be out of date" note, so re-read the pages each year and update `checkedOn`.
+You can also open a "New venue profile" issue and give the URLs.
+
 ## Checks before you push
 
 ```bash
@@ -46,6 +69,7 @@ pnpm build
 pnpm typecheck
 pnpm test
 pnpm templates:check
+pnpm venues:check
 ```
 
 If you changed `action/src` or anything it bundles, rebuild the Action and

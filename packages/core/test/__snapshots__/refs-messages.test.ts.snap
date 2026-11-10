@@ -1,0 +1,64 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`lookup-incomplete messages > renders in Markdown 1`] = `
+"## Overfull preflight: WARN
+
+| Check | Status | Summary |
+| --- | --- | --- |
+| references | fail | 1 of 5 references verified (1 with differing metadata, 1 with an identifier that points to another work, 1 could not be checked, 1 not checkable automatically) |
+
+1 to fix · 2 to review · 1 note · 0 passed
+
+<details open><summary><b>references</b>: 4 items</summary>
+
+- **error** \\\`wrongdoi\\\`: the DOI 10.1/x points to a different paper, “Another Paper” <sub>reference-doi-wrong-work</sub>
+  - Why: doi.org resolves 10.1/x to “Another Paper”, not to the cited work
+  - Fix: Find the correct DOI for the cited title on the publisher page, or re-add the entry with <code>overfull cite "&lt;title&gt;"</code>. Do not re-add it from this DOI: that would cite the unrelated paper.
+- **warning** \\\`year\\\`: year differs from the CrossRef record <sub>reference-metadata-mismatch</sub>
+  - Why: year: bib “1981”, record “1978”
+  - Fix: Compare the entry with the record and correct it, or replace it with <code>overfull cite &lt;doi&gt;</code>.
+- **warning** \\\`lost\\\` could not be checked because CrossRef and dblp did not answer <sub>reference-lookup-failed</sub>
+  - Why: CrossRef: timed out after 4000 ms. dblp: answered HTTP 503. A network problem is not evidence against the reference.
+  - Fix: CrossRef and dblp could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with <code>overfull cite &lt;doi &#124; arXiv:id&gt;</code>.
+- **info** \\\`book1\\\` could not be checked automatically: no match found, but books are often not indexed <sub>reference-unverifiable</sub>
+  - Why: The lookup was incomplete. dblp: answered HTTP 503 (repeatedly; skipped for the rest of this run). CrossRef: timed out after 4000 ms.
+  - Fix: Check this entry by hand; add a DOI where one exists.
+
+</details>
+"
+`;
+
+exports[`lookup-incomplete messages > renders in the human format 1`] = `
+"overfull  WARN
+  ✕ references  1 of 5 references verified (1 with differing metadata, 1 with an identifier that points to another work, 1 could not be checked, 1 not checkable automatically)
+
+  ✕ \`wrongdoi\`: the DOI 10.1/x points to a different paper, “Another Paper”  reference-doi-wrong-work
+  ! \`year\`: year differs from the CrossRef record  reference-metadata-mismatch
+  ! \`lost\` could not be checked because CrossRef and dblp did not answer  reference-lookup-failed
+  i \`book1\` could not be checked automatically: no match found, but books are often not indexed  reference-unverifiable
+
+1 to fix · 2 to review · 1 note · 0 passed
+Run with --verbose for fixes, or \`overfull explain <rule>\`.
+"
+`;
+
+exports[`lookup-incomplete messages > renders in the human format 2`] = `
+"overfull  WARN
+  ✕ references  1 of 5 references verified (1 with differing metadata, 1 with an identifier that points to another work, 1 could not be checked, 1 not checkable automatically)
+
+  ✕ \`wrongdoi\`: the DOI 10.1/x points to a different paper, “Another Paper”  reference-doi-wrong-work
+    why: doi.org resolves 10.1/x to “Another Paper”, not to the cited work
+    fix: Find the correct DOI for the cited title on the publisher page, or re-add the entry with \`overfull cite "<title>"\`. Do not re-add it from this DOI: that would cite the unrelated paper.
+  ! \`year\`: year differs from the CrossRef record  reference-metadata-mismatch
+    why: year: bib “1981”, record “1978”
+    fix: Compare the entry with the record and correct it, or replace it with \`overfull cite <doi>\`.
+  ! \`lost\` could not be checked because CrossRef and dblp did not answer  reference-lookup-failed
+    why: CrossRef: timed out after 4000 ms. dblp: answered HTTP 503. A network problem is not evidence against the reference.
+    fix: CrossRef and dblp could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with \`overfull cite <doi | arXiv:id>\`.
+  i \`book1\` could not be checked automatically: no match found, but books are often not indexed  reference-unverifiable
+    why: The lookup was incomplete. dblp: answered HTTP 503 (repeatedly; skipped for the rest of this run). CrossRef: timed out after 4000 ms.
+    fix: Check this entry by hand; add a DOI where one exists.
+
+1 to fix · 2 to review · 1 note · 0 passed
+"
+`;

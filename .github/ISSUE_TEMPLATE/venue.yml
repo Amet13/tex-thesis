@@ -1,0 +1,48 @@
+name: New venue profile
+description: Ask for a conference, journal or publisher profile, or send the facts for one
+title: "[venue] "
+labels: venue
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Venue profiles are data files in `venues/`. Every value must come from the
+        venue's official page. You can also send a pull request: see "Adding a venue"
+        in CONTRIBUTING.md.
+  - type: input
+    id: name
+    attributes:
+      label: Venue and year
+      description: For example "ICLR 2027", or "rolling" for a journal.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Official page URLs (required)
+      description: The call for papers, author instructions or author kit. One URL per line.
+    validations:
+      required: true
+  - type: input
+    id: checked-on
+    attributes:
+      label: Date you read those pages (required)
+      description: YYYY-MM-DD
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules the pages state
+      description: |
+        Only what the pages say. Leave out what you are not sure of.
+        Page limit and what it counts or excludes, paper size, anonymity,
+        AI-use disclosure, accessibility, style file names (and the SHA-256 of the
+        official file if you computed it).
+    validations:
+      required: true
+  - type: textarea
+    id: tested
+    attributes:
+      label: How you tested it
+      description: Optional. For example the output of `overfull check` on a real paper.

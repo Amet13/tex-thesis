@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { parse, str } from '../args.js';
-import { loadConfig } from '../config.js';
+import { loadConfig, requireMain } from '../config.js';
 import { type Io, UsageError } from '../io.js';
 import { insideRoot, insideRootForWrite, safeRelPath } from '../safety.js';
 import {
@@ -22,7 +22,7 @@ supervisor or co-author can review changes. Prints the path of the PDF.
 Options:
   --base ref      Revision to compare with (default: merge-base with origin/main;
                   HEAD~1 when that is HEAD itself or there is no origin/main)
-  --main file     Main .tex file (default from overfull.yml)
+  --main file     Main .tex file (default from overfull.yml, else detected)
   --out file      Output PDF (default overfull-diff.pdf)
   --engine e      auto (default), local or docker
   --json          Print {pdf, base, sha, complete} (or {error}) as JSON. complete is
@@ -79,6 +79,7 @@ export async function diffCommand(args: string[], io: Io): Promise<number> {
     return 0;
   }
   const config = loadConfig(io.cwd, str(values.config), io.env);
+  if (!str(values.main)) requireMain(config);
   const main = safeRelPath(str(values.main) ?? config.main);
   insideRoot(config.root, main, 'Main file');
   if (!existsSync(join(config.root, main))) throw new UsageError(`${main} not found. Pass --main.`);

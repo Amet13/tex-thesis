@@ -45,6 +45,8 @@ export interface RefResult {
   query?: string;
   /** Sources that could not answer (network error, bot wall, rate limit), for `error`. */
   failed?: RefSource[];
+  /** Last error per source that could not answer (for `error`, and for `unverifiable` after a partial lookup). */
+  failures?: { source: RefSource; reason: string }[];
   /** Sources that answered definitively (searched and found / did not find). */
   searched?: RefSource[];
   location?: Location;
@@ -69,12 +71,20 @@ export interface RefsOptions {
   cache?: RefCache;
   /**
    * How long cached answers stay valid, in days. A number sets both; defaults:
-   * negative answers (DOI missing, no arXiv paper, empty search) 30, records 180.
+   * negative answers (DOI missing, no arXiv paper, empty search) 1, records 30.
+   * Transport errors (timeouts, 5xx, bot walls) are never cached.
    */
   cacheMaxAgeDays?: number | { negative?: number; positive?: number };
+  /**
+   * Ignore stored answers and ask the indexes again (CLI `--refresh`). New answers
+   * are still written to the cache.
+   */
+  refresh?: boolean;
+  /** Called after each entry is verified (not for skipped or offline runs): `done` of `total`. */
+  onProgress?: (done: number, total: number) => void;
   /** Parallel entries (default 4). */
   concurrency?: number;
-  /** Per-request timeout in ms (default 10000). */
+  /** Total time per request in ms (default 10000); the first byte must arrive within 4000. */
   timeoutMs?: number;
   offline?: boolean;
   /**

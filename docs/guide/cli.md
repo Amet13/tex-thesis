@@ -9,14 +9,14 @@ section: Reference
 overfull init [thesis|paper|slides] [dir] [--force] [--no-git] [--json]
 overfull build [main.tex] [--engine auto|local|docker] [--image name] [--verbose] [--force]
                [--json] [--config file]
-overfull check [--checks a,b] [--profile p] [--offline] [--fail-on error|warning|never]
+overfull check [file...] [--main file] [--checks a,b] [--profile p] [--offline] [--fail-on error|warning|never]
                [--json | --markdown | --annotations] [--verbose]
                [--pdf file] [--log file] [--aux file] [--bib a.bib,b.bib]
                [--mailto address] [--no-verapdf] [--engine auto|local|docker] [--image name]
                [--config file]
 overfull cite <doi | arXiv:id | "title"> [--bib file] [--key k] [--author name] [--year yyyy]
               [--dry-run] [--json] [--mailto addr] [--config file]
-overfull pages <range> [--pdf file] [--out dir] [--dpi n] [--json] [--config file]
+overfull pages <range> [--main file] [--pdf file] [--out dir] [--dpi n] [--json] [--config file]
 overfull diff [--base ref] [--main file] [--out file] [--engine auto|local|docker] [--json]
               [--config file]
 overfull explain <rule> [--json]
@@ -98,14 +98,32 @@ overfull check
 overfull check --json
 overfull check --checks build,output --fail-on warning
 overfull check --profile arxiv
+overfull check paper.tex
+overfull check refs.bib
 ```
 
 Runs the checks on the output of the last build. It reads `<jobname>.log`,
 `<jobname>.pdf` and `<jobname>.aux` and the `.bib` files, and does not build
 anything.
 
+Without `overfull.yml` and without `main:`, the main file is `main.tex` if it
+exists. Otherwise it is the one `.tex` file in the project folder (not in
+subfolders) with an uncommented `\documentclass`; the jobname is its name without
+`.tex`. If several files qualify, the one with a matching `.log` or `.pdf` is
+used; if that does not decide it, `check` exits with 2 and lists the candidates.
+Pick one with `--main file.tex` or set `main:` in `overfull.yml`. When there is
+no `overfull.yml`, `check` prints one line on stderr (not with `--json`,
+`--markdown` or `--annotations`) saying which main file and profile it assumed,
+and the JSON report gains an `assumed` object.
+
+Files can be given as arguments. A `.tex` file is the main file (like `--main`);
+`.bib`, `.log`, `.pdf` and `.aux` files work like `--bib`, `--log`, `--pdf` and
+`--aux`. When only `.bib` files are given, only the references check runs, on
+those files. Any other extension is a usage error (exit 2).
+
 | Flag | Effect |
 | --- | --- |
+| `--main file` | Main `.tex` file. Overrides `main:` in `overfull.yml` and detection. `pages` and `diff` take it too. |
 | `--checks a,b` | Run only these checks: `build`, `output`, `references`, `accessibility`, `venue`. |
 | `--profile p` | Use this venue profile instead of the one in `overfull.yml`: `generic`, `thesis`, `paper`, `arxiv`, `double-blind`. |
 | `--offline` | Do not look references up online. The references check is skipped. Missing keys and `.bib` syntax errors are still reported. |
@@ -253,11 +271,12 @@ overfull doctor --json
 
 Reports which tools are available (Node.js, latexmk, LuaLaTeX, Biber, poppler,
 veraPDF, latexdiff, Git, Docker), whether the Docker image is pulled, whether
-`api.crossref.org` is reachable, whether `overfull.yml` is valid, and what is
+`api.crossref.org` answers (any HTTP response prints "reachable"; `--json` also
+has the status code), whether `overfull.yml` is valid, and what is
 disabled without each missing tool. It exits with 1 when nothing can build the
 document: no local TeX Live (`latexmk`) and no usable Docker image. Other missing
 tools only limit what can run, and the exit code stays 0. `--json` prints
-`{"canBuild", "message", "items": [{"name", "ok", "detail", "needFor"?}]}`.
+`{"canBuild", "message", "items": [{"name", "ok", "detail", "needFor"?, "status"?}]}`.
 `--config file` checks a different config file.
 
 ## Exit codes
@@ -283,7 +302,7 @@ Every command prints JSON on stdout with `--json`:
 | `pages` | `{pages: [{page, file}]}`. |
 | `diff` | `{pdf, base, sha, complete}`. |
 | `explain <rule>` | `{id, check, severity, title, summary, fix, corpus?}`. With `--list`, an array of these. |
-| `doctor` | `{canBuild, message, items: [{name, ok, detail, needFor?}]}`. |
+| `doctor` | `{canBuild, message, items: [{name, ok, detail, needFor?, status?}]}`. `status` is the HTTP status of the CrossRef probe. |
 
 Failures that the command itself reports (a failed build, a page that cannot be
 rendered, a diff that cannot be built) print `{"error": {"code", "message"}}` and
@@ -346,6 +365,7 @@ a real report has one entry per check that ran.
 | `tool` | `"overfull"` | |
 | `version` | string | Overfull version. |
 | `target` | string? | The PDF that was checked, or the main file when there is no PDF. |
+| `assumed` | object? | Only when there is no `overfull.yml`: `{main, mainSource, jobname, profile, bib}`, what the run assumed. `mainSource` is `--main`, `main.tex`, `detected` or `default`. |
 | `status` | `pass` \| `warn` \| `fail` | Worst status of the checks that ran. Skipped checks do not count. |
 | `checks[].check` | string | `build`, `output`, `references`, `accessibility`, `venue`. |
 | `checks[].status` | `pass` \| `warn` \| `fail` \| `skipped` | `skipped` has `skippedReason`. |

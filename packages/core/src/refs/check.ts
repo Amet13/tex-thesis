@@ -214,6 +214,20 @@ function authorProvidedProblem(r: RefResult, entry?: BibEntry): Problem {
   };
 }
 
+/**
+ * One line per source that could not answer, each ending in a full stop so the
+ * lines also read well when a renderer joins them: `CrossRef: timed out after 4000 ms.`
+ */
+function failureLines(r: RefResult): string | undefined {
+  if (!r.failures?.length) return undefined;
+  return r.failures
+    .map(
+      (f) =>
+        `${sourceName(f.source)}: ${f.reason.replace(/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:: | (?=answered|returned))/, '')}.`,
+    )
+    .join('\n');
+}
+
 function problemFor(r: RefResult, entry?: BibEntry, requireProvenance = false): Problem | null {
   if (r.status !== 'verified' && r.status !== 'mismatch' && entry && isAuthorProvided(entry))
     return r.reason === 'offline' || r.reason === 'skipped by author'
@@ -297,24 +311,33 @@ function problemFor(r: RefResult, entry?: BibEntry, requireProvenance = false): 
         fix: `Compare the entry with the record${r.matched?.doi ? ` (doi ${r.matched.doi})` : ''} and correct it, or replace it with \`${citeHint(r, entry)}\`.`,
       };
     }
-    case 'unverifiable':
+    case 'unverifiable': {
+      const why = r.reason?.replace(/ \(lookup incomplete: .*\)$/, '');
+      const lines = failureLines(r);
       return {
         ...common,
         rule: 'reference-unverifiable',
         severity: 'info',
-        message: `\`${r.key}\` could not be checked automatically${r.reason ? ` (${r.reason})` : ''}`,
+        message: `\`${r.key}\` could not be checked automatically${why ? `: ${why}` : ''}`,
+        ...(lines ? { detail: `The lookup was incomplete. ${lines}` } : {}),
         fix: 'Check this entry by hand; add a DOI where one exists.',
       };
-    case 'error':
+    }
+    case 'error': {
+      const lines = failureLines(r);
       return {
         ...common,
         rule: 'reference-lookup-failed',
         severity: 'warning',
-        message: `\`${r.key}\` could not be checked: ${r.reason ?? 'lookup failed'}`,
-        detail:
-          'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
+        message: lines
+          ? `\`${r.key}\` could not be checked because ${failedText(r)} did not answer`
+          : `\`${r.key}\` could not be checked: ${r.reason ?? 'lookup failed'}`,
+        detail: lines
+          ? `${lines} A network problem is not evidence against the reference.`
+          : 'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
         fix: `${failedText(r)} could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with \`overfull cite <doi | arXiv:id>\`.`,
       };
+    }
   }
 }
 
@@ -368,7 +391,10 @@ export interface RefsCheckOptions {
 function summaryOf(results: RefResult[], stats: Record<string, number>): string {
   const parts: string[] = [];
   if (stats.notFound) parts.push(`${stats.notFound} not found`);
-  if (stats.mismatch) parts.push(`${stats.mismatch} with differing metadata`);
+  const differing = (stats.mismatch ?? 0) - (stats.wrongWork ?? 0);
+  if (differing) parts.push(`${differing} with differing metadata`);
+  if (stats.wrongWork)
+    parts.push(`${stats.wrongWork} with an identifier that points to another work`);
   if (stats.error) parts.push(`${stats.error} could not be checked`);
   if (stats.unverifiable) parts.push(`${stats.unverifiable} not checkable automatically`);
   const head = `${stats.verified} of ${results.length} references verified`;
@@ -437,6 +463,8 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
     unverifiable: results.filter((r) => r.status === 'unverifiable').length,
     error: results.filter((r) => r.status === 'error').length,
   };
+  const wrongWork = results.filter((r) => r.status === 'mismatch' && r.wrongWork).length;
+  if (wrongWork) stats.wrongWork = wrongWork;
   const problems = [
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...(opts.extra ?? []),

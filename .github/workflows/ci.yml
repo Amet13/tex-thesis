@@ -34,6 +34,8 @@ jobs:
       - run: pnpm test
       - name: Templates are in sync with skills/ and shared/
         run: pnpm templates:check
+      - name: Venue profiles are valid and the generated module is current
+        run: pnpm venues:check
       - name: The image pins the same pnpm as packageManager
         run: |
           want="$(jq -r .packageManager package.json)"
@@ -172,3 +174,23 @@ jobs:
       - run: pnpm --filter site build
       - run: pnpm --filter site exec playwright install --with-deps chromium
       - run: pnpm --filter site test:e2e
+
+  installers:
+    name: Installers (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-26.04, macos-26, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: install.sh
+        if: runner.os != 'Windows'
+        run: sh scripts/test-install.sh
+      - name: install.ps1
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-install.ps1

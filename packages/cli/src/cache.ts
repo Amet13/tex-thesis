@@ -63,6 +63,21 @@ export class MemoryCache implements RefCache {
   save(): void {}
 }
 
+/** Entries older than the longest lifetime (30 days for a record) are dropped on save. */
+const PRUNE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Newest `cachedAt` of a stored value (a number, or a per-source map for title searches). */
+function storedAt(value: unknown): number | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const at = (value as { cachedAt?: unknown }).cachedAt;
+  if (typeof at === 'number') return at;
+  if (at && typeof at === 'object') {
+    const times = Object.values(at).filter((t): t is number => typeof t === 'number');
+    return times.length ? Math.max(...times) : undefined;
+  }
+  return undefined;
+}
+
 /** A JSON-file-backed RefCache. Call `save()` once at the end; failures to save are ignored. */
 export class FileCache implements RefCache {
   private data: Record<string, unknown> = {};
@@ -89,6 +104,11 @@ export class FileCache implements RefCache {
 
   save(): void {
     if (!this.dirty) return;
+    const now = Date.now();
+    for (const [key, value] of Object.entries(this.data)) {
+      const at = storedAt(value);
+      if (at !== undefined && now - at > PRUNE_AFTER_MS) delete this.data[key];
+    }
     try {
       mkdirSync(dirname(this.path), { recursive: true });
       writeFileSync(this.path, `${JSON.stringify(this.data, null, 1)}\n`);

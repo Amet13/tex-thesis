@@ -182,6 +182,13 @@ function sourcesText(sources: RefSource[]): string {
   return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
 }
 
+/** One entry per source (its last error), in the order the sources first failed. */
+function lastFailures(failures: SourceFailure[]): SourceFailure[] {
+  const bySource = new Map<RefSource, SourceFailure>();
+  for (const f of failures) bySource.set(f.source, f);
+  return [...bySource.values()];
+}
+
 function failuresText(failures: SourceFailure[]): string {
   return failures.map((f) => f.reason).join('; ');
 }
@@ -264,6 +271,7 @@ function noMatch(
     const failed = ev.failures.length ? ` (lookup incomplete: ${failuresText(ev.failures)})` : '';
     return {
       ...withSearched,
+      ...(ev.failures.length ? { failures: lastFailures(ev.failures) } : {}),
       status: 'unverifiable',
       reason: `no match found, but ${why}${failed}`,
     };
@@ -272,7 +280,7 @@ function noMatch(
     const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
-      ...(failed.length ? { failed } : {}),
+      ...(failed.length ? { failed, failures: lastFailures(ev.failures) } : {}),
       status: 'error',
       reason: `lookup incomplete: ${failuresText(ev.failures) || 'no source answered'}`,
     };
@@ -375,8 +383,10 @@ export async function verifyEntries(
   }
   const ctx: Ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
+  let done = 0;
   return runPool(entries, opts.concurrency ?? 4, async (e) => {
     const result = await verifyEntry(e, ctx, ignore);
+    opts.onProgress?.(++done, entries.length);
     return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
   });
 }

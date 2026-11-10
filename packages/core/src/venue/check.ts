@@ -2,7 +2,11 @@ import { type CheckResult, statusOf } from '../types.js';
 import { anonymityProblems } from './anonymity.js';
 import { arxivProblems } from './arxiv.js';
 import { disclosureProblems } from './disclosure.js';
+import { layoutProblems } from './layout.js';
+import { anonymityLinkProblems } from './links.js';
 import { pageLimitProblems, pageLimitText, paperSizeProblems } from './pages.js';
+import { staleProfileProblems } from './stale.js';
+import { styleFileProblems } from './style-file.js';
 import type { VenueContext, VenueProfile } from './types.js';
 
 /** Runs the venue rules a profile enables. */
@@ -18,9 +22,12 @@ export function venueCheck(profile: VenueProfile, ctx: VenueContext): CheckResul
   const problems = [
     ...pageLimitProblems(profile, ctx),
     ...paperSizeProblems(profile, ctx),
-    ...(profile.anonymous ? anonymityProblems(ctx) : []),
+    ...(profile.anonymous ? [...anonymityProblems(ctx), ...anonymityLinkProblems(ctx)] : []),
+    ...styleFileProblems(profile, ctx.texFiles ?? []),
+    ...layoutProblems(profile, ctx),
     ...disclosureProblems(profile.disclosure, ctx),
     ...(profile.arxiv ? arxivProblems(ctx) : []),
+    ...staleProfileProblems(profile, ctx.now ?? new Date()),
   ];
   const stats: Record<string, number> = {};
   if (ctx.facts) stats.pages = ctx.facts.pageCount;

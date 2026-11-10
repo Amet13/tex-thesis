@@ -16,6 +16,7 @@
     "corpus:verify": "node scripts/corpus.mjs --verify",
     "templates:sync": "node scripts/sync-templates.mjs",
     "templates:check": "node scripts/sync-templates.mjs --check",
+    "venues:check": "node scripts/build-venues.mjs --check",
     "standalone": "node scripts/build-standalone.mjs"
   },
   "devDependencies": {
