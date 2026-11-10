@@ -1,0 +1,24 @@
+id: iclr-2027
+name: ICLR 2027
+year: 2027
+source:
+  - https://iclr.cc/Conferences/2027/CallForPapers
+  - https://iclr.cc/Conferences/2027/AuthorGuidelines
+  - https://iclr.cc/Conferences/2027/AIPolicyForAuthors
+checkedOn: 2026-11-10
+extends: double-blind
+pageLimit:
+  max: 9
+  endLabel: overfull:main-end
+  counts: Main text at submission
+  excludes: [References, AI use statement, Optional ethics statement (at most 1 page)]
+anonymous: true
+disclosure: required
+styleFiles:
+  - name: iclr2027_conference.sty
+    sha256: 797deef41724e93761426ac0cbcca46279a91cc650dd1f0ce76a4f08d2098ea6
+notes: >-
+  The page limit is 10 for the discussion phase and the camera-ready version. A
+  mandatory AI use statement section does not count toward the limit. Style files
+  are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded
+  on 2026-11-10 (file dated 2026-07-28 in the archive).

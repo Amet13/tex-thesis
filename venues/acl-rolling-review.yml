@@ -1,0 +1,23 @@
+id: acl-rolling-review
+name: ACL Rolling Review (long papers)
+year: rolling
+source:
+  - https://aclrollingreview.org/cfp
+  - https://acl-org.github.io/ACLPUB/formatting.html
+checkedOn: 2026-11-10
+extends: double-blind
+paper: a4
+pageLimit:
+  max: 8
+  endLabel: overfull:main-end
+  counts: Content, including figures and tables
+  excludes: [Limitations (required section), Ethical considerations, References]
+anonymous: true
+disclosure: recommended
+notes: >-
+  Short papers have 4 pages of content. Final versions of long papers get one more page
+  (9). Missing a Limitations section is a desk-rejection reason. Use of generative AI for
+  writing or coding must be disclosed in the Responsible NLP Checklist, with details in
+  the Acknowledgements; some uses (language polishing, short-form input assistance) need
+  no disclosure. The official style files are at https://github.com/acl-org/acl-style-files
+  (not reachable from this session, so no file name or hash is recorded).

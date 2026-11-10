@@ -83,6 +83,25 @@ A profile whose `checkedOn` is more than 14 months old adds an info note,
 `venue-profile-stale`: it may be out of date. Read the venue's current pages
 (listed in the note) before you submit.
 
+## Venues included
+
+Profiles in the repository's `venues/` folder. Each was read from the venue's
+own official pages on the day shown; the pages are listed in the `source` field
+of its file. Rules change every year, so read the venue's call for papers or
+author instructions before you submit: the profile is a starting point, and
+fields the venue's pages did not state are left out.
+
+| Id | Venue | Edition | Last checked |
+| --- | --- | --- | --- |
+| `neurips-2026` | NeurIPS main track | 2026 | 2026-11-10 |
+| `iclr-2027` | ICLR | 2027 | 2026-11-10 |
+| `icml-2026` | ICML | 2026 | 2026-11-10 |
+| `cvpr-2027` | CVPR | 2027 | 2026-11-10 |
+| `aaai-2027` | AAAI main technical track | 2027 | 2026-11-10 |
+| `acl-rolling-review` | ACL Rolling Review (long papers) | rolling | 2026-11-10 |
+| `emnlp-2026` | EMNLP main conference | 2026 | 2026-11-10 |
+| `springer-lncs` | Springer LNCS and related proceedings series | rolling | 2026-11-10 |
+
 ## Venue fields
 
 ```yaml
