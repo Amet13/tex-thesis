@@ -71,7 +71,8 @@ jobs:
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$VERSION" > /dev/null 2>&1; then
             echo "::error::v$VERSION is already released; bump the version first (scripts/bump-version.mjs)"; exit 1
           fi
-          ci="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&event=push" --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')"
+          # A merge made by automation starts ci with workflow_dispatch, not push.
+          ci="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA" --jq '[.workflow_runs[] | select(.conclusion == "success" and (.event == "push" or .event == "workflow_dispatch"))] | length')"
           [ "$ci" -gt 0 ] || { echo "::error::ci has not passed on $GITHUB_SHA yet; wait for it, then run again"; exit 1; }
           echo "Publishing v$VERSION from $GITHUB_SHA"
 

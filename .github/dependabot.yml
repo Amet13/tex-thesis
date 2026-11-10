@@ -25,6 +25,9 @@ updates:
       # astro check (site) does not support TypeScript 7 yet; review majors by hand.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # pnpm is pinned twice (packageManager and docker/pnpm) and must match;
+      # update-pins.yml bumps both together.
+      - dependency-name: "pnpm"
     groups:
       npm:
         patterns: ["*"]

@@ -1,0 +1,50 @@
+# Merges a pull request labelled `automerge` (Dependabot patch and minor updates, and the
+# pull requests the maintenance workflows open) once every check on its head commit has
+# passed. It runs after ci and codeql finish, never checks out the pull request's code,
+# and skips pull requests from forks.
+#
+# A merge made with GITHUB_TOKEN starts no workflows, so after merging it starts ci,
+# image, pages and regenerate on main itself.
+name: automerge
+
+on:
+  workflow_run:
+    workflows: [ci, codeql]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automerge-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch != 'main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+      checks: read
+    steps:
+      - name: Merge when every check passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          pr="$(gh pr list --head "$BRANCH" --state open --json number,headRefOid,labels,isCrossRepository \
+            --jq '[.[] | select(.isCrossRepository == false and .headRefOid == env.SHA and any(.labels[]; .name == "automerge"))][0].number // empty')"
+          if [ -z "$pr" ]; then echo "No open same-repository PR labelled automerge at $SHA."; exit 0; fi
+          pending="$(gh api "repos/$GH_REPO/commits/$SHA/check-runs?per_page=100" --paginate \
+            --jq '.check_runs[] | select(.status != "completed" or (.conclusion as $c | ["success","skipped","neutral"] | index($c) | not)) | .name')"
+          if [ -n "$pending" ]; then
+            echo "Not merging #$pr yet; waiting for or failed:"; echo "$pending"; exit 0
+          fi
+          gh pr merge "$pr" --squash --delete-branch
+          for w in ci.yml image.yml pages.yml regenerate.yml; do gh workflow run "$w" --ref main; done
+          echo "Merged #$pr and started ci, image, pages and regenerate on main."

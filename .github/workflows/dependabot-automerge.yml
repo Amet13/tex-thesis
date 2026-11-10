@@ -1,3 +1,6 @@
+# Labels Dependabot's patch and minor updates (and Docker digest updates, such as a new
+# TeX Live image) with `automerge`; automerge.yml merges them once every check passes.
+# Major updates stay open for a person. Never checks out the pull request's code.
 name: Dependabot auto-merge
 
 on:
@@ -8,12 +11,11 @@ permissions:
   contents: read
 
 jobs:
-  automerge:
+  label:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
-      contents: write
       pull-requests: write
     steps:
       - name: Fetch Dependabot metadata
@@ -21,10 +23,15 @@ jobs:
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Enable auto-merge for Dependabot PR
-        if: ${{ steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor' }}
-        run: gh pr merge --auto --squash "$PR_URL"
+      - name: Label for automerge
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
+          (steps.metadata.outputs.package-ecosystem == 'docker' && steps.metadata.outputs.update-type == '')
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create automerge --repo "$GITHUB_REPOSITORY" --color 0e8a16 \
+            --description "Merged automatically when CI passes" 2>/dev/null || true
+          gh pr edit "$PR_URL" --add-label automerge
