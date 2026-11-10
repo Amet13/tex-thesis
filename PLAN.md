@@ -185,6 +185,7 @@ only `page-limit-unchecked` is reported.
 Accept: unit test in `packages/core/test/venue.test.ts`.
 
 **A4. Reference summary and messages.** (F6, F7)
+
 - The summary counts must use the same groups as the listed problems: name
   wrong-work results as "N with an identifier that points to another work".
 - Rewrite the unverifiable/lookup-incomplete message as one sentence plus a
@@ -194,6 +195,7 @@ Accept: snapshot tests for human and Markdown formats; JSON `data` unchanged.
 
 **A5. Failing sources fail fast; progress on a terminal.** (F8)
 Files: `packages/core/src/refs/http.ts`, `verify.ts`, `packages/cli/src/check.ts`.
+
 - Circuit breaker per host: after 2 consecutive timeouts or 5xx, skip that host
   for the rest of the run (today it retries more before skipping; measure and
   fix). Connect/first-byte timeout 4 s, total 10 s.
@@ -210,6 +212,7 @@ Print "reachable" for any HTTP response and keep the status only under
 `--json`. Use a GET the API answers with 200 (*verify first*).
 
 **A7. Test and source hygiene.** (F17)
+
 - Move every test in `round*.test.ts` and `round2-leftovers.test.ts` into the
   file named after the module it tests (create files where needed). No test is
   dropped: the test count before and after must match; put both numbers in the
@@ -226,6 +229,7 @@ Files: `packages/cli/src/commands/init.ts`, `templates.ts`, new
 `packages/cli/src/adopt.ts`, tests, `docs/guide/install.md`, new
 `docs/guide/existing-project.md`.
 `overfull init --here` (alias `overfull adopt`) in an existing LaTeX folder:
+
 1. Detect: main file (A1), engine (from `.latexmkrc`, a `% !TEX program` line,
    `fontspec`/`\DocumentMetadata` use, else pdfLaTeX), bibliography files and
    backend (`\addbibresource`, `\bibliography`, biber vs bibtex), document
@@ -266,6 +270,7 @@ Accept: image job builds both for amd64 and arm64; smoke test in CI runs
 `overfull check` on the committed fixture project inside `-check`.
 
 **B4. Install without thinking.** (F15)
+
 - `install.sh` (POSIX sh) and `install.ps1` at the repository root, served
   from the site: detect OS and CPU, download the release asset, verify it
   against `SHA256SUMS`, install to `~/.local/bin` (or `%LOCALAPPDATA%`), print
@@ -280,6 +285,7 @@ Accept: `curl -fsSL <site>/install.sh | sh` on a clean container gives a
 working `overfull --version`; a tampered download fails the checksum.
 
 **B5. Overleaf path.** (F16)
+
 - Browser check accepts a project `.zip` (Overleaf "Download source") and a
   folder drop: finds the main file, the `.bib` files, a `.log` and PDF if
   present, and runs references plus the source-only venue checks. Unzip in the
@@ -301,6 +307,7 @@ Files: `packages/core/src/refs/sources/`, `verify.ts`, `lookup.ts`, fixtures in
 Add, each behind the existing source interface, each with recorded fixtures
 and a live opt-in test. *Verify first* the endpoint, the fields, whether a key
 is needed and the rate limit, and record them in the source file header:
+
 1. Semantic Scholar Graph API (works without a key at a low rate; optional
    `SEMANTIC_SCHOLAR_API_KEY`).
 2. ACL Anthology (ids like `2020.acl-main.1`, `aclanthology.org` URLs).
@@ -316,6 +323,7 @@ Accept: fixtures for at least 5 real works per new source verify offline from
 recordings; the fabricated fixture still reports every fabricated entry.
 
 **C2. New deterministic reference rules.** (F11)
+
 - `reference-retracted` (error): the matched work is retracted or withdrawn
   per CrossRef (Retraction Watch data) or arXiv. *Verify first* the fields.
 - `reference-published-version` (info): an arXiv entry whose record names a
@@ -370,6 +378,7 @@ arXiv. One pull request per two or three venues, each field with its source.
 If a venue's next call is not out, ship the latest published year and say so.
 
 **D3. Venue rules that need new checks.**
+
 - `style-file-modified` (warning): the official style file in the project
   differs from the recorded hash.
 - `layout-tampering` (warning): commands commonly used to squeeze space in the
@@ -393,6 +402,7 @@ missing `source` or `checkedOn`.
 
 **E1. Guard: block hand-written bibliography edits.** (F13)
 New command `overfull guard`:
+
 - `overfull guard --staged` (pre-commit): fails when a `.bib` change adds or
   alters an entry that neither carries valid `cite` provenance nor verifies;
   prints the `overfull cite` command to use.
@@ -425,6 +435,7 @@ Bundle into the single-file builds; measure the size increase and report it.
 Accept: an MCP client test lists the tools and runs `check` on the fixture.
 
 **E4. Evals with published numbers.** (F12)
+
 - Grow `evals/tasks/` to at least 12: fix a broken build, add five citations
   from a notes file that contains two wrong DOIs, fit the page limit,
   anonymize for review, prepare arXiv, adopt an existing project, add alt
