@@ -1,6 +1,7 @@
 ---
 import Docs from '../../layouts/Docs.astro';
 import { docHeadings, docSlug, rewriteDocLinks, sortedDocs } from '../../lib/docs';
+import { benchResultsHtml, evalResultsHtml } from '../../lib/results';
 
 export async function getStaticPaths() {
   const docs = await sortedDocs();
@@ -14,7 +15,12 @@ const current = docs.find((d) => d.id === Astro.props.id);
 if (!current) throw new Error(`Unknown doc ${Astro.props.id}`);
 const html = rewriteDocLinks(current.rendered?.html ?? '', current, import.meta.env.BASE_URL);
 const headings = docHeadings(current);
+// Measured results, rendered from the committed result files (empty until one exists).
+const slug = docSlug(current);
+const measured =
+  slug === 'accuracy' ? benchResultsHtml() : slug === 'evals' ? evalResultsHtml() : '';
 ---
 <Docs title={current.data.title} description={current.data.description ?? ''} docs={docs} current={current} headings={headings}>
   <Fragment set:html={html} />
+  {measured && <Fragment set:html={measured} />}
 </Docs>
