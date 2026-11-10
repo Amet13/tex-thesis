@@ -1,0 +1,28 @@
+id: cvpr-2027
+name: CVPR 2027
+year: 2027
+source:
+  - https://cvpr.thecvf.com/Conferences/2027/AuthorGuidelines
+  - https://media.eventhosts.cc/Conferences/CVPR2027/author-kit-CVPR2027-v1-latex.zip
+checkedOn: 2026-11-10
+extends: double-blind
+paper: letter
+pageLimit:
+  max: 8
+  endLabel: overfull:main-end
+  counts: Main text including figures and tables
+  excludes: [References, LLM Usage Statement]
+anonymous: true
+disclosure: required
+styleFiles:
+  - name: cvpr.sty
+    sha256: 1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4
+textBlock:
+  widthMm: 174.6
+notes: >-
+  Every submission needs a section titled "LLM Usage Statement" after the main text and
+  before the references; it states "No LLMs or generative AI tools were used in this
+  work" if none were. The camera-ready version must disclose AI-generated content in the
+  Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of
+  cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10.
+  Text block: 6.875 in wide, centred on US Letter (cvpr.sty).

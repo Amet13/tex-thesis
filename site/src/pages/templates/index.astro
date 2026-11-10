@@ -75,7 +75,7 @@ const md = (s: string) =>
       <aside class="marginal"><p>Licensed MIT-0. Copy a template, change anything, owe nothing, no attribution needed.</p></aside>
       <h1>Templates</h1>
       <p class="lede">Three starting points that build without errors. All use LuaLaTeX, biblatex and TeX Live 2026, keep figures reproducible from data in <code>figures/data/</code>, and build in Docker if you have no TeX installed. The thesis and paper are tagged PDF/UA-2; Beamer slides cannot be tagged yet. A fresh paper warns until you write its AI-use statement.</p>
-      <p class="tpl-pre"><span class="mark">Pre-release.</span> Until v3.0.0, run <code>init</code> from a clone: <code>node packages/cli/dist/bin.js init &lt;template&gt; &lt;dir&gt;</code>. See <a href={url('docs/install/')}>Install</a>.</p>
+      <p class="tpl-pre">Already have a document in a venue's own style? Run <code>overfull init --here</code> in it instead. See <a href={url('docs/existing-project/')}>Add Overfull to an existing project</a>.</p>
     </div>
 
     {templates.map((t) => (

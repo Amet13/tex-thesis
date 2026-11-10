@@ -10,9 +10,12 @@ import {
   notIndexedReason,
 } from './kind.js';
 import { type Assessment, assess, type BibFacts, bestAssessment, bibFacts } from './match.js';
+import { attachRetractions } from './retraction.js';
 import {
+  aclByIdCached,
   arxivByIdCached,
   type Ctx,
+  europepmcByIdCached,
   failureReason,
   resolveDoiCached,
   type SourceFailure,
@@ -27,6 +30,9 @@ const SOURCE_NAMES: Record<RefSource, string> = {
   dblp: 'dblp',
   arxiv: 'arXiv',
   openalex: 'OpenAlex',
+  semanticscholar: 'Semantic Scholar',
+  acl: 'ACL Anthology',
+  europepmc: 'Europe PMC',
 };
 
 /** Sources whose answer is needed before "no match" may become `not-found`. */
@@ -145,6 +151,73 @@ async function checkArxiv(
   }
 }
 
+/**
+ * The entry's ACL Anthology, PubMed or PubMed Central id. The record found is final
+ * like for a DOI. An id the index does not know is no evidence either way: the search
+ * goes on by title, and `not-found` needs the usual indexes to agree.
+ */
+async function checkOtherId(
+  ctx: Ctx,
+  source: 'acl' | 'europepmc',
+  label: string,
+  fetchRecord: () => Promise<WorkRecord | null>,
+  facts: BibFacts,
+  ev: Evidence,
+): Promise<Assessment | null> {
+  ev.queries.push(label);
+  try {
+    const record = await fetchRecord();
+    ev.searched.add(source);
+    if (!record) return null;
+    const a = assess(facts, record, true);
+    ev.assessments.push(a);
+    return a;
+  } catch (err) {
+    if (ctx.opts.signal?.aborted) throw err;
+    ev.failures.push({ source, reason: failureReason(err) });
+    return null;
+  }
+}
+
+async function checkOtherIds(
+  ctx: Ctx,
+  ids: Identifiers,
+  facts: BibFacts,
+  ev: Evidence,
+): Promise<Assessment | null> {
+  if (ids.aclId && sourceAllowed(ctx.opts, 'acl')) {
+    const id = ids.aclId;
+    const a = await checkOtherId(ctx, 'acl', `acl:${id}`, () => aclByIdCached(ctx, id), facts, ev);
+    if (a) return a;
+  }
+  if (sourceAllowed(ctx.opts, 'europepmc')) {
+    if (ids.pmid) {
+      const pmid = ids.pmid;
+      const a = await checkOtherId(
+        ctx,
+        'europepmc',
+        `pmid:${pmid}`,
+        () => europepmcByIdCached(ctx, { pmid }),
+        facts,
+        ev,
+      );
+      if (a) return a;
+    }
+    if (ids.pmcid) {
+      const pmcid = ids.pmcid;
+      return checkOtherId(
+        ctx,
+        'europepmc',
+        `pmcid:${pmcid}`,
+        () => europepmcByIdCached(ctx, { pmcid }),
+        facts,
+        ev,
+      );
+    }
+  }
+  return null;
+}
+
 async function searchByTitle(
   ctx: Ctx,
   facts: BibFacts,
@@ -180,6 +253,13 @@ function sourcesText(sources: RefSource[]): string {
   const names = sources.map(sourceName);
   if (names.length <= 1) return names.join('');
   return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+}
+
+/** One entry per source (its last error), in the order the sources first failed. */
+function lastFailures(failures: SourceFailure[]): SourceFailure[] {
+  const bySource = new Map<RefSource, SourceFailure>();
+  for (const f of failures) bySource.set(f.source, f);
+  return [...bySource.values()];
 }
 
 function failuresText(failures: SourceFailure[]): string {
@@ -264,6 +344,7 @@ function noMatch(
     const failed = ev.failures.length ? ` (lookup incomplete: ${failuresText(ev.failures)})` : '';
     return {
       ...withSearched,
+      ...(ev.failures.length ? { failures: lastFailures(ev.failures) } : {}),
       status: 'unverifiable',
       reason: `no match found, but ${why}${failed}`,
     };
@@ -272,7 +353,7 @@ function noMatch(
     const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
-      ...(failed.length ? { failed } : {}),
+      ...(failed.length ? { failed, failures: lastFailures(ev.failures) } : {}),
       status: 'error',
       reason: `lookup incomplete: ${failuresText(ev.failures) || 'no source answered'}`,
     };
@@ -284,6 +365,15 @@ function noMatch(
       ...withSearched,
       status: 'unverifiable',
       reason: `could not be checked here ${skippedNote}`,
+    };
+  }
+  // A paper known only from its OpenReview page (often under review or just accepted) may
+  // not be indexed yet, and OpenReview cannot be asked automatically: it is not "not found".
+  if (ids.openreviewId) {
+    return {
+      ...withSearched,
+      status: 'unverifiable',
+      reason: `no index has it yet, and OpenReview (forum ${ids.openreviewId}) cannot be checked automatically; open the link to confirm`,
     };
   }
   return {
@@ -324,7 +414,8 @@ export async function verifyEntry(
       : null) ??
     (ids.arxivId && sourceAllowed(ctx.opts, 'arxiv')
       ? await checkArxiv(ctx, ids.arxivId, facts, ev)
-      : null);
+      : null) ??
+    (await checkOtherIds(ctx, ids, facts, ev));
   const withQuery = (r: RefResult): RefResult => ({ ...r, query: ev.queries[0] ?? '' });
   if (viaId) return withQuery(withBrokenIds(fromAssessment(base, viaId, ev), ids, ev));
 
@@ -375,10 +466,14 @@ export async function verifyEntries(
   }
   const ctx: Ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
-  return runPool(entries, opts.concurrency ?? 4, async (e) => {
+  let done = 0;
+  const results = await runPool(entries, opts.concurrency ?? 4, async (e) => {
     const result = await verifyEntry(e, ctx, ignore);
+    opts.onProgress?.(++done, entries.length);
     return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
   });
+  await attachRetractions(ctx, results);
+  return results;
 }
 
 /**

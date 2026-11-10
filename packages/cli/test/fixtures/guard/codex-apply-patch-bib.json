@@ -1,0 +1,1 @@
+{"session_id":"s1","cwd":"/work/paper","hook_event_name":"PreToolUse","turn_id":"t1","model":"m","permission_mode":"default","tool_name":"apply_patch","tool_use_id":"u1","tool_input":{"command":"*** Begin Patch\n*** Update File: references.bib\n*** End Patch"}}

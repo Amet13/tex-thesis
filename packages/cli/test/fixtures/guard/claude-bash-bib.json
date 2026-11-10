@@ -1,0 +1,1 @@
+{"session_id":"abc123","cwd":"/work/paper","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo \"@misc{x}\" >> references.bib","description":"append"},"tool_use_id":"toolu_01H"}

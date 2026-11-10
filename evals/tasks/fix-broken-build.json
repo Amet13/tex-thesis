@@ -1,0 +1,34 @@
+{
+  "id": "fix-broken-build",
+  "template": "paper",
+  "title": "Fix a broken build",
+  "edits": [
+    {
+      "file": "main.tex",
+      "find": "\\input{sections/results}",
+      "replace": "\\input{sections/result}"
+    },
+    {
+      "file": "sections/introduction.tex",
+      "find": "\\emph{one clearly stated question}",
+      "replace": "\\emphasis{one clearly stated question}"
+    }
+  ],
+  "prompt": "The paper no longer builds. Find the cause of every build error and fix it with the smallest change. Do not delete any text, section or figure, and do not change the engine, packages or document class.",
+  "allowed": ["main.tex", "sections/introduction.tex", "sections/result*.tex"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": ["missing-file", "undefined-control-sequence", "tex-error"],
+    "contains": [
+      {
+        "file": "main.tex",
+        "pattern": "\\\\input\\{sections/results\\}"
+      },
+      {
+        "file": "sections/introduction.tex",
+        "pattern": "clearly stated question"
+      }
+    ]
+  }
+}

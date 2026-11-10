@@ -31,8 +31,23 @@ export function readFixture(name: string): string {
 }
 
 let store: Store | undefined;
+/**
+ * http.json (record.mjs) plus http-sources.json (record-sources.mjs: ACL Anthology, Europe PMC,
+ * Semantic Scholar, CrossRef retraction data), merged. The second file is optional.
+ */
 function loadStore(): Store {
-  store ??= JSON.parse(readFixture('http.json')) as Store;
+  if (store) return store;
+  const main = JSON.parse(readFixture('http.json')) as Store;
+  let extra: Partial<Store> = {};
+  try {
+    extra = JSON.parse(readFixture('http-sources.json')) as Partial<Store>;
+  } catch {
+    // not recorded yet
+  }
+  store = {
+    requests: { ...main.requests, ...(extra.requests ?? {}) },
+    hostFallbacks: { ...main.hostFallbacks, ...(extra.hostFallbacks ?? {}) },
+  };
   return store;
 }
 

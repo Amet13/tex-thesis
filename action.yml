@@ -46,11 +46,17 @@ inputs:
     description: Write a Markdown report to the job summary.
     required: false
     default: 'true'
+  sarif:
+    description: Path to write a SARIF 2.1.0 file, relative to the workspace (for github/codeql-action/upload-sarif). Empty means no file.
+    required: false
+    default: ''
 outputs:
   status:
     description: 'Overall status: pass, warn or fail.'
   report:
     description: Path to the JSON report (in $RUNNER_TEMP).
+  sarif:
+    description: Path to the SARIF file, when the sarif input is set.
 runs:
   using: node24
   main: action/dist/index.js

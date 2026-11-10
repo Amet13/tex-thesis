@@ -34,6 +34,10 @@ jobs:
       - run: pnpm test
       - name: Templates are in sync with skills/ and shared/
         run: pnpm templates:check
+      - name: Venue profiles are valid and the generated module is current
+        run: pnpm venues:check
+      - name: Every eval task and variant can be prepared
+        run: node evals/run.mjs --dry-run
       - name: The image pins the same pnpm as packageManager
         run: |
           want="$(jq -r .packageManager package.json)"
@@ -131,6 +135,35 @@ jobs:
           # Same cache as image.yml's amd64 build: PRs reuse the layers from main.
           cache-from: type=gha,scope=overfull-linux-amd64
           cache-to: type=gha,scope=overfull-linux-amd64,mode=max
+      - name: Build the check-only image (no TeX Live)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: check
+          load: true
+          tags: overfull:ci-check
+          cache-from: type=gha,scope=check-linux-amd64
+      - name: The check-only image checks a built project and has no TeX
+        run: |
+          docker run --rm overfull:ci-check sh -c 'overfull --version && verapdf --version && ! command -v lualatex'
+          code=0
+          docker run --rm -v "$PWD/packages/cli/test/fixtures/project:/work" -w /work \
+            overfull:ci-check overfull check --offline || code=$?
+          echo "overfull check exit code: $code"
+          test "$code" -le 1
+      - name: Build the medium image (TeX Live medium scheme)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: overfull
+          build-args: TEX_FLAVOR=medium
+          load: true
+          tags: overfull:ci-medium
+          cache-from: type=gha,scope=medium-linux-amd64
+      - name: Templates build and pass their own preflight in the medium image
+        run: bash scripts/e2e-templates.sh overfull:ci-medium out-medium
       - name: Corpus reproduces every rule on TeX Live 2026
         run: docker run --rm -v "$PWD:/repo" -w /repo -e OVERFULL_TEX_LOCAL=1 overfull:ci node scripts/corpus.mjs --verify
       - name: Templates build and pass their own preflight
@@ -172,3 +205,23 @@ jobs:
       - run: pnpm --filter site build
       - run: pnpm --filter site exec playwright install --with-deps chromium
       - run: pnpm --filter site test:e2e
+
+  installers:
+    name: Installers (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-26.04, macos-26, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: install.sh
+        if: runner.os != 'Windows'
+        run: sh scripts/test-install.sh
+      - name: install.ps1
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-install.ps1

@@ -1,5 +1,6 @@
 import { CHECK_IDS } from '../types.js';
-import type { InlineProfile, VenueProfile } from './types.js';
+import type { InlineProfile, VenueProfile, VenueProfileData } from './types.js';
+import { venueProfileData } from './venues.generated.js';
 
 const ALL_CHECKS = [...CHECK_IDS];
 
@@ -57,30 +58,20 @@ export const builtinProfiles: Record<string, VenueProfile> = {
 };
 
 export class UnknownProfileError extends Error {
-  constructor(name: string) {
+  constructor(name: string, extra: Record<string, VenueProfileData> = venueProfileData) {
+    const venues = Object.keys({ ...venueProfileData, ...extra });
     super(
-      `Unknown profile "${name}". Built-in profiles: ${Object.keys(builtinProfiles).join(', ')}`,
+      `Unknown profile "${name}". Built-in profiles: ${Object.keys(builtinProfiles).join(', ')}` +
+        (venues.length ? `. Venue profiles: ${venues.join(', ')}` : ''),
     );
     this.name = 'UnknownProfileError';
   }
 }
 
-function builtin(name: string): VenueProfile {
-  const p = builtinProfiles[name];
-  if (!p) throw new UnknownProfileError(name);
-  return p;
-}
+type Registry = Record<string, VenueProfileData>;
 
-/**
- * Resolves a profile by name, or an inline profile whose fields override a
- * built-in (`extends`, default `generic`; or `id` when it names a built-in).
- * Throws `UnknownProfileError` for unknown names.
- */
-export function resolveProfile(nameOrInline: string | InlineProfile): VenueProfile {
-  if (typeof nameOrInline === 'string') return { ...builtin(nameOrInline) };
-  const { extends: base, ...inline } = nameOrInline;
-  const baseName = base ?? (inline.id && builtinProfiles[inline.id] ? inline.id : 'generic');
-  const parent = builtin(baseName);
+/** Merges `inline` over `parent`; `pageLimit` merges field by field. */
+function merge(parent: VenueProfile, inline: Partial<VenueProfile>): VenueProfile {
   const merged: VenueProfile = { ...parent };
   for (const [k, v] of Object.entries(inline)) {
     if (v !== undefined) (merged as unknown as Record<string, unknown>)[k] = v;
@@ -88,4 +79,40 @@ export function resolveProfile(nameOrInline: string | InlineProfile): VenueProfi
   if (inline.pageLimit) merged.pageLimit = { ...parent.pageLimit, ...inline.pageLimit };
   if (!inline.id) merged.id = parent.id;
   return merged;
+}
+
+/** True when `name` is a built-in profile or a venue profile. */
+function known(name: string, venues: Registry): boolean {
+  return Object.hasOwn(builtinProfiles, name) || Object.hasOwn(venues, name);
+}
+
+function lookup(name: string, venues: Registry): VenueProfile {
+  const built = Object.hasOwn(builtinProfiles, name) ? builtinProfiles[name] : undefined;
+  if (built) return { ...built };
+  const data = Object.hasOwn(venues, name) ? venues[name] : undefined;
+  if (!data) throw new UnknownProfileError(name, venues);
+  const { extends: base, ...fields } = data;
+  const parent = lookup(base ?? 'generic', venues);
+  const withDescription = {
+    description: `${data.name}${data.year !== undefined ? ` (${data.year})` : ''}`,
+    ...fields,
+  };
+  return merge(parent, withDescription);
+}
+
+/**
+ * Resolves a profile by name, or an inline profile whose fields override a
+ * built-in or venue profile (`extends`, default `generic`; or `id` when it names
+ * one). Venue profiles come from `venues/*.yml` (compiled into
+ * `venues.generated.ts`); `venues` replaces that set, which tests use.
+ * Throws `UnknownProfileError` for unknown names.
+ */
+export function resolveProfile(
+  nameOrInline: string | InlineProfile,
+  venues: Registry = venueProfileData,
+): VenueProfile {
+  if (typeof nameOrInline === 'string') return lookup(nameOrInline, venues);
+  const { extends: base, ...inline } = nameOrInline;
+  const baseName = base ?? (inline.id && known(inline.id, venues) ? inline.id : 'generic');
+  return merge(lookup(baseName, venues), inline);
 }

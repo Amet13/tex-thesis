@@ -1,0 +1,36 @@
+{
+  "id": "adopt-existing-project",
+  "project": "packages/cli/test/fixtures/adopt/acm-biblatex",
+  "title": "Adopt an existing project",
+  "prompt": "This is an existing ACM-style paper that has no Overfull setup. Set the project up so that `overfull build` and `overfull check` work on it, without changing the document class, the bibliography style, the text or the bibliography. Run the check and tell me what it reports.",
+  "allowed": [
+    "overfull.yml",
+    ".gitignore",
+    ".github/**",
+    "Makefile",
+    ".latexmkrc",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".agents/**",
+    ".claude/**",
+    ".cursor/**"
+  ],
+  "expect": {
+    "status": ["pass", "warn", "fail"],
+    "maxErrors": 1,
+    "maxUnverified": 1,
+    "noRules": ["undefined-control-sequence", "missing-file", "missing-package", "tex-error"],
+    "files": ["overfull.yml"],
+    "contains": [
+      {
+        "file": "overfull.yml",
+        "pattern": "main:\\s*main\\.tex"
+      },
+      {
+        "file": "overfull.yml",
+        "pattern": "references\\.bib"
+      }
+    ]
+  }
+}

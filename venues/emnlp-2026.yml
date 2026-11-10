@@ -1,0 +1,24 @@
+id: emnlp-2026
+name: EMNLP 2026 (main conference)
+year: 2026
+source:
+  - https://2026.emnlp.org/calls/main_conference_papers/
+  - https://aclrollingreview.org/cfp
+  - https://acl-org.github.io/ACLPUB/formatting.html
+checkedOn: 2026-11-10
+extends: double-blind
+paper: a4
+pageLimit:
+  max: 8
+  endLabel: overfull:main-end
+  counts: Content, including figures and tables
+  excludes: [Limitations (required section), Ethical considerations, References]
+anonymous: true
+disclosure: recommended
+notes: >-
+  Papers go through ACL Rolling Review and follow all ARR submission requirements; the
+  EMNLP page lists long papers (8 pages) and short papers (4 pages). Final versions get
+  one additional page (9 for long papers, 5 for short papers). Exclusions and the A4 size
+  are from the ARR call and the ACL formatting guidelines it links. Writing-assistance
+  disclosure follows the ARR policy. No style file name or hash is recorded because the
+  official style repository was not reachable from this session.

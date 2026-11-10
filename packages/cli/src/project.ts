@@ -1,4 +1,14 @@
-import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import {
+  closeSync,
+  existsSync,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+} from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import type { TexFile } from '@overfull/core';
 import { UsageError } from './io.js';
@@ -150,4 +160,80 @@ export function readAux(root: string, jobname: string, auxDir = '.'): string | u
     if (extra) parts.push(extra);
   }
   return parts.join('\n');
+}
+
+export interface MainDetection {
+  /** The chosen main file, or undefined when there is none or it is ambiguous. */
+  main?: string;
+  /** How it was found. */
+  how?: 'main.tex' | 'only document' | 'matching build output';
+  /** Every root-level .tex file with an uncommented \\documentclass. */
+  candidates: string[];
+}
+
+/**
+ * Finds the main file when nothing names it: `main.tex` if present, else the
+ * root-level .tex files with an uncommented `\documentclass`. One candidate is
+ * the main file. Several: the one with a matching .log or .pdf (in the root or
+ * the given output directories), if exactly one has; otherwise `main` is
+ * undefined and `candidates` lists them.
+ */
+export function detectMain(root: string, outputDirs: string[] = ['.']): MainDetection {
+  if (isRegular(join(root, 'main.tex')))
+    return { main: 'main.tex', how: 'main.tex', candidates: [] };
+  let names: string[];
+  try {
+    names = readdirSync(root).sort();
+  } catch {
+    return { candidates: [] };
+  }
+  const candidates: string[] = [];
+  for (const name of names) {
+    if (!/\.tex$/i.test(name) || isDiffArtifact(name)) continue;
+    const abs = join(root, name);
+    // Check and read through one descriptor, so the file cannot be swapped
+    // between the size check and the read.
+    let fd: number | undefined;
+    try {
+      fd = openSync(abs, 'r');
+      const st = fstatSync(fd);
+      if (!st.isFile() || st.size > MAX_TEX_BYTES) continue;
+      const text = readFileSync(fd, 'utf8').replace(/(^|[^\\])%.*$/gm, '$1');
+      if (/\\documentclass\b/.test(text)) candidates.push(name);
+    } catch {
+      /* unreadable: not a candidate */
+    } finally {
+      if (fd !== undefined) closeSync(fd);
+    }
+  }
+  if (candidates.length === 1)
+    return { main: candidates[0] as string, how: 'only document', candidates };
+  if (candidates.length > 1) {
+    const built = candidates.filter((c) => {
+      const stem = c.replace(/\.tex$/i, '');
+      return outputDirs.some((d) =>
+        ['log', 'pdf'].some((ext) => isRegular(join(root, d, `${stem}.${ext}`))),
+      );
+    });
+    if (built.length === 1)
+      return { main: built[0] as string, how: 'matching build output', candidates };
+  }
+  return { candidates };
+}
+
+function isRegular(path: string): boolean {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/** The usage error for several possible main files. */
+export function ambiguousMainError(candidates: string[]): UsageError {
+  const first = candidates[0] ?? 'paper.tex';
+  return new UsageError(
+    `More than one .tex file here has a \\documentclass: ${candidates.join(', ')}.\n` +
+      `Say which is the main file: \`overfull check --main ${first}\`, or set \`main: ${first}\` in overfull.yml.`,
+  );
 }

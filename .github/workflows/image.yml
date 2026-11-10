@@ -7,6 +7,10 @@ name: image
 #   with the "Run workflow" button
 #   main       → edge
 #   every push → sha-<short>
+# A second, much smaller image without TeX Live (CLI, veraPDF, poppler, git)
+# gets the same tags with a "-check" suffix: 3.1.0-check, 3.1-check, 3-check,
+# edge-check, sha-<short>-check. A third builds on TeX Live's medium scheme plus
+# the collections the templates need: "-medium" (3.1.0-medium, 3-medium, ...).
 # Each build is signed with a build provenance attestation.
 
 on:
@@ -51,13 +55,17 @@ env:
 
 jobs:
   build:
-    name: Build (${{ matrix.platform }})
+    name: Build (${{ matrix.target }}, ${{ matrix.platform }})
     strategy:
       fail-fast: true
       matrix:
         include:
-          - { platform: linux/amd64, runner: ubuntu-26.04, pair: linux-amd64 }
-          - { platform: linux/arm64, runner: ubuntu-26.04-arm, pair: linux-arm64 }
+          - { target: overfull, flavor: full, suffix: "", platform: linux/amd64, runner: ubuntu-26.04, pair: overfull-linux-amd64 }
+          - { target: overfull, flavor: full, suffix: "", platform: linux/arm64, runner: ubuntu-26.04-arm, pair: overfull-linux-arm64 }
+          - { target: check, flavor: full, suffix: -check, platform: linux/amd64, runner: ubuntu-26.04, pair: check-linux-amd64 }
+          - { target: check, flavor: full, suffix: -check, platform: linux/arm64, runner: ubuntu-26.04-arm, pair: check-linux-arm64 }
+          - { target: overfull, flavor: medium, suffix: -medium, platform: linux/amd64, runner: ubuntu-26.04, pair: medium-linux-amd64 }
+          - { target: overfull, flavor: medium, suffix: -medium, platform: linux/arm64, runner: ubuntu-26.04-arm, pair: medium-linux-arm64 }
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     permissions:
@@ -82,6 +90,8 @@ jobs:
             type=semver,pattern={{major}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
             type=edge,branch=main,enable=${{ !inputs.version }}
             type=sha
+          flavor: |
+            suffix=${{ matrix.suffix }}
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
@@ -93,19 +103,35 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile
-          target: overfull
+          target: ${{ matrix.target }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ steps.meta.outputs.version }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            TEX_FLAVOR=${{ matrix.flavor }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=overfull-${{ matrix.pair }}
-          cache-to: type=gha,scope=overfull-${{ matrix.pair }},mode=max
+          cache-from: type=gha,scope=${{ matrix.pair }}
+          cache-to: type=gha,scope=${{ matrix.pair }},mode=max
       - name: The image runs the CLI
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           docker run --rm "$IMAGE@$DIGEST" overfull --version
           docker run --rm "$IMAGE@$DIGEST" verapdf --version > /dev/null
+      - name: The check image has no TeX Live and checks the fixture project
+        if: matrix.target == 'check'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          if docker run --rm "$IMAGE@$DIGEST" sh -c 'command -v lualatex || command -v pdflatex'; then
+            echo "::error::the check image must not contain TeX Live"; exit 1
+          fi
+          set +e
+          docker run --rm -v "$PWD/packages/cli/test/fixtures/project:/work" -w /work "$IMAGE@$DIGEST" overfull check --offline
+          code=$?
+          echo "overfull check exited with $code"
+          # 0 (clean) and 1 (problems found) are fine; 2 is a failure to run.
+          test "$code" -le 1
       - name: Export digest
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
@@ -120,7 +146,15 @@ jobs:
           retention-days: 1
 
   publish:
+    name: Publish (${{ matrix.name }})
     needs: build
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { name: overfull, suffix: "" }
+          - { name: check, suffix: -check }
+          - { name: medium, suffix: -medium }
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
@@ -131,7 +165,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: digests-*
+          pattern: digests-${{ matrix.name }}-*
           merge-multiple: true
           path: ${{ runner.temp }}/digests
       - id: meta
@@ -146,6 +180,8 @@ jobs:
             type=semver,pattern={{major}},value=${{ inputs.version && format('v{0}', inputs.version) || '' }}
             type=edge,branch=main,enable=${{ !inputs.version }}
             type=sha
+          flavor: |
+            suffix=${{ matrix.suffix }}
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:

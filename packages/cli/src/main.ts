@@ -5,7 +5,9 @@ import { citeCommand } from './commands/cite.js';
 import { diffCommand } from './commands/diff.js';
 import { doctorCommand } from './commands/doctor.js';
 import { explainCommand } from './commands/explain.js';
-import { initCommand } from './commands/init.js';
+import { guardCommand } from './commands/guard.js';
+import { adoptCommand, initCommand } from './commands/init.js';
+import { mcpCommand } from './commands/mcp.js';
 import { pagesCommand } from './commands/pages.js';
 import { closest } from './config.js';
 import { type Io, UsageError } from './io.js';
@@ -18,6 +20,7 @@ Usage: overfull <command> [options]
 
 Commands:
   init [thesis|paper|slides] [dir]   Create a project from a template
+  adopt                              Add Overfull to the LaTeX project in this folder (init --here)
   build [main.tex]                   Compile with latexmk (local or Docker) and check the log
   check                              Check log, PDF, references, accessibility, venue rules
   cite <doi | arXiv:id | "title">    Add a verified BibTeX entry; prints its key
@@ -25,6 +28,8 @@ Commands:
   diff [--base ref]                  Build a PDF marking changes since a git revision
   explain <rule>                     What a rule means and how to fix it
   doctor                             Show which tools are available
+  guard --staged | --hook            Block hand-written .bib entries (git pre-commit, agent hooks)
+  mcp                                Run as an MCP server on stdio (for agents without a shell)
 
 Run \`overfull <command> --help\` for options. Docs: https://amet13.github.io/overfull/
 `;
@@ -33,6 +38,7 @@ type Command = (args: string[], io: Io) => Promise<number>;
 
 const COMMANDS: Record<string, Command> = {
   init: initCommand,
+  adopt: adoptCommand,
   build: buildCommand,
   check: checkCommand,
   cite: (args, io) => citeCommand(args, io),
@@ -40,6 +46,8 @@ const COMMANDS: Record<string, Command> = {
   diff: diffCommand,
   explain: explainCommand,
   doctor: doctorCommand,
+  guard: (args, io) => guardCommand(args, io),
+  mcp: (args, io) => mcpCommand(args, io, main),
 };
 
 /** Runs the CLI and returns the exit code (0 ok, 1 problems found, 2 usage/internal error). */

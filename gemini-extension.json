@@ -1,0 +1,11 @@
+{
+  "name": "overfull",
+  "version": "3.1.0",
+  "description": "Preflight checks for LaTeX papers and theses: verified citations, build fixes, page limits, accessible PDFs. Needs the overfull CLI on PATH.",
+  "mcpServers": {
+    "overfull": {
+      "command": "overfull",
+      "args": ["mcp"]
+    }
+  }
+}

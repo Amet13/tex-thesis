@@ -1,4 +1,12 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -96,4 +104,69 @@ export function writeEmbeddedTemplate(name: TemplateName, dest: string): void {
       }
     }
   }
+}
+
+/** A file of the agent kit: path relative to the project root, and its bytes. */
+export interface AgentFile {
+  path: string;
+  content: Buffer;
+}
+
+/** What an agent kit holds: AGENTS.md, the pointer files and the skills. Nothing else of a template. */
+const AGENT_KIT_FILES = new Set([
+  'AGENTS.md',
+  'CLAUDE.md',
+  'GEMINI.md',
+  '.github/copilot-instructions.md',
+  '.cursor/rules/overfull.mdc',
+  // Hook settings (guard): merged into an existing file by `init --here`, never overwritten.
+  '.claude/settings.json',
+  '.gemini/settings.json',
+  '.codex/hooks.json',
+]);
+const AGENT_KIT_PREFIX = '.agents/skills/';
+
+function isAgentKitFile(rel: string): boolean {
+  return (AGENT_KIT_FILES.has(rel) || rel.startsWith(AGENT_KIT_PREFIX)) && isTemplateFile(rel);
+}
+
+/**
+ * The agent kit for `overfull init --here`: AGENTS.md, the pointer files and
+ * `.agents/skills/`, read from a bundled template. Every template carries the
+ * same copy (`scripts/sync-templates.mjs` writes them from `shared/agents` and
+ * `skills/`, and `--check` fails on drift), so there is one source and no
+ * second copy to keep. Works from the repository, the npm package and the
+ * single-file builds (which embed `templates/`). Undefined when no template is bundled.
+ */
+export function agentKit(): AgentFile[] | undefined {
+  const all = embeddedTemplates();
+  const files: AgentFile[] = [];
+  for (const name of TEMPLATE_NAMES) {
+    files.length = 0;
+    if (all) {
+      for (const [key, value] of Object.entries(all)) {
+        if (!key.startsWith(`${name}/`) || typeof value !== 'string') continue;
+        const rel = key.slice(name.length + 1);
+        if (isAgentKitFile(rel)) files.push({ path: rel, content: Buffer.from(value, 'base64') });
+      }
+    } else {
+      const root = templatesDir();
+      const src = root ? join(root, name) : undefined;
+      if (!src || !existsSync(src)) continue;
+      const walk = (dir: string) => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const full = join(dir, entry.name);
+          if (entry.isDirectory()) walk(full);
+          else if (entry.isFile()) {
+            const rel = relative(src, full).split(sep).join('/');
+            if (isAgentKitFile(rel)) files.push({ path: rel, content: readFileSync(full) });
+          }
+        }
+      };
+      walk(src);
+    }
+    if (files.some((f) => f.path === 'AGENTS.md'))
+      return files.sort((a, b) => a.path.localeCompare(b.path));
+  }
+  return undefined;
 }

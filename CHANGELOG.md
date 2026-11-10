@@ -6,6 +6,81 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [v3.1.0] - Any project first
+
+Overfull now starts from the paper you already have: one command checks any
+LaTeX project, and templates become one way in among several.
+
+### Added
+
+- `overfull init --here` (alias `overfull adopt`) adds Overfull to an existing
+  project: it detects the main file, engine, bibliography and backend, and the
+  venue style file, and writes a commented `overfull.yml`. `--agents`, `--ci`,
+  `--make`, `--hooks` (or `--all`) add agent files, a workflow, a Makefile and
+  a git pre-commit hook. It never touches `.tex` or `.bib` files.
+- `overfull guard`: `--staged` refuses commits that add bibliography entries
+  that neither came from `overfull cite`, carry an author note, nor verify;
+  `--hook` blocks direct `.bib` edits by Claude Code, Codex CLI and Gemini CLI.
+  `.pre-commit-hooks.yaml` for the pre-commit framework.
+- `overfull mcp`: a dependency-free Model Context Protocol server (stdio) with
+  `check`, `cite`, `explain`, `pages` and `doctor`.
+- Claude Code plugin and marketplace manifests: skills, the guard hook and the
+  MCP server in one install. Gemini CLI extension (`gemini-extension.json`):
+  skills and the MCP server.
+- Venue profiles as data (`venues/*.yml`, each with its sources and check
+  date): NeurIPS 2026, ICLR 2027, ICML 2026, CVPR 2027, AAAI-27, ACL Rolling
+  Review, EMNLP 2026, Springer LNCS, IEEE conferences (IEEEtran) and ACM
+  conferences (acmart sigconf). New rules `style-file-modified`,
+  `layout-tampering`, `anonymity-link`, `venue-profile-stale`, and
+  `text-outside-block` (text in the margin, measured on the PDF against the
+  style file's text block).
+- Reference sources: Semantic Scholar, ACL Anthology (ids and URLs), Europe
+  PMC (PMID, PMCID), keyless OpenAlex when DBLP cannot be reached. New rules
+  `reference-retracted`, `reference-published-version`, `reference-duplicate`,
+  and `reference-uncited` (off by default, `references.reportUncited`).
+- `overfull check` takes files as arguments, finds the main file without
+  `overfull.yml`, says what it assumed, shows progress on a terminal, and has
+  `--main`, `--refresh` and `--sarif`.
+- Action: `sarif` input and output.
+- `ghcr.io/amet13/overfull:<version>-check`: the CLI, veraPDF and poppler
+  without TeX Live. `ghcr.io/amet13/overfull:<version>-medium`: TeX Live's
+  medium scheme plus the collections the templates need; CI builds the
+  templates in it.
+- `overfull check --watch` checks again whenever the log, PDF, `.aux` or a
+  `.bib` file changes.
+- A native build for Intel Macs (`overfull-darwin-x64`). Each release
+  attaches a Homebrew formula and a Scoop manifest generated from its
+  checksums (`packaging/`).
+- References: an entry that links to its OpenReview page and that no index
+  has yet is "could not be checked", not "not found".
+- Guide pages: How it compares (other reference checkers, from their own
+  pages), How accurate is the reference check, Does it help agents; the last
+  two render measured results once they are committed.
+- A test checks that every `overfull` command quoted in the docs exists and
+  uses real flags.
+- `install.sh` and `install.ps1`, served from the website; they verify the
+  download against `SHA256SUMS` and need no administrator rights.
+- The browser check accepts a project `.zip` (such as Overleaf's source
+  download) or a folder.
+- `bench/refs/`: a reference-check benchmark (124 real, 90 fabricated
+  entries), run monthly. `evals/`: 13 agent tasks with three variants. No
+  measured results are published yet.
+
+### Changed
+
+- A reference source that times out or fails twice is skipped for the rest of
+  the run; sources for one entry are asked at the same time. Cached records
+  last 30 days, "not found" 1 day.
+- Reference messages: wrong-work identifiers are counted separately; "could
+  not be checked" is one sentence with one line per source.
+- `page-limit-label-missing` is reported only when pages were counted.
+- `overfull doctor` reports the CrossRef API as reachable instead of showing
+  an HTTP status.
+- `AGENTS.md` no longer assumes the template layout, and is shorter (1,477 to
+  842 words) with every rule kept.
+- Guide: existing project, CI and Overleaf come first; new pages on existing
+  projects, MCP, accuracy and evals.
+
 ## [v3.0.0] - Overfull
 
 tex-thesis becomes **Overfull**, a preflight kit for LaTeX papers and theses

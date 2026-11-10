@@ -26,6 +26,8 @@ interface Item {
   name: string;
   ok: boolean;
   detail: string;
+  /** HTTP status of a network probe; only shown in the JSON output. */
+  status?: number;
   /** What the missing tool is needed for. */
   needFor?: string;
 }
@@ -51,8 +53,16 @@ async function tool(
 
 async function reachable(url: string, f: typeof fetch): Promise<Item> {
   try {
-    const res = await f(url, { method: 'HEAD', signal: AbortSignal.timeout(2000) });
-    return { name: 'api.crossref.org', ok: res.status < 500, detail: `HTTP ${res.status}` };
+    // GET, not HEAD: on 2026-11-10 api.crossref.org/works?rows=0 answered GET with 200 and HEAD with 405.
+    const res = await f(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
+    await res.body?.cancel().catch(() => {});
+    // Any HTTP response means the host is reachable; the status is kept for --json only.
+    return {
+      name: 'api.crossref.org',
+      ok: res.status < 500,
+      detail: res.status < 500 ? 'reachable' : `reachable, but it answered HTTP ${res.status}`,
+      status: res.status,
+    };
   } catch (err) {
     const reason =
       err instanceof Error && err.name === 'TimeoutError' ? 'timed out after 2s' : 'unreachable';

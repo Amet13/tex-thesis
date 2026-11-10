@@ -43,7 +43,8 @@ function check(c: CheckResult): Partial<CheckResult> {
 
 /** Pretty JSON of the `Report`, with a stable key order. */
 export function formatJson(report: Report): string {
-  const o = ordered(report, ['tool', 'version', 'target', 'status', 'checks']);
+  const o = ordered(report, ['tool', 'version', 'target', 'assumed', 'status', 'checks']);
+  if (report.assumed) o.assumed = sortKeys(report.assumed) as Report['assumed'];
   o.checks = report.checks.map((c) => check(c) as CheckResult);
   return `${JSON.stringify(o, null, 2)}\n`;
 }

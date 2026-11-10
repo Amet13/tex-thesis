@@ -3,6 +3,12 @@ import { type CheckResult, type Problem, type RuleInfo, statusOf } from '../type
 import { citeLocations } from '../venue/tex.js';
 import type { TexFile } from '../venue/types.js';
 import { isAuthorProvided } from './entry.js';
+import {
+  duplicateProblems,
+  publishedVersionProblems,
+  retractedProblems,
+  uncitedProblems,
+} from './extra.js';
 import type { RefResult } from './types.js';
 import { hasValidProvenance, isUnproven, sourceName } from './verify.js';
 
@@ -114,6 +120,42 @@ export const refsRules: RuleInfo[] = [
     fix: 'Run `overfull check` again with network access. If an index stays unreachable, the DOI or arXiv id in the entry lets doi.org or arXiv confirm it.',
   },
   {
+    id: 'reference-retracted',
+    check: 'references',
+    severity: 'error',
+    title: 'Cited work is retracted or withdrawn',
+    summary:
+      'CrossRef records a retraction or withdrawal for the work this entry matched (publisher notices and Retraction Watch data). Citing it as sound evidence misleads readers. Needs the lookup to find the work by DOI; entries without a DOI are not checked for this.',
+    fix: 'Read the retraction notice. Replace the work with one that stands, or cite it only to say it was retracted, together with the notice.',
+  },
+  {
+    id: 'reference-published-version',
+    check: 'references',
+    severity: 'info',
+    title: 'Preprint has a published version',
+    summary:
+      'The entry is an arXiv preprint, and its arXiv record names a DOI for the published article.',
+    fix: 'If you read the published version, run `overfull cite <doi>` and cite that; if you read the preprint, keep the entry.',
+  },
+  {
+    id: 'reference-duplicate',
+    check: 'references',
+    severity: 'warning',
+    title: 'Two entries for the same work',
+    summary:
+      'Two entries have the same DOI, the same arXiv id, or the same title and year. The reference list may show the work twice, under two keys. Checked offline, from the .bib file alone.',
+    fix: 'Keep one entry, use its key in every `\\cite{}`, and delete the other.',
+  },
+  {
+    id: 'reference-uncited',
+    check: 'references',
+    severity: 'info',
+    title: 'Bibliography entry that nothing cites',
+    summary:
+      'No `\\cite` in the document uses this entry. Off by default; turn it on with `references.reportUncited: true` in overfull.yml. Needs the cited keys (from the .aux or .bcf, or the .tex sources).',
+    fix: 'Cite it where it belongs, or remove the entry.',
+  },
+  {
     id: 'bib-parse-error',
     check: 'references',
     severity: 'error',
@@ -141,7 +183,7 @@ function titleHint(r: RefResult, entry?: BibEntry): string | undefined {
   return title ? `overfull cite "${title.replace(/[{}]/g, '').replace(/"/g, "'")}"` : undefined;
 }
 
-function citeHint(r: RefResult, entry?: BibEntry): string {
+export function citeHint(r: RefResult, entry?: BibEntry): string {
   // A DOI that points to another work must never be suggested: it would cite that work.
   if (r.wrongWork) return titleHint(r, entry) ?? 'overfull cite "<title>"';
   if (r.matched?.doi) return `overfull cite ${r.matched.doi}`;
@@ -212,6 +254,20 @@ function authorProvidedProblem(r: RefResult, entry?: BibEntry): Problem {
     fix: 'The author vouches for this entry; check it by hand before submission.',
     data: { key: r.key, status: r.status, authorProvided: true },
   };
+}
+
+/**
+ * One line per source that could not answer, each ending in a full stop so the
+ * lines also read well when a renderer joins them: `CrossRef: timed out after 4000 ms.`
+ */
+function failureLines(r: RefResult): string | undefined {
+  if (!r.failures?.length) return undefined;
+  return r.failures
+    .map(
+      (f) =>
+        `${sourceName(f.source)}: ${f.reason.replace(/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:: | (?=answered|returned))/, '')}.`,
+    )
+    .join('\n');
 }
 
 function problemFor(r: RefResult, entry?: BibEntry, requireProvenance = false): Problem | null {
@@ -297,24 +353,33 @@ function problemFor(r: RefResult, entry?: BibEntry, requireProvenance = false): 
         fix: `Compare the entry with the record${r.matched?.doi ? ` (doi ${r.matched.doi})` : ''} and correct it, or replace it with \`${citeHint(r, entry)}\`.`,
       };
     }
-    case 'unverifiable':
+    case 'unverifiable': {
+      const why = withoutLookupNote(r.reason);
+      const lines = failureLines(r);
       return {
         ...common,
         rule: 'reference-unverifiable',
         severity: 'info',
-        message: `\`${r.key}\` could not be checked automatically${r.reason ? ` (${r.reason})` : ''}`,
+        message: `\`${r.key}\` could not be checked automatically${why ? `: ${why}` : ''}`,
+        ...(lines ? { detail: `The lookup was incomplete. ${lines}` } : {}),
         fix: 'Check this entry by hand; add a DOI where one exists.',
       };
-    case 'error':
+    }
+    case 'error': {
+      const lines = failureLines(r);
       return {
         ...common,
         rule: 'reference-lookup-failed',
         severity: 'warning',
-        message: `\`${r.key}\` could not be checked: ${r.reason ?? 'lookup failed'}`,
-        detail:
-          'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
+        message: lines
+          ? `\`${r.key}\` could not be checked because ${failedText(r)} did not answer`
+          : `\`${r.key}\` could not be checked: ${r.reason ?? 'lookup failed'}`,
+        detail: lines
+          ? `${lines} A network problem is not evidence against the reference.`
+          : 'A network problem is not evidence against the reference; it was neither confirmed nor ruled out.',
         fix: `${failedText(r)} could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with \`overfull cite <doi | arXiv:id>\`.`,
       };
+    }
   }
 }
 
@@ -363,12 +428,19 @@ export interface RefsCheckOptions {
    * (needs `entries`). Results marked `unproven` by `verifyEntries` are always reported.
    */
   requireProvenance?: boolean;
+  /** Report entries that nothing cites (`reference-uncited`); needs `entries` and `citedKeys`. */
+  reportUncited?: boolean;
+  /** Keys the document cites. Without them `reference-uncited` cannot tell and reports nothing. */
+  citedKeys?: string[];
 }
 
 function summaryOf(results: RefResult[], stats: Record<string, number>): string {
   const parts: string[] = [];
   if (stats.notFound) parts.push(`${stats.notFound} not found`);
-  if (stats.mismatch) parts.push(`${stats.mismatch} with differing metadata`);
+  const differing = (stats.mismatch ?? 0) - (stats.wrongWork ?? 0);
+  if (differing) parts.push(`${differing} with differing metadata`);
+  if (stats.wrongWork)
+    parts.push(`${stats.wrongWork} with an identifier that points to another work`);
   if (stats.error) parts.push(`${stats.error} could not be checked`);
   if (stats.unverifiable) parts.push(`${stats.unverifiable} not checkable automatically`);
   const head = `${stats.verified} of ${results.length} references verified`;
@@ -437,6 +509,8 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
     unverifiable: results.filter((r) => r.status === 'unverifiable').length,
     error: results.filter((r) => r.status === 'error').length,
   };
+  const wrongWork = results.filter((r) => r.status === 'mismatch' && r.wrongWork).length;
+  if (wrongWork) stats.wrongWork = wrongWork;
   const problems = [
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...(opts.extra ?? []),
@@ -450,6 +524,12 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
         return Boolean(opts.requireProvenance && entry && isUnproven(entry, r));
       })
       .map((r) => unprovenProblem(r, byKey.get(r.key))),
+    ...retractedProblems(results, byKey),
+    ...publishedVersionProblems(results, byKey),
+    ...(opts.entries ? duplicateProblems(opts.entries) : []),
+    ...(opts.reportUncited && opts.entries && opts.citedKeys
+      ? uncitedProblems(opts.entries, opts.citedKeys)
+      : []),
   ];
   collapseNetworkFailures(problems, results);
   if (problems.some((p) => p.rule === 'reference-unproven')) {
@@ -476,4 +556,15 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
     summary: summaryOf(results, stats),
     stats,
   };
+}
+
+/**
+ * Drops a trailing " (lookup incomplete: …)" note. Plain string search, not a
+ * regular expression: the reason contains text from the network, and
+ * `.*\)$` backtracks quadratically on a crafted one.
+ */
+function withoutLookupNote(reason: string | undefined): string | undefined {
+  if (!reason?.endsWith(')')) return reason;
+  const at = reason.indexOf(' (lookup incomplete: ');
+  return at < 0 ? reason : reason.slice(0, at);
 }

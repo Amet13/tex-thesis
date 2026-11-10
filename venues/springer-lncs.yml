@@ -1,0 +1,24 @@
+id: springer-lncs
+name: Springer LNCS proceedings (also LNAI, LNBI, CCIS, LNBIP, LNICST, IFIP AICT)
+year: rolling
+source:
+  - https://www.springer.com/gp/computer-science/lncs/conference-proceedings-guidelines
+  - https://cms-resources.apps.public.k8s.springernature.io/springer-cms/rest/v1/content/27852130/data/Instructions%20for%20Authors%20PDF
+  - https://cms-resources.apps.public.k8s.springernature.io/springer-cms/rest/v1/content/27851904/data/LaTeX2e%20Proceedings%20Template%20ZIP
+checkedOn: 2026-11-10
+extends: paper
+accessibility: recommended
+styleFiles:
+  - name: llncs.cls
+    sha256: 04ec99046ad9867f6cd54ffd1ef8c47c767b327d1baec77536db0528cd492fa2
+textBlock:
+  widthMm: 122
+  leftMm: 47.5
+notes: >-
+  No page limit or paper size is set by Springer; the volume editors set the limit (full
+  papers are typically 12-15 pages, short papers 6-11). Springer's instructions say
+  proceedings contributions need alternative text for non-text content under WCAG; the
+  level is recommended here because Overfull's accessibility check is about the PDF, not
+  alt text. The hash is of llncs.cls v2.25 (2026/09/03) from the LaTeX2e template
+  downloaded on 2026-11-10.
+  Text block: 12.2 cm wide, 1 in + 63 pt from the left edge (llncs.cls).

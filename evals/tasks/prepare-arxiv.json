@@ -1,0 +1,35 @@
+{
+  "id": "prepare-arxiv",
+  "template": "paper",
+  "title": "Prepare the source for arXiv",
+  "setup": {
+    "overfull.yml": {
+      "profile": "arxiv"
+    }
+  },
+  "edits": [
+    {
+      "file": "sections/method.tex",
+      "find": "]{sample-photo}",
+      "replace": "]{/home/author/paper/figures/sample-photo.png}"
+    }
+  ],
+  "prompt": "Prepare this paper for submission to arXiv. arXiv compiles the uploaded source itself, with pdfLaTeX. Check the project the way arXiv would build it and fix what would break there. Do not change the content.",
+  "allowed": ["sections/**", "figures/**"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": [
+      "arxiv-absolute-path",
+      "arxiv-filename-space",
+      "arxiv-shell-escape",
+      "arxiv-eps-pdflatex"
+    ],
+    "notContains": [
+      {
+        "file": "sections/method.tex",
+        "pattern": "/home/author"
+      }
+    ]
+  }
+}

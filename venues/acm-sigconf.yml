@@ -1,0 +1,20 @@
+id: acm-sigconf
+name: ACM conference proceedings (acmart, sigconf format)
+year: rolling
+source:
+  - https://ctan.org/pkg/acmart
+  - https://mirrors.ctan.org/macros/latex/contrib/acmart/acmart.dtx
+checkedOn: 2026-11-10
+extends: paper
+paper: letter
+styleFiles:
+  - name: acmart.cls
+textBlock:
+  widthMm: 177.9
+notes: >-
+  Each ACM conference sets its own page limit and review rules; set them in overfull.yml
+  (`venue:`) from the call for papers, and use the class option `anonymous` for double-blind
+  review. Layout from acmart v2.21 (2026/11/01): the sigconf format is US Letter with 54 pt
+  inner and outer margins, so the text block is 8.5 in minus 108 pt wide. acmart.cls is
+  generated from acmart.dtx, so no hash is recorded. ACM's own pages
+  (acm.org/publications) could not be read from the build machine.

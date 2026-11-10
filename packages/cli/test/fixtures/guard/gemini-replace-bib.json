@@ -1,0 +1,1 @@
+{"session_id":"s1","cwd":"/work/paper","hook_event_name":"BeforeTool","tool_name":"replace","tool_input":{"file_path":"references.bib","instruction":"fix year","old_string":"2020","new_string":"2021"}}

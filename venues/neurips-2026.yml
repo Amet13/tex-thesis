@@ -1,0 +1,30 @@
+id: neurips-2026
+name: NeurIPS 2026 (main track)
+year: 2026
+source:
+  - https://neurips.cc/Conferences/2026/CallForPapers
+  - https://neurips.cc/Conferences/2026/MainTrackHandbook
+  - https://media.neurips.cc/Conferences/NeurIPS2026/Formatting_Instructions_For_NeurIPS_2026.zip
+checkedOn: 2026-11-10
+extends: double-blind
+paper: letter
+pageLimit:
+  max: 9
+  endLabel: overfull:main-end
+  counts: Main text including all figures and tables
+  excludes: [References, Optional technical appendices, Mandatory paper checklist]
+anonymous: true
+disclosure: recommended
+styleFiles:
+  - name: neurips_2026.sty
+    sha256: c3fc2894e83d2517ca18b66741d6c595986d97957dc08ec08bb2125a7ec4555a
+textBlock:
+  widthMm: 139.7
+notes: >-
+  The handbook asks authors to describe agent or LLM use in the experimental setup
+  only when it is an important, original or non-standard part of the method. Accepted
+  papers get one additional content page for the camera-ready version. Paper size is
+  from the letterpaper option in the official style file (the handbook does not state
+  it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on
+  2026-11-10.
+  Text block: 5.5 in wide, centred on US Letter (geometry in neurips_2026.sty).

@@ -31,28 +31,34 @@ const samples = [
   },
 ].filter((s) => s.files.every((f) => f.text));
 ---
-<Base title="Check a LaTeX log, .bib or PDF in your browser" description="Drop a LaTeX build log, bibliography or PDF and get a plain-language report: TeX errors, undefined references, unverifiable citations, PDF accessibility. Files never leave your computer." section="check">
+<Base title="Check a LaTeX project, log, .bib or PDF in your browser" description="Drop a project .zip or folder, or a LaTeX build log, bibliography or PDF, and get a plain-language report: TeX errors, undefined references, unverifiable citations, PDF accessibility. Files never leave your computer." section="check">
   <div class="check-page">
     <p class="runhead"><span>Browser check</span></p>
     <div class="galley">
       <aside class="marginal">
-        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded. Online verification is on by default: each reference’s DOI or title is sent to CrossRef and doi.org, and nothing else. Untick “Verify references online” to keep everything on your computer.</p>
+        <p><span class="mark">Privacy.</span> Your files are read by this page and never uploaded; a .zip is unpacked here, in your browser. Online verification is on by default: each reference’s DOI or title is sent to CrossRef and doi.org, and nothing else. Untick “Verify references online” to keep everything on your computer.</p>
         <p>The full check, with veraPDF, arXiv and DBLP lookups and the venue rules from <code>overfull.yml</code>, runs from the command line: <code>overfull check</code>.</p>
       </aside>
       <h1>Check your files</h1>
-      <p class="lede">Drop a build log, a bibliography or a PDF. This page runs the same checks as the <code>overfull</code> command, with two differences: arXiv and DBLP cannot be searched from a browser, so entries only they could confirm show as “could not be checked here”; and veraPDF’s full PDF/UA validation runs only in <code>overfull check</code>.</p>
+      <p class="lede">Drop a project <code>.zip</code> (for Overleaf, the source download) or folder, or a build log, a bibliography or a PDF. This page runs the same checks as the <code>overfull</code> command, with two differences: arXiv and DBLP cannot be searched from a browser, so entries only they could confirm show as “could not be checked here”; and veraPDF’s full PDF/UA validation runs only in <code>overfull check</code>.</p>
     </div>
 
     <div class="bench">
       <form class="intake" id="intake" aria-labelledby="intake-title" novalidate>
         <h2 id="intake-title" class="intake-title">Input</h2>
         <div class="drop" id="drop" data-active="false">
-          <p class="drop-main">Drop files here</p>
-          <p class="drop-types"><code>.log</code> <code>.bib</code> <code>.aux</code> <code>.bcf</code> <code>.pdf</code> <code>.tex</code>, several at once (one PDF)</p>
-          <input id="file-input" type="file" multiple aria-label="Choose files to check" tabindex="-1" accept=".log,.bib,.aux,.bcf,.pdf,.tex,.blg,text/plain,application/pdf" class="sr-only" />
-          <button type="button" class="btn" id="choose">Choose files</button>
+          <p class="drop-main">Drop files, a .zip or a folder here</p>
+          <p class="drop-types"><code>.zip</code> <code>.log</code> <code>.bib</code> <code>.aux</code> <code>.bcf</code> <code>.pdf</code> <code>.tex</code>, several at once (one PDF)</p>
+          <input id="file-input" type="file" multiple aria-label="Choose files to check" tabindex="-1" accept=".log,.bib,.aux,.bcf,.pdf,.tex,.blg,.zip,text/plain,application/pdf,application/zip" class="sr-only" />
+          <input id="folder-input" type="file" aria-label="Choose a project folder to check" tabindex="-1" class="sr-only" />
+          <button type="button" class="btn" id="choose">Choose files or a .zip</button>
+          <button type="button" class="btn ghost" id="choose-folder" hidden>Choose a folder</button>
         </div>
         <p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
+        <div class="main-pick" id="main-pick" hidden>
+          <label for="main-select">Main file</label>
+          <select id="main-select" class="field"></select>
+        </div>
 
         <details class="paste">
           <summary>Paste a build log instead</summary>
@@ -188,6 +194,14 @@ const samples = [
   }
   .drop-types code {
     font-size: 0.72rem;
+  }
+  .drop .btn + .btn {
+    margin-left: 0.5rem;
+  }
+  .main-pick {
+    display: grid;
+    gap: 0.25rem;
+    font-size: var(--s-1);
   }
   .paste summary {
     cursor: pointer;

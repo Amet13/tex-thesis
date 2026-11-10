@@ -21,6 +21,7 @@ agent tools for those facts and a clear definition of done.
 | `.cursor/rules/overfull.mdc` | An always-on Cursor rule pointing to `AGENTS.md`. |
 | `.agents/skills/` | Task instructions in the [Agent Skills](https://agentskills.io) format, one folder per task. |
 | `.claude/skills/` | A symlink to `.agents/skills/` for Claude Code. |
+| `.claude/settings.json`, `.gemini/settings.json` | The [guard](#guard) hook for Claude Code and Gemini CLI. |
 | `overfull.yml` | Project facts: main file, bibliography, profile, venue rules. |
 
 The skills cover starting a paper (`start-paper`), adding citations
@@ -123,3 +124,124 @@ does not have.
 
 If an agent breaks one, the check report or the PR diff usually shows it. See
 [Responsible use](./responsible-use.md) for the reasoning.
+
+## Guard
+
+Rules in `AGENTS.md` are requests. The guard enforces the one that matters most:
+no hand-written bibliography entries. It works at two points.
+
+**In the agent.** `overfull guard --hook` answers an agent's pre-tool-use hook.
+When the agent's file tools try to write or edit a `.bib` file, the hook denies
+the call and tells the agent to use `overfull cite`. Reading a `.bib` file, and
+every other tool and file, is allowed. The template ships the hook settings for
+three agents; the formats were read from their documentation on 2026-11-10.
+
+| Agent | Settings file | Event and tools | Documentation |
+| --- | --- | --- | --- |
+| Claude Code | `.claude/settings.json` | `PreToolUse`: `Write`, `Edit`, `MultiEdit` | <https://code.claude.com/docs/en/hooks> |
+| Gemini CLI | `.gemini/settings.json` | `BeforeTool`: `write_file`, `replace` | <https://geminicli.com/docs/hooks/> |
+| Codex CLI | `.codex/hooks.json` | `PreToolUse`: `apply_patch` (files named in the patch) | <https://developers.openai.com/codex/hooks> |
+
+Codex loads project hooks only when you trust the project's `.codex/` folder.
+
+Cursor has hooks too, but its documentation does not list the input of its
+`Write` tool, and the hook that names the edited file runs after the edit and
+cannot block it, so there is no hook for Cursor yet. It still gets the rules in
+`AGENTS.md` and the pre-commit guard below.
+
+`overfull init --here --agents` writes these files. If one already exists, the
+Overfull hook is added and your other settings are kept; a file that is not
+valid JSON is left alone. The hook command does nothing when `overfull` is not
+on `PATH`, because the guard is a small command that is not run through Docker:
+
+```sh
+command -v overfull >/dev/null 2>&1 && overfull guard --hook claude || exit 0
+```
+
+It uses a POSIX shell, so on Windows it needs Git Bash or WSL. An unreadable or
+unknown payload is always allowed: a broken guard must not stop the agent's
+other tools.
+
+A shell command that writes a `.bib` file, such as `echo ... >> refs.bib`, is
+not detected. Overfull does not try to parse shell. The pre-commit guard and
+`overfull check` catch it.
+
+**At commit time.** `overfull guard --staged` compares the staged `.bib` files
+with `HEAD`, entry by entry. A new or changed entry passes when it was added by
+`overfull cite`, when it carries `note = {overfull: author-provided}` (or
+`overfull: skip`), or when the indexes confirm it. Otherwise the commit is
+refused and each entry is listed with the `overfull cite` command to use:
+
+```text
+refs.bib:12  ongaro2014search
+  not added by `overfull cite`, and no index confirms it
+  add it properly:  overfull cite "In search of an understandable consensus algorithm"
+  or, if you wrote it yourself, add to the entry:  note = {overfull: author-provided}
+```
+
+Moved entries, removed entries and whitespace or order changes pass. Use
+`--offline` to skip the lookup. Install it in one of three ways:
+
+- `overfull init --here --hooks` writes `.git/hooks/pre-commit` if there is none.
+  If one exists it is not changed and the line to add is printed.
+- With the [pre-commit](https://pre-commit.com) framework, add to
+  `.pre-commit-config.yaml`:
+
+  ```yaml
+  repos:
+    - repo: https://github.com/amet13/overfull
+      rev: v3.1.0  # a release tag
+      hooks:
+        - id: overfull-guard
+  ```
+
+- By hand: put `overfull guard --staged || exit 1` in your pre-commit hook.
+
+The author can still add an entry by hand: write it, add
+`note = {overfull: author-provided}`, and commit. That note is the author's
+statement; the agent rules forbid the agent to add it.
+
+## Install as a Claude Code plugin
+
+The repository is also a Claude Code plugin and a plugin marketplace
+(`.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`, read from
+<https://code.claude.com/docs/en/plugins-reference> and
+<https://code.claude.com/docs/en/plugin-marketplaces> on 2026-11-10). The plugin
+loads the ten skills from `skills/` (the same files the templates carry) and the
+guard hook. It needs the `overfull` command on `PATH`. In a shell:
+
+```sh
+claude plugin marketplace add amet13/overfull
+claude plugin install overfull@overfull
+```
+
+Or inside Claude Code:
+
+```text
+/plugin marketplace add amet13/overfull
+/plugin install overfull@overfull
+```
+
+Plugin skills are namespaced, for example `/overfull:add-citation`. The plugin
+does not write `AGENTS.md` or `overfull.yml` into a project; run
+`overfull init --here` for that.
+
+## Install as a Gemini CLI extension
+
+The repository is also a Gemini CLI extension (`gemini-extension.json`, format
+read from <https://geminicli.com/docs/extensions/reference/> on 2026-11-10). It
+adds the skills from `skills/` and the MCP server; the guard hook comes from the
+project's `.gemini/settings.json`, which `overfull init --here --agents` writes.
+
+```sh
+gemini extensions install https://github.com/amet13/overfull
+```
+
+Codex and Cursor package plugins differently; there is no package for them in
+this release. `overfull init --here --agents` sets up both.
+
+## Agents without a shell
+
+Desktop apps and cloud editors cannot run `overfull` in a terminal. For them,
+`overfull mcp` offers the same checks as a Model Context Protocol server. See
+[Using Overfull over MCP](./mcp.md).

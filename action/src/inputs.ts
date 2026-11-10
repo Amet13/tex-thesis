@@ -31,6 +31,8 @@ export interface ActionInputs {
   failOn: 'error' | 'warning' | 'never';
   annotations: boolean;
   summary: boolean;
+  /** Where to write the SARIF file (relative to the workspace); undefined = off. */
+  sarif: string | undefined;
   check: CheckOptions;
 }
 
@@ -67,6 +69,7 @@ export function readInputs(
     failOn: failOn as ActionInputs['failOn'],
     annotations: boolInput(env, 'annotations', true),
     summary: boolInput(env, 'summary', true),
+    sarif: input(env, 'sarif'),
     check,
   };
 }

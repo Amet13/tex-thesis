@@ -10,6 +10,7 @@ import {
 } from '@overfull/core';
 import { parse as parseYaml } from 'yaml';
 import { UsageError } from './io.js';
+import { ambiguousMainError, detectMain } from './project.js';
 import { safeImage, safeJobname, safeRelPath } from './safety.js';
 
 export const DEFAULT_IMAGE = 'ghcr.io/amet13/overfull:3';
@@ -23,6 +24,10 @@ export interface Config {
   /** Absolute path of the config file, when one was loaded. */
   file?: string;
   main: string;
+  /** Where `main` comes from, for messages and the report's `assumed` object. */
+  mainSource: 'overfull.yml' | '--main' | 'main.tex' | 'detected' | 'default';
+  /** Several possible main files and none chosen (`main` is then the default main.tex). Commands that need a main file call `requireMain`. */
+  mainCandidates?: string[];
   jobname: string;
   bib: string[];
   /** True when `bib` was found in the main file (`\\bibliography`, `\\addbibresource`), not configured. */
@@ -42,6 +47,8 @@ export interface Config {
     cache: 'user' | 'project';
     /** Require every entry to carry `x-overfull = {cite …}` provenance. */
     requireCite: boolean;
+    /** Report bibliography entries that nothing cites (`reference-uncited`, info). Off by default. */
+    reportUncited: boolean;
   };
   build: {
     engine: Engine;
@@ -240,6 +247,7 @@ export function loadConfig(
   cwd: string,
   explicit?: string,
   env: Record<string, string | undefined> = {},
+  opts: { main?: string } = {},
 ): Config {
   let file: string | undefined;
   if (explicit) {
@@ -270,10 +278,32 @@ export function loadConfig(
   const f = file ?? join(root, CONFIG_FILE);
   if (raw.main !== undefined && typeof raw.main !== 'string')
     throw new ConfigError(f, '`main` must be a file name');
-  const main = safeRelPath((raw.main as string | undefined) ?? 'main.tex');
   if (raw.jobname !== undefined && typeof raw.jobname !== 'string')
     throw new ConfigError(f, '`jobname` must be a string');
   const rc = latexmkrcDirs(root);
+  let main: string;
+  let mainSource: Config['mainSource'];
+  let mainCandidates: string[] | undefined;
+  if (opts.main !== undefined) {
+    main = safeRelPath(opts.main);
+    mainSource = '--main';
+    if (!existsSync(join(root, main))) throw new UsageError(`Main file not found: ${opts.main}`);
+  } else if (raw.main !== undefined) {
+    main = safeRelPath(raw.main as string);
+    mainSource = 'overfull.yml';
+  } else {
+    const found = detectMain(root, [
+      ...new Set(['.', rc.outDir ?? '.', rc.auxDir ?? rc.outDir ?? '.']),
+    ]);
+    if (found.main) {
+      main = found.main;
+      mainSource = found.how === 'main.tex' ? 'main.tex' : 'detected';
+    } else {
+      main = 'main.tex';
+      mainSource = 'default';
+      if (found.candidates.length > 1) mainCandidates = found.candidates;
+    }
+  }
   const jobnameSource: Config['jobnameSource'] =
     raw.jobname !== undefined ? 'overfull.yml' : rc.jobname ? '.latexmkrc' : 'main file';
   const jobname = safeJobname(
@@ -299,13 +329,16 @@ export function loadConfig(
 
   const refs = raw.references ?? {};
   if (!isObj(refs)) throw new ConfigError(f, '`references` must be a mapping');
-  checkKeys(refs, ['mailto', 'ignore', 'cache', 'requireCite'], 'references.', f);
+  checkKeys(refs, ['mailto', 'ignore', 'cache', 'requireCite', 'reportUncited'], 'references.', f);
   const cache = refs.cache ?? 'user';
   if (cache !== 'user' && cache !== 'project')
     throw new ConfigError(f, '`references.cache` must be user or project');
   if (refs.requireCite !== undefined && typeof refs.requireCite !== 'boolean')
     throw new ConfigError(f, '`references.requireCite` must be true or false');
   const requireCite = refs.requireCite === true;
+  if (refs.reportUncited !== undefined && typeof refs.reportUncited !== 'boolean')
+    throw new ConfigError(f, '`references.reportUncited` must be true or false');
+  const reportUncited = refs.reportUncited === true;
   const mailto = (typeof refs.mailto === 'string' ? refs.mailto : undefined) ?? env.OVERFULL_MAILTO;
   const ignore = refs.ignore !== undefined ? stringList(refs.ignore, 'references.ignore', f) : [];
 
@@ -335,6 +368,8 @@ export function loadConfig(
   const config: Config = {
     root,
     main,
+    mainSource,
+    ...(mainCandidates ? { mainCandidates } : {}),
     jobname,
     bib,
     bibDiscovered: raw.bib === undefined,
@@ -343,11 +378,16 @@ export function loadConfig(
     profile,
     venue: inline,
     checks,
-    references: { ...(mailto ? { mailto } : {}), ignore, cache, requireCite },
+    references: { ...(mailto ? { mailto } : {}), ignore, cache, requireCite, reportUncited },
     build: { engine, image, outDir, auxDir, outDirFromConfig: build.outDir !== undefined },
   };
   if (file) config.file = file;
   return config;
+}
+
+/** Throws a usage error when several .tex files could be the main file and none was chosen. */
+export function requireMain(config: Config): void {
+  if (config.mainCandidates) throw ambiguousMainError(config.mainCandidates);
 }
 
 export { closest };

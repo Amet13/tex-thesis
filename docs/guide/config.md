@@ -37,7 +37,7 @@ build:
 
 | Field | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `main` | path | `main.tex` | Main `.tex` file. |
+| `main` | path | `main.tex`, else the only `.tex` file in the project folder with a `\documentclass` | Main `.tex` file. With several candidates and no match, `check` asks for `--main` or this key. |
 | `jobname` | string | `main` without `.tex` | Output name. Overfull looks for `<jobname>.pdf`, `<jobname>.log` and `<jobname>.aux`. Without `jobname`, `overfull build other.tex` names the output `other`. |
 | `bib` | string or list of paths | the files named by `\addbibresource` or `\bibliography` in `main`, else every `.bib` in the project folder | Bibliography files. `overfull cite` writes to the first one unless `--bib` is given (and to `references.bib` if there is none). |
 | `profile` | string | `generic` | Venue profile: `generic`, `thesis`, `paper`, `arxiv` or `double-blind`. See [Venues](./venues.md). A mapping with the `venue` fields is also accepted. |

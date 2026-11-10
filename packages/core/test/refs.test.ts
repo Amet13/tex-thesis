@@ -502,7 +502,7 @@ describe('verifyEntries', () => {
     expect(second.map((r) => r.status)).toEqual(first.map((r) => r.status));
   });
 
-  it('stores cachedAt and re-fetches stale negative answers after 30 days', async () => {
+  it('stores cachedAt and re-fetches stale negative answers', async () => {
     const map = new Map<string, unknown>();
     const cache: RefCache = { get: (k) => map.get(k), set: (k, v) => void map.set(k, v) };
     const day = 24 * 60 * 60 * 1000;
@@ -540,26 +540,26 @@ describe('verifyEntries', () => {
     const cache: RefCache = { get: (k) => map.get(k), set: (k, v) => void map.set(k, v) };
     const day = 24 * 60 * 60 * 1000;
     const doiKey = 'doi:10.1145/359545.359563';
-    map.set(doiKey, { kind: 'missing', cachedAt: Date.now() - 10 * day });
+    map.set(doiKey, { kind: 'missing', cachedAt: Date.now() - 0.5 * day });
     const f = router({ ...allEmpty, 'doi.org': () => json(clocksCsl) });
     const [fresh] = await verifyEntries(parseBib(CLOCKS), { fetch: f.fetch, cache, ...fast });
     expect(fresh?.status).toBe('not-found');
     expect(f.calls.some((c) => c.includes('doi.org'))).toBe(false);
-    // With a 7-day limit the same 10-day-old answer is stale.
+    // With a 6-hour limit the same 12-hour-old answer is stale.
     const [refetched] = await verifyEntries(parseBib(CLOCKS), {
       fetch: f.fetch,
       cache,
-      cacheMaxAgeDays: { negative: 7 },
+      cacheMaxAgeDays: { negative: 0.25 },
       ...fast,
     });
     expect(refetched?.status).toBe('verified');
-    // A positive answer 100 days old is still used; 200 days old is re-fetched.
+    // A positive answer 20 days old is still used; 40 days old is re-fetched.
     const g = router({ 'doi.org': () => json(clocksCsl) });
     const stored = map.get(doiKey) as object;
-    map.set(doiKey, { ...stored, cachedAt: Date.now() - 100 * day });
+    map.set(doiKey, { ...stored, cachedAt: Date.now() - 20 * day });
     await verifyEntries(parseBib(CLOCKS), { fetch: g.fetch, cache, ...fast });
     expect(g.calls).toHaveLength(0);
-    map.set(doiKey, { ...stored, cachedAt: Date.now() - 200 * day });
+    map.set(doiKey, { ...stored, cachedAt: Date.now() - 40 * day });
     await verifyEntries(parseBib(CLOCKS), { fetch: g.fetch, cache, ...fast });
     expect(g.calls).toHaveLength(1);
   });

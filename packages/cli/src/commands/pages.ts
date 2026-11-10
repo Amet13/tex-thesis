@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'node:path';
 import { int, parse, str } from '../args.js';
-import { loadConfig } from '../config.js';
+import { loadConfig, requireMain } from '../config.js';
 import { type Io, UsageError } from '../io.js';
 import { loadPdfjs } from '../pdf.js';
 import { insideRootForWrite } from '../safety.js';
@@ -14,6 +14,7 @@ Range: "3", "2-5", "1,4,7", "8-" (to the end). Prints the written paths.
 
 Options:
   --pdf file      PDF to render (default <jobname>.pdf)
+  --main file     Main .tex file, to find <jobname>.pdf (default from overfull.yml or detected)
   --out dir       Output directory inside the project (default .overfull/pages)
   --dpi n         Resolution (default 110)
   --json          Print {pages: [{page, file}]} (or {error}) as JSON
@@ -62,6 +63,7 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
     args,
     {
       pdf: { type: 'string' },
+      main: { type: 'string' },
       out: { type: 'string' },
       dpi: { type: 'string' },
       json: { type: 'boolean' },
@@ -75,7 +77,10 @@ export async function pagesCommand(args: string[], io: Io): Promise<number> {
   }
   const spec = positionals.join(',');
   if (!spec) throw new UsageError('Give a page range: `overfull pages 3` or `overfull pages 2-5`');
-  const config = loadConfig(io.cwd, str(values.config), io.env);
+  const config = loadConfig(io.cwd, str(values.config), io.env, {
+    ...(str(values.main) ? { main: str(values.main) as string } : {}),
+  });
+  if (!str(values.pdf)) requireMain(config);
   const pdfRel = str(values.pdf) ?? `${config.jobname}.pdf`;
   const pdf = isAbsolute(pdfRel) ? pdfRel : join(io.cwd, pdfRel);
   const pdfAtRoot = existsSync(pdf) ? pdf : join(config.root, pdfRel);

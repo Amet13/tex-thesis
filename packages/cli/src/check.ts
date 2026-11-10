@@ -30,7 +30,7 @@ import {
   verifyEntries,
 } from '@overfull/core';
 import { FileCache, MemoryCache, refsCachePath, symlinkOnPath } from './cache.js';
-import { type Config, DEFAULT_IMAGE, loadConfig } from './config.js';
+import { type Config, DEFAULT_IMAGE, loadConfig, requireMain } from './config.js';
 import { UsageError } from './io.js';
 import { readPdfFacts } from './pdf.js';
 import { listFiles, readAux, readIfExists, readTexFiles, requireRegularFile } from './project.js';
@@ -46,6 +46,8 @@ export interface CheckOptions {
   config?: string;
   checks?: CheckId[];
   profile?: string;
+  /** Main .tex file (overrides overfull.yml and detection). */
+  main?: string;
   pdf?: string;
   log?: string;
   aux?: string;
@@ -56,6 +58,10 @@ export interface CheckOptions {
   verapdf?: boolean;
   /** Cache reference lookups (default true): in the user cache dir, or `.overfull/cache` with `references.cache: project`. */
   cache?: boolean;
+  /** Skip cached reference answers and ask the indexes again; fresh answers are still stored (`--refresh`). */
+  refresh?: boolean;
+  /** Called after each entry is looked up. The CLI passes it only on an interactive stderr. */
+  progress?: (done: number, total: number) => void;
   /**
    * Where veraPDF and pdffonts run when not installed locally: `auto` (default)
    * uses the Overfull image if Docker has it, `docker` always may (pulling it),
@@ -401,14 +407,20 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
   }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
+  const semanticScholarKey = env.SEMANTIC_SCHOLAR_API_KEY;
   const refsOptions: Parameters<typeof verifyEntries>[1] = {
     ...(opts.fetch ? { fetch: opts.fetch } : {}),
     ...(mailto ? { mailto } : {}),
     ...(openalexKey ? { openalexKey } : {}),
+    ...(semanticScholarKey ? { semanticScholarKey } : {}),
     ...(cache ? { cache } : {}),
+    ...(opts.refresh ? { refresh: true } : {}),
+    ...(opts.progress ? { onProgress: opts.progress } : {}),
     offline: opts.offline ?? false,
     ignore: config.references.ignore,
     ...(config.references.requireCite ? { requireProvenance: true } : {}),
+    // The CLI asks CrossRef about retractions; the core library leaves it off by default.
+    checkRetractions: true,
   };
   const results = await verifyEntries(toVerify, refsOptions);
   cache?.save();
@@ -416,6 +428,9 @@ async function references(inp: Inputs, opts: CheckOptions): Promise<CheckResult>
     entries: toVerify,
     extra,
     requireProvenance: config.references.requireCite,
+    ...(config.references.reportUncited && keys && !citeAll
+      ? { reportUncited: true, citedKeys: keys }
+      : {}),
   });
   if (!keys) {
     result.summary =
@@ -506,7 +521,7 @@ function venue(inp: Inputs): CheckResult {
 export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   const cwd = opts.cwd ?? process.cwd();
   const env = opts.env ?? process.env;
-  const config = loadConfig(cwd, opts.config, env);
+  const config = loadConfig(cwd, opts.config, env, opts.main ? { main: opts.main } : {});
   if (opts.profile) {
     try {
       config.profile = resolveProfile({ ...config.venue, extends: opts.profile });
@@ -517,6 +532,8 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
   }
   const selected = opts.checks ?? config.checks;
   const wanted = new Set(selected);
+  // A references-only run reads .bib files and does not need to know the main file.
+  if (selected.some((c) => c !== 'references')) requireMain(config);
   const needPdf = ['output', 'accessibility', 'venue'].some((c) => wanted.has(c as CheckId));
   const inp = await gather({ ...opts, env }, config, needPdf);
   const results: CheckResult[] = [...buildAndOutput(inp, wanted)];
@@ -531,9 +548,38 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
     tool: 'overfull',
     version: VERSION,
     target,
+    ...(config.file
+      ? {}
+      : {
+          assumed: {
+            main: config.main,
+            mainSource: config.mainSource,
+            jobname: config.jobname,
+            profile: config.profile.id,
+            bib: config.bib,
+          },
+        }),
     status: reportStatus(results),
     checks: results,
   };
+}
+
+/**
+ * The file SARIF results without a source file point at: the project's main
+ * file when it exists (GitHub shows only results that have a location).
+ */
+export function sarifFallbackFile(
+  cwd: string,
+  env: Record<string, string | undefined>,
+  configPath?: string,
+  main?: string,
+): string | undefined {
+  try {
+    const cfg = loadConfig(cwd, configPath, env, main ? { main } : {});
+    return existsSync(join(cfg.root, cfg.main)) ? cfg.main : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Exit code for a report: 1 when it fails the `failOn` threshold. */

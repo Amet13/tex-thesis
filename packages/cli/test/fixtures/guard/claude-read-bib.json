@@ -1,0 +1,1 @@
+{"session_id":"abc123","cwd":"/work/paper","hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"/work/paper/references.bib"},"tool_use_id":"toolu_01G"}

@@ -6,6 +6,9 @@
 //                                each harness reads: CLAUDE.md, GEMINI.md,
 //                                .github/copilot-instructions.md, .cursor/rules/overfull.mdc)
 //   templates/<t>/.claude/skills -> ../.agents/skills   (relative symlink)
+//   shared/agents/.claude/settings.json (hooks) -> .claude-plugin/plugin.json "hooks"
+//                                (the Claude Code plugin ships the same guard hook; the plugin
+//                                 uses the repository's skills/ directly, so skills need no copy)
 //
 // Usage:
 //   node scripts/sync-templates.mjs           write changes
@@ -126,6 +129,33 @@ for (const t of templates) {
       }
     }
     syncLink(join(tdir, '.claude', 'skills'), LINK_TARGET);
+  }
+}
+
+// The Claude Code plugin (repository root) declares the same hook as the template settings.
+const pluginManifest = join(root, '.claude-plugin', 'plugin.json');
+const claudeSettings = join(agentsDir, '.claude', 'settings.json');
+// Read both without checking first: a missing file is simply skipped.
+const readJson = (file) => {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    if (err.code === 'ENOENT') return undefined;
+    throw err;
+  }
+};
+const plugin = readJson(pluginManifest);
+const settings = readJson(claudeSettings);
+if (plugin && settings) {
+  const wanted = settings.hooks ?? {};
+  if (JSON.stringify(plugin.hooks) !== JSON.stringify(wanted)) {
+    drift.push(
+      `changed: ${rel(pluginManifest)} (hooks differ from shared/agents/.claude/settings.json)`,
+    );
+    if (!check) {
+      plugin.hooks = wanted;
+      writeFileSync(pluginManifest, `${JSON.stringify(plugin, null, 2)}\n`);
+    }
   }
 }
 

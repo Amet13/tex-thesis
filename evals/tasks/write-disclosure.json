@@ -1,0 +1,32 @@
+{
+  "id": "write-disclosure",
+  "template": "paper",
+  "title": "Write the AI-use disclosure from stated facts",
+  "setup": {
+    "overfull.yml": {
+      "venue": {
+        "disclosure": "required"
+      }
+    }
+  },
+  "prompt": "The authors used an AI assistant only for language editing of the introduction and the conclusion. It was not used to analyse data, write code, choose references or write any other section. The authors checked every edit and take responsibility for the text. Replace the placeholder in sections/ai-disclosure.tex with the statement, written from exactly these facts and nothing else.",
+  "allowed": ["sections/ai-disclosure.tex"],
+  "maxAddedLines": 12,
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "noRules": ["disclosure-missing", "disclosure-placeholder"],
+    "contains": [
+      {
+        "file": "sections/ai-disclosure.tex",
+        "pattern": "language[- ]editing"
+      }
+    ],
+    "notContains": [
+      {
+        "file": "sections/ai-disclosure.tex",
+        "pattern": "Placeholder"
+      }
+    ]
+  }
+}

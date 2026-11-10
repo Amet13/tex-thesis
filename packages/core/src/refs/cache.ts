@@ -16,8 +16,11 @@ export function titleCacheKey(title: string, year?: number, isTex = true): strin
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Default lifetimes: a "does not exist" answer may change soon (new DOIs, new indexing). */
-export const DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 30, positive: 180 } as const;
+/**
+ * Default lifetimes: a record stays valid 30 days; a "does not exist" answer only 1 day,
+ * because new DOIs and new indexing appear quickly. Transport errors are never cached.
+ */
+export const DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 1, positive: 30 } as const;
 
 export interface CacheMaxAge {
   /** Days a negative answer (DOI missing, no arXiv paper, empty search) stays valid. */
@@ -52,6 +55,8 @@ export interface CachedOptions<T> {
   /** True for "does not exist" answers, which expire sooner. */
   isNegative: (value: T) => boolean;
   maxAge: CacheMaxAge;
+  /** Ignore stored answers (`--refresh`); the fresh answer is still stored. */
+  refresh?: boolean;
 }
 
 /**
@@ -64,7 +69,7 @@ export async function cached<T extends object>(
   compute: () => Promise<T>,
   opts: CachedOptions<T>,
 ): Promise<T> {
-  if (cache) {
+  if (cache && !opts.refresh) {
     const hit = (await cache.get(key)) as (T & { cachedAt?: number }) | null | undefined;
     if (hit !== undefined && hit !== null && typeof hit === 'object') {
       const { cachedAt, ...value } = hit;

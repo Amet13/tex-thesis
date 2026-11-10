@@ -29,6 +29,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @overfull/core build
       - run: pnpm --filter site build
+      # Served at https://amet13.github.io/overfull/install.sh and install.ps1.
+      - run: cp install.sh install.ps1 site/dist/
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist

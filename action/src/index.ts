@@ -1,16 +1,18 @@
-import { appendFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import {
   CHECK_IDS,
   exitCodeFor,
   formatHuman,
   formatJson,
   formatMarkdown,
+  formatSarif,
   githubAnnotations,
   neutralizeWorkflowCommands,
   oneLine,
   runCheck,
+  sarifFallbackFile,
   stopCommands,
 } from 'overfull';
 import { readInputs } from './inputs.js';
@@ -50,6 +52,20 @@ async function main(): Promise<number> {
   }
   const reportPath = join(env.RUNNER_TEMP ?? tmpdir(), 'overfull-report.json');
   writeFileSync(reportPath, formatJson(report));
+  if (inputs.sarif) {
+    const cwd = resolve(inputs.check.cwd ?? workspace);
+    const fallbackFile = sarifFallbackFile(cwd, env);
+    const sarifPath = resolve(workspace, inputs.sarif);
+    mkdirSync(dirname(sarifPath), { recursive: true });
+    writeFileSync(
+      sarifPath,
+      formatSarif(report, {
+        root: relative(workspace, cwd) || '.',
+        ...(fallbackFile ? { fallbackFile } : {}),
+      }),
+    );
+    setOutput('sarif', sarifPath);
+  }
   setOutput('status', report.status);
   setOutput('report', reportPath);
   return exitCodeFor(report, inputs.failOn);

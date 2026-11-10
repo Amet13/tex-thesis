@@ -1,6 +1,6 @@
 ---
 title: Venues
-description: Venue profiles (generic, thesis, paper, arxiv, double-blind), venue fields in overfull.yml, page-limit counting with an end label, anonymity checks, and AI-use disclosure.
+description: Venue profiles (built-in and from venues/), venue fields in overfull.yml, how profiles resolve, page-limit counting, anonymity, layout and style-file checks, and AI-use disclosure.
 order: 33
 section: Checks
 ---
@@ -33,6 +33,77 @@ No profile sets a page limit, and all of them accept any paper size. Set
 `pageLimit` and `paper` under `venue:`. All profiles run all five checks.
 
 Fields under `venue:` in `overfull.yml` override the profile.
+
+## Venue profiles from data
+
+Besides the five built-in profiles, a profile can come from a data file in the
+repository's `venues/` folder, one YAML file per venue (for example
+`neurips-2027.yml`). Use it by id:
+
+```yaml
+profile: neurips-2027
+```
+
+Each file records where its values came from, so you can check them:
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `name` | Profile id (the file name without `.yml`) and display name. |
+| `year` | The venue year, or `rolling`. |
+| `source` | Official pages the values were read from. Required. |
+| `checkedOn` | The day those pages were read (`YYYY-MM-DD`). Required. |
+| `extends` | Built-in profile that supplies the other defaults (default `generic`). |
+| `paper` | `a4`, `letter` or `any`. |
+| `pageLimit` | `max`, optional `endLabel`, and the words `counts` and `excludes` describing what the venue counts. |
+| `anonymous` | Double-blind review. |
+| `disclosure`, `accessibility` | `required`, `recommended` or `off`. |
+| `styleFiles` | Required style or class file names, each with an optional `sha256` of the official file. |
+| `textBlock` | The text block from the official style file, in millimetres: `widthMm`, and optionally `heightMm`, `leftMm`, `topMm`. Without `leftMm` the block is centred; without `topMm` and `heightMm` only the width is checked. |
+| `notes` | Free text. |
+
+The files are checked and compiled into the generated module
+`packages/core/src/venue/venues.generated.ts` by `node scripts/build-venues.mjs`
+(`pnpm venues:check` in CI). The core library never reads YAML at run time, so
+it works in the browser. Adding a venue is described in
+[CONTRIBUTING.md](https://github.com/amet13/overfull/blob/main/CONTRIBUTING.md).
+
+### How a profile is resolved
+
+1. `profile: <id>` looks the id up among the built-in profiles, then among the
+   venue profiles. An unknown id is an error that lists both.
+2. A venue profile starts from the built-in profile named by its `extends`
+   (default `generic`) and applies its own fields on top.
+3. Fields under `venue:` in `overfull.yml`, and `--profile`, are applied last.
+   `venue.pageLimit` is merged field by field, so setting only `max` keeps the
+   profile's `endLabel`. An inline profile can also set `extends: <id>` with any
+   venue id.
+
+### Old profiles
+
+A profile whose `checkedOn` is more than 14 months old adds an info note,
+`venue-profile-stale`: it may be out of date. Read the venue's current pages
+(listed in the note) before you submit.
+
+## Venues included
+
+Profiles in the repository's `venues/` folder. Each was read from the venue's
+own official pages on the day shown; the pages are listed in the `source` field
+of its file. Rules change every year, so read the venue's call for papers or
+author instructions before you submit: the profile is a starting point, and
+fields the venue's pages did not state are left out.
+
+| Id | Venue | Edition | Last checked |
+| --- | --- | --- | --- |
+| `neurips-2026` | NeurIPS main track | 2026 | 2026-11-10 |
+| `iclr-2027` | ICLR | 2027 | 2026-11-10 |
+| `icml-2026` | ICML | 2026 | 2026-11-10 |
+| `cvpr-2027` | CVPR | 2027 | 2026-11-10 |
+| `aaai-2027` | AAAI main technical track | 2027 | 2026-11-10 |
+| `acl-rolling-review` | ACL Rolling Review (long papers) | rolling | 2026-11-10 |
+| `emnlp-2026` | EMNLP main conference | 2026 | 2026-11-10 |
+| `springer-lncs` | Springer LNCS and related proceedings series | rolling | 2026-11-10 |
+| `ieee-conference` | IEEE conference proceedings (IEEEtran, conference mode) | rolling | 2026-11-10 |
+| `acm-sigconf` | ACM conference proceedings (acmart, sigconf) | rolling | 2026-11-10 |
 
 ## Venue fields
 
@@ -80,6 +151,43 @@ If you are over, fix the content. Changing fonts, margins or spacing usually
 breaks the venue's formatting rules and can get a paper desk-rejected. The
 `fit-page-limit` skill describes what agents may and may not do.
 
+## Style files and layout
+
+Three checks guard the venue's formatting rules. The first two work on the
+source and run without a PDF; the third measures the PDF.
+
+`style-file-modified` (warning) compares the project's copy of a style file the
+profile names with the SHA-256 recorded for the official file. It runs only for
+style files whose profile records a hash, and only for files Overfull reads
+(`.sty`, `.cls`). A copy with Windows line endings is compared after converting
+them. Download the file again from the venue's page and keep your changes in
+other files.
+
+`layout-tampering` (warning) lists commands often used to squeeze text into a
+page limit, with file and line:
+
+- a negative `\vspace` or `\vskip` within three lines of a figure, table, caption
+  or heading;
+- negative float or equation spacing (`\textfloatsep`, `\abovecaptionskip` and
+  similar);
+- `\baselinestretch`, `\linespread` or `\setstretch` below 1;
+- the `savetrees` package;
+- when the profile names a style file: `\textheight`, `\textwidth`,
+  `\columnsep`, margin lengths or `geometry` options, and a changed base font
+  size (class option such as `10pt`, `\normalsize` redefined).
+
+`text-outside-block` (warning) measures where the text sits on every page of the
+PDF and reports a page whose text reaches past the venue's text block by more
+than 2 mm, with how far and on which side. Bare numbers (the line numbers of
+review versions) do not count. It runs only for profiles that record a
+`textBlock`. Render the page with `overfull pages <n>` to find the
+line, table or figure that sticks out.
+
+Each message ends with "check that your venue allows this": the check does not
+know your venue's rules, and some venues allow some of these. It runs only for
+profiles that set a page limit or name a style file, never for `generic` or
+`thesis`. Class files and the style files the profile names are not scanned.
+
 ## Anonymity
 
 With `anonymous: true` (or the `double-blind` profile), Overfull checks:
@@ -90,8 +198,14 @@ With `anonymous: true` (or the `double-blind` profile), Overfull checks:
   (`anonymity-acknowledgments`, warning);
 - phrases such as "our previous work" (`anonymity-self-reference`, info).
 
+- links that can identify the authors (`anonymity-link`, warning): your own
+  `github.com/<user>` (or GitLab, Bitbucket) pages, `*.github.io`, Google Sites
+  or `~user` pages, and institutional (`.edu`, `.ac.*`) pages. Links to
+  `anonymous.4open.science` are allowed. A link to someone else's page is
+  reported too, because the check cannot tell whose it is; ignore it then.
+
 It cannot catch everything. Also check for other first-person self-citations,
-links to your own repositories or websites, file names and comments in the
+links to repositories or websites the check does not know, file names and comments in the
 source if you upload it, and names in figure images.
 
 ## AI-use disclosure

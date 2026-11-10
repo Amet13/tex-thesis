@@ -5,12 +5,13 @@ export {
   formatHuman,
   formatJson,
   formatMarkdown,
+  formatSarif,
   githubAnnotations,
   oneLine,
   type Problem,
   type Report,
 } from '@overfull/core';
-export { type CheckOptions, exitCodeFor, runCheck } from './check.js';
+export { type CheckOptions, exitCodeFor, runCheck, sarifFallbackFile } from './check.js';
 export { type Config, DEFAULT_IMAGE, loadConfig } from './config.js';
 export { type Io, processIo, UsageError } from './io.js';
 export { main } from './main.js';

@@ -36,3 +36,15 @@ export function listDirs(rel: string): string[] {
 export function exists(rel: string): boolean {
   return existsSync(path.join(ROOT, rel));
 }
+
+/** Names of the files (not folders) in a repository folder, sorted; [] when it is missing. */
+export function listFiles(rel: string): string[] {
+  try {
+    return readdirSync(path.join(ROOT, rel), { withFileTypes: true })
+      .filter((d) => d.isFile())
+      .map((d) => d.name)
+      .sort();
+  } catch {
+    return [];
+  }
+}

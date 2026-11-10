@@ -22,26 +22,36 @@ packages/core/      @overfull/core — browser-safe TypeScript. No Node APIs.
   src/types.ts      Problem / CheckResult / Report / RuleInfo (the contract)
   src/log/          build-log parser → build + output checks
   src/bib/          BibTeX/biblatex parser + serializer, cited-key extraction
-  src/refs/         reference verification + lookup (CrossRef, doi.org, DBLP, arXiv, OpenAlex)
+  src/refs/         reference verification + lookup (CrossRef, doi.org, DBLP, arXiv, OpenAlex,
+                    Semantic Scholar, ACL Anthology, Europe PMC), retractions, duplicates
   src/pdf/          PDF facts → output + accessibility checks (pdf.js injected)
-  src/venue/        venue profiles + checks (page limit, anonymity, disclosure, arXiv)
-  src/report/       human, JSON, Markdown, GitHub annotation formatters
+  src/venue/        venue profiles + checks (page limit, anonymity, disclosure, arXiv,
+                    style files, layout); venues.generated.ts is built from venues/*.yml
+  src/report/       human, JSON, Markdown, SARIF, GitHub annotation formatters
   src/rules.ts      registry of every RuleInfo (allRules())
 packages/cli/       `overfull` — Node CLI and programmatic API used by the Action
+  src/adopt.ts      `init --here`: detect an existing project, write overfull.yml and extras
+  src/guard/        `guard --staged` (pre-commit) and `guard --hook` (agent harness hooks)
+  src/mcp/          `overfull mcp`: Model Context Protocol server over stdio, no dependencies
 action.yml + action/dist/   GitHub Action (node24, bundled)
+venues/             venue profiles as data (one YAML per venue, with sources and check date)
 corpus/             one folder per failing LaTeX document that proves a log rule
 templates/          thesis, paper, slides — accessible by default, agent-ready
 skills/             canonical Agent Skills (SKILL.md); synced into each template
-docker/             TeX Live 2026 image + poppler + veraPDF + latexdiff + overfull
+docker/             TeX Live 2026 image + poppler + veraPDF + latexdiff + overfull;
+                    target `check`: the same without TeX Live (`:<version>-check`)
 site/               Astro static site → GitHub Pages (docs, rules, browser check)
-evals/              agent tasks scored by preflight
+evals/              agent tasks scored by preflight (variants bare, instructions, guard)
+bench/refs/         reference-check benchmark: real and fabricated entries, monthly run
+.claude-plugin/     Claude Code plugin + marketplace manifests (skills, guard hook, MCP)
 scripts/            corpus runner, template sync, e2e, standalone build, version bump
 ```
 
 ## Tooling (2026)
 
 Node 26 LTS (the GitHub Action runs on Node 24, the newest Actions runtime), pnpm 12 workspaces, TypeScript 7, Vitest 5, Biome 2,
-Astro 7, pdf.js 6. ESM only. Tests live in `packages/*/test/*.test.ts`.
+Astro 7, pdf.js 6. ESM only. Tests live in `packages/*/test/*.test.ts`, `site/tests/`,
+`bench/refs/test/` and `evals/test/`.
 
 ## The result model
 
@@ -121,6 +131,7 @@ browser and in Node.
 
 ```ts
 builtinProfiles: Record<string, VenueProfile>   // generic, thesis, paper, arxiv, double-blind
+// plus the profiles generated from venues/*.yml (resolveProfile looks in both)
 resolveProfile(nameOrInline): VenueProfile
 venueCheck(profile, ctx: VenueContext): CheckResult
 ```

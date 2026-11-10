@@ -43,6 +43,8 @@ jobs:
               - action/dist
               - "**/node_modules"
               - packages/core/test/fixtures
+              # Maintenance scripts that record live lookups into fixtures on purpose.
+              - evals/fixtures
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: /language:${{ matrix.language }}

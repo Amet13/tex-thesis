@@ -16,9 +16,10 @@ import { loadConfig } from '../config.js';
 import { type Io, UsageError } from '../io.js';
 import { insideRootForWrite } from '../safety.js';
 
-export const citeHelp = `Usage: overfull cite <doi | arXiv:id | "title"> [options]
+export const citeHelp = `Usage: overfull cite <doi | arXiv:id | ACL id | PMID | PMCID | "title"> [options]
 
-Look a reference up in CrossRef / doi.org / arXiv / dblp and append a clean
+Look a reference up in CrossRef / doi.org / arXiv / dblp / ACL Anthology / Europe PMC
+(and Semantic Scholar as a title fallback) and append a clean
 BibTeX entry to your .bib file. Prints the citation key as the last line.
 Never invents an entry: without a confident match it exits 1 and writes nothing.
 
@@ -36,6 +37,8 @@ Options:
 Examples:
   overfull cite 10.1145/359545.359563
   overfull cite arXiv:1706.03762
+  overfull cite 2020.acl-main.1
+  overfull cite PMID:19872477
   overfull cite "Attention is all you need"
   overfull cite "Literate programming" --author Knuth
 
@@ -82,6 +85,9 @@ const SOURCE_NAMES: Record<string, string> = {
   'export.arxiv.org': 'arXiv',
   'dblp.org': 'dblp',
   'api.openalex.org': 'OpenAlex',
+  'api.semanticscholar.org': 'Semantic Scholar',
+  'aclanthology.org': 'ACL Anthology',
+  'www.ebi.ac.uk': 'Europe PMC',
 };
 
 /** Which reference indexes a lookup actually reached, and which failed (and why). */
@@ -155,6 +161,9 @@ const SOURCE_LABELS: Record<string, string> = {
   arxiv: 'arXiv',
   dblp: 'dblp',
   openalex: 'OpenAlex',
+  semanticscholar: 'Semantic Scholar',
+  acl: 'ACL Anthology',
+  europepmc: 'Europe PMC',
 };
 
 const list = (xs: string[]) =>
@@ -202,7 +211,9 @@ export async function citeCommand(
   }
   const query = positionals.join(' ').trim();
   if (!query)
-    throw new UsageError('Give a DOI, arXiv id or title: `overfull cite 10.1145/359545.359563`');
+    throw new UsageError(
+      'Give a DOI, arXiv id, ACL Anthology id, PMID or title: `overfull cite 10.1145/359545.359563`',
+    );
   const explicitKey = str(values.key);
   if (explicitKey !== undefined && !SAFE_KEY.test(explicitKey)) {
     throw new UsageError(
@@ -217,6 +228,7 @@ export async function citeCommand(
 
   const mailto = str(values.mailto) ?? config.references.mailto;
   const openalexKey = io.env.OPENALEX_API_KEY;
+  const semanticScholarKey = io.env.SEMANTIC_SCHOLAR_API_KEY;
   const author = str(values.author);
   const yearText = str(values.year);
   const year = yearText === undefined ? undefined : Number(yearText);
@@ -243,6 +255,7 @@ export async function citeCommand(
       ...(baseFetch ? { fetch: tracker.wrap(baseFetch) } : {}),
       ...(mailto ? { mailto } : {}),
       ...(openalexKey ? { openalexKey } : {}),
+      ...(semanticScholarKey ? { semanticScholarKey } : {}),
       ...(hint ? { hint } : {}),
       onSearch: (o) => tracker.report(o),
     });

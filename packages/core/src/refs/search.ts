@@ -8,12 +8,15 @@ import {
   titleCacheKey,
 } from './cache.js';
 import { type HttpClient, SourceUnavailableError } from './http.js';
+import { aclById } from './sources/acl.js';
 import { arxivById, arxivSearch } from './sources/arxiv.js';
 import { crossrefSearch } from './sources/crossref.js';
 import { dblpSearch } from './sources/dblp.js';
 import { type DoiResolution, resolveDoi } from './sources/doi.js';
+import { europepmcByPmcid, europepmcByPmid, europepmcSearch } from './sources/europepmc.js';
 import { openalexSearch } from './sources/openalex.js';
-import type { RefSource, RefsOptions, WorkRecord } from './types.js';
+import { semanticScholarSearch } from './sources/semanticscholar.js';
+import type { RefCache, RefSource, RefsOptions, WorkRecord } from './types.js';
 
 export interface Ctx {
   client: HttpClient;
@@ -64,6 +67,7 @@ export function resolveDoiCached(ctx: Ctx, doi: string): Promise<DoiResolution> 
   return cached(ctx.opts.cache, doiCacheKey(doi), () => resolveDoi(ctx.client, doi), {
     isNegative: (v) => v.kind !== 'found',
     maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+    refresh: ctx.opts.refresh === true,
   });
 }
 
@@ -73,7 +77,53 @@ export async function arxivByIdCached(ctx: Ctx, id: string): Promise<WorkRecord 
     ctx.opts.cache,
     arxivCacheKey(id),
     async () => ({ record: await arxivById(ctx.client, id) }),
-    { isNegative: (v) => !v.record, maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays) },
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true,
+    },
+  );
+  return value.record;
+}
+
+/** Most sources that answer a title search for one entry before the fallbacks stop. */
+export const MAX_TITLE_ANSWERS = 3;
+
+/** An ACL Anthology paper by id (cached); null when the Anthology has no such paper. */
+export async function aclByIdCached(ctx: Ctx, id: string): Promise<WorkRecord | null> {
+  const value = await cached(
+    ctx.opts.cache,
+    `acl:${id}`,
+    async () => ({ record: await aclById(ctx.client, id) }),
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true,
+    },
+  );
+  return value.record;
+}
+
+/** A Europe PMC record by PubMed id or PubMed Central id (cached); null when it has none. */
+export async function europepmcByIdCached(
+  ctx: Ctx,
+  id: { pmid: string } | { pmcid: string },
+): Promise<WorkRecord | null> {
+  const key = 'pmid' in id ? `pmid:${id.pmid}` : `pmcid:${id.pmcid}`;
+  const value = await cached(
+    ctx.opts.cache,
+    key,
+    async () => ({
+      record:
+        'pmid' in id
+          ? await europepmcByPmid(ctx.client, id.pmid)
+          : await europepmcByPmcid(ctx.client, id.pmcid),
+    }),
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true,
+    },
   );
   return value.record;
 }
@@ -96,6 +146,8 @@ function titleSources(ctx: Ctx, q: TitleSearch): [RefSource, () => Promise<WorkR
   return list.filter(([source]) => sourceAllowed(opts, source));
 }
 
+const writes = new WeakMap<RefCache, Promise<void>>();
+
 async function searchOne(
   ctx: Ctx,
   cacheKey: string,
@@ -103,7 +155,10 @@ async function searchOne(
   run: () => Promise<WorkRecord[]>,
 ): Promise<WorkRecord[]> {
   const cache = ctx.opts.cache;
-  const hit = cache ? ((await cache.get(cacheKey)) as TitleCacheValue | undefined) : undefined;
+  const hit =
+    cache && !ctx.opts.refresh
+      ? ((await cache.get(cacheKey)) as TitleCacheValue | undefined)
+      : undefined;
   const cachedRecords = hit?.[source];
   if (
     Array.isArray(cachedRecords) &&
@@ -117,19 +172,28 @@ async function searchOne(
   }
   const records = await run();
   if (cache) {
-    const latest = ((await cache.get(cacheKey)) as TitleCacheValue | undefined) ?? {};
-    await cache.set(cacheKey, {
-      ...latest,
-      [source]: records,
-      cachedAt: { ...(latest.cachedAt ?? {}), [source]: Date.now() },
+    // Sources of one entry run concurrently and share one cache value: serialize the
+    // read-modify-write so one answer does not overwrite another.
+    const write = (writes.get(cache) ?? Promise.resolve()).then(async () => {
+      const latest = ((await cache.get(cacheKey)) as TitleCacheValue | undefined) ?? {};
+      await cache.set(cacheKey, {
+        ...latest,
+        [source]: records,
+        cachedAt: { ...(latest.cachedAt ?? {}), [source]: Date.now() },
+      });
     });
+    writes.set(
+      cache,
+      write.catch(() => {}),
+    );
+    await write;
   }
   return records;
 }
 
 /**
- * Searches CrossRef, dblp, arXiv (and OpenAlex with a key) in order. `visit`
- * sees each source's candidates and returns true to stop early.
+ * Searches CrossRef, dblp, arXiv (and OpenAlex with a key), concurrently within each
+ * wave. `visit` sees each source's candidates in source order and returns true to stop early.
  */
 export async function titleSearch(
   ctx: Ctx,
@@ -140,21 +204,36 @@ export async function titleSearch(
   const cacheKey =
     titleCacheKey(q.title, q.year, q.isTex) +
     (q.hinted && q.firstAuthor ? `|author:${q.firstAuthor.toLowerCase()}` : '');
-  for (const [source, run] of titleSources(ctx, q)) {
-    if (ctx.deadline !== undefined && Date.now() > ctx.deadline) {
-      outcome.failures.push({ source, reason: `${source} not asked: lookup time budget used up` });
-      continue;
+  // Independent indexes are asked at the same time, in two waves: CrossRef and dblp first,
+  // then (only when neither verified) the rest. arXiv has a strict request spacing, so it
+  // is not queried for entries the first wave already settled. Answers are visited in the
+  // usual source order, and a `visit` that returns true stops the search.
+  const sources = titleSources(ctx, q);
+  const first = sources.filter(([s]) => s === 'crossref' || s === 'dblp');
+  const waves = [first, sources.filter((entry) => !first.includes(entry))];
+  for (const wave of waves) {
+    const pending = wave.map(([source, run]) => {
+      if (ctx.deadline !== undefined && Date.now() > ctx.deadline) {
+        const reason = `${source} not asked: lookup time budget used up`;
+        return Promise.resolve({ source, reason } as { source: RefSource; reason: string });
+      }
+      return searchOne(ctx, cacheKey, source, run).then(
+        (records) => ({ source, records }),
+        (err: unknown) => ({ source, err }),
+      );
+    });
+    for (const p of pending) {
+      const got = await p;
+      if ('records' in got) {
+        outcome.searched.push(got.source);
+        if (visit(got.records, got.source)) return outcome;
+      } else if ('reason' in got) {
+        outcome.failures.push({ source: got.source, reason: got.reason });
+      } else {
+        if (ctx.opts.signal?.aborted) throw got.err;
+        outcome.failures.push({ source: got.source, reason: failureReason(got.err) });
+      }
     }
-    let records: WorkRecord[];
-    try {
-      records = await searchOne(ctx, cacheKey, source, run);
-    } catch (err) {
-      if (ctx.opts.signal?.aborted) throw err;
-      outcome.failures.push({ source, reason: failureReason(err) });
-      continue;
-    }
-    outcome.searched.push(source);
-    if (visit(records, source)) return outcome;
   }
   // Keyless fallback: when dblp could not answer (bot wall, 429, 5xx) and no OpenAlex key
   // is configured, ask OpenAlex without a key (it has a free per-IP daily budget).
@@ -170,10 +249,35 @@ export async function titleSearch(
         openalexSearch(ctx.client, plain, undefined, ctx.opts.mailto),
       );
       outcome.searched.push('openalex');
-      visit(records, 'openalex');
+      if (visit(records, 'openalex')) return outcome;
     } catch (err) {
       if (ctx.opts.signal?.aborted) throw err;
       outcome.failures.push({ source: 'openalex', reason: failureReason(err) });
+    }
+  }
+  // Fallbacks, one at a time and only while fewer than MAX_TITLE_ANSWERS sources have
+  // answered (a source that failed does not use up a slot): the indexes that were reachable
+  // found nothing, so ask the next. Semantic Scholar first, then Europe PMC.
+  const plainTitle = q.isTex ? texToPlain(q.title) : q.title;
+  const fallbacks: [RefSource, () => Promise<WorkRecord[]>][] = [
+    [
+      'semanticscholar',
+      () => semanticScholarSearch(ctx.client, plainTitle, ctx.opts.semanticScholarKey),
+    ],
+    ['europepmc', () => europepmcSearch(ctx.client, plainTitle)],
+  ];
+  for (const [source, run] of fallbacks) {
+    if (outcome.searched.length >= MAX_TITLE_ANSWERS) break;
+    if (ctx.deadline !== undefined && Date.now() > ctx.deadline) break;
+    if (!sourceAllowed(ctx.opts, source)) continue;
+    try {
+      const records = await searchOne(ctx, cacheKey, source, run);
+      outcome.searched.push(source);
+      if (visit(records, source)) return outcome;
+    } catch (err) {
+      if (ctx.opts.signal?.aborted) throw err;
+      // These two are extras: when one cannot answer, the lookup is exactly as complete as it
+      // was without it, so its failure is not reported as a reason for `error`.
     }
   }
   return outcome;

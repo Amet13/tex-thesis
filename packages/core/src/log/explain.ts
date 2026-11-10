@@ -6,6 +6,7 @@
  * author's own text where the log shows it.
  */
 
+import { EXPLAINER_PATTERNS, SIMPLE_EXPLANATIONS } from './explain-data.js';
 import {
   COMMAND_PACKAGES,
   COMMON_COMMANDS,
@@ -827,120 +828,41 @@ const explainUnknownOption: Explainer = (m) => {
   };
 };
 
-// ---------------------------------------------------------------------------
+const HANDLERS: Record<string, Explainer> = {
+  explainUndefinedControlSequence,
+  explainMissingDollar,
+  explainDoubleScript,
+  explainAlignmentTab,
+  explainMissingBrace,
+  explainExtraBrace,
+  explainRunaway,
+  explainFileNotFound,
+  explainOptionClash,
+  explainGraphicsExtension,
+  explainEnvironmentUndefined,
+  explainEnvironmentMismatch,
+  explainMissingBeginDocument,
+  explainPreambleOnly,
+  explainUnicode,
+  explainFontNotFound,
+  explainTfmFont,
+  explainBiblatex,
+  explainParameterNumber,
+  explainColor,
+  explainCapacity,
+  explainTikz,
+  explainHyperref,
+  explainCommandDefined,
+  explainUnknownOption,
+};
 
-const EXPLAINERS: [RegExp, Explainer][] = [
-  [/^Undefined control sequence/, explainUndefinedControlSequence],
-  [/^Missing \$ inserted/, explainMissingDollar],
-  [/^Display math should end with \$\$/, explainMissingDollar],
-  [/^Double (subscript|superscript)/, explainDoubleScript],
-  [/^Misplaced alignment tab character &/, explainAlignmentTab],
-  [/^Missing ([{}]) inserted/, explainMissingBrace],
-  [
-    /^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/,
-    explainExtraBrace,
-  ],
-  [
-    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)(?:\s+was complete)?(?:\s*\.)?\s*$/,
-    explainRunaway,
-  ],
-  [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
-  [/^I can't find file [`'](.+?)'/, explainFileNotFound],
-  [/^LaTeX Error: Option clash for package (\S+?)\.?$/, explainOptionClash],
-  [/^LaTeX Error: Unknown graphics extension: (\.\S+?)\.?$/, explainGraphicsExtension],
-  [/^LaTeX Error: Environment (\S+) undefined/, explainEnvironmentUndefined],
-  [
-    /^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/,
-    explainEnvironmentMismatch,
-  ],
-  [/^LaTeX Error: \\begin\{(document)\}() ended by \\end\{([^}]*)\}/, explainEnvironmentMismatch],
-  [
-    /^LaTeX Error: Lonely \\item/,
-    simple(
-      'lonely-item',
-      '`\\item` is used outside a list',
-      '`\\item` only works inside `itemize`, `enumerate` or `description`.',
-      'Wrap the items in `\\begin{itemize}` … `\\end{itemize}` (or `enumerate`).',
-    ),
-  ],
-  [
-    /^LaTeX Error: Something's wrong--perhaps a missing \\item/,
-    simple(
-      'missing-item',
-      'LaTeX expected `\\item` here',
-      'Common causes: text inside a list before the first `\\item`, `\\\\` at the start of a paragraph, or an empty `thebibliography`.',
-      'Start each list entry with `\\item`, move text before `\\begin{itemize}`, and remove `\\\\` after blank lines.',
-    ),
-  ],
-  [
-    /^LaTeX Error: There's no line here to end/,
-    simple(
-      'no-line-to-end',
-      '`\\\\` is used where there is no line to end',
-      '`\\\\` ends a line inside a paragraph; after a blank line, at the start of a paragraph or after a list there is no line yet.',
-      'Remove the `\\\\`. Use a blank line for a new paragraph and `\\vspace{…}` for vertical space.',
-    ),
-  ],
-  [/^LaTeX Error: Missing \\begin\{document\}/, explainMissingBeginDocument],
-  [/^LaTeX Error: Can be used only in preamble/, explainPreambleOnly],
-  [
-    /^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/,
-    explainUnicode,
-  ],
-  [
-    /^Package inputenc Error: Invalid UTF-8 byte/,
-    simple(
-      'unicode-character',
-      'A source file is not saved as UTF-8',
-      'LaTeX expects UTF-8 input, but the file contains bytes from another encoding (often Latin-1 or Windows-1252).',
-      'Re-save the file as UTF-8 in your editor (or convert it with `iconv -f latin1 -t utf-8`).',
-    ),
-  ],
-  [
-    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: [^"]*?font "([^"]+)"[^\n]*?not found/,
-    explainFontNotFound,
-  ],
-  [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, explainTfmFont],
-  [/^Package biblatex Error: (.*)$/, explainBiblatex],
-  [/^Illegal parameter number in definition of (\\\S+?)\.?$/, explainParameterNumber],
-  [/^You can't use [`']macro parameter character #' in \w+ mode()/, explainParameterNumber],
-  [/^Package xcolor Error: Undefined color [`']([^']+)'/, explainColor],
-  [
-    /^LaTeX Error: Not in outer par mode/,
-    simple(
-      'not-in-outer-par-mode',
-      'A float or margin note is inside a box',
-      '`figure`, `table` and `\\marginpar` cannot be placed inside a `minipage`, `\\parbox`, table cell, another float, or similar box.',
-      'Move the float outside the box. Inside a minipage, drop the `figure` environment and use `\\captionof{figure}{…}` (caption package).',
-    ),
-  ],
-  [
-    /^Dimension too large/,
-    simple(
-      'dimension-too-large',
-      'A length is larger than TeX allows (about 5.75 m / 16383pt)',
-      'Common causes: a typo in a length (`20000pt`), a pgfplots axis with huge coordinates, or scaling by a very large factor.',
-      'Check the length on this line; for plots, rescale the data or set `restrict y to domain`/`scaled ticks`.',
-    ),
-  ],
-  [/^TeX capacity exceeded, sorry \[(.+?)\]/, explainCapacity],
-  [/^Package (pgfkeys|tikz|pgf|pgfplots) Error: (.*)$/, explainTikz],
-  [/^Package hyperref Error: (.*)$/, explainHyperref],
-  [/^LaTeX Error: Command (\\\S+?) already defined/, explainCommandDefined],
-  [
-    /^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/,
-    explainUnknownOption,
-  ],
-  [
-    /^LaTeX Error: Float\(s\) lost/,
-    simple(
-      'not-in-outer-par-mode',
-      'Floats were lost',
-      'A `figure` or `table` (or `\\marginpar`) was placed inside a box or another float, so LaTeX dropped it.',
-      'Move floats out of minipages, `\\parbox`es and other floats; use `\\captionof` for captions inside a minipage.',
-    ),
-  ],
-];
+const EXPLAINERS: [RegExp, Explainer][] = EXPLAINER_PATTERNS.map(([pattern, key]) => {
+  const fixed = SIMPLE_EXPLANATIONS[key];
+  if (fixed) return [pattern, simple(fixed.rule, fixed.message, fixed.detail, fixed.fix)];
+  const handler = HANDLERS[key];
+  if (!handler) throw new Error(`explain: no handler named ${key}`);
+  return [pattern, handler];
+});
 
 /** Explains a TeX error; unknown errors get the generic `tex-error` rule with TeX's message. */
 export function explainError(error: LogError, ctx: ExplainContext): Explanation {

@@ -28,6 +28,15 @@ export const venueRules: RuleInfo[] = [
     fix: 'Build the document first (`overfull build`).',
   },
   {
+    id: 'text-outside-block',
+    check: 'venue',
+    severity: 'warning',
+    title: 'Text outside the text block',
+    summary:
+      "Text on a page of the PDF reaches into the margin, measured against the text block of the venue's style file (2 mm tolerance). Only for venue profiles that record a text block.",
+    fix: 'Find the line, table or figure that sticks out (`overfull pages <n>` renders the page) and make it fit. Changing the margins or the text block is usually against the rules.',
+  },
+  {
     id: 'paper-size-mismatch',
     check: 'venue',
     severity: 'warning',
@@ -144,6 +153,42 @@ export const venueRules: RuleInfo[] = [
     title: 'File name with spaces (arXiv)',
     summary: 'arXiv’s processing breaks on file names containing spaces.',
     fix: 'Rename files using - or _ instead of spaces.',
+  },
+  {
+    id: 'venue-profile-stale',
+    check: 'venue',
+    severity: 'info',
+    title: 'Venue profile may be out of date',
+    summary:
+      'The profile was last compared with the venue’s official pages more than 14 months ago. Page limits, style files and policies change between years.',
+    fix: 'Read the venue’s current author instructions (the profile lists its sources) and compare them with what Overfull reports.',
+  },
+  {
+    id: 'style-file-modified',
+    check: 'venue',
+    severity: 'warning',
+    title: 'Style file differs from the official one',
+    summary:
+      'The project’s copy of a style or class file named by the profile does not match the SHA-256 recorded for the official file. Venues often reject papers built with a changed style file. Only profiles that record a hash are checked; a copy with Windows line endings is compared after converting them.',
+    fix: 'Download the style file again from the venue’s page and keep your own changes in separate files.',
+  },
+  {
+    id: 'layout-tampering',
+    check: 'venue',
+    severity: 'warning',
+    title: 'Source squeezes the layout',
+    summary:
+      'The source uses a command often used to fit more text on a page: a negative `\\vspace` next to a figure, table or heading, negative float or equation spacing, line spacing below 1, `savetrees`, or (for profiles that name a style file) changed margins, text block or base font size. Overfull cannot tell whether your venue allows it.',
+    fix: 'Check that your venue allows this. If it does not, remove the command and shorten the text instead.',
+  },
+  {
+    id: 'anonymity-link',
+    check: 'venue',
+    severity: 'warning',
+    title: 'Link that can identify the authors',
+    summary:
+      'An anonymous submission links to a personal repository (`github.com/<user>`, GitLab, Bitbucket), a personal page (`*.github.io`, Google Sites, `~user`) or an institutional page. Links to anonymous.4open.science are allowed. A link to someone else’s page is reported too.',
+    fix: 'Use an anonymized copy such as anonymous.4open.science, or remove the link for the review version. Ignore the warning for links that are not yours.',
   },
   {
     id: 'tex-file-skipped',

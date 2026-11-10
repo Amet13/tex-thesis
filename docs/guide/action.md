@@ -1,11 +1,32 @@
 ---
 title: GitHub Action
 description: Run Overfull checks in GitHub Actions with amet13/overfull@v3, its inputs and outputs, and how it differs from the template workflow that builds in Docker.
-order: 42
-section: Reference
+order: 4
+section: Start
 ---
 
-There are two ways to run Overfull in GitHub Actions.
+There are three ways to run Overfull in GitHub Actions. Pick the lightest one
+that does what you need.
+
+- **No image: the Action alone.** Fastest to start. It checks the log, PDF
+  and bibliography your workflow built. veraPDF is not installed on the
+  runner, so the accessibility check reports `verapdf-not-run` unless you
+  install it.
+- **The `-check` image** (`ghcr.io/amet13/overfull:3-check`). The CLI, veraPDF
+  and poppler without TeX Live. Use it as a job container, or with
+  `docker run`, when you build the PDF elsewhere but want the full
+  accessibility check. It cannot build a document.
+- **The full image** (`ghcr.io/amet13/overfull:3`). Adds TeX Live 2026, so it
+  also builds the PDF. This is what the template workflow uses.
+
+```yaml
+    steps:
+      - uses: actions/checkout@v7
+      # ... build paper.pdf elsewhere ...
+      - run: docker run --rm -v "$PWD:/work" -w /work ghcr.io/amet13/overfull:3-check overfull check
+```
+
+The rest of this page covers the Action and the template workflow.
 
 - **The Action** (`amet13/overfull@v3`) checks files your workflow already
   produced: the log, the PDF, the bibliography. Use it to add Overfull to an
@@ -54,7 +75,7 @@ the missing file, so a wrong name cannot silently skip a check.
 
 **Pinning.** `@v3` follows every 3.x release. For fully reproducible CI, pin
 a release commit by its full 40-character SHA instead,
-`uses: amet13/overfull@<full commit SHA> # v3.0.0`; GitHub rejects short SHAs
+`uses: amet13/overfull@<full commit SHA> # v3.1.0`; GitHub rejects short SHAs
 in `uses:`, and Dependabot keeps SHA pins up to date.
 
 The Action writes problems as annotations (at most 50), adds a Markdown report
@@ -87,6 +108,7 @@ Actions.
 | `mailto` | `references.mailto`, else `$OVERFULL_MAILTO` | Contact address for CrossRef's polite pool. |
 | `annotations` | `true` | Write problems as file annotations. |
 | `summary` | `true` | Write a Markdown report to the job summary. |
+| `sarif` | empty (off) | Path to write a SARIF 2.1.0 file, relative to the workspace. See [Code scanning](#code-scanning-sarif). |
 
 Inputs you leave out come from `overfull.yml` in `working-directory`, where
 present. Checks whose default inputs are missing are reported as `skipped`;
@@ -98,6 +120,40 @@ an input you give explicitly that points to a missing file fails the step.
 | --- | --- |
 | `status` | `pass`, `warn` or `fail`. |
 | `report` | Path to the JSON report file, written to `$RUNNER_TEMP`. The content has the same schema as `overfull check --json`. |
+| `sarif` | Path to the SARIF file. Set only when the `sarif` input is set. |
+
+### Code scanning (SARIF)
+
+Set `sarif` to a path and the Action writes a SARIF 2.1.0 file there. Upload it
+with `github/codeql-action/upload-sarif` and the problems appear under the
+repository's Security tab and as annotations on pull requests:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      # ... build the document, then:
+      - uses: amet13/overfull@v3
+        with:
+          sarif: overfull.sarif
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: always()
+        with:
+          sarif_file: overfull.sarif
+```
+
+Use `if: always()` so the upload also runs when Overfull fails the step.
+Code scanning shows a result only if it has a file and a line
+([SARIF requirements](https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning)).
+Problems that name no source file (PDF, venue and most reference findings) point at the
+main file, line 1. Each rule links to its page on this site. On the command
+line, `overfull check --sarif > overfull.sarif` writes the same file.
 
 ## The template workflow
 
@@ -130,3 +186,22 @@ search, pass the key as an environment variable on the step:
 
 For forks or restricted networks, set `offline: true` and run reference checks
 locally.
+
+### Cache the lookups
+
+Lookups are cached in `~/.cache/overfull` on the runner. Keep that folder
+between runs with `actions/cache` and most runs make no reference requests at
+all:
+
+```yaml
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/overfull
+          key: overfull-refs-${{ hashFiles('**/*.bib') }}
+          restore-keys: overfull-refs-
+      - uses: amet13/overfull@v3
+```
+
+A found record is reused for 30 days and a "not found" answer for 1 day. To
+look everything up again, run `overfull check --refresh` (the Action has no
+refresh input: change the cache `key` instead).

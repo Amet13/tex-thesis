@@ -1,4 +1,5 @@
 ---
+import { VERSION } from '@overfull/core';
 import Base from '../layouts/Base.astro';
 import { CHECK_LABELS, REPO_URL, url } from '../lib/paths';
 import { rulesByCheck } from '../lib/rules';
@@ -10,25 +11,26 @@ const ruleCount = (check: string) => groups.find((g) => g.check === check)?.rule
 const sheet = renderSheet(sampleReport(), { ruleHref: (r) => url(`rules/${r}/`), headingLevel: 3 });
 const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as const;
 ---
-<Base title="Preflight for LaTeX papers and theses" description="Overfull checks a LaTeX paper or thesis before you submit: the build log, the PDF, every reference, accessibility and venue rules. For authors working by hand or with an AI agent." section="home">
+<Base title="Preflight for LaTeX papers and theses" description="Overfull checks the LaTeX paper or thesis you already have before you submit: every reference against the scholarly indexes, the PDF, accessibility and the venue's rules. In the terminal, in CI, with an AI agent, or on Overleaf." section="home">
   <section class="hero" aria-labelledby="hero-title">
     <p class="runhead"><span>Preflight for LaTeX papers and theses</span></p>
     <div class="hero-grid">
       <div class="hero-measure">
-        <h1 id="hero-title"><span class="l">Write your paper</span> <span class="l l-over">with any AI agent, or by hand.<span class="slug" aria-hidden="true"></span><span class="slug-note" aria-hidden="true">Overfull \hbox (14.2pt too wide) in paragraph at line 1</span></span> <span class="l">Ship one that checks out.</span></h1>
+        <h1 id="hero-title"><span class="l">Check the paper</span> <span class="l l-over">you already have, before you submit.<span class="slug" aria-hidden="true"></span><span class="slug-note" aria-hidden="true">Overfull \hbox (14.2pt too wide) in paragraph at line 1</span></span> <span class="l">With an agent or by hand.</span></h1>
       </div>
       <div class="hero-text">
-        <p class="lede">Overfull is a free, open preflight kit for LaTeX. It compiles your document, reads the log and the PDF, looks up every reference, and tells you what is wrong in plain language, with the file and line to fix.</p>
+        <p class="lede">Overfull is a free, open preflight for any LaTeX project. It looks up every reference in CrossRef, arXiv, DBLP, Semantic Scholar and more, reads the build log and the PDF, applies the venue's rules, and tells you what is wrong in plain language, with the file and line to fix.</p>
         <p class="hero-links">
-          <a class="cta" href={url('check/')}>Check a log or PDF in your browser</a>
+          <a class="cta" href={url('check/')}>Check a project in your browser</a>
           <a class="caret-link" href={url('docs/')}>Read the guide</a>
         </p>
-        <p class="hero-note">The browser check runs on this page; your files are not uploaded.</p>
+        <p class="hero-note">Drop a .zip (Overleaf's source download works), a folder, a log, a .bib or a PDF. It runs on this page; your files are not uploaded.</p>
       </div>
       <dl class="hero-facts" aria-label="At a glance">
-        <div><dt>Version</dt><dd>3.0.0, the successor to tex-thesis</dd></div>
+        <div><dt>Version</dt><dd>{VERSION}, the successor to tex-thesis</dd></div>
         <div><dt>Licence</dt><dd>MIT; templates MIT-0</dd></div>
-        <div><dt>Runs on</dt><dd>Docker, or a local TeX Live 2026</dd></div>
+        <div><dt>Runs on</dt><dd>Linux, macOS, Windows, Docker, GitHub Actions, the browser</dd></div>
+        <div><dt>Venues</dt><dd>NeurIPS, ICLR, ICML, CVPR, AAAI, ACL, EMNLP, IEEE, ACM, Springer LNCS</dd></div>
         <div><dt>Agents</dt><dd>Claude Code, Codex, Cursor, Copilot, Gemini CLI, or none</dd></div>
       </dl>
     </div>
@@ -78,17 +80,17 @@ const checks = ['build', 'output', 'references', 'accessibility', 'venue'] as co
     <div class="ways">
       <div class="way">
         <h3>By hand</h3>
-        <p>Write LaTeX the way you always have. <code>make build</code> compiles in Docker, so a local TeX Live is optional. <code>make check</code> prints the report in plain language, with the file and line of each problem.</p>
+        <p>Write LaTeX the way you always have, in your editor or on Overleaf. <code>overfull check</code> prints the report in plain language, with the file and line of each problem; <code>--watch</code> checks again after every build.</p>
         <p><a href={url('docs/by-hand/')} class="caret-link">Working by hand</a></p>
       </div>
       <div class="way">
         <h3>With an agent</h3>
-        <p>The templates ship <code>AGENTS.md</code> and skills that coding agents read. The agent adds references only through <code>overfull cite</code>, which writes the entry from CrossRef, arXiv or DBLP, runs <code>overfull check --json</code> after each change, and opens a pull request you review with the changes highlighted in the PDF.</p>
+        <p><code>overfull init --here --agents</code> adds <code>AGENTS.md</code> and skills that coding agents read; in Claude Code the plugin installs them. The agent adds references only through <code>overfull cite</code>, which writes the entry from the indexes, and a hook stops it from editing <code>.bib</code> files by hand. It runs <code>overfull check --json</code> after each change. Agents without a shell use <code>overfull mcp</code>.</p>
         <p><a href={url('docs/with-an-agent/')} class="caret-link">Working with an agent</a></p>
       </div>
       <div class="way">
         <h3>In CI</h3>
-        <p>The GitHub Action reads the log, PDF and <code>.bib</code> your workflow already builds, annotates the pull request at the right lines and writes a summary. Each template also ships a workflow that builds in Docker and runs veraPDF.</p>
+        <p>The GitHub Action reads the log, PDF and <code>.bib</code> your workflow already builds, annotates the pull request at the right lines and writes a summary; it can also write SARIF for code scanning. <code>overfull init --here --ci</code> writes a workflow for your project.</p>
         <p><a href={url('docs/action/')} class="caret-link">The GitHub Action</a></p>
       </div>
     </div>
@@ -178,23 +180,23 @@ venue          pass   main text 9 of 9 pages (11 total)</span></pre>
   <section class="block" aria-labelledby="start-title">
     <p class="runhead"><span>Getting started</span></p>
     <div class="galley">
-      <h2 id="start-title">Start in five minutes</h2>
-      <p>You need Docker (or a local TeX Live 2026). The first build downloads the image, about 3 GB (9–10 GB on disk); after that, builds take seconds.</p>
+      <h2 id="start-title">Check your paper in one minute</h2>
+      <p>Install the <code>overfull</code> command (a single file, checked against the release checksums), then run it in the folder of the paper you already have. Build with your usual tools first, or let <code>overfull build</code> use a local TeX Live or Docker.</p>
       <ol class="steps">
         <li>
-          <p>Get the <code>overfull</code> command: a single-file download from <a href={`${REPO_URL}/releases/latest`}>GitHub Releases</a> (native executables for Linux, macOS and Windows), or skip it and run everything from the Docker image <code>ghcr.io/amet13/overfull:3</code>.</p>
-          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 1"><span class="ln"><span class="p">$ </span>curl -fLo overfull {REPO_URL}/releases/latest/download/overfull-linux-x64</span><span class="ln"><span class="p">$ </span>chmod +x overfull && sudo mv overfull /usr/local/bin/</span></div>
+          <p>Install. On Windows: <code>irm https://amet13.github.io/overfull/install.ps1 | iex</code>. Or skip it and use the Docker image <code>ghcr.io/amet13/overfull:3</code>.</p>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 1"><span class="ln"><span class="p">$ </span>curl -fsSL https://amet13.github.io/overfull/install.sh | sh</span></div>
         </li>
         <li>
-          <p>Create a project from a template.</p>
-          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 2"><span class="p">$ </span>overfull init paper my-paper && cd my-paper</div>
+          <p>Check the project you have.</p>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 2"><span class="ln"><span class="p">$ </span>cd my-paper</span><span class="ln"><span class="p">$ </span>overfull check</span></div>
         </li>
         <li>
-          <p>Build and check it. Or open the folder in your coding agent and ask for the change you want; it runs the check itself. In CI, add <code>uses: amet13/overfull@v3</code>.</p>
-          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 3"><span class="ln"><span class="p">$ </span>make build</span><span class="ln"><span class="p">$ </span>make check</span></div>
+          <p>Keep the settings and add what you use: agent instructions, a CI workflow, a pre-commit hook. Your <code>.tex</code> and <code>.bib</code> files are not touched. In CI, add <code>uses: amet13/overfull@v3</code>; for a new document, <code>overfull init paper</code>.</p>
+          <div class="cmd" tabindex="0" role="region" aria-label="Commands for step 3"><span class="p">$ </span>overfull init --here --all</div>
         </li>
       </ol>
-      <p>Already have a LaTeX project and a build log? <a href={url('check/')}>Check it in your browser</a> now. Source and issues are on <a href={REPO_URL}>GitHub</a>.</p>
+      <p>On Overleaf? <a href={url('check/')}>Drop the source zip on the browser check</a>. How accurate is the reference check: <a href={url('docs/accuracy/')}>method and limits</a>. Source and issues are on <a href={REPO_URL}>GitHub</a>.</p>
     </div>
   </section>
 </Base>

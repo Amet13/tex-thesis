@@ -3,7 +3,7 @@ name: release
 # Tag vX.Y.Z → GitHub release with:
 #   - overfull.cjs                      single-file CLI, runs with Node ≥ 26 on any OS
 #   - overfull-<os>-<arch>[.exe]        native executables (Node single executable):
-#                                       linux-x64, linux-arm64, darwin-arm64, win-x64
+#                                       linux-x64, linux-arm64, darwin-arm64, darwin-x64, win-x64
 #   - thesis.pdf, paper.pdf, slides.pdf template PDFs built in the Docker image
 #   - SHA256SUMS                        checksums, plus build provenance attestations
 #   - overfull.intoto.sigstore.json     the signed provenance (Sigstore bundle) for every file
@@ -112,6 +112,7 @@ jobs:
           - { os: ubuntu-26.04, target: linux-x64 }
           - { os: ubuntu-26.04-arm, target: linux-arm64 }
           - { os: macos-26, target: darwin-arm64 }
+          - { os: macos-26-intel, target: darwin-x64 }
           - { os: windows-2025, target: win-x64 }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
@@ -167,9 +168,17 @@ jobs:
           pattern: assets-*
           merge-multiple: true
           path: assets
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: src
       - name: Checksums
         working-directory: assets
         run: sha256sum -- * > SHA256SUMS
+      - name: Homebrew formula and Scoop manifest
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: node src/packaging/generate.mjs --version "$VERSION" --sums assets/SHA256SUMS --out assets
       - id: attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:

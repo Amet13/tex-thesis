@@ -1,0 +1,32 @@
+{
+  "name": "overfull",
+  "displayName": "Overfull",
+  "description": "Skills, a guard and an MCP server for LaTeX papers and theses: add verified citations, fix the build, fit page limits, make the PDF accessible. Needs the overfull CLI on PATH.",
+  "author": {
+    "name": "Amet Umierov",
+    "url": "https://github.com/amet13"
+  },
+  "homepage": "https://amet13.github.io/overfull/",
+  "repository": "https://github.com/amet13/overfull",
+  "license": "MIT",
+  "keywords": ["latex", "references", "accessibility", "thesis"],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v overfull >/dev/null 2>&1 && overfull guard --hook claude || exit 0"
+          }
+        ]
+      }
+    ]
+  },
+  "mcpServers": {
+    "overfull": {
+      "command": "overfull",
+      "args": ["mcp"]
+    }
+  }
+}

@@ -57,16 +57,18 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
       problems.push(...floatsAfterEnd(ctx.aux ?? '', page, endLabel));
       return problems;
     }
-    problems.push({
-      rule: 'page-limit-label-missing',
-      check: 'venue',
-      severity: 'warning',
-      message: entry
-        ? `\\label{${endLabel}} is on page "${entry.page}", which is not a page number; counted all pages`
-        : `\\label{${endLabel}} not found in the .aux; counted all pages`,
-      fix: `Put \`\\label{${endLabel}}\` right after the last line of the main text (before references/appendix) and rebuild`,
-      data: { endLabel },
-    });
+    // Only say pages were counted when there was a PDF to count them in.
+    if (ctx.facts)
+      problems.push({
+        rule: 'page-limit-label-missing',
+        check: 'venue',
+        severity: 'warning',
+        message: entry
+          ? `\\label{${endLabel}} is on page "${entry.page}", which is not a page number; counted all pages`
+          : `\\label{${endLabel}} not found in the .aux; counted all pages`,
+        fix: `Put \`\\label{${endLabel}}\` right after the last line of the main text (before references/appendix) and rebuild`,
+        data: { endLabel },
+      });
   }
   const total = ctx.facts?.pageCount;
   if (total === undefined) {

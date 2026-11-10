@@ -1,0 +1,27 @@
+{
+  "id": "respond-to-reviewer",
+  "template": "paper",
+  "title": "Respond to a reviewer comment that needs one new reference",
+  "write": {
+    "notes/reviews.md": {
+      "generate": "reviewer-comment",
+      "key": "hochreiter1997long",
+      "ask": "Please discuss it and cite it."
+    }
+  },
+  "prompt": "notes/reviews.md holds the reviews. Address Reviewer 2's comment 3 in the paper: add the discussion it asks for in the related-work section, in no more than two sentences, and cite the work properly. Then write a short response to that comment in notes/response.md that says what you changed and where. Do not change anything else.",
+  "allowed": ["references.bib", "sections/related.tex", "notes/response.md"],
+  "expect": {
+    "status": ["pass", "warn"],
+    "maxErrors": 0,
+    "citedAtLeast": 9,
+    "noRules": ["reference-not-found", "citation-key-missing", "pdf-unresolved-citation"],
+    "files": ["notes/response.md"],
+    "contains": [
+      {
+        "file": "references.bib",
+        "pattern": "{{doi:hochreiter1997long}}"
+      }
+    ]
+  }
+}
