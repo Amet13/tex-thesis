@@ -1714,7 +1714,7 @@ var require_merge = __commonJS({
     var identity = require_identity();
     var Scalar = require_Scalar();
     var MERGE_KEY = "<<";
-    var merge = {
+    var merge2 = {
       identify: (value) => value === MERGE_KEY || typeof value === "symbol" && value.description === MERGE_KEY,
       default: "key",
       tag: "tag:yaml.org,2002:merge",
@@ -1724,7 +1724,7 @@ var require_merge = __commonJS({
       }),
       stringify: () => MERGE_KEY
     };
-    var isMergeKey = (ctx, key) => (merge.identify(key) || identity.isScalar(key) && (!key.type || key.type === Scalar.Scalar.PLAIN) && merge.identify(key.value)) && ctx?.doc.schema.tags.some((tag2) => tag2.tag === merge.tag && tag2.default);
+    var isMergeKey = (ctx, key) => (merge2.identify(key) || identity.isScalar(key) && (!key.type || key.type === Scalar.Scalar.PLAIN) && merge2.identify(key.value)) && ctx?.doc.schema.tags.some((tag2) => tag2.tag === merge2.tag && tag2.default);
     function addMergeToJSMap(ctx, map, value) {
       const source = resolveAliasValue(ctx, value);
       if (identity.isSeq(source))
@@ -1763,7 +1763,7 @@ var require_merge = __commonJS({
     }
     exports.addMergeToJSMap = addMergeToJSMap;
     exports.isMergeKey = isMergeKey;
-    exports.merge = merge;
+    exports.merge = merge2;
   }
 });
 
@@ -1772,15 +1772,15 @@ var require_addPairToJSMap = __commonJS({
   "../node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
     "use strict";
     var log = require_log();
-    var merge = require_merge();
+    var merge2 = require_merge();
     var stringify = require_stringify();
     var identity = require_identity();
     var toJS = require_toJS();
     function addPairToJSMap(ctx, map, { key, value }) {
       if (identity.isNode(key) && key.addToJSMap)
         key.addToJSMap(ctx, map, value);
-      else if (merge.isMergeKey(ctx, key))
-        merge.addMergeToJSMap(ctx, map, value);
+      else if (merge2.isMergeKey(ctx, key))
+        merge2.addMergeToJSMap(ctx, map, value);
       else {
         const jsKey = toJS.toJS(key, "", ctx);
         if (map instanceof Map) {
@@ -2394,9 +2394,9 @@ var require_stringifyNumber = __commonJS({
     function stringifyNumber({ format, minFractionDigits, tag: tag2, value }) {
       if (typeof value === "bigint")
         return String(value);
-      const num2 = typeof value === "number" ? value : Number(value);
-      if (!isFinite(num2))
-        return isNaN(num2) ? ".nan" : num2 < 0 ? "-.inf" : ".inf";
+      const num3 = typeof value === "number" ? value : Number(value);
+      if (!isFinite(num3))
+        return isNaN(num3) ? ".nan" : num3 < 0 ? "-.inf" : ".inf";
       let n = Object.is(value, -0) ? "-0" : JSON.stringify(value);
       if (!format && minFractionDigits && (!tag2 || tag2 === "tag:yaml.org,2002:float") && /^-?\d/.test(n) && !n.includes("e")) {
         let i = n.indexOf(".");
@@ -2436,8 +2436,8 @@ var require_float = __commonJS({
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
       resolve: (str3) => parseFloat(str3),
       stringify(node) {
-        const num2 = Number(node.value);
-        return isFinite(num2) ? num2.toExponential() : stringifyNumber.stringifyNumber(node);
+        const num3 = Number(node.value);
+        return isFinite(num3) ? num3.toExponential() : stringifyNumber.stringifyNumber(node);
       }
     };
     var float = {
@@ -2876,8 +2876,8 @@ var require_float2 = __commonJS({
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
       resolve: (str3) => parseFloat(str3.replace(/_/g, "")),
       stringify(node) {
-        const num2 = Number(node.value);
-        return isFinite(num2) ? num2.toExponential() : stringifyNumber.stringifyNumber(node);
+        const num3 = Number(node.value);
+        return isFinite(num3) ? num3.toExponential() : stringifyNumber.stringifyNumber(node);
       }
     };
     var float = {
@@ -3079,23 +3079,23 @@ var require_timestamp = __commonJS({
     function parseSexagesimal(str3, asBigInt) {
       const sign = str3[0];
       const parts = sign === "-" || sign === "+" ? str3.substring(1) : str3;
-      const num2 = (n) => asBigInt ? BigInt(n) : Number(n);
-      const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num2(60) + num2(p), num2(0));
-      return sign === "-" ? num2(-1) * res : res;
+      const num3 = (n) => asBigInt ? BigInt(n) : Number(n);
+      const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num3(60) + num3(p), num3(0));
+      return sign === "-" ? num3(-1) * res : res;
     }
     function stringifySexagesimal(node) {
       let { value } = node;
-      let num2 = (n) => n;
+      let num3 = (n) => n;
       if (typeof value === "bigint")
-        num2 = (n) => BigInt(n);
+        num3 = (n) => BigInt(n);
       else if (isNaN(value) || !isFinite(value))
         return stringifyNumber.stringifyNumber(node);
       let sign = "";
       if (value < 0) {
         sign = "-";
-        value *= num2(-1);
+        value *= num3(-1);
       }
-      const _60 = num2(60);
+      const _60 = num3(60);
       const parts = [value % _60];
       if (value < 60) {
         parts.unshift(0);
@@ -3171,7 +3171,7 @@ var require_schema3 = __commonJS({
     var bool = require_bool2();
     var float = require_float2();
     var int2 = require_int2();
-    var merge = require_merge();
+    var merge2 = require_merge();
     var omap = require_omap();
     var pairs = require_pairs();
     var set = require_set();
@@ -3191,7 +3191,7 @@ var require_schema3 = __commonJS({
       float.floatExp,
       float.float,
       binary.binary,
-      merge.merge,
+      merge2.merge,
       omap.omap,
       pairs.pairs,
       set.set,
@@ -3217,7 +3217,7 @@ var require_tags = __commonJS({
     var schema = require_schema();
     var schema$1 = require_schema2();
     var binary = require_binary();
-    var merge = require_merge();
+    var merge2 = require_merge();
     var omap = require_omap();
     var pairs = require_pairs();
     var schema$2 = require_schema3();
@@ -3242,7 +3242,7 @@ var require_tags = __commonJS({
       intOct: int2.intOct,
       intTime: timestamp.intTime,
       map: map.map,
-      merge: merge.merge,
+      merge: merge2.merge,
       null: _null.nullTag,
       omap: omap.omap,
       pairs: pairs.pairs,
@@ -3252,7 +3252,7 @@ var require_tags = __commonJS({
     };
     var coreKnownTags = {
       "tag:yaml.org,2002:binary": binary.binary,
-      "tag:yaml.org,2002:merge": merge.merge,
+      "tag:yaml.org,2002:merge": merge2.merge,
       "tag:yaml.org,2002:omap": omap.omap,
       "tag:yaml.org,2002:pairs": pairs.pairs,
       "tag:yaml.org,2002:set": set.set,
@@ -3261,7 +3261,7 @@ var require_tags = __commonJS({
     function getTags(customTags, schemaName, addMergeTag) {
       const schemaTags = schemas.get(schemaName);
       if (schemaTags && !customTags) {
-        return addMergeTag && !schemaTags.includes(merge.merge) ? schemaTags.concat(merge.merge) : schemaTags.slice();
+        return addMergeTag && !schemaTags.includes(merge2.merge) ? schemaTags.concat(merge2.merge) : schemaTags.slice();
       }
       let tags = schemaTags;
       if (!tags) {
@@ -3279,7 +3279,7 @@ var require_tags = __commonJS({
         tags = customTags(tags.slice());
       }
       if (addMergeTag)
-        tags = tags.concat(merge.merge);
+        tags = tags.concat(merge2.merge);
       return tags.reduce((tags2, tag2) => {
         const tagObj = typeof tag2 === "string" ? tagsByName[tag2] : tag2;
         if (!tagObj) {
@@ -3308,11 +3308,11 @@ var require_Schema = __commonJS({
     var tags = require_tags();
     var sortMapEntriesByKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
     var Schema = class _Schema {
-      constructor({ compat, customTags, merge, resolveKnownTags, schema, sortMapEntries, toStringDefaults }) {
+      constructor({ compat, customTags, merge: merge2, resolveKnownTags, schema, sortMapEntries, toStringDefaults }) {
         this.compat = Array.isArray(compat) ? tags.getTags(compat, "compat") : compat ? tags.getTags(null, compat) : null;
         this.name = typeof schema === "string" && schema || "core";
         this.knownTags = resolveKnownTags ? tags.coreKnownTags : {};
-        this.tags = tags.getTags(customTags, this.name, merge);
+        this.tags = tags.getTags(customTags, this.name, merge2);
         this.toStringOptions = toStringDefaults ?? null;
         Object.defineProperty(this, identity.MAP, { value: map.map });
         Object.defineProperty(this, identity.SCALAR, { value: string.string });
@@ -7679,14 +7679,14 @@ function stringToPDFString(str3, keepEscapeSequence = false) {
   return strBuf.join("");
 }
 function getLookupTableFactory(initializer, useArray = false) {
-  let lookup;
+  let lookup2;
   return function() {
     if (initializer) {
-      lookup = useArray ? [] : /* @__PURE__ */ Object.create(null);
-      initializer(lookup);
+      lookup2 = useArray ? [] : /* @__PURE__ */ Object.create(null);
+      initializer(lookup2);
       initializer = null;
     }
-    return lookup;
+    return lookup2;
   };
 }
 function arrayBuffersToBytes(arr) {
@@ -9466,7 +9466,7 @@ async function OpenJPEG(moduleArg = {}) {
   };
   var INT53_MAX = 9007199254740992;
   var INT53_MIN = -9007199254740992;
-  var bigintToI53Checked = (num2) => num2 < INT53_MIN || num2 > INT53_MAX ? NaN : Number(num2);
+  var bigintToI53Checked = (num3) => num3 < INT53_MIN || num3 > INT53_MAX ? NaN : Number(num3);
   function _fd_seek(fd, offset, whence, newOffset) {
     offset = bigintToI53Checked(offset);
     return 70;
@@ -9523,7 +9523,7 @@ async function OpenJPEG(moduleArg = {}) {
   var UTF8ToString = (ptr, maxBytesToRead, ignoreNul) => ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead, ignoreNul) : "";
   var HEAPU32;
   var _fd_write = (fd, iov, iovcnt, pnum) => {
-    var num2 = 0;
+    var num3 = 0;
     for (var i = 0; i < iovcnt; i++) {
       var ptr = HEAPU32[iov >> 2];
       var len = HEAPU32[iov + 4 >> 2];
@@ -9531,9 +9531,9 @@ async function OpenJPEG(moduleArg = {}) {
       for (var j = 0; j < len; j++) {
         printChar(fd, HEAPU8[ptr + j]);
       }
-      num2 += len;
+      num3 += len;
     }
-    HEAPU32[pnum >> 2] = num2;
+    HEAPU32[pnum >> 2] = num3;
     return 0;
   };
   function _init_pixels(size) {
@@ -13348,9 +13348,9 @@ function getRatio(data) {
       den: 1
     };
   }
-  const [num2, den] = ratio;
+  const [num3, den] = ratio;
   return {
-    num: num2,
+    num: num3,
     den
   };
 }
@@ -20006,9 +20006,9 @@ var init_pdf_worker = __esm({
     };
     Ref = class _Ref {
       #str;
-      constructor(str3, num2, gen) {
+      constructor(str3, num3, gen) {
         this.#str = str3;
-        this.num = num2;
+        this.num = num3;
         this.gen = gen;
       }
       toString() {
@@ -20027,11 +20027,11 @@ var init_pdf_worker = __esm({
         RefCache.set(str3, ref);
         return ref;
       }
-      static get(num2, gen) {
-        const str3 = gen === 0 ? `${num2}R` : `${num2}R${gen}`;
+      static get(num3, gen) {
+        const str3 = gen === 0 ? `${num3}R` : `${num3}R${gen}`;
         let ref = RefCache.get(str3);
         if (!ref) {
-          ref = new _Ref(str3, num2, gen);
+          ref = new _Ref(str3, num3, gen);
           RefCache.set(str3, ref);
         }
         return ref;
@@ -20464,20 +20464,20 @@ var init_pdf_worker = __esm({
     };
     IndexedCS = class extends ColorSpace {
       #rgbLookup;
-      constructor(base, highVal, lookup) {
+      constructor(base, highVal, lookup2) {
         super("Indexed", 1);
         this.highVal = highVal;
         const count = highVal + 1;
         const length = base.numComps * count;
         const palette2 = new Uint8Array(length);
-        if (lookup instanceof BaseStream) {
-          palette2.set(lookup.getBytes(length));
-        } else if (typeof lookup === "string") {
+        if (lookup2 instanceof BaseStream) {
+          palette2.set(lookup2.getBytes(length));
+        } else if (typeof lookup2 === "string") {
           for (let i = 0; i < length; ++i) {
-            palette2[i] = lookup.charCodeAt(i);
+            palette2[i] = lookup2.charCodeAt(i);
           }
         } else {
-          throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
+          throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup2}`);
         }
         this.#rgbLookup = new Uint8ClampedArray(count * 3);
         base.getRgbBuffer(palette2, 0, count, this.#rgbLookup, 0, 8, 0);
@@ -22195,8 +22195,8 @@ var init_pdf_worker = __esm({
             case "Indexed":
               baseCS = this.#subParse(cs[1], options);
               const hiVal = MathClamp(xref.fetchIfRef(cs[2]), 0, 255);
-              const lookup = xref.fetchIfRef(cs[3]);
-              return new IndexedCS(baseCS, hiVal, lookup);
+              const lookup2 = xref.fetchIfRef(cs[3]);
+              return new IndexedCS(baseCS, hiVal, lookup2);
             case "Separation":
             case "DeviceN":
               const name = xref.fetchIfRef(cs[1]);
@@ -23467,10 +23467,10 @@ var init_pdf_worker = __esm({
         const n = this.readNumber();
         return n & 1 ? ~(n >>> 1) : n >>> 1;
       }
-      readHex(num2, size) {
-        num2.set(this.getBytes(size + 1));
+      readHex(num3, size) {
+        num3.set(this.getBytes(size + 1));
       }
-      readHexNumber(num2, size) {
+      readHexNumber(num3, size) {
         let last;
         const stack = this.tmpBuf;
         let sp = 0;
@@ -23488,19 +23488,19 @@ var init_pdf_worker = __esm({
             buffer |= stack[--sp] << bufferSize;
             bufferSize += 7;
           }
-          num2[i] = buffer & 255;
+          num3[i] = buffer & 255;
           i--;
           buffer >>= 8;
           bufferSize -= 8;
         }
       }
-      readHexSigned(num2, size) {
-        this.readHexNumber(num2, size);
-        const sign = num2[size] & 1 ? 255 : 0;
+      readHexSigned(num3, size) {
+        this.readHexNumber(num3, size);
+        const sign = num3[size] & 1 ? 255 : 0;
         let c = 0;
         for (let i = 0; i <= size; i++) {
-          c = (c & 1) << 8 | num2[i];
-          num2[i] = c >> 1 ^ sign;
+          c = (c & 1) << 8 | num3[i];
+          num3[i] = c >> 1 ^ sign;
         }
       }
       readString() {
@@ -25510,35 +25510,35 @@ var init_pdf_worker = __esm({
         }
       }
       const LOOKUP = new Int32Array(2048);
-      function unpackLookupTable(lookup, utfMap, utfRle) {
+      function unpackLookupTable(lookup2, utfMap, utfRle) {
         for (let i = 0; i < 256; ++i) {
-          lookup[i] = i & 63;
-          lookup[512 + i] = i >> 2;
-          lookup[1792 + i] = 2 + (i >> 6);
+          lookup2[i] = i & 63;
+          lookup2[512 + i] = i >> 2;
+          lookup2[1792 + i] = 2 + (i >> 6);
         }
         for (let i = 0; i < 128; ++i) {
-          lookup[1024 + i] = 4 * (utfMap.charCodeAt(i) - 32);
+          lookup2[1024 + i] = 4 * (utfMap.charCodeAt(i) - 32);
         }
         for (let i = 0; i < 64; ++i) {
-          lookup[1152 + i] = i & 1;
-          lookup[1216 + i] = 2 + (i & 1);
+          lookup2[1152 + i] = i & 1;
+          lookup2[1216 + i] = 2 + (i & 1);
         }
         let offset = 1280;
         for (let k = 0; k < 19; ++k) {
           const value = k & 3;
           const rep = utfRle.charCodeAt(k) - 32;
           for (let i = 0; i < rep; ++i) {
-            lookup[offset++] = value;
+            lookup2[offset++] = value;
           }
         }
         for (let i = 0; i < 16; ++i) {
-          lookup[1792 + i] = 1;
-          lookup[2032 + i] = 6;
+          lookup2[1792 + i] = 1;
+          lookup2[2032 + i] = 6;
         }
-        lookup[1792] = 0;
-        lookup[2047] = 7;
+        lookup2[1792] = 0;
+        lookup2[2047] = 7;
         for (let i = 0; i < 256; ++i) {
-          lookup[1536 + i] = lookup[1792 + i] << 3;
+          lookup2[1536 + i] = lookup2[1792 + i] << 3;
         }
       }
       unpackLookupTable(LOOKUP, `         !!  !                  "#$##%#$&'##(#)#++++++++++((&*'##,---,---,-----,-----,-----&#'###.///.///./////./////./////&#'# `, "A/*  ':  & : $  \x81 @");
@@ -32964,7 +32964,7 @@ var init_pdf_worker = __esm({
         function parseFloatOperand() {
           let str3 = "";
           const eof = 15;
-          const lookup = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "E", "E-", null, "-"];
+          const lookup2 = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "E", "E-", null, "-"];
           const length = dict.length;
           while (pos < length) {
             const b = dict[pos++];
@@ -32973,11 +32973,11 @@ var init_pdf_worker = __esm({
             if (b1 === eof) {
               break;
             }
-            str3 += lookup[b1];
+            str3 += lookup2[b1];
             if (b2 === eof) {
               break;
             }
-            str3 += lookup[b2];
+            str3 += lookup2[b2];
           }
           return parseFloat(str3);
         }
@@ -33866,12 +33866,12 @@ var init_pdf_worker = __esm({
       static get EncodeFloatRegExp() {
         return util_shadow(this, "EncodeFloatRegExp", /\.(\d*?)(?:9{5,20}|0{5,20})\d{0,2}(?:e(.+)|$)/);
       }
-      encodeFloat(num2) {
-        let value = num2.toString();
+      encodeFloat(num3) {
+        let value = num3.toString();
         const m = _CFFCompiler.EncodeFloatRegExp.exec(value);
         if (m) {
           const epsilon = parseFloat("1e" + ((m[2] ? +m[2] : 0) + m[1].length));
-          value = (Math.round(num2 * epsilon) / epsilon).toString();
+          value = (Math.round(num3 * epsilon) / epsilon).toString();
         }
         let nibbles = "";
         let i, ii;
@@ -39322,9 +39322,9 @@ var init_pdf_worker = __esm({
                   error = true;
                   break;
                 }
-                const num2 = this.stack.pop();
+                const num22 = this.stack.pop();
                 const num1 = this.stack.pop();
-                this.stack.push(num1 / num2);
+                this.stack.push(num1 / num22);
                 break;
               case (12 << 8) + 16:
                 if (this.stack.length < 2) {
@@ -52564,8 +52564,8 @@ var init_pdf_worker = __esm({
         changes
       }) {
         const root = await pdfManager.ensureCatalog("cloneDict");
-        const cache = new RefMap();
-        cache.put(catalogRef, root);
+        const cache2 = new RefMap();
+        cache2.put(catalogRef, root);
         const structTreeRootRef = xref.getNewTemporaryRef();
         root.set("StructTreeRoot", structTreeRootRef);
         const structTreeRoot = new Dict(xref);
@@ -52574,7 +52574,7 @@ var init_pdf_worker = __esm({
         structTreeRoot.set("ParentTree", parentTreeRef);
         const kids = [];
         structTreeRoot.set("K", kids);
-        cache.put(structTreeRootRef, structTreeRoot);
+        cache2.put(structTreeRootRef, structTreeRoot);
         const parentTree = new Dict(xref);
         const nums = [];
         parentTree.set("Nums", nums);
@@ -52587,11 +52587,11 @@ var init_pdf_worker = __esm({
           xref,
           pdfManager,
           changes,
-          cache
+          cache: cache2
         });
         structTreeRoot.set("ParentTreeNextKey", nextKey);
-        cache.put(parentTreeRef, parentTree);
-        for (const [ref, obj] of cache.items()) {
+        cache2.put(parentTreeRef, parentTree);
+        for (const [ref, obj] of cache2.items()) {
           changes.put(ref, {
             data: obj
           });
@@ -52675,8 +52675,8 @@ var init_pdf_worker = __esm({
           xref
         } = this;
         const structTreeRoot = this.dict.clone();
-        const cache = new RefMap();
-        cache.put(structTreeRootRef, structTreeRoot);
+        const cache2 = new RefMap();
+        cache2.put(structTreeRootRef, structTreeRoot);
         let parentTreeRef = structTreeRoot.getRaw("ParentTree");
         let parentTree;
         if (parentTreeRef instanceof Ref) {
@@ -52687,7 +52687,7 @@ var init_pdf_worker = __esm({
           structTreeRoot.set("ParentTree", parentTreeRef);
         }
         parentTree = parentTree.clone();
-        cache.put(parentTreeRef, parentTree);
+        cache2.put(parentTreeRef, parentTree);
         let nums = parentTree.getRaw("Nums");
         let numsRef = null;
         if (nums instanceof Ref) {
@@ -52707,16 +52707,16 @@ var init_pdf_worker = __esm({
           xref,
           pdfManager,
           changes,
-          cache
+          cache: cache2
         });
         if (newNextKey === -1) {
           return;
         }
         structTreeRoot.set("ParentTreeNextKey", newNextKey);
         if (numsRef) {
-          cache.put(numsRef, nums);
+          cache2.put(numsRef, nums);
         }
-        for (const [ref, obj] of cache.items()) {
+        for (const [ref, obj] of cache2.items()) {
           changes.put(ref, {
             data: obj
           });
@@ -52731,7 +52731,7 @@ var init_pdf_worker = __esm({
         xref,
         pdfManager,
         changes,
-        cache
+        cache: cache2
       }) {
         const objr = Name.get("OBJR");
         let nextKey = -1;
@@ -52788,7 +52788,7 @@ var init_pdf_worker = __esm({
               structTreeRootRef,
               fallbackKids: kids,
               xref,
-              cache
+              cache: cache2
             });
             const objDict = new Dict(xref);
             tagDict.set("K", objDict);
@@ -52797,7 +52797,7 @@ var init_pdf_worker = __esm({
               objDict.set("Pg", pageRef);
             }
             objDict.set("Obj", ref);
-            cache.put(tagRef, tagDict);
+            cache2.put(tagRef, tagDict);
             nums.push(parentTreeId, tagRef);
           }
         }
@@ -52902,7 +52902,7 @@ var init_pdf_worker = __esm({
         structTreeRootRef,
         fallbackKids,
         xref,
-        cache
+        cache: cache2
       }) {
         let ref = null;
         let parentRef;
@@ -52920,15 +52920,15 @@ var init_pdf_worker = __esm({
           fallbackKids.push(newTagRef);
           return;
         }
-        const cachedParentDict = cache.getOrPutComputed(parentRef, () => parentDict.clone());
+        const cachedParentDict = cache2.getOrPutComputed(parentRef, () => parentDict.clone());
         const parentKidsRaw = cachedParentDict.getRaw("K");
-        let cachedParentKids = parentKidsRaw instanceof Ref ? cache.get(parentKidsRaw) : null;
+        let cachedParentKids = parentKidsRaw instanceof Ref ? cache2.get(parentKidsRaw) : null;
         if (!cachedParentKids) {
           cachedParentKids = xref.fetchIfRef(parentKidsRaw);
           cachedParentKids = Array.isArray(cachedParentKids) ? cachedParentKids.slice() : [parentKidsRaw];
           const parentKidsRef = xref.getNewTemporaryRef();
           cachedParentDict.set("K", parentKidsRef);
-          cache.put(parentKidsRef, cachedParentKids);
+          cache2.put(parentKidsRef, cachedParentKids);
         }
         const index = cachedParentKids.indexOf(ref);
         cachedParentKids.splice(index >= 0 ? index + 1 : cachedParentKids.length, 0, newTagRef);
@@ -53915,8 +53915,8 @@ var init_pdf_worker = __esm({
           groups: [...groupRefCache]
         };
       }
-      setActualNumPages(num2 = null) {
-        this.#actualNumPages = num2;
+      setActualNumPages(num3 = null) {
+        this.#actualNumPages = num3;
       }
       get hasActualNumPages() {
         return this.#actualNumPages !== null;
@@ -65677,8 +65677,8 @@ var init_pdf_worker = __esm({
             }
             const isTooBig = (fsize) => {
               let totalHeight = 0;
-              for (const cache of cachedLines) {
-                const chunks = this._splitLine(null, font, fsize, width, maxWidth, cache);
+              for (const cache2 of cachedLines) {
+                const chunks = this._splitLine(null, font, fsize, width, maxWidth, cache2);
                 totalHeight += chunks.length * fsize;
                 if (totalHeight > height) {
                   return true;
@@ -65836,9 +65836,9 @@ var init_pdf_worker = __esm({
           }
           const isDate = m[1] === "Date";
           let format = m[2];
-          const num2 = parseInt(format, 10);
-          if (!isNaN(num2) && Math.floor(Math.log10(num2)) + 1 === m[2].length) {
-            format = (isDate ? DateFormats : TimeFormats)[num2] ?? format;
+          const num3 = parseInt(format, 10);
+          if (!isNaN(num3) && Math.floor(Math.log10(num3)) + 1 === m[2].length) {
+            format = (isDate ? DateFormats : TimeFormats)[num3] ?? format;
           }
           this.data.datetimeFormat = format;
           if (!canUseHTMLDateTime) {
@@ -65915,9 +65915,9 @@ var init_pdf_worker = __esm({
         const renderedText = buf.join("\n");
         return `/Tx BMC q ${colors}BT ` + defaultAppearance + ` 1 0 0 1 0 ${core_utils_numberToString(height)} Tm ${renderedText} ET Q EMC`;
       }
-      _splitLine(line, font, fontSize, width, maxWidth, cache = {}) {
-        line = cache.line || line;
-        const glyphs = cache.glyphs || font.charsToGlyphs(line);
+      _splitLine(line, font, fontSize, width, maxWidth, cache2 = {}) {
+        line = cache2.line || line;
+        const glyphs = cache2.glyphs || font.charsToGlyphs(line);
         if (glyphs.length <= 1) {
           return [line];
         }
@@ -65925,7 +65925,7 @@ var init_pdf_worker = __esm({
         if (Math.sumPrecise(glyphs.map((g) => g.width)) * scale <= maxWidth) {
           return [line];
         }
-        const positions = cache.positions || font.getCharPositions(line);
+        const positions = cache2.positions || font.getCharPositions(line);
         const chunks = [];
         let lastSpacePosInStringStart = -1, lastSpacePosInStringEnd = -1, lastSpacePos = -1, startChunk = 0, currentWidth = 0;
         for (let i = 0, ii = glyphs.length; i < ii; i++) {
@@ -68901,14 +68901,14 @@ var init_pdf_worker = __esm({
         }
         return userPassword;
       }
-      #buildObjectKey(num2, gen, encryptionKey, isAes = false) {
+      #buildObjectKey(num3, gen, encryptionKey, isAes = false) {
         const n = encryptionKey.length;
         const key = new Uint8Array(n + 9);
         key.set(encryptionKey);
         let i = n;
-        key[i++] = num2 & 255;
-        key[i++] = num2 >> 8 & 255;
-        key[i++] = num2 >> 16 & 255;
+        key[i++] = num3 & 255;
+        key[i++] = num3 >> 8 & 255;
+        key[i++] = num3 >> 16 & 255;
         key[i++] = gen & 255;
         key[i++] = gen >> 8 & 255;
         if (isAes) {
@@ -69041,7 +69041,7 @@ var init_pdf_worker = __esm({
         const transform = new _CipherTransformFactory(this.dict, this.#fileId, password);
         this.encryptionKey = transform.encryptionKey;
       }
-      createCipherTransform(num2, gen) {
+      createCipherTransform(num3, gen) {
         if (this.algorithm === 4 || this.algorithm === 5) {
           const resolveCipher2 = (filterName) => {
             if (!(filterName instanceof Name)) {
@@ -69059,10 +69059,10 @@ var init_pdf_worker = __esm({
               return AES256Cipher.bind(null, this.encryptionKey);
             }
             if (cfm.name === "V2") {
-              return ARCFourCipher.bind(null, this.#buildObjectKey(num2, gen, this.encryptionKey, false));
+              return ARCFourCipher.bind(null, this.#buildObjectKey(num3, gen, this.encryptionKey, false));
             }
             if (cfm.name === "AESV2") {
-              return AES128Cipher.bind(null, this.#buildObjectKey(num2, gen, this.encryptionKey, true));
+              return AES128Cipher.bind(null, this.#buildObjectKey(num3, gen, this.encryptionKey, true));
             }
             throw new FormatError("Unknown crypto method");
           };
@@ -69070,7 +69070,7 @@ var init_pdf_worker = __esm({
           transform.embeddedFilterName = this.eff;
           return transform;
         }
-        const resolveCipher = () => ARCFourCipher.bind(null, this.#buildObjectKey(num2, gen, this.encryptionKey, false));
+        const resolveCipher = () => ARCFourCipher.bind(null, this.#buildObjectKey(num3, gen, this.encryptionKey, false));
         return new CipherTransform(resolveCipher);
       }
     };
@@ -69093,9 +69093,9 @@ var init_pdf_worker = __esm({
         if (this.#newPersistentRefNum === null) {
           this.#newPersistentRefNum = this.#entries.length || 1;
         }
-        const num2 = this.#newPersistentRefNum++;
-        this.#cacheMap.set(num2, obj);
-        return Ref.get(num2, 0);
+        const num3 = this.#newPersistentRefNum++;
+        this.#cacheMap.set(num3, obj);
+        return Ref.get(num3, 0);
       }
       getNewTemporaryRef() {
         if (this.#newTemporaryRefNum === null) {
@@ -69113,8 +69113,8 @@ var init_pdf_worker = __esm({
       resetNewTemporaryRef() {
         this.#newTemporaryRefNum = null;
         if (this.#persistentRefsCache) {
-          for (const [num2, obj] of this.#persistentRefsCache) {
-            this.#cacheMap.set(num2, obj);
+          for (const [num3, obj] of this.#persistentRefsCache) {
+            this.#cacheMap.set(num3, obj);
           }
         }
         this.#persistentRefsCache = null;
@@ -69410,12 +69410,12 @@ var init_pdf_worker = __esm({
             trailers.push(position);
             position += skipUntil(buffer, position, startxrefBytes);
           } else if (m = objRegExp.exec(token)) {
-            const num2 = m[1] | 0, gen = m[2] | 0;
+            const num3 = m[1] | 0, gen = m[2] | 0;
             const startPos = position + token.length;
             let contentLength, updateEntries = false;
-            if (!this.#entries[num2]) {
+            if (!this.#entries[num3]) {
               updateEntries = true;
-            } else if (this.#entries[num2].gen === gen) {
+            } else if (this.#entries[num3].gen === gen) {
               try {
                 const parser = new Parser3({
                   lexer: new Lexer(stream.makeSubStream(startPos))
@@ -69431,7 +69431,7 @@ var init_pdf_worker = __esm({
               }
             }
             if (updateEntries) {
-              this.#entries[num2] = {
+              this.#entries[num3] = {
                 offset: position - stream.start,
                 gen,
                 free: false,
@@ -69544,12 +69544,12 @@ var init_pdf_worker = __esm({
           return this.topDict;
         }
         if (!trailerDicts.length) {
-          for (const num2 in this.#entries) {
-            const entry = this.#entries[num2];
+          for (const num3 in this.#entries) {
+            const entry = this.#entries[num3];
             if (!entry) {
               continue;
             }
-            const ref = Ref.get(parseInt(num2, 10), entry.gen);
+            const ref = Ref.get(parseInt(num3, 10), entry.gen);
             let obj;
             try {
               obj = this.fetch(ref);
@@ -69656,15 +69656,15 @@ var init_pdf_worker = __esm({
         if (!(ref instanceof Ref)) {
           throw new Error("ref object is not a reference");
         }
-        const num2 = ref.num;
-        const cacheEntry = this.#cacheMap.get(num2);
+        const num3 = ref.num;
+        const cacheEntry = this.#cacheMap.get(num3);
         if (cacheEntry !== void 0) {
           if (cacheEntry instanceof Dict && !cacheEntry.objId) {
             cacheEntry.objId = ref.toString();
           }
           return cacheEntry;
         }
-        let xrefEntry = this.getEntry(num2);
+        let xrefEntry = this.getEntry(num3);
         if (xrefEntry === null) {
           return xrefEntry;
         }
@@ -69690,12 +69690,12 @@ var init_pdf_worker = __esm({
       }
       fetchUncompressed(ref, xrefEntry, suppressEncryption = false) {
         const gen = ref.gen;
-        let num2 = ref.num;
+        let num3 = ref.num;
         if (xrefEntry.gen !== gen) {
           const msg = `Inconsistent generation in XRef: ${ref}`;
           if (this._generationFallback && xrefEntry.gen < gen) {
             warn(msg);
-            return this.fetchUncompressed(Ref.get(num2, xrefEntry.gen), xrefEntry, suppressEncryption);
+            return this.fetchUncompressed(Ref.get(num3, xrefEntry.gen), xrefEntry, suppressEncryption);
           }
           throw new XRefEntryException(msg);
         }
@@ -69708,21 +69708,21 @@ var init_pdf_worker = __esm({
         const obj1 = parser.getObj();
         const obj2 = parser.getObj();
         const obj3 = parser.getObj();
-        if (obj1 !== num2 || obj2 !== gen || !(obj3 instanceof Cmd)) {
+        if (obj1 !== num3 || obj2 !== gen || !(obj3 instanceof Cmd)) {
           throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
         }
         if (obj3.cmd !== "obj") {
           if (obj3.cmd.startsWith("obj")) {
-            num2 = parseInt(obj3.cmd.substring(3), 10);
-            if (!Number.isNaN(num2)) {
-              return num2;
+            num3 = parseInt(obj3.cmd.substring(3), 10);
+            if (!Number.isNaN(num3)) {
+              return num3;
             }
           }
           throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
         }
-        xrefEntry = this.encrypt && !suppressEncryption ? parser.getObj(this.encrypt.createCipherTransform(num2, gen)) : parser.getObj();
+        xrefEntry = this.encrypt && !suppressEncryption ? parser.getObj(this.encrypt.createCipherTransform(num3, gen)) : parser.getObj();
         if (!(xrefEntry instanceof BaseStream)) {
-          this.#cacheMap.set(num2, xrefEntry);
+          this.#cacheMap.set(num3, xrefEntry);
         }
         return xrefEntry;
       }
@@ -69745,16 +69745,16 @@ var init_pdf_worker = __esm({
         const nums = new Array(n);
         const offsets = new Array(n);
         for (let i = 0; i < n; ++i) {
-          const num2 = parser.getObj();
-          if (!Number.isInteger(num2)) {
-            throw new FormatError(`invalid object number in the ObjStm stream: ${num2}`);
+          const num3 = parser.getObj();
+          if (!Number.isInteger(num3)) {
+            throw new FormatError(`invalid object number in the ObjStm stream: ${num3}`);
           }
           const offset = parser.getObj();
           if (!Number.isInteger(offset)) {
             throw new FormatError(`invalid object offset in the ObjStm stream: ${offset}`);
           }
-          nums[i] = num2;
-          const entry = this.getEntry(num2);
+          nums[i] = num3;
+          const entry = this.getEntry(num3);
           if (entry?.offset === tableOffset && entry.gen !== i) {
             entry.gen = i;
           }
@@ -69777,9 +69777,9 @@ var init_pdf_worker = __esm({
           if (obj instanceof BaseStream) {
             continue;
           }
-          const num2 = nums[i], entry = this.#entries[num2];
+          const num3 = nums[i], entry = this.#entries[num3];
           if (entry && entry.offset === tableOffset && entry.gen === i) {
-            this.#cacheMap.set(num2, obj);
+            this.#cacheMap.set(num3, obj);
           }
         }
         xrefEntry = entries[xrefEntry.gen];
@@ -70518,17 +70518,17 @@ var init_pdf_worker = __esm({
         this.xref.setStartXRef(this.startXRef);
       }
       get numPages() {
-        let num2 = 0;
+        let num3 = 0;
         if (this.catalog.hasActualNumPages) {
-          num2 = this.catalog.numPages;
+          num3 = this.catalog.numPages;
         } else if (this.xfaFactory) {
-          num2 = this.xfaFactory.getNumPages();
+          num3 = this.xfaFactory.getNumPages();
         } else if (this.linearization) {
-          num2 = this.linearization.numPages;
+          num3 = this.linearization.numPages;
         } else {
-          num2 = this.catalog.numPages;
+          num3 = this.catalog.numPages;
         }
-        return util_shadow(this, "numPages", num2);
+        return util_shadow(this, "numPages", num3);
       }
       #hasOnlyDocumentSignatures(fields, recursionDepth = 0) {
         const RECURSION_LIMIT = 10;
@@ -74729,10 +74729,10 @@ var init_pdf_worker = __esm({
           };
         });
         handler.on("GetPageIndex", function({
-          num: num2,
+          num: num3,
           gen
         }) {
-          return pdfManager.ensureCatalog("getPageIndex", [Ref.get(num2, gen)]);
+          return pdfManager.ensureCatalog("getPageIndex", [Ref.get(num3, gen)]);
         });
         handler.on("GetDestinations", function() {
           return pdfManager.ensureCatalog("destinations");
@@ -89961,13 +89961,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         this.#knockoutElementDepth = 0;
         this.#knockoutGroupLevel = 0;
         this.cachedPatterns.clear();
-        for (const cache of this._cachedBitmapsMap.values()) {
-          for (const canvas of cache.values()) {
+        for (const cache2 of this._cachedBitmapsMap.values()) {
+          for (const canvas of cache2.values()) {
             if (typeof HTMLCanvasElement !== "undefined" && canvas instanceof HTMLCanvasElement) {
               canvas.width = canvas.height = 0;
             }
           }
-          cache.clear();
+          cache2.clear();
         }
         this._cachedBitmapsMap.clear();
         this.#drawFilter();
@@ -90061,12 +90061,12 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         const isPatternFill = this.current.patternFill;
         const fillColor = isPatternFill ? this.current.fillColor : ctx.fillStyle;
         const currentTransform = getCurrentTransform(ctx);
-        let cache, cacheKey, scaled, maskCanvas;
+        let cache2, cacheKey, scaled, maskCanvas;
         if ((img.bitmap || img.data) && img.count > 1) {
           const mainKey = img.bitmap || img.data.buffer;
           cacheKey = JSON.stringify(isPatternFill ? currentTransform : [currentTransform.slice(0, 4), fillColor]);
-          cache = this._cachedBitmapsMap.getOrInsertComputed(mainKey, makeMap2);
-          const cachedImage = cache.get(cacheKey);
+          cache2 = this._cachedBitmapsMap.getOrInsertComputed(mainKey, makeMap2);
+          const cachedImage = cache2.get(cacheKey);
           if (cachedImage && !isPatternFill) {
             const offsetX2 = Math.round(Math.min(currentTransform[0], currentTransform[2]) + currentTransform[4]);
             const offsetY2 = Math.round(Math.min(currentTransform[1], currentTransform[3]) + currentTransform[5]);
@@ -90105,8 +90105,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
             this.canvasFactory.destroy(maskCanvas);
             maskCanvas = null;
           }
-          if (cache && isPatternFill) {
-            cache.set(cacheKey, scaled);
+          if (cache2 && isPatternFill) {
+            cache2.set(cacheKey, scaled);
             scaledEntry = null;
             maskCanvas = null;
           }
@@ -90123,13 +90123,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         const inverse = Util2.transform(getCurrentTransformInverse(fillCtx), [1, 0, 0, 1, -offsetX, -offsetY]);
         fillCtx.fillStyle = isPatternFill ? fillColor.getPattern(ctx, this, inverse, PathType.FILL, opIdx) : fillColor;
         fillCtx.fillRect(0, 0, width, height);
-        if (cache && !isPatternFill) {
-          cache.set(cacheKey, fillCanvas.canvas);
+        if (cache2 && !isPatternFill) {
+          cache2.set(cacheKey, fillCanvas.canvas);
         }
         this.dependencyTracker?.recordDependencies(opIdx, Dependencies.transformAndFill);
         return {
           canvas: fillCanvas.canvas,
-          canvasEntry: cache && !isPatternFill ? null : fillCanvas,
+          canvasEntry: cache2 && !isPatternFill ? null : fillCanvas,
           offsetX: Math.round(offsetX),
           offsetY: Math.round(offsetY)
         };
@@ -98801,9 +98801,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
       _getKeyModifier(event) {
         return FeatureTest2.platform.isMac ? event.metaKey : event.ctrlKey;
       }
-      _setEventListener(element, elementData, baseName, eventName, valueGetter) {
-        if (baseName.includes("mouse")) {
-          element.addEventListener(baseName, (event) => {
+      _setEventListener(element, elementData, baseName3, eventName, valueGetter) {
+        if (baseName3.includes("mouse")) {
+          element.addEventListener(baseName3, (event) => {
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
               source: this,
               detail: {
@@ -98816,13 +98816,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
             });
           });
         } else {
-          element.addEventListener(baseName, (event) => {
-            if (baseName === "blur") {
+          element.addEventListener(baseName3, (event) => {
+            if (baseName3 === "blur") {
               if (!elementData.focused || !event.relatedTarget) {
                 return;
               }
               elementData.focused = false;
-            } else if (baseName === "focus") {
+            } else if (baseName3 === "focus") {
               if (elementData.focused) {
                 return;
               }
@@ -98846,14 +98846,14 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         const {
           actions
         } = this.data;
-        for (const [baseName, eventName] of names) {
+        for (const [baseName3, eventName] of names) {
           if (eventName === "Action" || actions?.has(eventName)) {
             if (eventName === "Focus" || eventName === "Blur") {
               elementData ||= {
                 focused: false
               };
             }
-            this._setEventListener(element, elementData, baseName, eventName, getter);
+            this._setEventListener(element, elementData, baseName3, eventName, getter);
             if (eventName === "Focus" && !actions?.has("Blur")) {
               this._setEventListener(element, elementData, "blur", "Blur", null);
             } else if (eventName === "Blur" && !actions?.has("Focus")) {
@@ -108280,9 +108280,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
 });
 
 // src/index.ts
-import { appendFileSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { appendFileSync, mkdirSync as mkdirSync2, writeFileSync as writeFileSync2 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join as join7, relative as relative8, resolve as resolve4 } from "node:path";
+import { dirname as dirname6, join as join7, relative as relative8, resolve as resolve4 } from "node:path";
 
 // ../packages/core/src/bib/cited.ts
 function unescapeXml(s) {
@@ -108919,6 +108919,108 @@ function reportStatus(checks) {
   if (checks.some((c) => c.status === "warn")) return "warn";
   return "pass";
 }
+
+// ../packages/core/src/log/explain-data.ts
+var SIMPLE_EXPLANATIONS = {
+  lonelyItem: {
+    rule: "lonely-item",
+    message: "`\\item` is used outside a list",
+    detail: "`\\item` only works inside `itemize`, `enumerate` or `description`.",
+    fix: "Wrap the items in `\\begin{itemize}` \u2026 `\\end{itemize}` (or `enumerate`)."
+  },
+  missingItem: {
+    rule: "missing-item",
+    message: "LaTeX expected `\\item` here",
+    detail: "Common causes: text inside a list before the first `\\item`, `\\\\` at the start of a paragraph, or an empty `thebibliography`.",
+    fix: "Start each list entry with `\\item`, move text before `\\begin{itemize}`, and remove `\\\\` after blank lines."
+  },
+  noLineToEnd: {
+    rule: "no-line-to-end",
+    message: "`\\\\` is used where there is no line to end",
+    detail: "`\\\\` ends a line inside a paragraph; after a blank line, at the start of a paragraph or after a list there is no line yet.",
+    fix: "Remove the `\\\\`. Use a blank line for a new paragraph and `\\vspace{\u2026}` for vertical space."
+  },
+  invalidUtf8: {
+    rule: "unicode-character",
+    message: "A source file is not saved as UTF-8",
+    detail: "LaTeX expects UTF-8 input, but the file contains bytes from another encoding (often Latin-1 or Windows-1252).",
+    fix: "Re-save the file as UTF-8 in your editor (or convert it with `iconv -f latin1 -t utf-8`)."
+  },
+  notInOuterParMode: {
+    rule: "not-in-outer-par-mode",
+    message: "A float or margin note is inside a box",
+    detail: "`figure`, `table` and `\\marginpar` cannot be placed inside a `minipage`, `\\parbox`, table cell, another float, or similar box.",
+    fix: "Move the float outside the box. Inside a minipage, drop the `figure` environment and use `\\captionof{figure}{\u2026}` (caption package)."
+  },
+  dimensionTooLarge: {
+    rule: "dimension-too-large",
+    message: "A length is larger than TeX allows (about 5.75 m / 16383pt)",
+    detail: "Common causes: a typo in a length (`20000pt`), a pgfplots axis with huge coordinates, or scaling by a very large factor.",
+    fix: "Check the length on this line; for plots, rescale the data or set `restrict y to domain`/`scaled ticks`."
+  },
+  floatsLost: {
+    rule: "not-in-outer-par-mode",
+    message: "Floats were lost",
+    detail: "A `figure` or `table` (or `\\marginpar`) was placed inside a box or another float, so LaTeX dropped it.",
+    fix: "Move floats out of minipages, `\\parbox`es and other floats; use `\\captionof` for captions inside a minipage."
+  }
+};
+var EXPLAINER_PATTERNS = [
+  [/^Undefined control sequence/, "explainUndefinedControlSequence"],
+  [/^Missing \$ inserted/, "explainMissingDollar"],
+  [/^Display math should end with \$\$/, "explainMissingDollar"],
+  [/^Double (subscript|superscript)/, "explainDoubleScript"],
+  [/^Misplaced alignment tab character &/, "explainAlignmentTab"],
+  [/^Missing ([{}]) inserted/, "explainMissingBrace"],
+  [
+    /^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/,
+    "explainExtraBrace"
+  ],
+  [
+    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)(?:\s+was complete)?(?:\s*\.)?\s*$/,
+    "explainRunaway"
+  ],
+  [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, "explainFileNotFound"],
+  [/^I can't find file [`'](.+?)'/, "explainFileNotFound"],
+  [/^LaTeX Error: Option clash for package (\S+?)\.?$/, "explainOptionClash"],
+  [/^LaTeX Error: Unknown graphics extension: (\.\S+?)\.?$/, "explainGraphicsExtension"],
+  [/^LaTeX Error: Environment (\S+) undefined/, "explainEnvironmentUndefined"],
+  [
+    /^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/,
+    "explainEnvironmentMismatch"
+  ],
+  [/^LaTeX Error: \\begin\{(document)\}() ended by \\end\{([^}]*)\}/, "explainEnvironmentMismatch"],
+  [/^LaTeX Error: Lonely \\item/, "lonelyItem"],
+  [/^LaTeX Error: Something's wrong--perhaps a missing \\item/, "missingItem"],
+  [/^LaTeX Error: There's no line here to end/, "noLineToEnd"],
+  [/^LaTeX Error: Missing \\begin\{document\}/, "explainMissingBeginDocument"],
+  [/^LaTeX Error: Can be used only in preamble/, "explainPreambleOnly"],
+  [
+    /^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/,
+    "explainUnicode"
+  ],
+  [/^Package inputenc Error: Invalid UTF-8 byte/, "invalidUtf8"],
+  [
+    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: [^"]*?font "([^"]+)"[^\n]*?not found/,
+    "explainFontNotFound"
+  ],
+  [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, "explainTfmFont"],
+  [/^Package biblatex Error: (.*)$/, "explainBiblatex"],
+  [/^Illegal parameter number in definition of (\\\S+?)\.?$/, "explainParameterNumber"],
+  [/^You can't use [`']macro parameter character #' in \w+ mode()/, "explainParameterNumber"],
+  [/^Package xcolor Error: Undefined color [`']([^']+)'/, "explainColor"],
+  [/^LaTeX Error: Not in outer par mode/, "notInOuterParMode"],
+  [/^Dimension too large/, "dimensionTooLarge"],
+  [/^TeX capacity exceeded, sorry \[(.+?)\]/, "explainCapacity"],
+  [/^Package (pgfkeys|tikz|pgf|pgfplots) Error: (.*)$/, "explainTikz"],
+  [/^Package hyperref Error: (.*)$/, "explainHyperref"],
+  [/^LaTeX Error: Command (\\\S+?) already defined/, "explainCommandDefined"],
+  [
+    /^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/,
+    "explainUnknownOption"
+  ],
+  [/^LaTeX Error: Float\(s\) lost/, "floatsLost"]
+];
 
 // ../packages/core/src/log/hints.ts
 function words(text2) {
@@ -109922,118 +110024,40 @@ var explainUnknownOption = (m) => {
     data: { package: pkg, option }
   };
 };
-var EXPLAINERS = [
-  [/^Undefined control sequence/, explainUndefinedControlSequence],
-  [/^Missing \$ inserted/, explainMissingDollar],
-  [/^Display math should end with \$\$/, explainMissingDollar],
-  [/^Double (subscript|superscript)/, explainDoubleScript],
-  [/^Misplaced alignment tab character &/, explainAlignmentTab],
-  [/^Missing ([{}]) inserted/, explainMissingBrace],
-  [
-    /^(?:Extra \}, or forgotten (?:\$|\\endgroup|\\right)|Too many \}'s|Argument of \S+ has an extra \})/,
-    explainExtraBrace
-  ],
-  [
-    /^(Paragraph ended before|File ended while scanning use of|File ended while scanning definition of|Forbidden control sequence found while scanning use of) (\\?[^\s.]+)(?:\s+was complete)?(?:\s*\.)?\s*$/,
-    explainRunaway
-  ],
-  [/^(?:LaTeX|Package \S+) Error: File [`'](.+?)' not found/, explainFileNotFound],
-  [/^I can't find file [`'](.+?)'/, explainFileNotFound],
-  [/^LaTeX Error: Option clash for package (\S+?)\.?$/, explainOptionClash],
-  [/^LaTeX Error: Unknown graphics extension: (\.\S+?)\.?$/, explainGraphicsExtension],
-  [/^LaTeX Error: Environment (\S+) undefined/, explainEnvironmentUndefined],
-  [
-    /^LaTeX Error: \\begin\{([^}]*)\} on input line (\d+) ended by \\end\{([^}]*)\}/,
-    explainEnvironmentMismatch
-  ],
-  [/^LaTeX Error: \\begin\{(document)\}() ended by \\end\{([^}]*)\}/, explainEnvironmentMismatch],
-  [
-    /^LaTeX Error: Lonely \\item/,
-    simple(
-      "lonely-item",
-      "`\\item` is used outside a list",
-      "`\\item` only works inside `itemize`, `enumerate` or `description`.",
-      "Wrap the items in `\\begin{itemize}` \u2026 `\\end{itemize}` (or `enumerate`)."
-    )
-  ],
-  [
-    /^LaTeX Error: Something's wrong--perhaps a missing \\item/,
-    simple(
-      "missing-item",
-      "LaTeX expected `\\item` here",
-      "Common causes: text inside a list before the first `\\item`, `\\\\` at the start of a paragraph, or an empty `thebibliography`.",
-      "Start each list entry with `\\item`, move text before `\\begin{itemize}`, and remove `\\\\` after blank lines."
-    )
-  ],
-  [
-    /^LaTeX Error: There's no line here to end/,
-    simple(
-      "no-line-to-end",
-      "`\\\\` is used where there is no line to end",
-      "`\\\\` ends a line inside a paragraph; after a blank line, at the start of a paragraph or after a list there is no line yet.",
-      "Remove the `\\\\`. Use a blank line for a new paragraph and `\\vspace{\u2026}` for vertical space."
-    )
-  ],
-  [/^LaTeX Error: Missing \\begin\{document\}/, explainMissingBeginDocument],
-  [/^LaTeX Error: Can be used only in preamble/, explainPreambleOnly],
-  [
-    /^(?:LaTeX|Package inputenc) Error: Unicode character (\S+) \(U\+([0-9A-Fa-f]+)\)/,
-    explainUnicode
-  ],
-  [
-    /^Package inputenc Error: Invalid UTF-8 byte/,
-    simple(
-      "unicode-character",
-      "A source file is not saved as UTF-8",
-      "LaTeX expects UTF-8 input, but the file contains bytes from another encoding (often Latin-1 or Windows-1252).",
-      "Re-save the file as UTF-8 in your editor (or convert it with `iconv -f latin1 -t utf-8`)."
-    )
-  ],
-  [
-    /^Package fontspec Error: The font "([^"]+)" cannot be found|^Package fontspec Error: [^"]*?font "([^"]+)"[^\n]*?not found/,
-    explainFontNotFound
-  ],
-  [/^Font (\S+?)(?:=\S+)? (?:at [\d.]+pt )?not loadable/, explainTfmFont],
-  [/^Package biblatex Error: (.*)$/, explainBiblatex],
-  [/^Illegal parameter number in definition of (\\\S+?)\.?$/, explainParameterNumber],
-  [/^You can't use [`']macro parameter character #' in \w+ mode()/, explainParameterNumber],
-  [/^Package xcolor Error: Undefined color [`']([^']+)'/, explainColor],
-  [
-    /^LaTeX Error: Not in outer par mode/,
-    simple(
-      "not-in-outer-par-mode",
-      "A float or margin note is inside a box",
-      "`figure`, `table` and `\\marginpar` cannot be placed inside a `minipage`, `\\parbox`, table cell, another float, or similar box.",
-      "Move the float outside the box. Inside a minipage, drop the `figure` environment and use `\\captionof{figure}{\u2026}` (caption package)."
-    )
-  ],
-  [
-    /^Dimension too large/,
-    simple(
-      "dimension-too-large",
-      "A length is larger than TeX allows (about 5.75 m / 16383pt)",
-      "Common causes: a typo in a length (`20000pt`), a pgfplots axis with huge coordinates, or scaling by a very large factor.",
-      "Check the length on this line; for plots, rescale the data or set `restrict y to domain`/`scaled ticks`."
-    )
-  ],
-  [/^TeX capacity exceeded, sorry \[(.+?)\]/, explainCapacity],
-  [/^Package (pgfkeys|tikz|pgf|pgfplots) Error: (.*)$/, explainTikz],
-  [/^Package hyperref Error: (.*)$/, explainHyperref],
-  [/^LaTeX Error: Command (\\\S+?) already defined/, explainCommandDefined],
-  [
-    /^LaTeX Error: Unknown option [`']([^']+)' for (?:package|class) [`']([^']+)'/,
-    explainUnknownOption
-  ],
-  [
-    /^LaTeX Error: Float\(s\) lost/,
-    simple(
-      "not-in-outer-par-mode",
-      "Floats were lost",
-      "A `figure` or `table` (or `\\marginpar`) was placed inside a box or another float, so LaTeX dropped it.",
-      "Move floats out of minipages, `\\parbox`es and other floats; use `\\captionof` for captions inside a minipage."
-    )
-  ]
-];
+var HANDLERS = {
+  explainUndefinedControlSequence,
+  explainMissingDollar,
+  explainDoubleScript,
+  explainAlignmentTab,
+  explainMissingBrace,
+  explainExtraBrace,
+  explainRunaway,
+  explainFileNotFound,
+  explainOptionClash,
+  explainGraphicsExtension,
+  explainEnvironmentUndefined,
+  explainEnvironmentMismatch,
+  explainMissingBeginDocument,
+  explainPreambleOnly,
+  explainUnicode,
+  explainFontNotFound,
+  explainTfmFont,
+  explainBiblatex,
+  explainParameterNumber,
+  explainColor,
+  explainCapacity,
+  explainTikz,
+  explainHyperref,
+  explainCommandDefined,
+  explainUnknownOption
+};
+var EXPLAINERS = EXPLAINER_PATTERNS.map(([pattern, key]) => {
+  const fixed = SIMPLE_EXPLANATIONS[key];
+  if (fixed) return [pattern, simple(fixed.rule, fixed.message, fixed.detail, fixed.fix)];
+  const handler = HANDLERS[key];
+  if (!handler) throw new Error(`explain: no handler named ${key}`);
+  return [pattern, handler];
+});
 function explainError(error, ctx) {
   for (const [pattern, explain] of EXPLAINERS) {
     const m = pattern.exec(error.message);
@@ -110570,23 +110594,23 @@ var CONSEQUENCE_RULES = /* @__PURE__ */ new Set([
 function isFollower(error, rule, check2, group) {
   if (!group) return false;
   if (isTerminationNotice(error)) return true;
-  const { root, problem: problem2 } = group;
-  if (rule === "runaway-argument" && problem2.rule === "missing-dollar" && isInternalRunaway(error)) {
+  const { root, problem: problem3 } = group;
+  if (rule === "runaway-argument" && problem3.rule === "missing-dollar" && isInternalRunaway(error)) {
     return true;
   }
-  if (problem2.rule === "undefined-control-sequence" && rule === "missing-dollar") {
+  if (problem3.rule === "undefined-control-sequence" && rule === "missing-dollar") {
     return atEndDocument(error);
   }
-  if (atEndDocument(error) && check2 === problem2.check) return true;
-  if (rule === "missing-dollar" && problem2.rule === "missing-dollar" && paragraphEnd(error) && error.logLine > root.logLine) {
+  if (atEndDocument(error) && check2 === problem3.check) return true;
+  if (rule === "missing-dollar" && problem3.rule === "missing-dollar" && paragraphEnd(error) && error.logLine > root.logLine) {
     return true;
   }
   if (error.file !== root.file || error.line === void 0 || root.line === void 0) return false;
   if (error.line === root.line) return true;
-  if (check2 !== problem2.check) return false;
+  if (check2 !== problem3.check) return false;
   if (error.line < root.line || error.line - root.line > CASCADE_LINES) return false;
-  const sideEffect = CONSEQUENCE_RULES.has(rule) || rule === "undefined-control-sequence" && problem2.rule !== rule;
-  return rule === problem2.rule || sideEffect;
+  const sideEffect = CONSEQUENCE_RULES.has(rule) || rule === "undefined-control-sequence" && problem3.rule !== rule;
+  return rule === problem3.rule || sideEffect;
 }
 function isInternalRunaway(error) {
   return /\\__[A-Za-z]/.test(error.message);
@@ -110609,7 +110633,7 @@ function errorProblems(parsed, ctx) {
       last.followers.push(error);
       continue;
     }
-    const problem2 = compact({
+    const problem3 = compact({
       rule: explanation.rule,
       check: explanation.check,
       severity: "error",
@@ -110619,17 +110643,17 @@ function errorProblems(parsed, ctx) {
       fix: explanation.fix,
       data: { ...explanation.data, tex: error.message }
     });
-    last = { root: error, problem: problem2, followers: [] };
+    last = { root: error, problem: problem3, followers: [] };
     groups.push(last);
   }
-  return bySourcePosition(groups, parsed.files).map(({ root, problem: problem2, followers }) => {
-    if (followers.length > 0) problem2.related = followers.length;
+  return bySourcePosition(groups, parsed.files).map(({ root, problem: problem3, followers }) => {
+    if (followers.length > 0) problem3.related = followers.length;
     const lined = followers.find((f) => f.line !== void 0 && f.file === root.file);
-    if (root.line === void 0 && lined?.line !== void 0 && problem2.location && problem2.rule !== "missing-package") {
-      problem2.location.line = lined.line;
+    if (root.line === void 0 && lined?.line !== void 0 && problem3.location && problem3.rule !== "missing-package") {
+      problem3.location.line = lined.line;
     }
-    problem2.evidence = evidence([root.raw, ...followers.map((f) => f.raw)]);
-    return problem2;
+    problem3.evidence = evidence([root.raw, ...followers.map((f) => f.raw)]);
+    return problem3;
   });
 }
 function fatalWithoutError(parsed, problems) {
@@ -111098,6 +111122,409 @@ function attributeBibliography(problems, src) {
   });
 }
 
+// ../packages/core/src/log/rules.ts
+var logRules = [
+  // build
+  {
+    id: "undefined-control-sequence",
+    check: "build",
+    severity: "error",
+    title: "Unknown command",
+    summary: "The document uses a command that no loaded package defines: a typo, a missing package, or a command from another citation package.",
+    fix: "Fix the spelling or load the package that defines the command.",
+    corpus: "undefined-control-sequence"
+  },
+  {
+    id: "missing-dollar",
+    check: "build",
+    severity: "error",
+    title: "Math symbol outside math mode",
+    summary: "A `_`, `^` or math command appears in running text, or a formula is not closed, so TeX inserted a `$`.",
+    fix: "Escape `_` as `\\_` in text, or put the formula inside `$\u2026$`.",
+    corpus: "underscore-in-text"
+  },
+  {
+    id: "missing-brace",
+    check: "build",
+    severity: "error",
+    title: "Missing brace",
+    summary: "A `{` group is still open where TeX needs it closed, for example at the end of a formula.",
+    fix: "Close every `{` before the formula or environment ends.",
+    corpus: "missing-brace-inserted"
+  },
+  {
+    id: "extra-brace",
+    check: "build",
+    severity: "error",
+    title: "Extra closing brace",
+    summary: "A `}` closes nothing: there are more closing braces than opening ones.",
+    fix: "Delete the extra `}` or add the missing `{`.",
+    corpus: "too-many-braces"
+  },
+  {
+    id: "runaway-argument",
+    check: "build",
+    severity: "error",
+    title: "Unclosed command argument",
+    summary: "The argument of a command is never closed, so TeX read to the end of the paragraph or file.",
+    fix: "Add the missing `}` after the argument.",
+    corpus: "unclosed-brace"
+  },
+  {
+    id: "missing-package",
+    check: "build",
+    severity: "error",
+    title: "Package or class not installed",
+    summary: "A `\\usepackage` or `\\documentclass` names a file that is not in the TeX installation.",
+    fix: "Check the spelling, install it with `tlmgr install <name>`, or build in the Overfull Docker image.",
+    corpus: "missing-package"
+  },
+  {
+    id: "missing-file",
+    check: "build",
+    severity: "error",
+    title: "Input file not found",
+    summary: "An `\\input` or `\\include` points to a file that does not exist.",
+    fix: "Fix the path; it is relative to the main file and case-sensitive.",
+    corpus: "missing-input-file"
+  },
+  {
+    id: "option-clash",
+    check: "build",
+    severity: "error",
+    title: "Package loaded twice with different options",
+    summary: "A package was loaded again with options it was not first loaded with.",
+    fix: "Load it once with all options, or use `\\PassOptionsToPackage` before `\\documentclass`.",
+    corpus: "option-clash"
+  },
+  {
+    id: "unknown-graphics-extension",
+    check: "build",
+    severity: "error",
+    title: "Unsupported image format",
+    summary: "`\\includegraphics` was given a format such as SVG or GIF that the engine cannot embed.",
+    fix: "Convert the image to PDF, PNG or JPEG.",
+    corpus: "unknown-graphics-extension"
+  },
+  {
+    id: "environment-undefined",
+    check: "build",
+    severity: "error",
+    title: "Unknown environment",
+    summary: "A `\\begin{\u2026}` names an environment that is not defined (theorem environments must be declared).",
+    fix: "Load the package that defines it, declare it with `\\newtheorem`, or fix the spelling.",
+    corpus: "environment-undefined"
+  },
+  {
+    id: "environment-mismatch",
+    check: "build",
+    severity: "error",
+    title: "Environment closed with the wrong \\end",
+    summary: "A `\\begin{a}` is closed by `\\end{b}`.",
+    fix: "Make each `\\end{\u2026}` match the innermost open `\\begin{\u2026}`.",
+    corpus: "environment-mismatch"
+  },
+  {
+    id: "lonely-item",
+    check: "build",
+    severity: "error",
+    title: "\\item outside a list",
+    summary: "`\\item` is used outside `itemize`, `enumerate` or `description`.",
+    fix: "Wrap the items in a list environment.",
+    corpus: "lonely-item"
+  },
+  {
+    id: "missing-item",
+    check: "build",
+    severity: "error",
+    title: "Missing \\item",
+    summary: "LaTeX expected `\\item`, typically because text appears in a list before the first item.",
+    fix: "Start each entry with `\\item` and move other text out of the list.",
+    corpus: "missing-item"
+  },
+  {
+    id: "no-line-to-end",
+    check: "build",
+    severity: "error",
+    title: "Line break with no line to end",
+    summary: "`\\\\` is used after a blank line or at the start of a paragraph.",
+    fix: "Remove the `\\\\`; use a blank line or `\\vspace` for spacing."
+  },
+  {
+    id: "missing-begin-document",
+    check: "build",
+    severity: "error",
+    title: "Text in the preamble",
+    summary: "Typeset text appears before `\\begin{document}`.",
+    fix: "Move the text after `\\begin{document}` or comment it out.",
+    corpus: "missing-begin-document"
+  },
+  {
+    id: "preamble-only",
+    check: "build",
+    severity: "error",
+    title: "Preamble command in the document body",
+    summary: "A command such as `\\usepackage` is used after `\\begin{document}`.",
+    fix: "Move it above `\\begin{document}`.",
+    corpus: "usepackage-after-begin-document"
+  },
+  {
+    id: "unicode-character",
+    check: "build",
+    severity: "error",
+    title: "Unicode character pdfLaTeX cannot typeset",
+    summary: "The source contains a character pdfLaTeX does not know, or is not saved as UTF-8.",
+    fix: "Compile with LuaLaTeX, or replace the character with a LaTeX command.",
+    corpus: "inputenc-unicode"
+  },
+  {
+    id: "font-not-found",
+    check: "build",
+    severity: "error",
+    title: "Font not installed",
+    summary: "A font requested with fontspec (or a font package) is not available on this machine.",
+    fix: "Use a font shipped with TeX Live, or add the font files to the project and load them by file name.",
+    corpus: "fontspec-font-not-found"
+  },
+  {
+    id: "biblatex-error",
+    check: "build",
+    severity: "error",
+    title: "biblatex error",
+    summary: "biblatex stopped: BibTeX commands used with biblatex, an incompatible package, or a backend/version mismatch.",
+    fix: "Use biblatex options instead of BibTeX commands; delete the .bbl and rebuild on mismatches.",
+    corpus: "biblatex-bibliographystyle"
+  },
+  {
+    id: "illegal-parameter-number",
+    check: "build",
+    severity: "error",
+    title: "Misused # character",
+    summary: "A macro definition uses `#n` beyond its declared arguments, or a literal `#` appears in text.",
+    fix: "Declare enough arguments, or write `\\#` for a hash sign.",
+    corpus: "illegal-parameter-number"
+  },
+  {
+    id: "double-script",
+    check: "build",
+    severity: "error",
+    title: "Double subscript or superscript",
+    summary: "A symbol has two subscripts (or superscripts), such as `w_i_j`.",
+    fix: "Group them in braces: `w_{ij}`.",
+    corpus: "double-subscript"
+  },
+  {
+    id: "misplaced-alignment-tab",
+    check: "build",
+    severity: "error",
+    title: "Unescaped & in text",
+    summary: "`&` separates table columns and cannot appear in running text or a .bib field unescaped.",
+    fix: "Write `\\&`.",
+    corpus: "ampersand-in-text"
+  },
+  {
+    id: "undefined-color",
+    check: "build",
+    severity: "error",
+    title: "Undefined color",
+    summary: "A color name is used that xcolor does not know.",
+    fix: "Define it with `\\definecolor`, or load xcolor with `dvipsnames`/`svgnames`.",
+    corpus: "undefined-color"
+  },
+  {
+    id: "not-in-outer-par-mode",
+    check: "build",
+    severity: "error",
+    title: "Float inside a box",
+    summary: "A figure, table or margin note is placed inside a minipage, parbox or another float.",
+    fix: "Move the float out, or use `\\captionof` inside a minipage.",
+    corpus: "figure-in-minipage"
+  },
+  {
+    id: "dimension-too-large",
+    check: "build",
+    severity: "error",
+    title: "Length too large",
+    summary: "A length exceeds TeX\u2019s maximum of about 16383pt (5.75 m).",
+    fix: "Fix the length or rescale plot data.",
+    corpus: "dimension-too-large"
+  },
+  {
+    id: "tex-capacity-exceeded",
+    check: "build",
+    severity: "error",
+    title: "TeX ran out of capacity",
+    summary: "Usually infinite recursion (a command that calls itself); otherwise a very large figure.",
+    fix: "Check recent `\\newcommand`/`\\renewcommand` definitions; for big figures use LuaLaTeX or externalize them.",
+    corpus: "infinite-recursion"
+  },
+  {
+    id: "tikz-error",
+    check: "build",
+    severity: "error",
+    title: "TikZ/PGF error",
+    summary: "TikZ stopped on an unknown option, a missing semicolon, or an undefined node.",
+    fix: "Fix the option spelling, end paths with `;`, or load the needed TikZ library.",
+    corpus: "tikz-unknown-key"
+  },
+  {
+    id: "hyperref-error",
+    check: "build",
+    severity: "error",
+    title: "hyperref error",
+    summary: "hyperref reported an error, typically a driver or option conflict.",
+    fix: "Load hyperref last and set options with `\\hypersetup`."
+  },
+  {
+    id: "command-already-defined",
+    check: "build",
+    severity: "error",
+    title: "Command already defined",
+    summary: "`\\newcommand` tried to define a name that already exists.",
+    fix: "Choose another name, or use `\\renewcommand` deliberately."
+  },
+  {
+    id: "unknown-package-option",
+    check: "build",
+    severity: "error",
+    title: "Unknown package option",
+    summary: "A package or class was given an option it does not support.",
+    fix: "Check the option against the package documentation."
+  },
+  {
+    id: "tex-error",
+    check: "build",
+    severity: "error",
+    title: "TeX error",
+    summary: "TeX reported an error Overfull has no specific explanation for; the original message is shown.",
+    fix: "Read the message and fix the first error in the log first."
+  },
+  // output
+  {
+    id: "undefined-citation",
+    check: "output",
+    severity: "error",
+    title: "Undefined citation",
+    summary: "A cited key has no bibliography entry, so the PDF shows the key or [?].",
+    fix: "Fix the key or add the entry to the .bib file, then rebuild; or remove the `\\cite` if the source is not known.",
+    corpus: "biblatex-undefined-citation"
+  },
+  {
+    id: "undefined-reference",
+    check: "output",
+    severity: "error",
+    title: "Undefined reference",
+    summary: "A `\\ref` points to a label that does not exist, so the PDF shows ??.",
+    fix: "Add the `\\label` or fix the spelling in `\\ref`.",
+    corpus: "undefined-reference"
+  },
+  {
+    id: "bibliography-missing",
+    check: "output",
+    severity: "error",
+    title: "Bibliography not built",
+    summary: "Biber or BibTeX was never run, so all citations are undefined and the bibliography is empty.",
+    fix: "Build with `latexmk`, or run biber/bibtex and then LaTeX twice.",
+    corpus: "biblatex-rerun-biber"
+  },
+  {
+    id: "bibliography-stale",
+    check: "output",
+    severity: "warning",
+    title: "Bibliography out of date",
+    summary: "Citations changed since Biber or BibTeX last ran.",
+    fix: "Build with `latexmk`, or rerun biber/bibtex and LaTeX."
+  },
+  {
+    id: "rerun-needed",
+    check: "output",
+    severity: "warning",
+    title: "LaTeX needs another run",
+    summary: "Labels changed during the run; references and page numbers may be wrong until LaTeX runs again.",
+    fix: "Build with `latexmk`, which reruns LaTeX as needed.",
+    corpus: "labels-changed"
+  },
+  {
+    id: "empty-bibliography",
+    check: "output",
+    severity: "warning",
+    title: "Empty bibliography",
+    summary: "The bibliography printed no entries.",
+    fix: "Cite sources, check `\\addbibresource`, or use `\\nocite{*}`.",
+    corpus: "empty-bibliography"
+  },
+  {
+    id: "missing-figure",
+    check: "output",
+    severity: "error",
+    title: "Figure file not found",
+    summary: "An `\\includegraphics` file does not exist, so the PDF has an empty box.",
+    fix: "Fix the path and file name (case-sensitive).",
+    corpus: "missing-figure"
+  },
+  {
+    id: "duplicate-label",
+    check: "output",
+    severity: "warning",
+    title: "Label defined twice",
+    summary: "Two `\\label`s share a name, so references may point to the wrong place.",
+    fix: "Give each label a unique name.",
+    corpus: "duplicate-label"
+  },
+  {
+    id: "overfull-box",
+    check: "output",
+    severity: "warning",
+    title: "Text in the margin",
+    summary: "A line is wider than the text block by more than the threshold (default 10pt). The worst box per file is reported.",
+    fix: "Rephrase, use `\\url`/`\\path` for long identifiers, or scale wide material to `\\linewidth`.",
+    corpus: "overfull-hbox"
+  },
+  {
+    id: "font-substitution",
+    check: "output",
+    severity: "warning",
+    title: "Font shape substituted",
+    summary: "The font lacks a requested shape (e.g. bold small caps) and another one was used.",
+    fix: "Use a font family that has the shape, or avoid the combination.",
+    corpus: "font-shape-substitution"
+  },
+  {
+    id: "missing-glyph",
+    check: "output",
+    severity: "error",
+    title: "Characters missing from the font",
+    summary: "The font has no glyph for some characters, which are silently dropped from the PDF.",
+    fix: "Use a font that covers the characters (e.g. a CJK font with xeCJK or luatexja).",
+    corpus: "missing-glyph"
+  },
+  {
+    id: "pdf-string-token",
+    check: "output",
+    severity: "info",
+    title: "Heading simplified in PDF bookmarks",
+    summary: "hyperref removed math or commands from a heading when making the PDF bookmark.",
+    fix: "Use `\\texorpdfstring{TeX}{plain text}` in the heading.",
+    corpus: "math-in-pdf-bookmark"
+  },
+  {
+    id: "float-too-large",
+    check: "output",
+    severity: "warning",
+    title: "Float taller than the page",
+    summary: "A figure or table does not fit on a page.",
+    fix: "Scale it down or split it."
+  },
+  {
+    id: "font-feature-missing",
+    check: "output",
+    severity: "warning",
+    title: "Font lacks a requested feature",
+    summary: "fontspec could not apply a requested OpenType feature or script.",
+    fix: "Pick a font that supports it or drop the option."
+  }
+];
+
 // ../packages/core/src/venue/tex.ts
 function stripComments(content) {
   return content.split("\n").map((line) => {
@@ -111242,6 +111669,96 @@ function citeLocations(files, keys) {
 }
 
 // ../packages/core/src/pdf/rules.ts
+var pdfRules = [
+  {
+    id: "pdf-unresolved-reference",
+    check: "output",
+    severity: "error",
+    title: "Unresolved reference in the PDF",
+    summary: 'The PDF shows "??" where a figure, table, section or equation number belongs.',
+    fix: "Make sure every `\\ref` has a matching `\\label` (same spelling), then rebuild with latexmk."
+  },
+  {
+    id: "pdf-unresolved-citation",
+    check: "output",
+    severity: "error",
+    title: "Unresolved citation in the PDF",
+    summary: 'The PDF shows "[?]" where a citation number belongs.',
+    fix: "Add the cited key to the .bib file or fix its spelling, then rebuild so biber/bibtex runs."
+  },
+  {
+    id: "pdf-not-tagged",
+    check: "accessibility",
+    severity: "error",
+    title: "PDF is not tagged",
+    summary: "The PDF has no structure tags, so screen readers cannot tell headings, paragraphs, lists and figures apart.",
+    fix: "Add `\\DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on}` as the first line of main.tex and compile with LuaLaTeX. An untagged PDF also fails most veraPDF clauses; they are folded into this problem."
+  },
+  {
+    id: "pdf-missing-language",
+    check: "accessibility",
+    severity: "error",
+    title: "Document language not set",
+    summary: "The PDF does not declare its language, so assistive technology may read it with the wrong voice.",
+    fix: "Set `lang=` in `\\DocumentMetadata{...}` (for example `lang=en-US`)."
+  },
+  {
+    id: "pdf-missing-title",
+    check: "accessibility",
+    severity: "error",
+    title: "Document title missing or not displayed",
+    summary: "The PDF has no title in its metadata, or viewers are not told to show it instead of the file name (DisplayDocTitle).",
+    fix: "Set `\\hypersetup{pdftitle={...}, pdfdisplaydoctitle=true}` (or `title=` in `\\DocumentMetadata`)."
+  },
+  {
+    id: "figure-missing-alt",
+    check: "accessibility",
+    severity: "error",
+    title: "Figure without alternative text",
+    summary: "A tagged figure has no alt text, so its content is invisible to screen-reader users.",
+    fix: "Describe what the figure shows: `\\includegraphics[alt={...}]{file}`, or `\\begin{tikzpicture}[alt={...}]` for TikZ; use `artifact` instead of `alt` for purely decorative images."
+  },
+  {
+    id: "font-not-embedded",
+    check: "accessibility",
+    severity: "error",
+    title: "Font not embedded",
+    summary: "A font is referenced but not embedded, so the PDF may render differently elsewhere and fails PDF/UA and most venue checks.",
+    fix: "Use OpenType or Type 1 fonts (LuaLaTeX with fontspec embeds them); re-export figures with fonts embedded."
+  },
+  {
+    id: "pdfua-not-claimed",
+    check: "accessibility",
+    severity: "info",
+    title: "PDF/UA conformance not claimed",
+    summary: "The XMP metadata does not claim PDF/UA, so validators and archives will not treat it as accessible.",
+    fix: "Add `pdfstandard=ua-2` to `\\DocumentMetadata{...}`."
+  },
+  {
+    id: "verapdf-not-run",
+    check: "accessibility",
+    severity: "warning",
+    title: "veraPDF validation not run",
+    summary: "veraPDF was not available, so only Overfull\u2019s own accessibility checks ran (no full PDF/UA validation). A warning when the profile requires accessibility (thesis, paper) and the CLI could have run it (Docker is available); otherwise, including in the browser and the GitHub Action, a note.",
+    fix: "Install veraPDF (https://verapdf.org) and put `verapdf` on PATH, run `overfull check --engine docker`, or run the check in the Overfull Docker image."
+  },
+  {
+    id: "verapdf-error",
+    check: "accessibility",
+    severity: "warning",
+    title: "veraPDF could not validate the PDF",
+    summary: "veraPDF ran but did not produce a validation result.",
+    fix: "Run `verapdf --flavour ua2 <file.pdf>` by hand to see the error; the PDF may be damaged."
+  },
+  {
+    id: "verapdf",
+    check: "accessibility",
+    severity: "error",
+    title: "PDF/UA requirement failed (veraPDF)",
+    summary: "veraPDF found a PDF/UA violation. Rule ids are `verapdf-<clause>`, e.g. `verapdf-8-2-5-26` for clause 8.2.5.26 of ISO 14289.",
+    fix: "Read the clause description in the message; most failures come from untagged content, missing alt text or metadata."
+  }
+];
 var veraPdfClauses = [
   {
     clause: "8.2.2",
@@ -111408,7 +111925,7 @@ function veraPdfProblems(v, sev) {
     }
     const desc = f.description.replace(/\s+/g, " ").trim();
     const info3 = veraPdfClauseInfo(f.clause);
-    const problem2 = {
+    const problem3 = {
       rule,
       check: "accessibility",
       severity: sev,
@@ -111416,9 +111933,9 @@ function veraPdfProblems(v, sev) {
       detail: info3 ? `${desc}. ${info3.summary}` : desc,
       fix: info3 ? `${info3.fix} (\`overfull explain ${rule}\`)` : "See `overfull explain verapdf`; the clause names the PDF/UA requirement that failed"
     };
-    if (f.contexts.length) problem2.evidence = f.contexts.join("\n");
+    if (f.contexts.length) problem3.evidence = f.contexts.join("\n");
     groups.set(rule, {
-      problem: problem2,
+      problem: problem3,
       spec: f.specification,
       clause: f.clause,
       desc,
@@ -112181,7 +112698,7 @@ function titleCacheKey(title, year, isTex = true) {
   return `title:${normalizeTitle(title, isTex)}|${year ?? ""}`;
 }
 var DAY_MS = 24 * 60 * 60 * 1e3;
-var DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 30, positive: 180 };
+var DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 1, positive: 30 };
 function cacheMaxAge(option) {
   if (typeof option === "number") return { negative: option, positive: option };
   return { ...DEFAULT_CACHE_MAX_AGE_DAYS, ...option ?? {} };
@@ -112191,16 +112708,16 @@ function isFresh(cachedAt, negative, maxAge, now = Date.now()) {
   const days = negative ? maxAge.negative : maxAge.positive;
   return now - cachedAt <= days * DAY_MS;
 }
-async function cached(cache, key, compute, opts) {
-  if (cache) {
-    const hit = await cache.get(key);
+async function cached(cache2, key, compute, opts) {
+  if (cache2 && !opts.refresh) {
+    const hit = await cache2.get(key);
     if (hit !== void 0 && hit !== null && typeof hit === "object") {
       const { cachedAt, ...value2 } = hit;
       if (isFresh(cachedAt, opts.isNegative(value2), opts.maxAge)) return value2;
     }
   }
   const value = await compute();
-  if (cache) await cache.set(key, { ...value, cachedAt: Date.now() });
+  if (cache2) await cache2.set(key, { ...value, cachedAt: Date.now() });
   return value;
 }
 
@@ -112428,6 +112945,8 @@ var SourceUnavailableError = class extends Error {
   }
 };
 var MAX_RETRY_AFTER_MS = 3e4;
+var BREAKER_THRESHOLD = 2;
+var FIRST_BYTE_TIMEOUT_MS = 4e3;
 function sleep(ms, signal) {
   if (ms <= 0) return Promise.resolve();
   return new Promise((resolve5, reject) => {
@@ -112459,11 +112978,17 @@ var HttpClient = class {
   nextSlot = /* @__PURE__ */ new Map();
   down = /* @__PURE__ */ new Map();
   failures = /* @__PURE__ */ new Map();
+  /** Hosts that have answered at least once this run. */
+  healthy = /* @__PURE__ */ new Set();
+  /** The single in-flight probe request of a host that is unproven or failing. */
+  probing = /* @__PURE__ */ new Map();
+  firstByteMs;
   constructor(opts) {
     const f = opts.fetch ?? globalThis.fetch;
     if (!f) throw new Error("no fetch available; pass opts.fetch");
     this.fetchFn = (input2, init) => f.call(globalThis, input2, init);
     this.timeoutMs = opts.timeoutMs ?? 1e4;
+    this.firstByteMs = Math.min(FIRST_BYTE_TIMEOUT_MS, this.timeoutMs);
     this.retryDelayMs = opts.retryDelayMs ?? 1e3;
     this.signal = opts.signal;
     this.intervals = { "export.arxiv.org": opts.arxivIntervalMs ?? 3e3 };
@@ -112479,31 +113004,68 @@ var HttpClient = class {
    */
   async get(url, accept) {
     const host = new URL(url).host;
-    const downReason = this.down.get(host);
-    if (downReason) throw new SourceUnavailableError(host, downReason);
+    const release = await this.acquire(host);
+    try {
+      return await this.getOnce(url, accept, host);
+    } finally {
+      release();
+    }
+  }
+  async getOnce(url, accept, host) {
     let res = await this.attempt(url, accept, host);
     if (res.status === 429 && /daily|budget|quota|per day|credits/i.test(res.body)) {
       const reason = `${host} answered HTTP 429: daily request budget used up`;
       this.markDown(host, reason);
       throw new SourceUnavailableError(host, reason);
     }
+    if (res.status >= 500) this.recordFailure(host, `${host} answered HTTP ${res.status}`);
     if (res.status === 429 || res.status >= 500) {
+      const downReason = this.down.get(host);
+      if (downReason) throw new SourceUnavailableError(host, downReason);
       await sleep(retryAfterMs(res.retryAfter, this.retryDelayMs), this.signal);
       res = await this.attempt(url, accept, host);
     }
     if (res.status === 429 || res.status >= 500) {
       const reason = `${host} answered HTTP ${res.status}`;
-      this.recordFailure(host, reason);
-      throw new SourceUnavailableError(host, reason);
+      if (res.status === 429 || !this.down.has(host)) this.recordFailure(host, reason);
+      throw new SourceUnavailableError(host, this.down.get(host) ?? reason);
     }
     this.failures.delete(host);
+    this.healthy.add(host);
     return { status: res.status, body: res.body, contentType: res.contentType };
   }
-  /** Three consecutive failures take a host out for the rest of the run. */
+  /**
+   * Throws when the host is down. A host that has not answered yet, or is failing,
+   * lets one request through at a time; the others wait for its outcome.
+   */
+  async acquire(host) {
+    for (; ; ) {
+      const downReason = this.down.get(host);
+      if (downReason) throw new SourceUnavailableError(host, downReason);
+      if (this.signal?.aborted) throw this.signal.reason ?? new Error("aborted");
+      const unproven = !this.healthy.has(host) || (this.failures.get(host) ?? 0) > 0;
+      if (!unproven) return () => {
+      };
+      const other = this.probing.get(host);
+      if (!other) break;
+      await other;
+    }
+    let done;
+    const gate = new Promise((resolve5) => {
+      done = resolve5;
+    });
+    this.probing.set(host, gate);
+    return () => {
+      this.probing.delete(host);
+      done();
+    };
+  }
+  /** Consecutive failures take a host out for the rest of the run. */
   recordFailure(host, reason) {
     const n = (this.failures.get(host) ?? 0) + 1;
     this.failures.set(host, n);
-    if (n >= 3) this.markDown(host, `${reason} (repeatedly; skipped for the rest of this run)`);
+    if (n >= BREAKER_THRESHOLD && !this.down.has(host))
+      this.markDown(host, `${reason} (repeatedly; skipped for the rest of this run)`);
   }
   async throttle(host) {
     const interval = this.intervals[host] ?? 0;
@@ -112519,13 +113081,19 @@ var HttpClient = class {
     const controller = new AbortController();
     const onAbort = () => controller.abort(this.signal?.reason);
     this.signal?.addEventListener("abort", onAbort, { once: true });
-    const timer = setTimeout(() => controller.abort(new Error("timeout")), this.timeoutMs);
+    let timedOutAfter = this.firstByteMs;
+    const firstByte = setTimeout(() => controller.abort(new Error("timeout")), this.firstByteMs);
+    const total = setTimeout(() => {
+      timedOutAfter = this.timeoutMs;
+      controller.abort(new Error("timeout"));
+    }, this.timeoutMs);
     try {
       const res = await this.fetchFn(url, {
         headers: { Accept: accept },
         redirect: "follow",
         signal: controller.signal
       });
+      clearTimeout(firstByte);
       const body = await res.text();
       return {
         status: res.status,
@@ -112536,12 +113104,13 @@ var HttpClient = class {
     } catch (err) {
       if (this.signal?.aborted) throw this.signal.reason ?? err;
       const timedOut = controller.signal.aborted;
-      const why = timedOut ? `timed out after ${this.timeoutMs} ms` : `network error (${err.message})`;
-      const reason = `${host}: ${why}`;
+      const why2 = timedOut ? `timed out after ${timedOutAfter} ms` : `network error (${err.message})`;
+      const reason = `${host}: ${why2}`;
       this.recordFailure(host, reason);
       throw new SourceUnavailableError(host, reason);
     } finally {
-      clearTimeout(timer);
+      clearTimeout(firstByte);
+      clearTimeout(total);
       this.signal?.removeEventListener("abort", onAbort);
     }
   }
@@ -113042,7 +113611,8 @@ function failureReason(err) {
 function resolveDoiCached(ctx, doi) {
   return cached(ctx.opts.cache, doiCacheKey(doi), () => resolveDoi(ctx.client, doi), {
     isNegative: (v) => v.kind !== "found",
-    maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays)
+    maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+    refresh: ctx.opts.refresh === true
   });
 }
 async function arxivByIdCached(ctx, id) {
@@ -113050,7 +113620,11 @@ async function arxivByIdCached(ctx, id) {
     ctx.opts.cache,
     arxivCacheKey(id),
     async () => ({ record: await arxivById(ctx.client, id) }),
-    { isNegative: (v) => !v.record, maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays) }
+    {
+      isNegative: (v) => !v.record,
+      maxAge: cacheMaxAge(ctx.opts.cacheMaxAgeDays),
+      refresh: ctx.opts.refresh === true
+    }
   );
   return value.record;
 }
@@ -113071,9 +113645,10 @@ function titleSources(ctx, q) {
   if (key) list3.push(["openalex", () => openalexSearch(client, plain2, key, opts.mailto)]);
   return list3.filter(([source]) => sourceAllowed(opts, source));
 }
+var writes = /* @__PURE__ */ new WeakMap();
 async function searchOne(ctx, cacheKey, source, run2) {
-  const cache = ctx.opts.cache;
-  const hit = cache ? await cache.get(cacheKey) : void 0;
+  const cache2 = ctx.opts.cache;
+  const hit = cache2 && !ctx.opts.refresh ? await cache2.get(cacheKey) : void 0;
   const cachedRecords = hit?.[source];
   if (Array.isArray(cachedRecords) && isFresh(
     hit?.cachedAt?.[source],
@@ -113083,34 +113658,53 @@ async function searchOne(ctx, cacheKey, source, run2) {
     return cachedRecords;
   }
   const records = await run2();
-  if (cache) {
-    const latest = await cache.get(cacheKey) ?? {};
-    await cache.set(cacheKey, {
-      ...latest,
-      [source]: records,
-      cachedAt: { ...latest.cachedAt ?? {}, [source]: Date.now() }
+  if (cache2) {
+    const write = (writes.get(cache2) ?? Promise.resolve()).then(async () => {
+      const latest = await cache2.get(cacheKey) ?? {};
+      await cache2.set(cacheKey, {
+        ...latest,
+        [source]: records,
+        cachedAt: { ...latest.cachedAt ?? {}, [source]: Date.now() }
+      });
     });
+    writes.set(
+      cache2,
+      write.catch(() => {
+      })
+    );
+    await write;
   }
   return records;
 }
 async function titleSearch(ctx, q, visit) {
   const outcome = { searched: [], failures: [] };
   const cacheKey = titleCacheKey(q.title, q.year, q.isTex) + (q.hinted && q.firstAuthor ? `|author:${q.firstAuthor.toLowerCase()}` : "");
-  for (const [source, run2] of titleSources(ctx, q)) {
-    if (ctx.deadline !== void 0 && Date.now() > ctx.deadline) {
-      outcome.failures.push({ source, reason: `${source} not asked: lookup time budget used up` });
-      continue;
+  const sources = titleSources(ctx, q);
+  const first2 = sources.filter(([s]) => s === "crossref" || s === "dblp");
+  const waves = [first2, sources.filter((entry) => !first2.includes(entry))];
+  for (const wave of waves) {
+    const pending = wave.map(([source, run2]) => {
+      if (ctx.deadline !== void 0 && Date.now() > ctx.deadline) {
+        const reason = `${source} not asked: lookup time budget used up`;
+        return Promise.resolve({ source, reason });
+      }
+      return searchOne(ctx, cacheKey, source, run2).then(
+        (records) => ({ source, records }),
+        (err) => ({ source, err })
+      );
+    });
+    for (const p of pending) {
+      const got = await p;
+      if ("records" in got) {
+        outcome.searched.push(got.source);
+        if (visit(got.records, got.source)) return outcome;
+      } else if ("reason" in got) {
+        outcome.failures.push({ source: got.source, reason: got.reason });
+      } else {
+        if (ctx.opts.signal?.aborted) throw got.err;
+        outcome.failures.push({ source: got.source, reason: failureReason(got.err) });
+      }
     }
-    let records;
-    try {
-      records = await searchOne(ctx, cacheKey, source, run2);
-    } catch (err) {
-      if (ctx.opts.signal?.aborted) throw err;
-      outcome.failures.push({ source, reason: failureReason(err) });
-      continue;
-    }
-    outcome.searched.push(source);
-    if (visit(records, source)) return outcome;
   }
   if ((ctx.deadline === void 0 || Date.now() <= ctx.deadline) && !ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
     const plain2 = q.isTex ? texToPlain(q.title) : q.title;
@@ -113253,6 +113847,11 @@ function sourcesText(sources) {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
 }
+function lastFailures(failures) {
+  const bySource = /* @__PURE__ */ new Map();
+  for (const f of failures) bySource.set(f.source, f);
+  return [...bySource.values()];
+}
 function failuresText(failures) {
   return failures.map((f) => f.reason).join("; ");
 }
@@ -113309,19 +113908,20 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
     };
   }
   if (kind !== "scholarly") {
-    const why = entry.type === "book" || entry.type === "inbook" ? "books are often not indexed" : entry.type.endsWith("thesis") ? "theses are often not indexed" : "this kind of entry is often not indexed";
+    const why2 = entry.type === "book" || entry.type === "inbook" ? "books are often not indexed" : entry.type.endsWith("thesis") ? "theses are often not indexed" : "this kind of entry is often not indexed";
     const failed = ev.failures.length ? ` (lookup incomplete: ${failuresText(ev.failures)})` : "";
     return {
       ...withSearched,
+      ...ev.failures.length ? { failures: lastFailures(ev.failures) } : {},
       status: "unverifiable",
-      reason: `no match found, but ${why}${failed}`
+      reason: `no match found, but ${why2}${failed}`
     };
   }
   if (failedRequired.length || !searched.length) {
     const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
-      ...failed.length ? { failed } : {},
+      ...failed.length ? { failed, failures: lastFailures(ev.failures) } : {},
       status: "error",
       reason: `lookup incomplete: ${failuresText(ev.failures) || "no source answered"}`
     };
@@ -113392,8 +113992,10 @@ async function verifyEntries(entries, opts = {}) {
   }
   const ctx = { client: new HttpClient(opts), opts };
   const ignore = new Set(opts.ignore ?? []);
+  let done = 0;
   return runPool(entries, opts.concurrency ?? 4, async (e) => {
     const result = await verifyEntry(e, ctx, ignore);
+    opts.onProgress?.(++done, entries.length);
     return opts.requireProvenance && isUnproven(e, result) ? { ...result, unproven: true } : result;
   });
 }
@@ -113410,6 +114012,112 @@ function hasValidProvenance(entry) {
 
 // ../packages/core/src/refs/check.ts
 var UNPROVEN_FIX = "Ask the author for a DOI/arXiv id and add it with `overfull cite`, or remove the \\cite. If you wrote this entry yourself, add `note = {overfull: author-provided}` to it.";
+var refsRules = [
+  {
+    id: "bib-file-missing",
+    check: "references",
+    severity: "error",
+    title: "Bibliography file not found",
+    summary: "A .bib file named in overfull.yml (`bib:`) or in `\\addbibresource`/`\\bibliography` does not exist, so its entries cannot be checked and LaTeX cannot use them.",
+    fix: "Fix the path in `bib:` (overfull.yml) or in `\\addbibresource`, relative to the project root."
+  },
+  {
+    id: "refs-cache-ignored",
+    check: "references",
+    severity: "info",
+    title: "Project reference cache ignored",
+    summary: "With `references.cache: project`, lookups are cached in `.overfull/cache/refs.json` inside the project. That file is repository content: in CI (any provider, with or without a .git directory) it is never read, and anywhere a cache reached through a symlink is not used, because it could mark references as verified that were never looked up. Every reference is looked up again.",
+    fix: "Keep `.overfull/` out of git (add it to .gitignore) and make sure it is a real directory, not a symlink; or drop `references.cache: project` to use the user cache directory."
+  },
+  {
+    id: "reference-not-found",
+    check: "references",
+    severity: "error",
+    title: "Reference not found in any index",
+    summary: "A journal or conference reference matched nothing in CrossRef, dblp or arXiv, or its DOI / arXiv id does not exist. The reference may be mistyped, or may not exist.",
+    fix: 'Check the title and DOI against the publisher page, then re-add the reference from real metadata with `overfull cite "<title>"` or `overfull cite <doi>`. If it is real but unindexed, add `note = {overfull: skip}`.'
+  },
+  {
+    id: "reference-metadata-mismatch",
+    check: "references",
+    severity: "warning",
+    title: "Reference metadata differs from the index record",
+    summary: "A matching record was found, but its year, authors or title differ meaningfully from the .bib entry.",
+    fix: "Compare the entry with the record shown and correct it, or replace it with `overfull cite <doi>`."
+  },
+  {
+    id: "reference-doi-wrong-work",
+    check: "references",
+    severity: "error",
+    title: "DOI points to a different work",
+    summary: "The entry\u2019s DOI resolves at doi.org, but to a paper with a different title or authors. Readers who follow the DOI land on an unrelated work.",
+    fix: 'Find the correct DOI for the cited title on the publisher page, or re-add the entry with `overfull cite "<title>"`. Do not re-add it from this DOI: that would cite the unrelated paper.'
+  },
+  {
+    id: "reference-arxiv-wrong-work",
+    check: "references",
+    severity: "error",
+    title: "arXiv id points to a different work",
+    summary: "The entry\u2019s arXiv id exists, but arXiv has a paper with a different title or authors under it. Readers who follow the id land on an unrelated work.",
+    fix: 'Find the correct arXiv id for the cited title on arxiv.org, or re-add the entry with `overfull cite "<title>"`. Do not re-add it from this id: that would cite the unrelated paper.'
+  },
+  {
+    id: "bib-outside-project",
+    check: "references",
+    severity: "warning",
+    title: "Bibliography outside the project not checked",
+    summary: "The document names a .bib file outside the project directory (for example `\\bibliography{../shared/refs}`). Overfull only reads files inside the project, so the references in it were not checked.",
+    fix: "Pass the file explicitly with `--bib` (or `bib:` in overfull.yml) from a project that contains it, or move it into the project."
+  },
+  {
+    id: "reference-unverifiable",
+    check: "references",
+    severity: "info",
+    title: "Reference could not be checked automatically",
+    summary: "Websites, software, standards, books and theses are often not in scholarly indexes, so their existence cannot be confirmed automatically.",
+    fix: "Check these entries by hand. Add a DOI or ISBN where one exists."
+  },
+  {
+    id: "reference-lookup-failed",
+    check: "references",
+    severity: "warning",
+    title: "Reference lookup failed",
+    summary: "An index could not be reached (network error, timeout, rate limit), so the reference was neither confirmed nor ruled out.",
+    fix: "The message names the index that could not answer. Add the DOI or arXiv id to the entry: doi.org and arXiv can confirm it even when the title search fails. Or re-add the entry with `overfull cite <doi | arXiv:id>`."
+  },
+  {
+    id: "reference-unproven",
+    check: "references",
+    severity: "error",
+    title: "Reference neither verified nor added with overfull cite",
+    summary: "With `references.requireCite`, every entry that cannot be verified must have been added with `overfull cite`: it carries an intact `x-overfull = {cite \u2026 <hash>}` marker and a DOI, eprint or URL. The hash makes edits evident; it is not authentication. Entries the author vouches for carry `note = {overfull: author-provided}` (added by the author, never by an agent). A hand-written entry that no index confirms may not exist.",
+    fix: UNPROVEN_FIX
+  },
+  {
+    id: "reference-not-reverified",
+    check: "references",
+    severity: "warning",
+    title: "Cited entry could not be re-verified",
+    summary: "The entry was added with `overfull cite` (its `x-overfull` marker is intact), but this run could not confirm it again: the check ran offline or the indexes could not be reached.",
+    fix: "Run `overfull check` again with network access. If an index stays unreachable, the DOI or arXiv id in the entry lets doi.org or arXiv confirm it."
+  },
+  {
+    id: "bib-parse-error",
+    check: "references",
+    severity: "error",
+    title: "Malformed .bib entry",
+    summary: "A .bib entry could not be parsed, so BibTeX/biber will skip or misread it.",
+    fix: "Fix the syntax at the reported line: usually a missing comma, `=`, or closing brace."
+  },
+  {
+    id: "citation-key-missing",
+    check: "references",
+    severity: "error",
+    title: "Cited key not in any .bib file",
+    summary: "The document cites a key that no .bib file defines; the PDF shows `[?]` or the key in bold.",
+    fix: 'Add the entry with `overfull cite <doi | arXiv:id | "title">`, or fix the key in `\\cite{}`.'
+  }
+];
 function fieldList(r) {
   return (r.differences ?? []).map((d) => d.field === "author" ? "authors" : d.field).join(", ");
 }
@@ -113470,6 +114178,12 @@ function authorProvidedProblem(r, entry) {
     fix: "The author vouches for this entry; check it by hand before submission.",
     data: { key: r.key, status: r.status, authorProvided: true }
   };
+}
+function failureLines(r) {
+  if (!r.failures?.length) return void 0;
+  return r.failures.map(
+    (f) => `${sourceName(f.source)}: ${f.reason.replace(/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:: | (?=answered|returned))/, "")}.`
+  ).join("\n");
 }
 function problemFor(r, entry, requireProvenance = false) {
   if (r.status !== "verified" && r.status !== "mismatch" && entry && isAuthorProvided(entry))
@@ -113541,23 +114255,29 @@ function problemFor(r, entry, requireProvenance = false) {
         fix: `Compare the entry with the record${r.matched?.doi ? ` (doi ${r.matched.doi})` : ""} and correct it, or replace it with \`${citeHint(r, entry)}\`.`
       };
     }
-    case "unverifiable":
+    case "unverifiable": {
+      const why2 = withoutLookupNote(r.reason);
+      const lines = failureLines(r);
       return {
         ...common,
         rule: "reference-unverifiable",
         severity: "info",
-        message: `\`${r.key}\` could not be checked automatically${r.reason ? ` (${r.reason})` : ""}`,
+        message: `\`${r.key}\` could not be checked automatically${why2 ? `: ${why2}` : ""}`,
+        ...lines ? { detail: `The lookup was incomplete. ${lines}` } : {},
         fix: "Check this entry by hand; add a DOI where one exists."
       };
-    case "error":
+    }
+    case "error": {
+      const lines = failureLines(r);
       return {
         ...common,
         rule: "reference-lookup-failed",
         severity: "warning",
-        message: `\`${r.key}\` could not be checked: ${r.reason ?? "lookup failed"}`,
-        detail: "A network problem is not evidence against the reference; it was neither confirmed nor ruled out.",
+        message: lines ? `\`${r.key}\` could not be checked because ${failedText(r)} did not answer` : `\`${r.key}\` could not be checked: ${r.reason ?? "lookup failed"}`,
+        detail: lines ? `${lines} A network problem is not evidence against the reference.` : "A network problem is not evidence against the reference; it was neither confirmed nor ruled out.",
         fix: `${failedText(r)} could not answer. Add the DOI or arXiv id to the entry (doi.org and arXiv can confirm it even when the title search fails), or re-add it with \`overfull cite <doi | arXiv:id>\`.`
       };
+    }
   }
 }
 function bibIssueProblems(issues, file) {
@@ -113590,7 +114310,10 @@ function missingKeys(cited, entries, texFiles) {
 function summaryOf(results, stats) {
   const parts = [];
   if (stats.notFound) parts.push(`${stats.notFound} not found`);
-  if (stats.mismatch) parts.push(`${stats.mismatch} with differing metadata`);
+  const differing = (stats.mismatch ?? 0) - (stats.wrongWork ?? 0);
+  if (differing) parts.push(`${differing} with differing metadata`);
+  if (stats.wrongWork)
+    parts.push(`${stats.wrongWork} with an identifier that points to another work`);
   if (stats.error) parts.push(`${stats.error} could not be checked`);
   if (stats.unverifiable) parts.push(`${stats.unverifiable} not checkable automatically`);
   const head = `${stats.verified} of ${results.length} references verified`;
@@ -113645,6 +114368,8 @@ function refsCheck(results, opts = {}) {
     unverifiable: results.filter((r) => r.status === "unverifiable").length,
     error: results.filter((r) => r.status === "error").length
   };
+  const wrongWork = results.filter((r) => r.status === "mismatch" && r.wrongWork).length;
+  if (wrongWork) stats.wrongWork = wrongWork;
   const problems = [
     ...bibIssueProblems(opts.issues ?? [], opts.bibFile),
     ...opts.extra ?? [],
@@ -113677,6 +114402,11 @@ function refsCheck(results, opts = {}) {
     summary: summaryOf(results, stats),
     stats
   };
+}
+function withoutLookupNote(reason) {
+  if (!reason?.endsWith(")")) return reason;
+  const at = reason.indexOf(" (lookup incomplete: ");
+  return at < 0 ? reason : reason.slice(0, at);
 }
 
 // ../packages/core/src/report/shared.ts
@@ -113885,7 +114615,8 @@ function check(c) {
   return o;
 }
 function formatJson(report) {
-  const o = ordered(report, ["tool", "version", "target", "status", "checks"]);
+  const o = ordered(report, ["tool", "version", "target", "assumed", "status", "checks"]);
+  if (report.assumed) o.assumed = sortKeys(report.assumed);
   o.checks = report.checks.map((c) => check(c));
   return `${JSON.stringify(o, null, 2)}
 `;
@@ -114226,6 +114957,231 @@ function disclosureProblems(level, ctx) {
   ];
 }
 
+// ../packages/core/src/venue/layout.ts
+var baseName = (path) => path.split("/").pop() ?? path;
+function layoutCheckApplies(profile) {
+  if (profile.id === "generic" || profile.id === "thesis") return false;
+  return profile.pageLimit !== void 0 || (profile.styleFiles?.length ?? 0) > 0;
+}
+var NEGATIVE_SPACE_LENGTHS = "abovecaptionskip|belowcaptionskip|textfloatsep|floatsep|intextsep|dbltextfloatsep|dblfloatsep|abovedisplayskip|belowdisplayskip|abovedisplayshortskip|belowdisplayshortskip";
+var PAGE_LENGTHS = "textheight|textwidth|columnsep|oddsidemargin|evensidemargin|topmargin|headheight|headsep|footskip|voffset|hoffset|marginparwidth|columnwidth|linewidth";
+var GEOMETRY_KEYS = /\b(?:margin|left|right|top|bottom|lmargin|rmargin|tmargin|bmargin|textwidth|textheight|text|total|body|hmargin|vmargin|inner|outer|width|height|hscale|vscale|columnsep|footskip|headheight|headsep|marginparwidth)\s*=/;
+var NEAR = 3;
+function problem2(use, kind, what, fix) {
+  return {
+    rule: "layout-tampering",
+    check: "venue",
+    severity: "warning",
+    message: `${what}; check that your venue allows this`,
+    location: { file: use.file, line: use.line },
+    fix,
+    data: { kind }
+  };
+}
+var num2 = (s) => {
+  const m = /^\s*([+-]?\d*\.?\d+)/.exec(s);
+  return m ? Number(m[1]) : void 0;
+};
+function layoutProblems(profile, ctx) {
+  if (!layoutCheckApplies(profile)) return [];
+  const named = new Set((profile.styleFiles ?? []).map((f) => f.name));
+  const strict = named.size > 0;
+  const files = (ctx.texFiles ?? []).filter(
+    (f) => !/\.cls$/i.test(f.path) && !named.has(baseName(f.path))
+  );
+  const out = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (p) => {
+    const key = `${p.location?.file}:${p.location?.line}:${p.data?.kind}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(p);
+  };
+  for (const f of files) {
+    const lines = stripComments(f.content).split("\n");
+    const nearAnchor = (i) => lines.slice(Math.max(0, i - NEAR), i + NEAR + 1).some(
+      (l) => /\\(?:begin|end)\{(?:figure|table|wrapfigure|wraptable)\*?\}|\\caption\b|\\(?:sub)*section\b|\\paragraph\b/.test(
+        l
+      )
+    );
+    lines.forEach((line, i) => {
+      const at = { file: f.path, line: i + 1 };
+      const neg = /\\(vspace|vskip)\*?\s*\{?\s*(-[^}\s]*)/.exec(line);
+      if (neg && nearAnchor(i)) {
+        add(
+          problem2(
+            at,
+            "negative-vspace",
+            `\`\\${neg[1]}{${neg[2]}}\` pulls a figure, table or heading closer to the text`,
+            "Remove it, or check the venue\u2019s formatting rules before you keep it"
+          )
+        );
+      }
+      const skip = new RegExp(
+        `\\\\(?:setlength|addtolength)\\s*\\{?\\\\(${NEGATIVE_SPACE_LENGTHS})\\}?\\s*\\{\\s*(-[^}]*)\\}`
+      ).exec(line);
+      if (skip) {
+        add(
+          problem2(
+            at,
+            "negative-skip",
+            `\`\\${skip[1]}\` is set to ${skip[2]?.trim()}, which shrinks the space around floats or equations`,
+            "Remove it, or check the venue\u2019s formatting rules before you keep it"
+          )
+        );
+      }
+      const stretch = /\\renewcommand\s*\{?\\baselinestretch\}?\s*\{([^}]*)\}/.exec(line) ?? /\\(?:linespread|setstretch)\s*\{([^}]*)\}/.exec(line);
+      const factor = stretch?.[1] === void 0 ? void 0 : num2(stretch[1]);
+      if (stretch && factor !== void 0 && factor < 1) {
+        add(
+          problem2(
+            at,
+            "line-spacing",
+            `Line spacing is set to ${stretch[1]?.trim()} (below 1)`,
+            "Remove it, or check the venue\u2019s formatting rules before you keep it"
+          )
+        );
+      }
+      if (strict) {
+        const len = new RegExp(
+          `\\\\(?:(?:setlength|addtolength)\\s*\\{?\\\\(${PAGE_LENGTHS})\\}?|(${PAGE_LENGTHS})\\s*=)`
+        ).exec(line);
+        if (len) {
+          const name = len[1] ?? len[2];
+          add(
+            problem2(
+              at,
+              "page-length",
+              `\`\\${name}\` is changed from the venue\u2019s style`,
+              "Remove it and use the venue\u2019s style file as shipped"
+            )
+          );
+        }
+        const geo = /\\(?:usepackage|geometry|newgeometry|RequirePackage)\b/.test(line) ? /geometry/.test(line) && GEOMETRY_KEYS.test(line) : false;
+        if (geo) {
+          add(
+            problem2(
+              at,
+              "geometry",
+              "The `geometry` package changes margins or the text block",
+              "Remove it and use the venue\u2019s style file as shipped"
+            )
+          );
+        }
+        if (/\\renewcommand\s*\{?\\(?:@normalsize|normalsize)\b/.test(line)) {
+          add(
+            problem2(
+              at,
+              "font-size",
+              "The base font size (`\\normalsize`) is redefined",
+              "Remove it and use the venue\u2019s style file as shipped"
+            )
+          );
+        }
+      }
+    });
+  }
+  for (const use of findCommands(files, ["usepackage", "RequirePackage"])) {
+    if (/(^|,)\s*savetrees\s*(,|$)/.test(use.arg)) {
+      add(
+        problem2(
+          use,
+          "savetrees",
+          "The `savetrees` package shrinks margins, spacing and fonts",
+          "Remove it; most venues do not allow it"
+        )
+      );
+    }
+  }
+  if (strict) {
+    for (const use of findCommands(files, ["documentclass"])) {
+      const size = use.optional ? /(?:^|,)\s*(\d+(?:\.\d+)?pt)\s*(?:,|$)/.exec(use.optional) : null;
+      if (size) {
+        add(
+          problem2(
+            use,
+            "font-size",
+            `The class option ${size[1]} sets the base font size`,
+            "Remove it unless the venue\u2019s instructions ask for that size"
+          )
+        );
+      }
+    }
+    for (const hit of grepTex(
+      files.filter((f) => f.path === ctx.main),
+      /\\fontsize\s*\{[^}]*\}\s*\{[^}]*\}\s*\\selectfont[^\n]*/
+    )) {
+      const f = files.find((x) => x.path === hit.file);
+      const body = f ? stripComments(f.content).search(/\\begin\{document\}/) : -1;
+      const before = f ? stripComments(f.content).split("\n").slice(0, hit.line).join("\n") : "";
+      if (body < 0 || before.length < body) {
+        add(
+          problem2(
+            hit,
+            "font-size",
+            "The base font size is set in the preamble with `\\fontsize`",
+            "Remove it and use the venue\u2019s style file as shipped"
+          )
+        );
+      }
+    }
+  }
+  const order = new Map(files.map((f, n) => [f.path, n]));
+  return out.sort(
+    (a, b) => (order.get(a.location?.file ?? "") ?? 0) - (order.get(b.location?.file ?? "") ?? 0) || (a.location?.line ?? 0) - (b.location?.line ?? 0)
+  );
+}
+
+// ../packages/core/src/venue/links.ts
+var URL_RE = /https?:\/\/[^\s{}\\|<>"^`]+/gi;
+var ANONYMIZERS = ["anonymous.4open.science"];
+var USER_HOSTS = ["github.com", "gitlab.com", "bitbucket.org"];
+function why(url) {
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  if (ANONYMIZERS.some((a) => host === a || host.endsWith(`.${a}`))) return void 0;
+  if (host === "osf.io" && url.searchParams.has("view_only")) return void 0;
+  if (USER_HOSTS.includes(host)) {
+    const user = url.pathname.split("/").filter(Boolean)[0];
+    return user ? `a ${host} page of "${user}"` : void 0;
+  }
+  if (host.endsWith(".github.io") || host.endsWith(".gitlab.io"))
+    return `a personal page (${host})`;
+  if (host === "sites.google.com") return "a personal Google Sites page";
+  if (/^[^/]*\/~[^/]+/.test(`${host}${url.pathname}`)) return "a personal page (a ~user path)";
+  if (/(^|\.)(edu|ac\.[a-z]{2}|edu\.[a-z]{2})$/.test(host))
+    return `an institutional page (${host})`;
+  return void 0;
+}
+function anonymityLinkProblems(ctx) {
+  const out = [];
+  for (const f of ctx.texFiles ?? []) {
+    if (/\.(cls|sty)$/i.test(f.path)) continue;
+    stripComments(f.content).split("\n").forEach((line, i) => {
+      for (const m of line.matchAll(URL_RE)) {
+        const raw = m[0].replace(/[.,;:)\]]+$/, "");
+        let url;
+        try {
+          url = new URL(raw);
+        } catch {
+          continue;
+        }
+        const reason = why(url);
+        if (!reason) continue;
+        out.push({
+          rule: "anonymity-link",
+          check: "venue",
+          severity: "warning",
+          message: `Link to ${reason} can identify the authors: ${raw.slice(0, 80)}`,
+          location: { file: f.path, line: i + 1 },
+          fix: "Use an anonymized copy (e.g. anonymous.4open.science), or remove the link for the review version. Ignore this if the link is not yours",
+          data: { url: raw }
+        });
+      }
+    });
+  }
+  return out;
+}
+
 // ../packages/core/src/venue/pages.ts
 var PAPER = {
   a4: { w: 210, h: 297, label: "A4 (210 \xD7 297 mm)" },
@@ -114272,14 +115228,15 @@ function pageLimitProblems(profile, ctx) {
       problems.push(...floatsAfterEnd(ctx.aux ?? "", page, endLabel));
       return problems;
     }
-    problems.push({
-      rule: "page-limit-label-missing",
-      check: "venue",
-      severity: "warning",
-      message: entry ? `\\label{${endLabel}} is on page "${entry.page}", which is not a page number; counted all pages` : `\\label{${endLabel}} not found in the .aux; counted all pages`,
-      fix: `Put \`\\label{${endLabel}}\` right after the last line of the main text (before references/appendix) and rebuild`,
-      data: { endLabel }
-    });
+    if (ctx.facts)
+      problems.push({
+        rule: "page-limit-label-missing",
+        check: "venue",
+        severity: "warning",
+        message: entry ? `\\label{${endLabel}} is on page "${entry.page}", which is not a page number; counted all pages` : `\\label{${endLabel}} not found in the .aux; counted all pages`,
+        fix: `Put \`\\label{${endLabel}}\` right after the last line of the main text (before references/appendix) and rebuild`,
+        data: { endLabel }
+      });
   }
   const total = ctx.facts?.pageCount;
   if (total === void 0) {
@@ -114358,6 +115315,54 @@ function paperSizeProblems(profile, ctx) {
   ];
 }
 
+// ../packages/core/src/venue/stale.ts
+var STALE_AFTER_MONTHS = 14;
+function staleProfileProblems(profile, now) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(profile.checkedOn ?? "");
+  if (!m) return [];
+  const checked = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  const limit = new Date(checked);
+  limit.setUTCMonth(limit.getUTCMonth() + STALE_AFTER_MONTHS);
+  if (now.getTime() <= limit.getTime()) return [];
+  return [
+    {
+      rule: "venue-profile-stale",
+      check: "venue",
+      severity: "info",
+      message: `Profile ${profile.id} was last checked against the venue's pages on ${profile.checkedOn}; it may be out of date`,
+      fix: `Read the venue's current instructions${profile.source?.length ? ` (${profile.source.join(", ")})` : ""} before you submit`,
+      data: { profile: profile.id, checkedOn: profile.checkedOn, months: STALE_AFTER_MONTHS }
+    }
+  ];
+}
+
+// ../packages/core/src/venue/style-file.ts
+var baseName2 = (path) => path.split("/").pop() ?? path;
+function styleFileProblems(profile, files) {
+  const problems = [];
+  for (const sf of profile.styleFiles ?? []) {
+    if (!sf.sha256) continue;
+    const want = sf.sha256.toLowerCase();
+    for (const f of files) {
+      if (baseName2(f.path) !== sf.name) continue;
+      if (sha256Hex(f.content) === want) continue;
+      if (f.content.includes("\r\n") && sha256Hex(f.content.replace(/\r\n/g, "\n")) === want)
+        continue;
+      problems.push({
+        rule: "style-file-modified",
+        check: "venue",
+        severity: "warning",
+        message: `${f.path} differs from the official ${sf.name} for ${profile.name}`,
+        location: { file: f.path },
+        detail: `Expected SHA-256 ${want}. Venues often reject papers built with a changed style file.`,
+        fix: `Download ${sf.name} again from the venue's page and keep your changes in your own files`,
+        data: { file: f.path, styleFile: sf.name, expected: want }
+      });
+    }
+  }
+  return problems;
+}
+
 // ../packages/core/src/venue/check.ts
 function venueCheck(profile, ctx) {
   if (!ctx.facts && !ctx.texFiles?.length && !ctx.aux) {
@@ -114371,9 +115376,12 @@ function venueCheck(profile, ctx) {
   const problems = [
     ...pageLimitProblems(profile, ctx),
     ...paperSizeProblems(profile, ctx),
-    ...profile.anonymous ? anonymityProblems(ctx) : [],
+    ...profile.anonymous ? [...anonymityProblems(ctx), ...anonymityLinkProblems(ctx)] : [],
+    ...styleFileProblems(profile, ctx.texFiles ?? []),
+    ...layoutProblems(profile, ctx),
     ...disclosureProblems(profile.disclosure, ctx),
-    ...profile.arxiv ? arxivProblems(ctx) : []
+    ...profile.arxiv ? arxivProblems(ctx) : [],
+    ...staleProfileProblems(profile, ctx.now ?? /* @__PURE__ */ new Date())
   ];
   const stats = {};
   if (ctx.facts) stats.pages = ctx.facts.pageCount;
@@ -114388,6 +115396,235 @@ function venueCheck(profile, ctx) {
   if (warnings) parts.push(`${warnings} to review`);
   return { check: "venue", status: statusOf(problems), problems, summary: parts.join(", "), stats };
 }
+
+// ../packages/core/src/venue/venues.generated.ts
+var venueProfileData = {
+  "aaai-2027": {
+    id: "aaai-2027",
+    name: "AAAI-27 (main technical track)",
+    extends: "double-blind",
+    year: 2027,
+    source: [
+      "https://aaai.org/conference/aaai/aaai-27/main-technical-track-call/",
+      "https://aaai.org/conference/aaai/aaai-27/submission-instructions/",
+      "https://aaai.org/conference/aaai/aaai-27/policies-aaai-27-authors/",
+      "https://aaai.org/authorkit27/"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "letter",
+    pageLimit: {
+      max: 7,
+      endLabel: "overfull:main-end",
+      counts: "Main content, including any ethical statements",
+      excludes: [
+        "References"
+      ]
+    },
+    anonymous: true,
+    styleFiles: [
+      {
+        name: "aaai2027.sty",
+        sha256: "01990f8d3716f8e39c5b28a7478f3ac6e28630d1161de6105a7217f5e7f60e43"
+      }
+    ],
+    notes: "The submission PDF can have up to 9 pages, with pages 8 and 9 reserved for references. Acknowledgements are omitted from papers submitted for review. The author policy allows judicious use of generative AI tools; the pages read state no disclosure requirement. The hash is of aaai2027.sty (2027/10/21) from the AuthorKit27 archive downloaded on 2026-11-10. The AAAI-28 call page redirects to AAAI-26 content, so AAAI-27 is the latest published."
+  },
+  "acl-rolling-review": {
+    id: "acl-rolling-review",
+    name: "ACL Rolling Review (long papers)",
+    extends: "double-blind",
+    year: "rolling",
+    source: [
+      "https://aclrollingreview.org/cfp",
+      "https://acl-org.github.io/ACLPUB/formatting.html"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "a4",
+    pageLimit: {
+      max: 8,
+      endLabel: "overfull:main-end",
+      counts: "Content, including figures and tables",
+      excludes: [
+        "Limitations (required section)",
+        "Ethical considerations",
+        "References"
+      ]
+    },
+    anonymous: true,
+    disclosure: "recommended",
+    notes: "Short papers have 4 pages of content. Final versions of long papers get one more page (9). Missing a Limitations section is a desk-rejection reason. Use of generative AI for writing or coding must be disclosed in the Responsible NLP Checklist, with details in the Acknowledgements; some uses (language polishing, short-form input assistance) need no disclosure. The official style files are at https://github.com/acl-org/acl-style-files (not reachable from this session, so no file name or hash is recorded)."
+  },
+  "cvpr-2027": {
+    id: "cvpr-2027",
+    name: "CVPR 2027",
+    extends: "double-blind",
+    year: 2027,
+    source: [
+      "https://cvpr.thecvf.com/Conferences/2027/AuthorGuidelines",
+      "https://media.eventhosts.cc/Conferences/CVPR2027/author-kit-CVPR2027-v1-latex.zip"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "letter",
+    pageLimit: {
+      max: 8,
+      endLabel: "overfull:main-end",
+      counts: "Main text including figures and tables",
+      excludes: [
+        "References",
+        "LLM Usage Statement"
+      ]
+    },
+    anonymous: true,
+    disclosure: "required",
+    styleFiles: [
+      {
+        name: "cvpr.sty",
+        sha256: "1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4"
+      }
+    ],
+    notes: 'Every submission needs a section titled "LLM Usage Statement" after the main text and before the references; it states "No LLMs or generative AI tools were used in this work" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10.'
+  },
+  "emnlp-2026": {
+    id: "emnlp-2026",
+    name: "EMNLP 2026 (main conference)",
+    extends: "double-blind",
+    year: 2026,
+    source: [
+      "https://2026.emnlp.org/calls/main_conference_papers/",
+      "https://aclrollingreview.org/cfp",
+      "https://acl-org.github.io/ACLPUB/formatting.html"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "a4",
+    pageLimit: {
+      max: 8,
+      endLabel: "overfull:main-end",
+      counts: "Content, including figures and tables",
+      excludes: [
+        "Limitations (required section)",
+        "Ethical considerations",
+        "References"
+      ]
+    },
+    anonymous: true,
+    disclosure: "recommended",
+    notes: "Papers go through ACL Rolling Review and follow all ARR submission requirements; the EMNLP page lists long papers (8 pages) and short papers (4 pages). Final versions get one additional page (9 for long papers, 5 for short papers). Exclusions and the A4 size are from the ARR call and the ACL formatting guidelines it links. Writing-assistance disclosure follows the ARR policy. No style file name or hash is recorded because the official style repository was not reachable from this session."
+  },
+  "iclr-2027": {
+    id: "iclr-2027",
+    name: "ICLR 2027",
+    extends: "double-blind",
+    year: 2027,
+    source: [
+      "https://iclr.cc/Conferences/2027/CallForPapers",
+      "https://iclr.cc/Conferences/2027/AuthorGuidelines",
+      "https://iclr.cc/Conferences/2027/AIPolicyForAuthors"
+    ],
+    checkedOn: "2026-11-10",
+    pageLimit: {
+      max: 9,
+      endLabel: "overfull:main-end",
+      counts: "Main text at submission",
+      excludes: [
+        "References",
+        "AI use statement",
+        "Optional ethics statement (at most 1 page)"
+      ]
+    },
+    anonymous: true,
+    disclosure: "required",
+    styleFiles: [
+      {
+        name: "iclr2027_conference.sty",
+        sha256: "797deef41724e93761426ac0cbcca46279a91cc650dd1f0ce76a4f08d2098ea6"
+      }
+    ],
+    notes: "The page limit is 10 for the discussion phase and the camera-ready version. A mandatory AI use statement section does not count toward the limit. Style files are from iclr-2027-style-files.zip (linked from the author guidelines), downloaded on 2026-11-10 (file dated 2026-07-28 in the archive)."
+  },
+  "icml-2026": {
+    id: "icml-2026",
+    name: "ICML 2026",
+    extends: "double-blind",
+    year: 2026,
+    source: [
+      "https://icml.cc/Conferences/2026/CallForPapers",
+      "https://icml.cc/Conferences/2026/AuthorInstructions"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "letter",
+    pageLimit: {
+      max: 8,
+      endLabel: "overfull:main-end",
+      counts: "Main paper",
+      excludes: [
+        "References",
+        "Impact statement",
+        "Appendices"
+      ]
+    },
+    anonymous: true,
+    disclosure: "recommended",
+    styleFiles: [
+      {
+        name: "icml2026.sty",
+        sha256: "7cdcf90f6a59c5219e7f15c88f7ed09fcaf598dad91e6cdddc4dc3cb0e397a95"
+      }
+    ],
+    notes: "Final versions of accepted papers get one extra page for the main paper. The call allows generative AI tools and encourages authors to explain notable uses in their methodology; LLMs cannot be authors. The hash is of icml2026.sty (v2.0, 2025/10/29) from icml2026.zip downloaded on 2026-11-10. The ICML 2027 call page exists but has no content yet."
+  },
+  "neurips-2026": {
+    id: "neurips-2026",
+    name: "NeurIPS 2026 (main track)",
+    extends: "double-blind",
+    year: 2026,
+    source: [
+      "https://neurips.cc/Conferences/2026/CallForPapers",
+      "https://neurips.cc/Conferences/2026/MainTrackHandbook",
+      "https://media.neurips.cc/Conferences/NeurIPS2026/Formatting_Instructions_For_NeurIPS_2026.zip"
+    ],
+    checkedOn: "2026-11-10",
+    paper: "letter",
+    pageLimit: {
+      max: 9,
+      endLabel: "overfull:main-end",
+      counts: "Main text including all figures and tables",
+      excludes: [
+        "References",
+        "Optional technical appendices",
+        "Mandatory paper checklist"
+      ]
+    },
+    anonymous: true,
+    disclosure: "recommended",
+    styleFiles: [
+      {
+        name: "neurips_2026.sty",
+        sha256: "c3fc2894e83d2517ca18b66741d6c595986d97957dc08ec08bb2125a7ec4555a"
+      }
+    ],
+    notes: "The handbook asks authors to describe agent or LLM use in the experimental setup only when it is an important, original or non-standard part of the method. Accepted papers get one additional content page for the camera-ready version. Paper size is from the letterpaper option in the official style file (the handbook does not state it). The hash is of neurips_2026.sty (dated 2026-01-29) from the kit downloaded on 2026-11-10."
+  },
+  "springer-lncs": {
+    id: "springer-lncs",
+    name: "Springer LNCS proceedings (also LNAI, LNBI, CCIS, LNBIP, LNICST, IFIP AICT)",
+    extends: "paper",
+    year: "rolling",
+    source: [
+      "https://www.springer.com/gp/computer-science/lncs/conference-proceedings-guidelines",
+      "https://cms-resources.apps.public.k8s.springernature.io/springer-cms/rest/v1/content/27852130/data/Instructions%20for%20Authors%20PDF",
+      "https://cms-resources.apps.public.k8s.springernature.io/springer-cms/rest/v1/content/27851904/data/LaTeX2e%20Proceedings%20Template%20ZIP"
+    ],
+    checkedOn: "2026-11-10",
+    accessibility: "recommended",
+    styleFiles: [
+      {
+        name: "llncs.cls",
+        sha256: "04ec99046ad9867f6cd54ffd1ef8c47c767b327d1baec77536db0528cd492fa2"
+      }
+    ],
+    notes: "No page limit or paper size is set by Springer; the volume editors set the limit (full papers are typically 12-15 pages, short papers 6-11). Springer's instructions say proceedings contributions need alternative text for non-text content under WCAG; the level is recommended here because Overfull's accessibility check is about the PDF, not alt text. The hash is of llncs.cls v2.25 (2026/09/03) from the LaTeX2e template downloaded on 2026-11-10."
+  }
+};
 
 // ../packages/core/src/venue/profiles.ts
 var ALL_CHECKS = [...CHECK_IDS];
@@ -114441,23 +115678,15 @@ var builtinProfiles = {
   }
 };
 var UnknownProfileError = class extends Error {
-  constructor(name) {
+  constructor(name, extra = venueProfileData) {
+    const venues = Object.keys({ ...venueProfileData, ...extra });
     super(
-      `Unknown profile "${name}". Built-in profiles: ${Object.keys(builtinProfiles).join(", ")}`
+      `Unknown profile "${name}". Built-in profiles: ${Object.keys(builtinProfiles).join(", ")}` + (venues.length ? `. Venue profiles: ${venues.join(", ")}` : "")
     );
     this.name = "UnknownProfileError";
   }
 };
-function builtin(name) {
-  const p = builtinProfiles[name];
-  if (!p) throw new UnknownProfileError(name);
-  return p;
-}
-function resolveProfile(nameOrInline) {
-  if (typeof nameOrInline === "string") return { ...builtin(nameOrInline) };
-  const { extends: base, ...inline2 } = nameOrInline;
-  const baseName = base ?? (inline2.id && builtinProfiles[inline2.id] ? inline2.id : "generic");
-  const parent = builtin(baseName);
+function merge(parent, inline2) {
   const merged = { ...parent };
   for (const [k, v] of Object.entries(inline2)) {
     if (v !== void 0) merged[k] = v;
@@ -114465,6 +115694,325 @@ function resolveProfile(nameOrInline) {
   if (inline2.pageLimit) merged.pageLimit = { ...parent.pageLimit, ...inline2.pageLimit };
   if (!inline2.id) merged.id = parent.id;
   return merged;
+}
+function known(name, venues) {
+  return Object.hasOwn(builtinProfiles, name) || Object.hasOwn(venues, name);
+}
+function lookup(name, venues) {
+  const built = Object.hasOwn(builtinProfiles, name) ? builtinProfiles[name] : void 0;
+  if (built) return { ...built };
+  const data = Object.hasOwn(venues, name) ? venues[name] : void 0;
+  if (!data) throw new UnknownProfileError(name, venues);
+  const { extends: base, ...fields } = data;
+  const parent = lookup(base ?? "generic", venues);
+  const withDescription = {
+    description: `${data.name}${data.year !== void 0 ? ` (${data.year})` : ""}`,
+    ...fields
+  };
+  return merge(parent, withDescription);
+}
+function resolveProfile(nameOrInline, venues = venueProfileData) {
+  if (typeof nameOrInline === "string") return lookup(nameOrInline, venues);
+  const { extends: base, ...inline2 } = nameOrInline;
+  const baseName3 = base ?? (inline2.id && known(inline2.id, venues) ? inline2.id : "generic");
+  return merge(lookup(baseName3, venues), inline2);
+}
+
+// ../packages/core/src/venue/rules.ts
+var venueRules = [
+  {
+    id: "page-limit-exceeded",
+    check: "venue",
+    severity: "error",
+    title: "Page limit exceeded",
+    summary: "The document (or its main text, up to the end label) is longer than the venue allows.",
+    fix: "Shorten the main text, or move material to an appendix if the venue does not count it."
+  },
+  {
+    id: "page-limit-label-missing",
+    check: "venue",
+    severity: "warning",
+    title: "Page-limit end label not found",
+    summary: "The profile counts pages up to a label (default `overfull:main-end`), but the .aux has no such label, so all pages were counted.",
+    fix: "Put `\\label{overfull:main-end}` right after the last paragraph of the main text and rebuild."
+  },
+  {
+    id: "page-limit-unchecked",
+    check: "venue",
+    severity: "info",
+    title: "Page limit not checked",
+    summary: "There was no PDF (or .aux label) to count pages from.",
+    fix: "Build the document first (`overfull build`)."
+  },
+  {
+    id: "paper-size-mismatch",
+    check: "venue",
+    severity: "warning",
+    title: "Wrong paper size",
+    summary: "Pages are not the paper size the venue expects (A4 or US Letter).",
+    fix: "Set the paper size in the class options or with `\\usepackage[a4paper]{geometry}` / `letterpaper`."
+  },
+  {
+    id: "anonymity-pdf-author",
+    check: "venue",
+    severity: "error",
+    title: "Author name in PDF metadata",
+    summary: "The PDF Author field names a person in a double-blind submission.",
+    fix: "Set `\\hypersetup{pdfauthor={Anonymous}}` for the review version."
+  },
+  {
+    id: "anonymity-author-named",
+    check: "venue",
+    severity: "error",
+    title: "Author named in the source",
+    summary: "`\\author{...}` contains names in a double-blind submission.",
+    fix: "Use `\\author{Anonymous}` or the venue class\u2019s anonymous/review option."
+  },
+  {
+    id: "anonymity-acknowledgments",
+    check: "venue",
+    severity: "warning",
+    title: "Acknowledgments in an anonymous submission",
+    summary: "Acknowledgments often name people, grants or institutions and break anonymity.",
+    fix: "Remove the acknowledgments until the camera-ready version."
+  },
+  {
+    id: "anonymity-self-reference",
+    check: "venue",
+    severity: "info",
+    title: "Possible self-identifying phrase",
+    summary: 'Phrases such as "our previous work [3]" reveal who the authors are.',
+    fix: "Refer to your earlier work in the third person."
+  },
+  {
+    id: "disclosure-missing",
+    check: "venue",
+    severity: "error",
+    title: "AI-use disclosure missing",
+    summary: "The venue asks authors to state whether and how generative AI tools were used; no such statement was found.",
+    fix: "Add a short section, e.g. `\\section*{Use of Generative AI}\\label{overfull:disclosure}`. The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used."
+  },
+  {
+    id: "disclosure-placeholder",
+    check: "venue",
+    severity: "error",
+    title: "AI-use disclosure is a placeholder",
+    summary: "The disclosure section exists but still holds placeholder text or almost nothing. Submitting it as is misstates how the paper was written.",
+    fix: "The author writes the statement: which AI tools were used and for what, and that the authors checked the output. Only the author can say whether none were used."
+  },
+  {
+    id: "arxiv-absolute-path",
+    check: "venue",
+    severity: "error",
+    title: "Absolute path (arXiv)",
+    summary: "arXiv compiles only the uploaded files, so absolute paths break the build.",
+    fix: "Use paths relative to the main file."
+  },
+  {
+    id: "float-after-main-end",
+    check: "venue",
+    severity: "warning",
+    title: "Figure or table floated past the end of the main text",
+    summary: "A main-text figure or table landed on a page after the page-limit end label. It may escape the page count, but reviewers see it among the references or appendix.",
+    fix: "Place the float earlier (`[t]`/`[htbp]`, or closer to its first reference) so it lands before the end label, or move it to the appendix on purpose."
+  },
+  {
+    id: "arxiv-unsupported-engine",
+    check: "venue",
+    severity: "error",
+    title: "Built with LuaLaTeX (arXiv)",
+    summary: "arXiv compiles submissions with pdfLaTeX. A paper that only builds with LuaLaTeX (fontspec, Lua code) fails there, and a LuaLaTeX log says nothing about the arXiv build.",
+    fix: "arXiv compiles with pdfLaTeX; build with `make arxiv` / `latexmk -pdf` and check that log with --log."
+  },
+  {
+    id: "arxiv-eps-pdflatex",
+    check: "venue",
+    severity: "warning",
+    title: "EPS figure with pdfLaTeX (arXiv)",
+    summary: "pdfLaTeX cannot include .eps files directly, and arXiv will not convert them for you.",
+    fix: "Convert figures to PDF with `epstopdf` and include the .pdf."
+  },
+  {
+    id: "arxiv-shell-escape",
+    check: "venue",
+    severity: "warning",
+    title: "Shell escape needed (arXiv)",
+    summary: "Packages such as `minted` need `-shell-escape`, which arXiv does not enable.",
+    fix: "Switch to `listings`, or pre-generate the output and upload it."
+  },
+  {
+    id: "arxiv-missing-bbl",
+    check: "venue",
+    severity: "info",
+    title: ".bbl not present (arXiv)",
+    summary: "arXiv does not run biber; with biblatex you must upload the .bbl generated by your build.",
+    fix: "Build locally, then include the .bbl named like the main file (`main.tex` \u2192 `main.bbl`; a `<jobname>.bbl` must be copied to that name) in the upload."
+  },
+  {
+    id: "arxiv-filename-space",
+    check: "venue",
+    severity: "warning",
+    title: "File name with spaces (arXiv)",
+    summary: "arXiv\u2019s processing breaks on file names containing spaces.",
+    fix: "Rename files using - or _ instead of spaces."
+  },
+  {
+    id: "venue-profile-stale",
+    check: "venue",
+    severity: "info",
+    title: "Venue profile may be out of date",
+    summary: "The profile was last compared with the venue\u2019s official pages more than 14 months ago. Page limits, style files and policies change between years.",
+    fix: "Read the venue\u2019s current author instructions (the profile lists its sources) and compare them with what Overfull reports."
+  },
+  {
+    id: "style-file-modified",
+    check: "venue",
+    severity: "warning",
+    title: "Style file differs from the official one",
+    summary: "The project\u2019s copy of a style or class file named by the profile does not match the SHA-256 recorded for the official file. Venues often reject papers built with a changed style file. Only profiles that record a hash are checked; a copy with Windows line endings is compared after converting them.",
+    fix: "Download the style file again from the venue\u2019s page and keep your own changes in separate files."
+  },
+  {
+    id: "layout-tampering",
+    check: "venue",
+    severity: "warning",
+    title: "Source squeezes the layout",
+    summary: "The source uses a command often used to fit more text on a page: a negative `\\vspace` next to a figure, table or heading, negative float or equation spacing, line spacing below 1, `savetrees`, or (for profiles that name a style file) changed margins, text block or base font size. Overfull cannot tell whether your venue allows it.",
+    fix: "Check that your venue allows this. If it does not, remove the command and shorten the text instead."
+  },
+  {
+    id: "anonymity-link",
+    check: "venue",
+    severity: "warning",
+    title: "Link that can identify the authors",
+    summary: "An anonymous submission links to a personal repository (`github.com/<user>`, GitLab, Bitbucket), a personal page (`*.github.io`, Google Sites, `~user`) or an institutional page. Links to anonymous.4open.science are allowed. A link to someone else\u2019s page is reported too.",
+    fix: "Use an anonymized copy such as anonymous.4open.science, or remove the link for the review version. Ignore the warning for links that are not yours."
+  },
+  {
+    id: "tex-file-skipped",
+    check: "venue",
+    severity: "info",
+    title: "Source file not read",
+    summary: "A .tex/.sty/.cls file in the project was not read for the venue checks: it is not a regular file (a pipe, socket or device) or it is larger than 20 MB.",
+    fix: "Nothing to do if the file is not part of the document. Otherwise replace it with a regular file of normal size."
+  }
+];
+
+// ../packages/core/src/rules.ts
+var cache;
+function allRules() {
+  if (cache) return cache;
+  const seen = /* @__PURE__ */ new Map();
+  for (const r of [...logRules, ...refsRules, ...pdfRules, ...venueRules]) {
+    if (!seen.has(r.id)) seen.set(r.id, r);
+  }
+  cache = [...seen.values()];
+  return cache;
+}
+function getRule(id) {
+  const exact = allRules().find((r) => r.id === id);
+  if (exact) return exact;
+  const m = /^verapdf-(\d[\w-]*)$/.exec(id);
+  const generic = allRules().find((r) => r.id === "verapdf");
+  if (m && generic) {
+    const clause = m[1].replace(/-/g, ".");
+    const info3 = veraPdfClauseInfo(clause);
+    if (info3) {
+      return {
+        ...generic,
+        id,
+        title: `PDF/UA clause ${clause}: ${info3.title} (veraPDF)`,
+        summary: info3.summary,
+        fix: info3.fix
+      };
+    }
+    return { ...generic, id, title: `PDF/UA clause ${clause} failed (veraPDF)` };
+  }
+  return void 0;
+}
+
+// ../packages/core/src/report/sarif.ts
+var SITE = "https://amet13.github.io/overfull/";
+var SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
+var LEVEL = {
+  error: "error",
+  warning: "warning",
+  info: "note"
+};
+function joinPath2(root, file) {
+  const f = file.replace(/\\/g, "/").replace(/^\.\//, "");
+  if (!root || root === "." || root === "./") return f;
+  return `${root.replace(/\/+$/, "")}/${f}`;
+}
+function messageOf(p) {
+  const page = p.location?.page && !p.location.file ? `Page ${p.location.page}: ` : "";
+  const text2 = `${page}${oneLine(p.message)}`;
+  return p.fix ? `${text2} Fix: ${oneLine(p.fix)}` : text2;
+}
+function ruleDescriptor(id, problem3) {
+  const info3 = getRule(id);
+  const title = info3?.title ?? oneLine(problem3.message);
+  return {
+    id,
+    name: id,
+    shortDescription: { text: title.slice(0, 1024) },
+    ...info3 ? { fullDescription: { text: info3.summary } } : {},
+    ...info3?.fix ? { help: { text: info3.fix } } : {},
+    helpUri: `${SITE}rules/${encodeURIComponent(id)}/`,
+    defaultConfiguration: { level: LEVEL[info3?.severity ?? problem3.severity] },
+    properties: { tags: [info3?.check ?? problem3.check] }
+  };
+}
+function formatSarif(report, opts = {}) {
+  const problems = sortedProblems(report);
+  const fallback = opts.fallbackFile ?? report.assumed?.main;
+  const ids = [];
+  const first2 = /* @__PURE__ */ new Map();
+  for (const p of problems) {
+    if (!first2.has(p.rule)) {
+      first2.set(p.rule, p);
+      ids.push(p.rule);
+    }
+  }
+  const results = problems.map((p) => {
+    const file = p.location?.file ?? fallback;
+    const line = p.location?.file ? p.location.line : void 0;
+    return {
+      ruleId: p.rule,
+      ruleIndex: ids.indexOf(p.rule),
+      level: LEVEL[p.severity],
+      message: { text: messageOf(p) },
+      ...file ? {
+        locations: [
+          {
+            physicalLocation: {
+              artifactLocation: { uri: joinPath2(opts.root, file), uriBaseId: "%SRCROOT%" },
+              region: { startLine: line && line > 0 ? line : 1 }
+            }
+          }
+        ]
+      } : {}
+    };
+  });
+  const log = {
+    $schema: SCHEMA,
+    version: "2.1.0",
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: "overfull",
+            version: report.version,
+            informationUri: SITE,
+            rules: ids.map((id) => ruleDescriptor(id, first2.get(id)))
+          }
+        },
+        results
+      }
+    ]
+  };
+  return `${JSON.stringify(log, null, 2)}
+`;
 }
 
 // ../packages/cli/src/check.ts
@@ -114516,6 +116064,17 @@ var MemoryCache = class {
   save() {
   }
 };
+var PRUNE_AFTER_MS = 30 * 24 * 60 * 60 * 1e3;
+function storedAt(value) {
+  if (!value || typeof value !== "object") return void 0;
+  const at = value.cachedAt;
+  if (typeof at === "number") return at;
+  if (at && typeof at === "object") {
+    const times = Object.values(at).filter((t) => typeof t === "number");
+    return times.length ? Math.max(...times) : void 0;
+  }
+  return void 0;
+}
 var FileCache = class {
   constructor(path) {
     this.path = path;
@@ -114539,6 +116098,11 @@ var FileCache = class {
   }
   save() {
     if (!this.dirty) return;
+    const now = Date.now();
+    for (const [key, value] of Object.entries(this.data)) {
+      const at = storedAt(value);
+      if (at !== void 0 && now - at > PRUNE_AFTER_MS) delete this.data[key];
+    }
     try {
       mkdirSync(dirname2(this.path), { recursive: true });
       writeFileSync(this.path, `${JSON.stringify(this.data, null, 1)}
@@ -114550,8 +116114,8 @@ var FileCache = class {
 };
 
 // ../packages/cli/src/config.ts
-import { existsSync as existsSync2, readdirSync, readFileSync as readFileSync2 } from "node:fs";
-import { basename as basename2, dirname as dirname4, isAbsolute as isAbsolute3, join as join2, resolve as resolve2 } from "node:path";
+import { existsSync as existsSync3, readdirSync as readdirSync2, readFileSync as readFileSync3 } from "node:fs";
+import { basename as basename2, dirname as dirname4, isAbsolute as isAbsolute3, join as join3, resolve as resolve2 } from "node:path";
 var import_yaml = __toESM(require_dist(), 1);
 
 // ../packages/cli/src/io.ts
@@ -114561,6 +116125,20 @@ var UsageError = class extends Error {
     this.name = "UsageError";
   }
 };
+
+// ../packages/cli/src/project.ts
+import {
+  closeSync,
+  existsSync as existsSync2,
+  fstatSync,
+  lstatSync as lstatSync3,
+  openSync,
+  readdirSync,
+  readFileSync as readFileSync2,
+  realpathSync as realpathSync3,
+  statSync
+} from "node:fs";
+import { join as join2, relative as relative3, sep as sep3 } from "node:path";
 
 // ../packages/cli/src/safety.ts
 import { randomBytes } from "node:crypto";
@@ -114643,15 +116221,183 @@ function stopCommands() {
 ` };
 }
 
+// ../packages/cli/src/project.ts
+var SKIP_DIRS = /* @__PURE__ */ new Set([
+  ".git",
+  "node_modules",
+  ".overfull",
+  "_minted",
+  "dist",
+  ".github",
+  ".agents",
+  ".claude"
+]);
+var MAX_FILES = 5e3;
+function listFiles(root) {
+  const out = [];
+  let realRoot = root;
+  try {
+    realRoot = realpathSync3(root);
+  } catch {
+  }
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const name of entries.sort()) {
+      if (out.length >= MAX_FILES) return;
+      const full = join2(dir, name);
+      let st;
+      try {
+        st = lstatSync3(full);
+        if (st.isSymbolicLink()) {
+          const target = statSync(full);
+          if (target.isDirectory()) continue;
+          if (!insideRootOrUndefined(realRoot, realpathSync3(full))) continue;
+          st = target;
+        }
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) {
+        if (!SKIP_DIRS.has(name)) walk(full);
+      } else out.push(relative3(root, full).split(sep3).join("/"));
+    }
+  };
+  walk(root);
+  return out;
+}
+function isDiffArtifact(path) {
+  const name = path.split("/").pop() ?? path;
+  return name.startsWith("overfull-diff") || /-diff[0-9a-f]{4,40}\.tex$/i.test(name);
+}
+var MAX_TEX_BYTES = 20 * 1024 * 1024;
+function readTexFiles(root, files, skipped3 = []) {
+  const out = [];
+  for (const path of files) {
+    if (!/\.(tex|sty|cls)$/i.test(path) || isDiffArtifact(path)) continue;
+    const abs = join2(root, path);
+    let st;
+    try {
+      st = statSync(abs);
+    } catch {
+      continue;
+    }
+    if (!st.isFile()) {
+      skipped3.push({ path, reason: "not a regular file" });
+      continue;
+    }
+    if (st.size > MAX_TEX_BYTES) {
+      skipped3.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
+      continue;
+    }
+    try {
+      out.push({ path, content: readFileSync2(abs, "utf8") });
+    } catch (err) {
+      skipped3.push({ path, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return out;
+}
+function readIfExists(path) {
+  if (!existsSync2(path)) return void 0;
+  requireRegularFile(path);
+  return readFileSync2(path, "utf8");
+}
+function requireRegularFile(path) {
+  let st;
+  try {
+    st = statSync(path);
+  } catch (err) {
+    throw new UsageError(
+      `Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+  if (!st.isFile()) {
+    throw new UsageError(
+      `${path} is not a file (${st.isDirectory() ? "it is a directory" : "it is a pipe, socket or device"}).`
+    );
+  }
+}
+function readAux(root, jobname, auxDir = ".") {
+  const dir = join2(root, auxDir);
+  const mainPath = insideRootOrUndefined(root, join2(dir, `${jobname}.aux`));
+  const main3 = mainPath ? readIfExists(mainPath) : void 0;
+  if (main3 === void 0) return void 0;
+  const parts = [main3];
+  for (const m of main3.matchAll(/\\@input\{([^}]+\.aux)\}/g)) {
+    const p = insideRootOrUndefined(root, join2(dir, m[1]));
+    const extra = p ? readIfExists(p) : void 0;
+    if (extra) parts.push(extra);
+  }
+  return parts.join("\n");
+}
+function detectMain(root, outputDirs = ["."]) {
+  if (isRegular(join2(root, "main.tex")))
+    return { main: "main.tex", how: "main.tex", candidates: [] };
+  let names;
+  try {
+    names = readdirSync(root).sort();
+  } catch {
+    return { candidates: [] };
+  }
+  const candidates = [];
+  for (const name of names) {
+    if (!/\.tex$/i.test(name) || isDiffArtifact(name)) continue;
+    const abs = join2(root, name);
+    let fd;
+    try {
+      fd = openSync(abs, "r");
+      const st = fstatSync(fd);
+      if (!st.isFile() || st.size > MAX_TEX_BYTES) continue;
+      const text2 = readFileSync2(fd, "utf8").replace(/(^|[^\\])%.*$/gm, "$1");
+      if (/\\documentclass\b/.test(text2)) candidates.push(name);
+    } catch {
+    } finally {
+      if (fd !== void 0) closeSync(fd);
+    }
+  }
+  if (candidates.length === 1)
+    return { main: candidates[0], how: "only document", candidates };
+  if (candidates.length > 1) {
+    const built = candidates.filter((c) => {
+      const stem = c.replace(/\.tex$/i, "");
+      return outputDirs.some(
+        (d) => ["log", "pdf"].some((ext) => isRegular(join2(root, d, `${stem}.${ext}`)))
+      );
+    });
+    if (built.length === 1)
+      return { main: built[0], how: "matching build output", candidates };
+  }
+  return { candidates };
+}
+function isRegular(path) {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+function ambiguousMainError(candidates) {
+  const first2 = candidates[0] ?? "paper.tex";
+  return new UsageError(
+    `More than one .tex file here has a \\documentclass: ${candidates.join(", ")}.
+Say which is the main file: \`overfull check --main ${first2}\`, or set \`main: ${first2}\` in overfull.yml.`
+  );
+}
+
 // ../packages/cli/src/config.ts
 var DEFAULT_IMAGE = "ghcr.io/amet13/overfull:3";
 var CONFIG_FILE = "overfull.yml";
 function latexmkrcDirs(root) {
   const out = {};
   for (const name of [".latexmkrc", "latexmkrc"]) {
-    const p = join2(root, name);
-    if (!existsSync2(p)) continue;
-    const text2 = readFileSync2(p, "utf8").replace(/(^|[^\\$])#.*$/gm, "$1");
+    const p = join3(root, name);
+    if (!existsSync3(p)) continue;
+    const text2 = readFileSync3(p, "utf8").replace(/(^|[^\\$])#.*$/gm, "$1");
     const o = /\$out_dir\s*=\s*['"]([^'"]+)['"]/.exec(text2);
     const a = /\$aux_dir\s*=\s*['"]([^'"]+)['"]/.exec(text2);
     const plain2 = (d) => d !== void 0 && /^[A-Za-z0-9._/-]+$/.test(d) && !d.startsWith("/") && !d.startsWith("-") && !d.split("/").includes("..");
@@ -114777,9 +116523,9 @@ function parseChecks(v, file, field = "checks") {
   return list3;
 }
 function discoverBib(root, main3) {
-  const mainPath = join2(root, main3);
-  if (existsSync2(mainPath)) {
-    const src = readFileSync2(mainPath, "utf8").replace(/(^|[^\\])%.*$/gm, "$1");
+  const mainPath = join3(root, main3);
+  if (existsSync3(mainPath)) {
+    const src = readFileSync3(mainPath, "utf8").replace(/(^|[^\\])%.*$/gm, "$1");
     const found = [];
     for (const m of src.matchAll(/\\addbibresource(?:\[[^\]]*\])?\{([^}]+)\}/g))
       found.push(m[1].trim());
@@ -114790,31 +116536,31 @@ function discoverBib(root, main3) {
       }
     }
     const rel2 = dirname4(main3);
-    const resolved = found.map((f) => rel2 === "." || isAbsolute3(f) ? f : join2(rel2, f));
+    const resolved = found.map((f) => rel2 === "." || isAbsolute3(f) ? f : join3(rel2, f));
     if (resolved.length) return [...new Set(resolved)];
   }
   try {
-    return readdirSync(root).filter((f) => f.endsWith(".bib")).sort();
+    return readdirSync2(root).filter((f) => f.endsWith(".bib")).sort();
   } catch {
     return [];
   }
 }
-function loadConfig(cwd, explicit, env = {}) {
+function loadConfig(cwd, explicit, env = {}, opts = {}) {
   let file;
   if (explicit) {
     file = resolve2(cwd, explicit);
-    if (!existsSync2(file)) throw new UsageError(`Config file not found: ${explicit}`);
-  } else if (existsSync2(join2(cwd, CONFIG_FILE))) {
-    file = join2(cwd, CONFIG_FILE);
-  } else if (existsSync2(join2(cwd, "overfull.yaml"))) {
-    file = join2(cwd, "overfull.yaml");
+    if (!existsSync3(file)) throw new UsageError(`Config file not found: ${explicit}`);
+  } else if (existsSync3(join3(cwd, CONFIG_FILE))) {
+    file = join3(cwd, CONFIG_FILE);
+  } else if (existsSync3(join3(cwd, "overfull.yaml"))) {
+    file = join3(cwd, "overfull.yaml");
   }
   const root = file ? dirname4(file) : cwd;
   let raw = {};
   if (file) {
     let data;
     try {
-      data = (0, import_yaml.parse)(readFileSync2(file, "utf8"));
+      data = (0, import_yaml.parse)(readFileSync3(file, "utf8"));
     } catch (err) {
       throw new ConfigError(
         file,
@@ -114826,13 +116572,35 @@ function loadConfig(cwd, explicit, env = {}) {
     raw = data ?? {};
     checkKeys(raw, TOP_KEYS, "", file);
   }
-  const f = file ?? join2(root, CONFIG_FILE);
+  const f = file ?? join3(root, CONFIG_FILE);
   if (raw.main !== void 0 && typeof raw.main !== "string")
     throw new ConfigError(f, "`main` must be a file name");
-  const main3 = safeRelPath(raw.main ?? "main.tex");
   if (raw.jobname !== void 0 && typeof raw.jobname !== "string")
     throw new ConfigError(f, "`jobname` must be a string");
   const rc = latexmkrcDirs(root);
+  let main3;
+  let mainSource;
+  let mainCandidates;
+  if (opts.main !== void 0) {
+    main3 = safeRelPath(opts.main);
+    mainSource = "--main";
+    if (!existsSync3(join3(root, main3))) throw new UsageError(`Main file not found: ${opts.main}`);
+  } else if (raw.main !== void 0) {
+    main3 = safeRelPath(raw.main);
+    mainSource = "overfull.yml";
+  } else {
+    const found = detectMain(root, [
+      .../* @__PURE__ */ new Set([".", rc.outDir ?? ".", rc.auxDir ?? rc.outDir ?? "."])
+    ]);
+    if (found.main) {
+      main3 = found.main;
+      mainSource = found.how === "main.tex" ? "main.tex" : "detected";
+    } else {
+      main3 = "main.tex";
+      mainSource = "default";
+      if (found.candidates.length > 1) mainCandidates = found.candidates;
+    }
+  }
   const jobnameSource = raw.jobname !== void 0 ? "overfull.yml" : rc.jobname ? ".latexmkrc" : "main file";
   const jobname = safeJobname(
     raw.jobname ?? rc.jobname ?? basename2(main3).replace(/\.tex$/i, "")
@@ -114855,8 +116623,8 @@ function loadConfig(cwd, explicit, env = {}) {
   const refs = raw.references ?? {};
   if (!isObj2(refs)) throw new ConfigError(f, "`references` must be a mapping");
   checkKeys(refs, ["mailto", "ignore", "cache", "requireCite"], "references.", f);
-  const cache = refs.cache ?? "user";
-  if (cache !== "user" && cache !== "project")
+  const cache2 = refs.cache ?? "user";
+  if (cache2 !== "user" && cache2 !== "project")
     throw new ConfigError(f, "`references.cache` must be user or project");
   if (refs.requireCite !== void 0 && typeof refs.requireCite !== "boolean")
     throw new ConfigError(f, "`references.requireCite` must be true or false");
@@ -114882,6 +116650,8 @@ function loadConfig(cwd, explicit, env = {}) {
   const config = {
     root,
     main: main3,
+    mainSource,
+    ...mainCandidates ? { mainCandidates } : {},
     jobname,
     bib,
     bibDiscovered: raw.bib === void 0,
@@ -114890,21 +116660,24 @@ function loadConfig(cwd, explicit, env = {}) {
     profile,
     venue: inline2,
     checks,
-    references: { ...mailto ? { mailto } : {}, ignore, cache, requireCite },
+    references: { ...mailto ? { mailto } : {}, ignore, cache: cache2, requireCite },
     build: { engine, image, outDir, auxDir, outDirFromConfig: build2.outDir !== void 0 }
   };
   if (file) config.file = file;
   return config;
 }
+function requireMain(config) {
+  if (config.mainCandidates) throw ambiguousMainError(config.mainCandidates);
+}
 
 // ../packages/cli/src/pdf.ts
-import { readFileSync as readFileSync3 } from "node:fs";
-import { relative as relative3 } from "node:path";
+import { readFileSync as readFileSync4 } from "node:fs";
+import { relative as relative4 } from "node:path";
 
 // ../packages/cli/src/tools.ts
 import { spawn } from "node:child_process";
 import { accessSync, constants } from "node:fs";
-import { delimiter, join as join3 } from "node:path";
+import { delimiter, join as join4 } from "node:path";
 function which(cmd, env = process.env, opts = {}) {
   const win = (opts.platform ?? process.platform) === "win32";
   const exts = win ? (env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((e) => e && (opts.allowBatch || !/^\.(bat|cmd)$/i.test(e))) : [""];
@@ -114912,7 +116685,7 @@ function which(cmd, env = process.env, opts = {}) {
   for (const dir of (env.PATH ?? env.Path ?? "").split(sepChar)) {
     if (!dir) continue;
     for (const ext of exts) {
-      const p = join3(dir, cmd + ext);
+      const p = join4(dir, cmd + ext);
       try {
         accessSync(p, win ? constants.F_OK : constants.X_OK);
         return p;
@@ -115025,13 +116798,13 @@ function loadPdfjs() {
   return pdfjsPromise;
 }
 async function readPdfFacts(path, opts = {}) {
-  const data = new Uint8Array(readFileSync3(path));
+  const data = new Uint8Array(readFileSync4(path));
   const facts = await extractPdfFacts(data, await loadPdfjs());
   if (which("pdffonts")) {
     const r = await run("pdffonts", [path], { timeoutMs: 3e4 });
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   } else if (opts.docker) {
-    const rel2 = `./${relative3(opts.docker.root, path).split("\\").join("/")}`;
+    const rel2 = `./${relative4(opts.docker.root, path).split("\\").join("/")}`;
     const r = await run(
       "docker",
       dockerToolArgs(opts.docker.image, opts.docker.root, "pdffonts", [rel2]),
@@ -115042,123 +116815,6 @@ async function readPdfFacts(path, opts = {}) {
     if (r.code === 0) facts.fonts = parsePdffonts(r.stdout);
   }
   return facts;
-}
-
-// ../packages/cli/src/project.ts
-import { existsSync as existsSync3, lstatSync as lstatSync3, readdirSync as readdirSync2, readFileSync as readFileSync4, realpathSync as realpathSync3, statSync } from "node:fs";
-import { join as join4, relative as relative4, sep as sep3 } from "node:path";
-var SKIP_DIRS = /* @__PURE__ */ new Set([
-  ".git",
-  "node_modules",
-  ".overfull",
-  "_minted",
-  "dist",
-  ".github",
-  ".agents",
-  ".claude"
-]);
-var MAX_FILES = 5e3;
-function listFiles(root) {
-  const out = [];
-  let realRoot = root;
-  try {
-    realRoot = realpathSync3(root);
-  } catch {
-  }
-  const walk = (dir) => {
-    let entries;
-    try {
-      entries = readdirSync2(dir);
-    } catch {
-      return;
-    }
-    for (const name of entries.sort()) {
-      if (out.length >= MAX_FILES) return;
-      const full = join4(dir, name);
-      let st;
-      try {
-        st = lstatSync3(full);
-        if (st.isSymbolicLink()) {
-          const target = statSync(full);
-          if (target.isDirectory()) continue;
-          if (!insideRootOrUndefined(realRoot, realpathSync3(full))) continue;
-          st = target;
-        }
-      } catch {
-        continue;
-      }
-      if (st.isDirectory()) {
-        if (!SKIP_DIRS.has(name)) walk(full);
-      } else out.push(relative4(root, full).split(sep3).join("/"));
-    }
-  };
-  walk(root);
-  return out;
-}
-function isDiffArtifact(path) {
-  const name = path.split("/").pop() ?? path;
-  return name.startsWith("overfull-diff") || /-diff[0-9a-f]{4,40}\.tex$/i.test(name);
-}
-var MAX_TEX_BYTES = 20 * 1024 * 1024;
-function readTexFiles(root, files, skipped3 = []) {
-  const out = [];
-  for (const path of files) {
-    if (!/\.(tex|sty|cls)$/i.test(path) || isDiffArtifact(path)) continue;
-    const abs = join4(root, path);
-    let st;
-    try {
-      st = statSync(abs);
-    } catch {
-      continue;
-    }
-    if (!st.isFile()) {
-      skipped3.push({ path, reason: "not a regular file" });
-      continue;
-    }
-    if (st.size > MAX_TEX_BYTES) {
-      skipped3.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
-      continue;
-    }
-    try {
-      out.push({ path, content: readFileSync4(abs, "utf8") });
-    } catch (err) {
-      skipped3.push({ path, reason: err instanceof Error ? err.message : String(err) });
-    }
-  }
-  return out;
-}
-function readIfExists(path) {
-  if (!existsSync3(path)) return void 0;
-  requireRegularFile(path);
-  return readFileSync4(path, "utf8");
-}
-function requireRegularFile(path) {
-  let st;
-  try {
-    st = statSync(path);
-  } catch (err) {
-    throw new UsageError(
-      `Cannot read ${path}: ${err instanceof Error ? err.message : String(err)}`
-    );
-  }
-  if (!st.isFile()) {
-    throw new UsageError(
-      `${path} is not a file (${st.isDirectory() ? "it is a directory" : "it is a pipe, socket or device"}).`
-    );
-  }
-}
-function readAux(root, jobname, auxDir = ".") {
-  const dir = join4(root, auxDir);
-  const mainPath = insideRootOrUndefined(root, join4(dir, `${jobname}.aux`));
-  const main3 = mainPath ? readIfExists(mainPath) : void 0;
-  if (main3 === void 0) return void 0;
-  const parts = [main3];
-  for (const m of main3.matchAll(/\\@input\{([^}]+\.aux)\}/g)) {
-    const p = insideRootOrUndefined(root, join4(dir, m[1]));
-    const extra = p ? readIfExists(p) : void 0;
-    if (extra) parts.push(extra);
-  }
-  return parts.join("\n");
 }
 
 // ../packages/cli/src/verapdf.ts
@@ -115432,13 +117088,13 @@ async function references(inp, opts) {
     });
   }
   const env = opts.env ?? process.env;
-  let cache;
+  let cache2;
   if (opts.cache !== false) {
     const path = refsCachePath(root, config.references.cache, env);
     const project = config.references.cache === "project";
     const link = project ? symlinkOnPath(root, path) : void 0;
     if (project && isCI(env)) {
-      cache = new MemoryCache();
+      cache2 = new MemoryCache();
       if (existsSync4(path) || link) {
         extra.push({
           rule: "refs-cache-ignored",
@@ -115449,7 +117105,7 @@ async function references(inp, opts) {
         });
       }
     } else if (link) {
-      cache = new MemoryCache();
+      cache2 = new MemoryCache();
       extra.push({
         rule: "refs-cache-ignored",
         check: "references",
@@ -115457,7 +117113,7 @@ async function references(inp, opts) {
         message: `Ignored ${rel(root, path)}: ${rel(root, link)} is a symlink, so the cache may be a file from the repository`,
         fix: "Replace the symlink with a real directory, or drop `references.cache: project`."
       });
-    } else cache = new FileCache(path);
+    } else cache2 = new FileCache(path);
   }
   const mailto = opts.mailto ?? config.references.mailto ?? env.OVERFULL_MAILTO;
   const openalexKey = env.OPENALEX_API_KEY;
@@ -115465,13 +117121,15 @@ async function references(inp, opts) {
     ...opts.fetch ? { fetch: opts.fetch } : {},
     ...mailto ? { mailto } : {},
     ...openalexKey ? { openalexKey } : {},
-    ...cache ? { cache } : {},
+    ...cache2 ? { cache: cache2 } : {},
+    ...opts.refresh ? { refresh: true } : {},
+    ...opts.progress ? { onProgress: opts.progress } : {},
     offline: opts.offline ?? false,
     ignore: config.references.ignore,
     ...config.references.requireCite ? { requireProvenance: true } : {}
   };
   const results = await verifyEntries(toVerify, refsOptions);
-  cache?.save();
+  cache2?.save();
   const result = refsCheck(results, {
     entries: toVerify,
     extra,
@@ -115550,7 +117208,7 @@ function venue(inp) {
 async function runCheck(opts = {}) {
   const cwd = opts.cwd ?? process.cwd();
   const env = opts.env ?? process.env;
-  const config = loadConfig(cwd, opts.config, env);
+  const config = loadConfig(cwd, opts.config, env, opts.main ? { main: opts.main } : {});
   if (opts.profile) {
     try {
       config.profile = resolveProfile({ ...config.venue, extends: opts.profile });
@@ -115561,6 +117219,7 @@ async function runCheck(opts = {}) {
   }
   const selected = opts.checks ?? config.checks;
   const wanted = new Set(selected);
+  if (selected.some((c) => c !== "references")) requireMain(config);
   const needPdf = ["output", "accessibility", "venue"].some((c) => wanted.has(c));
   const inp = await gather({ ...opts, env }, config, needPdf);
   const results = [...buildAndOutput(inp, wanted)];
@@ -115575,9 +117234,26 @@ async function runCheck(opts = {}) {
     tool: "overfull",
     version: VERSION,
     target,
+    ...config.file ? {} : {
+      assumed: {
+        main: config.main,
+        mainSource: config.mainSource,
+        jobname: config.jobname,
+        profile: config.profile.id,
+        bib: config.bib
+      }
+    },
     status: reportStatus(results),
     checks: results
   };
+}
+function sarifFallbackFile(cwd, env, configPath, main3) {
+  try {
+    const cfg = loadConfig(cwd, configPath, env, main3 ? { main: main3 } : {});
+    return existsSync4(join5(cfg.root, cfg.main)) ? cfg.main : void 0;
+  } catch {
+    return void 0;
+  }
 }
 function exitCodeFor(report, failOn) {
   if (failOn === "never") return 0;
@@ -115597,6 +117273,7 @@ Usage: overfull <command> [options]
 
 Commands:
   init [thesis|paper|slides] [dir]   Create a project from a template
+  adopt                              Add Overfull to the LaTeX project in this folder (init --here)
   build [main.tex]                   Compile with latexmk (local or Docker) and check the log
   check                              Check log, PDF, references, accessibility, venue rules
   cite <doi | arXiv:id | "title">    Add a verified BibTeX entry; prints its key
@@ -115607,6 +117284,114 @@ Commands:
 
 Run \`overfull <command> --help\` for options. Docs: https://amet13.github.io/overfull/
 `;
+
+// src/comment.ts
+import { readFileSync as readFileSync5 } from "node:fs";
+var COMMENT_MARKER = "<!-- overfull-report -->";
+var COMMENT_LIMIT = 65e3;
+var TRUNCATED = "\n\n</details>\n\n_The report was cut to fit GitHub's comment size limit. The full report is in the job summary and the `report` output._\n";
+function commentBody(markdown) {
+  const full = `${COMMENT_MARKER}
+${markdown}`;
+  if (full.length <= COMMENT_LIMIT) return full;
+  const room = COMMENT_LIMIT - TRUNCATED.length;
+  let cut = full.slice(0, room);
+  const nl = cut.lastIndexOf("\n");
+  if (nl > COMMENT_MARKER.length) cut = cut.slice(0, nl);
+  return `${cut}${TRUNCATED}`;
+}
+function pullRequestNumber(env) {
+  let event;
+  try {
+    if (env.GITHUB_EVENT_PATH) event = JSON.parse(readFileSync5(env.GITHUB_EVENT_PATH, "utf8"));
+  } catch {
+  }
+  const fromEvent = event?.pull_request?.number ?? event?.number;
+  if (Number.isInteger(fromEvent) && fromEvent > 0) return fromEvent;
+  const m = /^refs\/pull\/(\d+)\//.exec(env.GITHUB_REF ?? "");
+  return m ? Number(m[1]) : void 0;
+}
+function isFork(env) {
+  try {
+    if (!env.GITHUB_EVENT_PATH) return false;
+    const pr = JSON.parse(readFileSync5(env.GITHUB_EVENT_PATH, "utf8")).pull_request;
+    const head = pr?.head?.repo?.full_name;
+    const base = pr?.base?.repo?.full_name;
+    return Boolean(head && base && head !== base);
+  } catch {
+    return false;
+  }
+}
+async function upsertComment(o) {
+  const { env } = o;
+  const event = env.GITHUB_EVENT_NAME;
+  if (event !== "pull_request" && event !== "pull_request_target") {
+    o.notice("Not a pull request event: no comment written.");
+    return "skipped";
+  }
+  const number = pullRequestNumber(env);
+  const repo = env.GITHUB_REPOSITORY;
+  if (!number || !repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
+    o.notice("Could not tell which pull request this is: no comment written.");
+    return "skipped";
+  }
+  if (!o.token) {
+    o.notice("No github-token: no comment written.");
+    return "skipped";
+  }
+  if (event === "pull_request" && isFork(env)) {
+    o.notice(
+      "This pull request comes from a fork, so the token cannot write comments: no comment written. The job summary has the report."
+    );
+    return "skipped";
+  }
+  const doFetch = o.fetch ?? globalThis.fetch;
+  const api = (env.GITHUB_API_URL || "https://api.github.com").replace(/\/+$/, "");
+  const headers = {
+    Authorization: `Bearer ${o.token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "overfull-action",
+    "Content-Type": "application/json"
+  };
+  const base = `${api}/repos/${repo}/issues`;
+  const body = commentBody(o.markdown);
+  try {
+    let existing;
+    for (let page = 1; page <= 50 && !existing; page++) {
+      const res2 = await doFetch(`${base}/${number}/comments?per_page=100&page=${page}`, {
+        headers
+      });
+      if (!res2.ok) throw new Error(`listing comments failed: HTTP ${res2.status}`);
+      const batch = await res2.json();
+      existing = batch.find((c) => typeof c.body === "string" && c.body.includes(COMMENT_MARKER));
+      if (batch.length < 100) break;
+    }
+    if (existing) {
+      if (existing.body === body) return "unchanged";
+      const res2 = await doFetch(`${base}/comments/${existing.id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ body })
+      });
+      if (!res2.ok) throw new Error(`updating the comment failed: HTTP ${res2.status}`);
+      return "updated";
+    }
+    const res = await doFetch(`${base}/${number}/comments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ body })
+    });
+    if (!res.ok) throw new Error(`creating the comment failed: HTTP ${res.status}`);
+    return "created";
+  } catch (err) {
+    const why2 = err instanceof Error ? err.message : String(err);
+    o.notice(
+      `Could not write the pull request comment (${why2}). The step continues. Commenting needs \`pull-requests: write\`.`
+    );
+    return "failed";
+  }
+}
 
 // src/inputs.ts
 import { isAbsolute as isAbsolute4, resolve as resolve3 } from "node:path";
@@ -115652,6 +117437,9 @@ function readInputs(env, workspace) {
     failOn,
     annotations: boolInput(env, "annotations", true),
     summary: boolInput(env, "summary", true),
+    sarif: input(env, "sarif"),
+    comment: boolInput(env, "comment", false),
+    githubToken: input(env, "github-token"),
     check: check2
   };
 }
@@ -115698,8 +117486,31 @@ async function main2() {
     appendFileSync(env.GITHUB_STEP_SUMMARY, `${formatMarkdown(report)}
 `);
   }
+  if (inputs.comment) {
+    await upsertComment({
+      env,
+      markdown: formatMarkdown(report),
+      token: inputs.githubToken,
+      notice: (m) => process.stdout.write(`::notice title=Overfull comment::${escapeData2(oneLine(m))}
+`)
+    });
+  }
   const reportPath = join7(env.RUNNER_TEMP ?? tmpdir(), "overfull-report.json");
   writeFileSync2(reportPath, formatJson(report));
+  if (inputs.sarif) {
+    const cwd = resolve4(inputs.check.cwd ?? workspace);
+    const fallbackFile = sarifFallbackFile(cwd, env);
+    const sarifPath = resolve4(workspace, inputs.sarif);
+    mkdirSync2(dirname6(sarifPath), { recursive: true });
+    writeFileSync2(
+      sarifPath,
+      formatSarif(report, {
+        root: relative8(workspace, cwd) || ".",
+        ...fallbackFile ? { fallbackFile } : {}
+      })
+    );
+    setOutput("sarif", sarifPath);
+  }
   setOutput("status", report.status);
   setOutput("report", reportPath);
   return exitCodeFor(report, inputs.failOn);
