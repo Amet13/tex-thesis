@@ -56,3 +56,6 @@ try {
   if ($server) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
   Remove-Item -Recurse -Force -LiteralPath $work -ErrorAction SilentlyContinue
 }
+# The fake release file (hostname.exe) exits 1 for `--version`, which would
+# otherwise become this script's exit code. A real failure throws above.
+exit 0
