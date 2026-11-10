@@ -11,7 +11,7 @@ pnpm build
 pnpm test
 ```
 
-You need Node 22.12 or newer (CI uses 24) and pnpm 12 (`corepack enable` or
+You need Node 22.13 or newer (CI uses 26 and also tests 22.13) and pnpm 12 (`corepack enable` or
 `npm install -g pnpm@12`). Docker is needed for anything that
 compiles LaTeX (corpus, templates, end-to-end tests).
 

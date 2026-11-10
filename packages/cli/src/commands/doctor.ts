@@ -77,11 +77,13 @@ export async function doctorCommand(args: string[], io: Io): Promise<number> {
   }
   const env = io.env;
   const items: Item[] = [];
-  const major = Number(process.versions.node.split('.')[0]);
+  // pdf.js needs Node.js 22.13 or newer.
+  const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
+  const nodeOk = major > 22 || (major === 22 && minor >= 13);
   items.push({
     name: 'node',
-    ok: major >= 22,
-    detail: `v${process.versions.node}${major >= 22 ? '' : ' (need 22.12 or newer)'}`,
+    ok: nodeOk,
+    detail: `v${process.versions.node}${nodeOk ? '' : ' (need 22.13 or newer)'}`,
   });
   items.push({ name: 'overfull', ok: true, detail: VERSION });
 

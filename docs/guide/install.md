@@ -12,7 +12,7 @@ them run the same checks.
 | --- | --- |
 | Docker only | The Docker image and the template Makefile |
 | No Docker, no Node | The single-file `overfull` download from GitHub Releases; builds then need a local TeX Live |
-| Git, Node.js 22.12+, pnpm and Docker | [From source](#from-source), to work on Overfull itself |
+| Git, Node.js 22.13+, pnpm and Docker | [From source](#from-source), to work on Overfull itself |
 | VS Code + Docker | The Dev Container |
 | Overleaf | Git sync to a local or GitHub copy |
 

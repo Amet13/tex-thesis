@@ -40,7 +40,7 @@ scripts/            corpus runner, template sync, e2e, standalone build, version
 
 ## Tooling (2026)
 
-Node ≥22.12 (CI on 24), pnpm 12 workspaces, TypeScript 7, Vitest 5, Biome 2,
+Node ≥22.13 (CI on 26, unit tests also on 22), pnpm 12 workspaces, TypeScript 7, Vitest 5, Biome 2,
 Astro 7, pdf.js 6. ESM only. Tests live in `packages/*/test/*.test.ts`.
 
 ## The result model
@@ -182,7 +182,7 @@ Cache: the user cache directory (`$XDG_CACHE_HOME/overfull`, `~/.cache/overfull`
 ## Docker image
 
 `ghcr.io/amet13/overfull:<version>` — TeX Live 2026 (pinned digest), Microsoft
-core fonts, poppler-utils, qpdf, veraPDF, latexdiff, Node 24 and the `overfull`
+core fonts, poppler-utils, qpdf, veraPDF, latexdiff, Node 26 and the `overfull`
 CLI. `overfull build --engine docker` and the template Makefiles use it, so the
 classic path needs only Docker.
 

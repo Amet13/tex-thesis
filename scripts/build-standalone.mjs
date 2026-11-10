@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Builds the standalone `overfull` CLI that GitHub Releases ship (no npm needed):
 //
-//   node scripts/build-standalone.mjs            → dist-standalone/overfull.cjs (runs with Node ≥ 22)
+//   node scripts/build-standalone.mjs            → dist-standalone/overfull.cjs (runs with Node ≥ 22.13)
 //   node scripts/build-standalone.mjs --sea      → also dist-standalone/overfull[.exe], a single
 //                                                   executable for the current OS/arch (Node SEA,
 //                                                   embeds the Node.js that runs this script)

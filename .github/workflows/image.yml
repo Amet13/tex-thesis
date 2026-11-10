@@ -45,8 +45,8 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - { platform: linux/amd64, runner: ubuntu-24.04, pair: linux-amd64 }
-          - { platform: linux/arm64, runner: ubuntu-24.04-arm, pair: linux-arm64 }
+          - { platform: linux/amd64, runner: ubuntu-26.04, pair: linux-amd64 }
+          - { platform: linux/arm64, runner: ubuntu-26.04-arm, pair: linux-arm64 }
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     permissions:
@@ -108,7 +108,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read

@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       # ... your existing step that builds paper.pdf and paper.log ...

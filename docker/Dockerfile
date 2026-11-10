@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Overfull image: TeX Live 2026 + fonts + poppler + qpdf + veraPDF + Node 24 + overfull CLI.
+# Overfull image: TeX Live 2026 + fonts + poppler + qpdf + veraPDF + Node 26 + overfull CLI.
 #
 # Build context is the REPOSITORY ROOT:
 #   docker build -f docker/Dockerfile -t ghcr.io/amet13/overfull:dev .
@@ -8,7 +8,7 @@
 #
 # Stages:
 #   tex       TeX Live 2026 (pinned digest), MS core fonts, poppler-utils, qpdf, veraPDF
-#   node      tex + Node.js 24 (official binary, checksum-verified)
+#   node      tex + Node.js 26 LTS (official binary, checksum-verified)
 #   builder   node + pnpm: builds the monorepo and deploys the CLI to /opt/overfull
 #   overfull  final image: node + /opt/overfull, `overfull` on PATH (default target)
 #
@@ -23,8 +23,8 @@
 # not as an ARG, so Dependabot can propose digest updates.
 FROM texlive/texlive:latest@sha256:07e8062637249c4f780ca59f42cc2ed592bc2dc1db4320769406aee3f98aa70e AS tex
 
-ARG VERAPDF_VERSION=1.30.3
-ARG VERAPDF_SHA256=b512bf24945503a33fc10738ecffc1f2dccaaf8593a448e94ee9ac86a9559a59
+ARG VERAPDF_VERSION=1.30.4
+ARG VERAPDF_SHA256=04415ef3f149526a3048b9889723e81320ddf013bd891bcc7f0f297f3eadcc23
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
@@ -68,13 +68,13 @@ WORKDIR /work
 CMD ["bash"]
 
 # ---------------------------------------------------------------------------
-# node: add Node.js 24 so the overfull CLI can run inside the image
+# node: add Node.js 26 LTS so the overfull CLI can run inside the image
 # ---------------------------------------------------------------------------
 FROM tex AS node
 
-ARG NODE_VERSION=24.22.2
-ARG NODE_SHA256_AMD64=48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75
-ARG NODE_SHA256_ARM64=eb187837a2230d4047161ac0be008584e16b46f726e9c9490ee35dc6b17d9ba8
+ARG NODE_VERSION=26.13.0
+ARG NODE_SHA256_AMD64=d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997
+ARG NODE_SHA256_ARM64=406fe3fbde1c054adff8b297c16fdb5af6659db327c1ac8acd46b56ef1af9a92
 ARG TARGETARCH
 
 RUN --mount=type=secret,id=build_ca,required=false \
