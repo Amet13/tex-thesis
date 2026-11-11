@@ -77,4 +77,3 @@ export function isFileToken(token: string): boolean {
   if (/^(?:\.{1,2}\/|\/|~\/|[A-Za-z]:[\\/])/.test(token)) return token.length > 2;
   return /^[\w-][\w.\-/]*$/.test(token) && TEX_EXTENSIONS.test(token);
 }
-

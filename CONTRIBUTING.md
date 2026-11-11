@@ -84,8 +84,8 @@ commit `action/dist`: `pnpm --filter overfull-action build` (CI checks it).
 
 ## Cutting a release (maintainers)
 
-Overfull ships as a Docker image, GitHub Release downloads and the Action. It is
-not published to npm.
+Overfull ships as a Docker image, GitHub Release downloads, the Action, and the
+npm package `overfull` when the repository has an `NPM_TOKEN` secret.
 
 Releases normally happen on their own: `autorelease.yml` proposes a patch release
 every month and publishes it once merged (see [MAINTAINING.md](MAINTAINING.md)). To

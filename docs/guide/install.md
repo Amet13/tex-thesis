@@ -90,15 +90,20 @@ check both the compressed file and the unpacked executable. By hand:
 
 Each release includes a single-file `overfull` download on
 [GitHub Releases](https://github.com/amet13/overfull/releases). Put it on your
-`PATH` and run `overfull doctor`. There is no npm package, so `npx overfull` and
-`npm install` do not work.
+`PATH` and run `overfull doctor`.
+
+With Node.js 26 or newer you can also use the npm package, the same single-file
+program (about 900 kB, no dependencies), when it is listed at
+[npmjs.com/package/overfull](https://www.npmjs.com/package/overfull):
+`npm install -g overfull`, or `npx overfull check` without installing.
 
 `overfull build` uses a local `latexmk` if one is installed and falls back to
 Docker otherwise. Force one with `--engine local` or `--engine docker`.
 
-Reference lookups go to CrossRef, doi.org, arXiv, DBLP and, if the
-`OPENALEX_API_KEY` environment variable is set, OpenAlex. They need network
-access. Use `overfull check --offline` to skip them.
+Reference lookups go to CrossRef, doi.org, arXiv, DBLP, OpenAlex, Semantic
+Scholar, the ACL Anthology and Europe PMC (see
+[References](./references.md)). They need network access. Use
+`overfull check --offline` to skip them.
 
 ## Dev Container and VS Code
 

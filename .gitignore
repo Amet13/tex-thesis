@@ -45,3 +45,4 @@ coverage/
 dist-standalone/
 /out/
 /assets/
+dist-npm/
