@@ -35,8 +35,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 - Venue profiles: ECCV 2026 and AISTATS 2027.
 - Releases ship a gzip copy of each executable (about 50 MB instead of 150 MB);
   the installers use it and check both files.
-- The npm package `overfull` (the single-file CLI) is published with each
-  release when the repository has an `NPM_TOKEN` secret.
 - Automation: a weekly health check of every reference source, a monthly refresh
   of the recorded answers the tests replay, style-file hashes that follow each
   venue's official kit (new `kit` field), and venue-page change diffs in the

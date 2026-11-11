@@ -96,9 +96,10 @@ Each release includes a single-file `overfull` download on
 `overfull build` uses a local `latexmk` if one is installed and falls back to
 Docker otherwise. Force one with `--engine local` or `--engine docker`.
 
-Reference lookups go to CrossRef, doi.org, arXiv, DBLP and, if the
-`OPENALEX_API_KEY` environment variable is set, OpenAlex. They need network
-access. Use `overfull check --offline` to skip them.
+Reference lookups go to CrossRef, doi.org, arXiv, DBLP, OpenAlex, Semantic
+Scholar, the ACL Anthology and Europe PMC (see
+[References](./references.md)). They need network access. Use
+`overfull check --offline` to skip them.
 
 ## Dev Container and VS Code
 
