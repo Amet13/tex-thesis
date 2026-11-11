@@ -10,15 +10,7 @@
 //
 // The bundle embeds the templates, so `overfull init` works offline from the single file.
 import { execFileSync } from 'node:child_process';
-import {
-  lstatSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  readlinkSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
@@ -32,12 +24,11 @@ const { version } = JSON.parse(readFileSync(join(root, 'packages/cli/package.jso
 function embedTemplates() {
   const files = {};
   const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      const full = join(dir, name);
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
       const rel = relative(join(root, 'templates'), full).split(sep).join('/');
-      const st = lstatSync(full);
-      if (st.isSymbolicLink()) files[rel] = { link: readlinkSync(full) };
-      else if (st.isDirectory()) walk(full);
+      if (entry.isSymbolicLink()) files[rel] = { link: readlinkSync(full) };
+      else if (entry.isDirectory()) walk(full);
       else files[rel] = readFileSync(full).toString('base64');
     }
   };

@@ -328,7 +328,7 @@ export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry 
     fields[name] = name === 'pages' ? clean.replace(/\s*[–—-]+\s*/g, '--') : clean;
   }
   fields.doi = doi;
-  if (fields.url && /doi\.org\//i.test(fields.url)) delete fields.url;
+  if (fields.url && isDoiOrgUrl(fields.url)) delete fields.url;
   const entry: BibEntry = { key: '', type: parsed.type, fields, line: 0, raw: '' };
   entry.key = generateKey(entry);
   return entry;
@@ -399,4 +399,14 @@ export function isAuthorProvided(entry: Pick<BibEntry, 'fields'>): boolean {
   return /overfull\s*:\s*author-provided/i.test(
     `${entry.fields.note ?? ''} ${entry.fields.annote ?? ''}`,
   );
+}
+
+/** True for a doi.org (or dx.doi.org) link; the host is compared, not searched for. */
+function isDoiOrgUrl(value: string): boolean {
+  try {
+    const host = new URL(value.trim()).hostname.toLowerCase();
+    return host === 'doi.org' || host === 'dx.doi.org';
+  } catch {
+    return false;
+  }
 }

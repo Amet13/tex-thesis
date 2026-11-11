@@ -112638,8 +112638,17 @@ var ENTITIES = {
   apos: "'",
   nbsp: " "
 };
+function stripTags(s) {
+  let out = s;
+  for (let prev = ""; prev !== out; ) {
+    prev = out;
+    out = out.replace(/<[^<>]*>/g, "");
+  }
+  return out;
+}
 function stripMarkup(s) {
-  return s.replace(/<[^>]+>/g, "").replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(Number.parseInt(h, 16))).replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d))).replace(/&([a-z]+);/gi, (m, name) => ENTITIES[name.toLowerCase()] ?? m).replace(/\s+/g, " ").trim();
+  const decoded = s.replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(Number.parseInt(h, 16))).replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d))).replace(/&([a-z]+);/gi, (m, name) => ENTITIES[name.toLowerCase()] ?? m);
+  return stripTags(decoded).replace(/\s+/g, " ").trim();
 }
 function foldText(plain2) {
   return plain2.toLowerCase().replace(/[α-ωϑϕς]/g, (c) => ` ${GREEK_NAMES[c] ?? c} `).replace(/[ßøæœłðþıŋ]/g, (c) => FOLD[c] ?? c).normalize("NFKD").replace(/[̀-ͯ]/g, "");
@@ -114278,7 +114287,7 @@ function sourceName(s) {
 }
 function toMatched(r) {
   const m = {
-    title: r.title.replace(/<[^>]+>/g, ""),
+    title: stripTags(r.title),
     authors: r.authors.map((a) => a.given ? `${a.given} ${a.family}` : a.family)
   };
   const year = r.years.length ? Math.min(...r.years) : void 0;
@@ -116874,6 +116883,7 @@ var UsageError = class extends Error {
 // ../packages/cli/src/project.ts
 import {
   closeSync,
+  constants,
   existsSync as existsSync2,
   fstatSync,
   lstatSync as lstatSync3,
@@ -117025,24 +117035,27 @@ function readTexFiles(root, files, skipped3 = []) {
   for (const path of files) {
     if (!/\.(tex|sty|cls)$/i.test(path) || isDiffArtifact(path)) continue;
     const abs = join2(root, path);
-    let st;
+    let fd;
     try {
-      st = statSync(abs);
+      fd = openSync(abs, constants.O_RDONLY | (constants.O_NONBLOCK ?? 0));
     } catch {
       continue;
     }
-    if (!st.isFile()) {
-      skipped3.push({ path, reason: "not a regular file" });
-      continue;
-    }
-    if (st.size > MAX_TEX_BYTES) {
-      skipped3.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
-      continue;
-    }
     try {
-      out.push({ path, content: readFileSync2(abs, "utf8") });
+      const st = fstatSync(fd);
+      if (!st.isFile()) {
+        skipped3.push({ path, reason: "not a regular file" });
+        continue;
+      }
+      if (st.size > MAX_TEX_BYTES) {
+        skipped3.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
+        continue;
+      }
+      out.push({ path, content: readFileSync2(fd, "utf8") });
     } catch (err) {
       skipped3.push({ path, reason: err instanceof Error ? err.message : String(err) });
+    } finally {
+      closeSync(fd);
     }
   }
   return out;
@@ -117424,7 +117437,7 @@ import { relative as relative4 } from "node:path";
 
 // ../packages/cli/src/tools.ts
 import { spawn } from "node:child_process";
-import { accessSync, constants } from "node:fs";
+import { accessSync, constants as constants2 } from "node:fs";
 import { delimiter, join as join4 } from "node:path";
 function which(cmd, env = process.env, opts = {}) {
   const win = (opts.platform ?? process.platform) === "win32";
@@ -117435,7 +117448,7 @@ function which(cmd, env = process.env, opts = {}) {
     for (const ext of exts) {
       const p = join4(dir, cmd + ext);
       try {
-        accessSync(p, win ? constants.F_OK : constants.X_OK);
+        accessSync(p, win ? constants2.F_OK : constants2.X_OK);
         return p;
       } catch {
       }

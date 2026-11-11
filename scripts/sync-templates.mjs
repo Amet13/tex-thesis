@@ -55,7 +55,12 @@ function listFiles(dir, base = dir) {
 
 function syncFile(src, dest) {
   const want = readFileSync(src);
-  const have = existsSync(dest) ? readFileSync(dest) : null;
+  let have = null;
+  try {
+    have = readFileSync(dest);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
   if (have?.equals(want)) return;
   drift.push(`${have ? 'changed' : 'missing'}: ${rel(dest)}`);
   if (!check) {

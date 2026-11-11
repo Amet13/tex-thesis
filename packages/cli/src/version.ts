@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+declare const __OVERFULL_VERSION__: string | undefined;
+
 function readVersion(): string {
   try {
     const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
@@ -14,5 +16,3 @@ function readVersion(): string {
 /** CLI version; injected at bundle time for the Action (`__OVERFULL_VERSION__`). */
 export const VERSION: string =
   typeof __OVERFULL_VERSION__ === 'string' ? __OVERFULL_VERSION__ : readVersion();
-
-declare const __OVERFULL_VERSION__: string | undefined;

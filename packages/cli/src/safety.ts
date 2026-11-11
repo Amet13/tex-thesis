@@ -120,8 +120,8 @@ export function insideRootForWrite(root: string, path: string, what: string): st
     if (parent === probe) break;
     probe = parent;
   }
-  let realRoot = root;
-  let realProbe = probe;
+  let realRoot: string;
+  let realProbe: string;
   try {
     realRoot = realpathSync(root);
     realProbe = realpathSync(probe);
