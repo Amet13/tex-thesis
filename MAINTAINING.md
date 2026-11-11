@@ -42,10 +42,6 @@ merged on a red or missing check.
   source module in `packages/core/src/refs/sources/` and the API documentation it
   links. A bot wall or a new response format needs a code change; an outage needs
   nothing.
-- **API keys (optional).** Repository secrets `OPENALEX_API_KEY` and
-  `SEMANTIC_SCHOLAR_API_KEY` (free keys) and the variable `OVERFULL_MAILTO` make
-  the benchmark and the source check independent of the keyless budgets that
-  runners share.
 - **Issues the automation opens.** Each links the failing run. Fix the cause in a
   pull request; the issue closes itself on the next successful run.
 - **Agent evals.** They cost money and run only when you start them

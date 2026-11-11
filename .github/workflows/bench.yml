@@ -36,12 +36,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
         timeout-minutes: 5
       - name: Run the benchmark (live network)
-        # Optional secrets: without them the keyless OpenAlex and Semantic Scholar budgets,
-        # shared by every job on the runner's IP address, may run out mid-run.
-        env:
-          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
-          SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
-          OVERFULL_MAILTO: ${{ vars.OVERFULL_MAILTO }}
         run: node bench/refs/run.mjs --summary "$GITHUB_STEP_SUMMARY"
       # A complete live run is published: a pull request with results.json, merged by
       # automerge.yml when CI passes. The site's accuracy page renders it.

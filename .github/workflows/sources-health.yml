@@ -28,12 +28,8 @@ jobs:
         with:
           node-version: 26
       - name: Probe the reference sources
-        # Optional secrets: without them OpenAlex and Semantic Scholar use their keyless
-        # budgets, shared by every job on the runner's IP (a 429 then is only a note).
-        env:
-          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
-          SEMANTIC_SCHOLAR_API_KEY: ${{ secrets.SEMANTIC_SCHOLAR_API_KEY }}
-          OVERFULL_MAILTO: ${{ vars.OVERFULL_MAILTO }}
+        # Keyless, like most users: a 429 from OpenAlex or Semantic Scholar (a shared
+        # budget used up) is listed as a note, not as a broken source.
         run: node scripts/sources-health.mjs | tee "$RUNNER_TEMP/report.md"
       - name: Open, update or close the issue
         env:

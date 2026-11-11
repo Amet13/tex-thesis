@@ -35,8 +35,6 @@ jobs:
         with:
           node-version: 26
       - name: Record the reference sources again
-        env:
-          OVERFULL_MAILTO: ${{ vars.OVERFULL_MAILTO }}
         run: |
           node packages/core/test/fixtures/refs/record.mjs
           node packages/core/test/fixtures/refs/record-sources.mjs
