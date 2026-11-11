@@ -17,6 +17,8 @@ on:
       - regenerate
       - autorelease
       - venues-watch
+      - sources-health
+      - refresh-recordings
       - automerge
       - OpenSSF Scorecard
     types: [completed]

@@ -18,6 +18,7 @@ disclosure: recommended
 styleFiles:
   - name: neurips_2026.sty
     sha256: c3fc2894e83d2517ca18b66741d6c595986d97957dc08ec08bb2125a7ec4555a
+    kit: https://media.neurips.cc/Conferences/NeurIPS2026/Formatting_Instructions_For_NeurIPS_2026.zip
 textBlock:
   widthMm: 139.7
 notes: >-

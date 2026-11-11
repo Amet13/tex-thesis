@@ -17,6 +17,7 @@ disclosure: required
 styleFiles:
   - name: iclr2027_conference.sty
     sha256: 797deef41724e93761426ac0cbcca46279a91cc650dd1f0ce76a4f08d2098ea6
+    kit: https://media.iclr.cc/Conferences/ICLR2027/iclr-2027-style-files.zip
 textBlock:
   widthMm: 139.7
 notes: >-

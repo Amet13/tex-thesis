@@ -11,6 +11,7 @@ accessibility: recommended
 styleFiles:
   - name: llncs.cls
     sha256: 04ec99046ad9867f6cd54ffd1ef8c47c767b327d1baec77536db0528cd492fa2
+    kit: https://cms-resources.apps.public.k8s.springernature.io/springer-cms/rest/v1/content/27851904/data/LaTeX2e%20Proceedings%20Template%20ZIP
 textBlock:
   widthMm: 122
   leftMm: 47.5

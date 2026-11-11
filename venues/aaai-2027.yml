@@ -18,6 +18,7 @@ anonymous: true
 styleFiles:
   - name: aaai2027.sty
     sha256: 01990f8d3716f8e39c5b28a7478f3ac6e28630d1161de6105a7217f5e7f60e43
+    kit: https://aaai.org/authorkit27/
 textBlock:
   widthMm: 177.8
 notes: >-
