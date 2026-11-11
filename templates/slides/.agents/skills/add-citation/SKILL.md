@@ -5,10 +5,9 @@ description: Add a verified reference to the bibliography with `overfull cite` a
 
 # Add a citation
 
-References are the one place where a model's memory is most often wrong. Overfull
-looks the work up in CrossRef, doi.org, arXiv and DBLP (and OpenAlex when the
-`OPENALEX_API_KEY` environment variable is set) and writes the entry from the
-indexed record. You only choose where to cite it.
+References are where a model's memory is most often wrong. `overfull cite` looks
+the work up in the scholarly indexes and writes the entry from the indexed record
+(the published version when arXiv names one). You only choose where to cite it.
 
 ## Steps
 
@@ -32,15 +31,9 @@ indexed record. You only choose where to cite it.
    overfull cite 10.1145/3442188.3445922 --key bender2021parrots
    ```
 
-   Use `--key` only to match a key the author already uses. Use `--bib file`
-   only if `overfull.yml` lists more than one bibliography; it must be inside
-   the project. With `--json`, the result is `{key, entry, source, confidence,
-   added, bib}`; ambiguous and not-found results exit 1 with their own JSON
-   (`{ambiguous, candidates}`, `{found: false, ...}`).
-
-   `cite` ends each entry with an `x-overfull = {cite … <hash>}` marker. The
-   hash makes later edits evident; it is not authentication. Do not edit
-   an entry `cite` wrote: that breaks the marker.
+   Use `--key` only to match a key the author already uses, and `--bib file`
+   only if `overfull.yml` lists more than one bibliography. Do not edit an entry
+   `cite` wrote: its `x-overfull` marker would no longer match.
 5. Cite the printed key where the author wants it: `\cite{key}`,
    `\textcite{key}` or `\parencite{key}` (biblatex), matching what the
    document already uses.
@@ -82,8 +75,9 @@ author can add those entries by hand. Check reports them as
   arXiv id belongs to a different paper. Do not re-add from that identifier.
   Ask the author for the right one, or search by exact title with
   `overfull cite "<title>"`.
-- `reference-lookup-failed` (warning): a network problem, not evidence against the
-  entry. Rerun the check when online.
+- `reference-lookup-failed` (warning): too few indexes answered; not evidence
+  against the entry. Ask the author for its DOI or arXiv id (those are checked
+  directly), or rerun later.
 - `reference-unproven` (error, with `references.requireCite`, which the
   templates turn on): the entry was not added with `overfull cite` and no index
   confirms it. Get a DOI or arXiv id from the author and add it with `cite`, or
@@ -92,8 +86,8 @@ author can add those entries by hand. Check reports them as
   be checked again (offline or an index was down). Rerun with network access.
 - `bib-outside-project` (warning): a `.bib` outside the project was not read.
   Tell the author.
-- `citation-key-missing` (error) and `undefined-citation` (output error): the key
-  is not in the bib. Add it with `overfull cite` or remove the `\cite`.
+- `citation-key-missing` (error): the key is not in the bib. Add it with
+  `overfull cite` or remove the `\cite`.
 
 ## Done
 
@@ -104,7 +98,7 @@ author can add those entries by hand. Check reports them as
 ## Pitfalls
 
 - Do not add `note = {overfull: skip}`, `note = {overfull: author-provided}`,
-  `references.ignore`, or an `x-overfull` field by hand. Only the author opts an
-  entry out or marks it as provided; only `overfull cite` writes `x-overfull`.
+  `references.ignore`, or an `x-overfull` field yourself: only the author opts
+  an entry out.
 - Do not cite a paper to support a claim you have not seen in `notes/` or from
   the author. A real reference attached to the wrong claim is still wrong.
