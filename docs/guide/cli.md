@@ -181,6 +181,10 @@ appends a BibTeX entry built from the indexed record to the bibliography. OpenAl
 is also searched for titles when the `OPENALEX_API_KEY` environment variable is
 set. Prints the citation key as its last line.
 
+When the arXiv record of a preprint names the DOI of its published version (a
+journal or proceedings article with the same title), `cite` writes the published
+version and keeps the arXiv id in `eprint`, so you cite the version of record.
+
 | Flag | Effect |
 | --- | --- |
 | `--bib file` | Write to this file (default: the first file in `bib`, else `references.bib`). |

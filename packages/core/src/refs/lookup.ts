@@ -232,7 +232,33 @@ async function lookupDoi(ctx: Ctx, doi: string): Promise<LookupResult | null> {
 
 async function lookupArxiv(ctx: Ctx, id: string): Promise<LookupResult | null> {
   const record = await tracked(ctx, 'arxiv', () => arxivByIdCached(ctx, id));
-  return record ? { entry: entryFromRecord(record), source: 'arxiv', confidence: 1 } : null;
+  if (!record) return null;
+  const published = await publishedVersion(ctx, record);
+  return published
+    ? { ...published, source: 'arxiv', confidence: 1 }
+    : { entry: entryFromRecord(record), source: 'arxiv', confidence: 1 };
+}
+
+/**
+ * The published version of an arXiv preprint whose arXiv record names a DOI (and that
+ * DOI's record has the same title): the publisher's entry, with the arXiv id kept as
+ * `eprint`. Citing the version of record is what `reference-published-version` asks
+ * for, so `cite` must not write the preprint in its place. Null when there is none.
+ */
+async function publishedVersion(ctx: Ctx, record: WorkRecord): Promise<LookupResult | null> {
+  if (record.source !== 'arxiv' || !record.doi || record.doi.startsWith('10.48550/')) return null;
+  const viaDoi = await lookupDoi(ctx, record.doi).catch(() => null);
+  if (
+    !viaDoi ||
+    titleSimilarity(record.title, viaDoi.entry.fields.title ?? '') < LOOKUP_TITLE_THRESHOLD
+  ) {
+    return null;
+  }
+  if (record.arxivId) {
+    viaDoi.entry.fields.eprint ??= record.arxivId;
+    viaDoi.entry.fields.archiveprefix ??= 'arXiv';
+  }
+  return viaDoi;
 }
 
 /**
@@ -302,6 +328,8 @@ async function lookupTitle(
     return null;
   }
   const { record } = pick;
+  const published = await publishedVersion(ctx, record);
+  if (published) return { ...published, source: record.source, confidence: pick.confidence };
   if (record.doi && !record.doi.startsWith('10.48550/')) {
     const viaDoi = await lookupDoi(ctx, record.doi).catch(() => null);
     if (
