@@ -113368,7 +113368,12 @@ function parseDoi(input2) {
     doi = decodeURIComponent(doi);
   } catch {
   }
-  return doi.replace(/[.,;]+$/, "").toLowerCase();
+  return trimTrailingPunctuation(doi).toLowerCase();
+}
+function trimTrailingPunctuation(s) {
+  let end = s.length;
+  while (end > 0 && ".,;".includes(s[end - 1])) end--;
+  return s.slice(0, end);
 }
 function doiUrl(doi) {
   return `https://doi.org/${encodeURIComponent(doi).replace(/%2F/gi, "/")}`;

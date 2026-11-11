@@ -15,7 +15,18 @@ export function parseDoi(input: string): string | null {
   } catch {
     // keep as written
   }
-  return doi.replace(/[.,;]+$/, '').toLowerCase();
+  return trimTrailingPunctuation(doi).toLowerCase();
+}
+
+/**
+ * Drops sentence punctuation pasted after a DOI (`10.1/x.`, `10.1/x,;`). A loop from the
+ * end, not `/[.,;]+$/`: that pattern backtracks quadratically on a long run of commas
+ * that is not at the end of the input.
+ */
+function trimTrailingPunctuation(s: string): string {
+  let end = s.length;
+  while (end > 0 && '.,;'.includes(s[end - 1] as string)) end--;
+  return s.slice(0, end);
 }
 
 function doiUrl(doi: string): string {
