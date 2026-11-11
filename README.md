@@ -28,8 +28,8 @@ three questions in plain language, with the file and line:
   text in the margin, missing fonts, untagged or inaccessible PDF.
 - **Does it meet the venue's rules?** Page limit, paper size, anonymity,
   AI-use disclosure, the official style file left unmodified, arXiv's build
-  rules. Profiles for NeurIPS, ICLR, ICML, CVPR, AAAI, ACL, EMNLP, IEEE and ACM
-  conferences and Springer LNCS, each with its source and the date it was checked.
+  rules. Profiles for NeurIPS, ICLR, ICML, CVPR, ECCV, AISTATS, AAAI, ACL, EMNLP,
+  IEEE and ACM conferences and Springer LNCS, each with its source and the date it was checked.
 
 The checks are deterministic and need no AI. They work the same whether you
 write by hand or with a coding agent. Overfull never writes research content and

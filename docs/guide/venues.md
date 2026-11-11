@@ -98,6 +98,8 @@ fields the venue's pages did not state are left out.
 | `iclr-2027` | ICLR | 2027 | 2026-11-10 |
 | `icml-2026` | ICML | 2026 | 2026-11-10 |
 | `cvpr-2027` | CVPR | 2027 | 2026-11-10 |
+| `eccv-2026` | ECCV | 2026 | 2026-11-11 |
+| `aistats-2027` | AISTATS | 2027 | 2026-11-11 |
 | `aaai-2027` | AAAI main technical track | 2027 | 2026-11-10 |
 | `acl-rolling-review` | ACL Rolling Review (long papers) | rolling | 2026-11-10 |
 | `emnlp-2026` | EMNLP main conference | 2026 | 2026-11-10 |
