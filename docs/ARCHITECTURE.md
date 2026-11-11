@@ -1,220 +1,230 @@
 # Overfull architecture
 
-Overfull is a preflight kit for LaTeX papers and theses. It serves two kinds of
-authors from one engine:
+Overfull checks a LaTeX paper or thesis before it is submitted: the build log,
+the PDF, the references, accessibility and the venue's rules. It works on the
+project an author already has; templates are one way in, not a requirement.
 
-- **With an agent**: an AI coding agent (Claude Code, Codex, Cursor, Copilot…)
-  works on a repo made from an Overfull template. `AGENTS.md` and skills in
-  `.agents/skills/` tell it how to build, cite and verify. Deterministic tools
-  supply what a model cannot know: whether a reference exists, what the PDF
-  contains, what the venue requires.
-- **The classic way**: a person writes the LaTeX. `make build` and `make check`
-  run the same tools with plain-language output.
+Product principles:
 
-Product principle: **verification beats generation**. Overfull never writes
-research content. Every tool adds information the author or the agent does not
-have.
+- **Verification, not generation.** Overfull never writes research content. Every
+  check adds information the author or their coding agent does not have: whether a
+  reference exists, what the PDF really contains, what the venue requires.
+- **Deterministic and explainable.** No model decides anything. Every finding has a
+  stable rule id, a file and line or page, and a fix (`overfull explain <rule>`).
+- **Never "fake".** A reference is verified, differs from its record, is not found,
+  or could not be checked. Absence is claimed only when enough indexes agree.
 
 ## Repository layout
 
 ```text
-packages/core/      @overfull/core — browser-safe TypeScript. No Node APIs.
-  src/types.ts      Problem / CheckResult / Report / RuleInfo (the contract)
-  src/log/          build-log parser → build + output checks
-  src/bib/          BibTeX/biblatex parser + serializer, cited-key extraction
-  src/refs/         reference verification + lookup (CrossRef, doi.org, DBLP, arXiv, OpenAlex,
-                    Semantic Scholar, ACL Anthology, Europe PMC), retractions, duplicates
-  src/pdf/          PDF facts → output + accessibility checks (pdf.js injected)
-  src/venue/        venue profiles + checks (page limit, anonymity, disclosure, arXiv,
-                    style files, layout); venues.generated.ts is built from venues/*.yml
-  src/report/       human, JSON, Markdown, SARIF, GitHub annotation formatters
-  src/rules.ts      registry of every RuleInfo (allRules())
-packages/cli/       `overfull` — Node CLI and programmatic API used by the Action
-  src/adopt.ts      `init --here`: detect an existing project, write overfull.yml and extras
-  src/guard/        `guard --staged` (pre-commit) and `guard --hook` (agent harness hooks)
-  src/mcp/          `overfull mcp`: Model Context Protocol server over stdio, no dependencies
-action.yml + action/dist/   GitHub Action (node24, bundled)
-venues/             venue profiles as data (one YAML per venue, with sources and check date)
-corpus/             one folder per failing LaTeX document that proves a log rule
-templates/          thesis, paper, slides — accessible by default, agent-ready
-skills/             canonical Agent Skills (SKILL.md); synced into each template
-docker/             TeX Live 2026 image + poppler + veraPDF + latexdiff + overfull;
-                    target `check`: the same without TeX Live (`:<version>-check`)
-site/               Astro static site → GitHub Pages (docs, rules, browser check)
-evals/              agent tasks scored by preflight (variants bare, instructions, guard)
-bench/refs/         reference-check benchmark: real and fabricated entries, monthly run
-.claude-plugin/     Claude Code plugin + marketplace manifests (skills, guard hook, MCP)
-scripts/            corpus runner, template sync, e2e, standalone build, version bump
+packages/core/     @overfull/core: browser-safe TypeScript, no Node APIs
+  src/types.ts     Problem, CheckResult, Report, RuleInfo: the contract
+  src/log/         build-log parser → build and output checks; .bbl attribution
+  src/bib/         BibTeX/biblatex parser and writer, cited keys from .aux/.bcf
+  src/refs/        reference verification and lookup, one module per source
+  src/pdf/         PDF facts (pdf.js injected) → output and accessibility checks
+  src/venue/       venue profiles and checks; venues.generated.ts comes from venues/*.yml
+  src/report/      human, JSON, Markdown, SARIF and GitHub-annotation output
+  src/rules.ts     every RuleInfo (allRules())
+packages/cli/      the `overfull` command and the API the Action uses
+  src/check.ts     runCheck: finds the inputs, runs the checks, builds the Report
+  src/adopt.ts     `init --here`: detect a project, write overfull.yml and extras
+  src/guard/       `guard --staged` (git pre-commit) and `guard --hook` (agent hooks)
+  src/mcp/         `overfull mcp`: Model Context Protocol server on stdio, no dependencies
+action/            the GitHub Action (action.yml at the root; action/dist is bundled)
+venues/            venue profiles as data: one YAML file each, with sources and check date
+corpus/            one failing LaTeX document per log rule, proven on TeX Live 2026
+templates/         thesis, paper, slides: accessible by default, agent-ready
+skills/, shared/   Agent Skills and AGENTS.md, synced into each template
+docker/            the images (below)
+site/              Astro site on GitHub Pages: guide, rules, browser check
+bench/refs/        reference-check benchmark: real and fabricated entries, monthly run
+evals/             agent tasks scored by Overfull itself (run by hand; they cost money)
+packaging/         Homebrew formula and Scoop manifest, generated per release
+scripts/           build, sync, release, maintenance and installer-test scripts
+.claude-plugin/    Claude Code plugin and marketplace manifests
 ```
 
-## Tooling (2026)
+## Tooling
 
-Node 26 LTS (the GitHub Action runs on Node 24, the newest Actions runtime), pnpm 12 workspaces, TypeScript 7, Vitest 5, Biome 2,
-Astro 7, pdf.js 6. ESM only. Tests live in `packages/*/test/*.test.ts`, `site/tests/`,
-`bench/refs/test/` and `evals/test/`.
+Node 26 LTS (the Action runs on Node 24, the newest Actions runtime), pnpm 12
+workspaces, TypeScript 7, Vitest 5 with coverage floors, Biome 2, Astro 7,
+pdf.js 6. ESM only. The site stays on TypeScript 6 because `@astrojs/check`
+0.9.12 accepts only 5 or 6. Tests live in `packages/*/test/`, `site/tests/`,
+`bench/refs/test/`, `evals/test/`, `scripts/test/` and `packaging/`.
 
 ## The result model
 
-See `packages/core/src/types.ts`. Rules have stable kebab-case ids. Severity:
+`packages/core/src/types.ts`. Rule ids are stable kebab-case.
 
-- `error` — the paper is wrong or will be rejected (?? in PDF, unknown reference, page limit).
-- `warning` — likely problem, needs a human look (metadata differs, overfull box > 10pt).
-- `info` — could not be checked automatically (unindexed reference), or advice.
+- Severity `error`: the paper is wrong or will be rejected (`??` in the PDF, a
+  reference not found, over the page limit). `warning`: needs a person's look
+  (metadata differs, could not be checked). `info`: a note (not checkable
+  automatically, advice).
+- Check status: `fail` with any error, `warn` with any warning, `pass` otherwise,
+  `skipped` with `skippedReason` when its inputs are missing.
+- Report status: the worst check status. When every check was skipped, the report
+  is `skipped` ("nothing checked"), never `pass`, and the exit code is 1.
+- The same finding is never reported twice: a cited key with no `.bib` entry is
+  `citation-key-missing` (references), not also `undefined-citation` (output)
+  (`report/dedupe.ts`).
 
-Check status: `fail` if any error, `warn` if any warning, `pass` otherwise,
-`skipped` with `skippedReason` when inputs are missing (no PDF, offline…).
+Exit codes: 0 pass (or warnings without `--fail-on warning`), 1 fail or nothing
+checked, 2 usage or internal error. The JSON report is the `Report` type, stable
+for agents and scripts.
 
-## Module contracts
+## Checks
 
-### log (`src/log/index.ts`)
+| Check | Reads | Finds |
+| --- | --- | --- |
+| build | the log | TeX errors grouped by cause, with file and line (`-file-line-error` and the file stack) |
+| output | the log and PDF | `??` and `[?]`, undefined references, stale bibliography, missing files, overfull boxes over 10 pt, duplicate labels, font substitutions |
+| references | the `.bib` files, `.aux`/`.bcf` | entries that do not exist, differ from their record, point at another work, are retracted, duplicated, or uncited; cited keys with no entry |
+| accessibility | the PDF (veraPDF when available) and `.tex` | untagged PDF, missing language or title, figures without alt text, PDF/UA failures |
+| venue | the PDF, `.aux`, `.tex`, style files | page limit (up to `\label{overfull:main-end}`), paper size, anonymity, AI-use disclosure, modified style file, layout tampering, text outside the text block, arXiv build rules |
 
-```ts
-parseLog(text: string): ParsedLog
-analyzeLog(text: string, opts?: { root?: string; overfullThresholdPt?: number }):
-  { build: CheckResult; output: CheckResult; parsed: ParsedLog }
-logRules: RuleInfo[]
-```
+Errors inside the typeset bibliography are moved from the `.bbl` line to the
+`.bib` entry that caused them (`log/bibliography.ts`).
 
-- `build` = TeX errors (`! …` lines), grouped by root cause; follow-on errors
-  within 3 lines in the same file are folded into `related`.
-- `output` = problems that reach the PDF: undefined citations/references,
-  stale bibliography (rerun biber/bibtex), missing files/figures, overfull boxes
-  above threshold (default 10pt → warning; 1–10pt ignored), duplicate labels,
-  font-shape substitutions, "Label(s) may have changed".
-- File attribution tracks the TeX file stack `(./file.tex … )` properly.
-- Must handle LuaLaTeX, pdfLaTeX, XeLaTeX logs, `-file-line-error` style
-  (`./file.tex:12: message`), and 79-column wrapped lines.
+## References
 
-### bib (`src/bib/index.ts`)
+`refs/verify.ts` decides; `refs/search.ts` asks the sources; `refs/http.ts` is the
+polite client (first-byte 4 s and total 10 s timeouts, one retry on 429/5xx with
+`Retry-After`, per-host spacing, and a circuit breaker: two failures, or one HTML
+answer from a JSON API, take a host out for the run).
 
-```ts
-parseBib(text: string): BibEntry[]   // { key, type, fields, line, raw }
-formatBibEntry(e: BibEntry): string
-citedKeys(auxOrBcf: string): string[]  // \citation{}, \abx@aux@cite{..}{key}, <bcf:citekey>
-```
+Order for one entry:
 
-### refs (`src/refs/index.ts`)
+1. A DOI: doi.org (CSL), then the publisher's BibTeX for `cite`. An arXiv id: the
+   arXiv API. An ACL Anthology id: the Anthology. A PMID or PMCID: Europe PMC. An
+   identifier decides on its own.
+2. Otherwise by title: CrossRef and dblp at the same time, then arXiv, then OpenAlex
+   (always with `OPENALEX_API_KEY`; without a key, when dblp gave no answer), then
+   Semantic Scholar and Europe PMC until three sources have answered.
+3. `match.ts` compares title, authors and year: verified, mismatch (with the
+   differing fields) or no match.
 
-```ts
-type RefStatus = 'verified' | 'mismatch' | 'not-found' | 'unverifiable' | 'error';
-verifyEntries(entries: BibEntry[], opts: RefsOptions): Promise<RefResult[]>
-refsCheck(results: RefResult[]): CheckResult
-lookup(query: string, opts: RefsOptions): Promise<LookupResult | null>  // DOI, arXiv id, or title
-```
+**Not found** needs a quorum (`notFoundQuorum`): CrossRef plus at least one more
+general index (OpenAlex, Semantic Scholar or dblp) answered, and none has a similar
+title. No single index is required, so one that is down or behind a bot wall does
+not stop the check. With fewer answers the entry is `error` ("could not be
+checked", a warning). When an index knows other works with the same title, the
+entry is `unverifiable` ("could not tell"), because the right record may be lower
+in a relevance-ranked list. Websites, software, datasets and standards are never
+looked up by title.
 
-- `RefsOptions` = `{ fetch?, mailto?, openalexKey?, cache?, concurrency?, timeoutMs?, offline? }`.
-  `fetch` defaults to `globalThis.fetch` (works in browsers and Node).
-- Order: DOI → doi.org/CrossRef; arXiv id → arXiv API; otherwise title search
-  on CrossRef, then DBLP, then OpenAlex (only if a key/mailto is configured).
-- Never says "fake". `not-found` only for scholarly types (article,
-  inproceedings, incollection, phdthesis…) when no candidate is similar.
-  Websites, software, standards (RFCs), datasets → `unverifiable` (info).
-- `mismatch`: found, but year/authors/title differ meaningfully (warning).
-- Results are cacheable by a stable key (`doi:` / `arxiv:` / `title:` + normalized).
-- Entries can opt out: `note = {overfull: skip}` or config `references.ignore`.
+Answers are cached in the user cache directory (30 days for a record, 1 day for
+"no match"; failures never). `references.cache: project` keeps them in
+`.overfull/cache/refs.json`, which CI ignores.
 
-### pdf (`src/pdf/index.ts`)
+`overfull cite` uses the same lookup and writes the publisher's BibTeX when there
+is a DOI. When an arXiv record names the DOI of its published version, it writes
+that version and keeps the arXiv id. Every entry it writes carries an `x-overfull`
+provenance field (source, date, hash over the identifying fields), which `guard`
+checks.
 
-```ts
-extractPdfFacts(data: Uint8Array, pdfjs: PdfjsLike): Promise<PdfFacts>
-pdfOutputProblems(facts): Problem[]      // "??" and "[?]" in text, with page
-accessibilityCheck(facts, opts: { verapdf?: VeraPdfResult | null; level?: 'required' | 'recommended' | 'off' }): CheckResult
-parseVeraPdfReport(xmlOrJson: string): VeraPdfResult
-```
+The browser check asks only the sources that allow requests from web pages:
+CrossRef, doi.org and OpenAlex.
 
-`PdfFacts`: pages, per-page text, info dict, XMP language/title, `tagged`
-(MarkInfo), structure-tree figures with/without alt text, fonts (when
-available), PDF/UA claim. pdf.js is injected so the same code runs in the
-browser and in Node.
-
-### venue (`src/venue/index.ts`)
-
-```ts
-builtinProfiles: Record<string, VenueProfile>   // generic, thesis, paper, arxiv, double-blind
-// plus the profiles generated from venues/*.yml (resolveProfile looks in both)
-resolveProfile(nameOrInline): VenueProfile
-venueCheck(profile, ctx: VenueContext): CheckResult
-```
-
-`VenueContext` = `{ facts?, aux?, texFiles?: { path, content }[], log? }`.
-Checks: page limit (optionally counted up to the page of `\label{overfull:main-end}`
-from the .aux), paper size, anonymity (PDF Author metadata, `\author` content,
-acknowledgments) for double-blind, AI-use disclosure presence when required,
-arXiv rules (absolute paths, `.eps` with pdfLaTeX, `minted`/shell-escape,
-`.bbl` presence when packaging).
-
-### report (`src/report/index.ts`)
-
-```ts
-formatHuman(report, { color?: boolean; verbose?: boolean }): string
-formatJson(report): string
-formatMarkdown(report): string           // GitHub job summary / PR comment
-githubAnnotations(report): string[]      // ::error file=…,line=…,title=…::message
-```
-
-## CLI (`overfull`)
+## Command line
 
 ```text
-overfull init [thesis|paper|slides] [dir]   copy a template
-overfull build [main.tex] [--engine auto|local|docker]
-overfull check [--json|--markdown] [--checks a,b] [--profile p] [--offline] [--fail-on error|warning]
-overfull cite <doi | arXiv:id | "title"> [--bib file] [--key k] [--dry-run]
-overfull pages <range> [--pdf file] [--out dir] [--dpi n]
-overfull diff [--base ref] [--main main.tex]
-overfull explain <rule>
+overfull init --here [--agents] [--ci] [--make] [--hooks] [--all]   add Overfull to this project
+overfull init [thesis|paper|slides] [dir]                           start from a template
+overfull build [main.tex] [--engine auto|local|docker]              compile with latexmk, check the log
+overfull check [files] [--json|--markdown|--sarif|--annotations] [--checks a,b]
+               [--profile p] [--offline] [--refresh] [--fail-on error|warning|never] [--watch]
+overfull cite <doi | arXiv:id | ACL id | PMID | PMCID | "title"> [--bib f] [--key k]
+overfull guard --staged | --hook [claude|gemini|codex]              block hand-written .bib entries
+overfull mcp                                                        MCP server: check, cite, explain, pages, doctor
+overfull pages <range>                                              PDF pages to PNG
+overfull diff [--base ref]                                          PDF with changes highlighted (latexdiff)
+overfull explain <rule> | --list
 overfull doctor
 ```
 
-Exit codes: 0 pass (or warn without `--fail-on warning`), 1 fail, 2 usage or
-internal error. JSON output is the `Report` type, stable for agents.
+`adopt` is an alias of `init --here`. Without `overfull.yml`, `check` finds the
+main file (`main.tex`, or the only `.tex` file with `\documentclass`) and says what
+it assumed. `check` never runs code the project chooses: `build.image` is used by
+`build` only.
 
-Configuration lives in `overfull.yml` at the project root:
+Configuration (`overfull.yml`, written by `init --here`; every key optional):
 
 ```yaml
 main: main.tex
-jobname: thesis           # output is thesis.pdf / thesis.log
+jobname: thesis            # output is thesis.pdf / thesis.log
 bib: [references.bib]
-profile: thesis           # built-in name, or inline fields below override it
+profile: neurips-2026      # a built-in profile or a venue id
 checks: [build, output, references, accessibility, venue]
 references:
-  mailto: you@example.org # polite pool for CrossRef/OpenAlex
+  mailto: you@example.org  # CrossRef and OpenAlex polite pool
   ignore: [rfc9110]
-venue:
+  requireCite: true        # unverified entries need an overfull cite marker or an author note
+  reportUncited: false
+  cache: user              # or project
+venue:                     # overrides on top of the profile
   pageLimit: { max: 9, endLabel: overfull:main-end }
-  anonymous: false
+  anonymous: true
   disclosure: required
 build:
-  engine: auto            # local latexmk if present, else Docker
+  engine: auto             # local latexmk if present, else Docker
   image: ghcr.io/amet13/overfull:3
 ```
 
-Cache: the user cache directory (`$XDG_CACHE_HOME/overfull`, `~/.cache/overfull`, or `%LOCALAPPDATA%\overfull`), keyed per project. `references.cache: project` keeps it in `.overfull/cache/refs.json` instead; CI ignores a git-tracked cache.
+API keys come from the environment only: `OPENALEX_API_KEY`,
+`SEMANTIC_SCHOLAR_API_KEY`, `OVERFULL_MAILTO`.
 
-## Docker image
+## Venue profiles
 
-`ghcr.io/amet13/overfull:<version>` — TeX Live 2026 (pinned digest), Microsoft
-core fonts, poppler-utils, qpdf, veraPDF, latexdiff, Node 26 and the `overfull`
-CLI. `overfull build --engine docker` and the template Makefiles use it, so the
-classic path needs only Docker.
+Built in: `generic`, `thesis`, `paper`, `arxiv`, `double-blind`. Venues are data
+in `venues/*.yml` (NeurIPS, ICLR, ICML, CVPR, AAAI, ACL Rolling Review, EMNLP,
+IEEE and ACM conferences, Springer LNCS, …): each extends a built-in profile and
+records its official `source` pages, `checkedOn` date and the SHA-256 of the
+official style files. `scripts/build-venues.mjs` validates them and generates
+`venues.generated.ts`. Rules are read from the official pages by a person;
+automation only reports changes (see `MAINTAINING.md`).
 
-## GitHub Action
+## Delivery
 
-`uses: amet13/overfull@v3` runs `overfull check` on outputs an existing
-workflow already produced (log, PDF, bib). It writes annotations, a job summary
-and outputs `status` and `report`. Full builds, veraPDF and latexdiff run in the
-Docker image via the template workflow.
+- **Executables** for Linux, macOS and Windows: a Node.js single-executable
+  application (`scripts/build-standalone.mjs --sea`), about 150 MB, almost all of
+  it the Node runtime; a gzip copy (about 50 MB) ships next to each. `overfull.cjs`
+  is the same program for an existing Node 26. `install.sh` and `install.ps1`
+  check downloads against `SHA256SUMS`. Homebrew and Scoop files are generated
+  per release. Releases carry build provenance.
+- **Images** (`docker/Dockerfile`): `ghcr.io/amet13/overfull:3` (TeX Live 2026 at
+  a pinned digest, fonts, poppler, qpdf, veraPDF, latexdiff, Node 26 and the CLI),
+  `:3-check` (the same without TeX Live) and `:3-medium` (TeX Live's medium scheme
+  plus what the templates need).
+- **GitHub Action** (`uses: amet13/overfull@v3`): `overfull check` on what an
+  earlier step built; annotations, job summary, optional SARIF, outputs `status`
+  and `report`. Bundled to `action/dist` (Node 24).
+- **Agents**: `AGENTS.md` and skills from `init --here --agents`, the Claude Code
+  plugin (skills, guard hook, MCP server), the Gemini CLI extension, and
+  `overfull mcp` for agents without a shell.
+- **Browser check** on the website: the core package in the page; a project
+  `.zip` or folder is checked without uploading anything.
 
 ## Templates
-
-Each template is a standalone repo layout:
 
 ```text
 main.tex  metadata.tex  overfull.yml  references.bib
 sections/ (or chapters/)  figures/  notes/
-AGENTS.md  CLAUDE.md (@AGENTS.md)  .agents/skills/  .claude/skills -> ../.agents/skills
-Makefile  .github/workflows/paper.yml  LICENSE (MIT-0)
+AGENTS.md  CLAUDE.md  GEMINI.md  .agents/skills/  .claude/skills -> ../.agents/skills
+Makefile  .github/workflows/paper.yml  .devcontainer/  LICENSE (MIT-0)
 ```
 
 Accessible by default: `\DocumentMetadata{… tagging=on}`, LuaLaTeX, alt text on
-every figure, document language and title set. CI requires the thesis and
-paper templates to pass `overfull check` including veraPDF PDF/UA.
+every figure, document language and title set. CI builds every template in the
+full and the medium image and requires them to pass their own `overfull check`,
+veraPDF PDF/UA included (Beamer slides cannot be tagged yet).
+
+## Automation
+
+The repository maintains itself: Dependabot and `update-pins.yml` keep pinned
+tools current, `regenerate.yml` rebuilds generated files, `automerge.yml` merges
+labelled pull requests once every check passed, `autorelease.yml` proposes and
+publishes releases, `bench.yml` measures the reference check monthly,
+`sources-health.yml` probes every reference source weekly, `venues-watch.yml`
+reports venue changes, and `watchdog.yml` opens an issue when any of them fails.
+`MAINTAINING.md` has the schedule and what stays with a person.

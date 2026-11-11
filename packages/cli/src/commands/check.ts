@@ -28,7 +28,8 @@ are the same as --bib, --log, --pdf and --aux. Only .bib files: check references
 Options:
   --main file         Main .tex file (default from overfull.yml, else detected)
   --checks a,b        Only these checks (build, output, references, accessibility, venue)
-  --profile name      Venue profile: generic, thesis, paper, arxiv, double-blind
+  --profile name      Venue profile: generic, thesis, paper, arxiv, double-blind, or a
+                      venue id such as neurips-2026 (an unknown name lists them all)
   --offline           Do not look references up online
   --refresh           Ignore cached reference answers and look everything up again
                       (the new answers are still cached)
