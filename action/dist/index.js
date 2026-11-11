@@ -117760,7 +117760,7 @@ async function runVeraPdf(pdf, env, opts = {}) {
 }
 
 // ../packages/cli/src/version.ts
-var VERSION = true ? "3.1.0" : readVersion();
+var VERSION = true ? "3.1.1" : readVersion();
 
 // ../packages/cli/src/check.ts
 var skipped2 = (check2, reason) => ({
