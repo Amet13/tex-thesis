@@ -25,16 +25,3 @@ Generate them by hand:
 ```bash
 node packaging/generate.mjs --version 3.1.0 --sums SHA256SUMS --out .
 ```
-
-## npm
-
-`packaging/npm.mjs` turns the release's `overfull.cjs` (the whole CLI in one file,
-templates included, no dependencies) into the npm package `overfull`. The `npm`
-job of `release.yml` publishes it with provenance when the repository has an
-`NPM_TOKEN` secret, and skips with a notice otherwise.
-
-```sh
-node scripts/build-standalone.mjs
-node packaging/npm.mjs --version 3.2.0 --out dist-npm
-npm pack --dry-run ./dist-npm
-```

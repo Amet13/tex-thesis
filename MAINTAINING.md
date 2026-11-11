@@ -64,9 +64,6 @@ Set these once; the workflows cannot set them:
    from the review rule.
 3. **Packages:** make `ghcr.io/amet13/overfull` public (Package settings → Change
    visibility), so anyone can pull the images.
-4. **npm (optional):** add an `NPM_TOKEN` secret (an npm automation token that can
-   publish `overfull`) to publish each release to npm as well, with provenance.
-   Without it the release skips npm and says so in a notice.
 
 The `automerge` and `maintenance` labels are created by the workflows on first
 use.

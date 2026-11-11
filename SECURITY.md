@@ -68,10 +68,8 @@ publisher-supplied BibTeX.
   permissions and `persist-credentials: false`.
 - Dependencies locked with `pnpm-lock.yaml` and installed with
   `--frozen-lockfile`; only esbuild may run an install script.
-- The npm package `overfull` (when published) is the release's `overfull.cjs`,
-  published from the release workflow with npm provenance; it has no
-  dependencies. Release downloads and the Docker image carry GitHub build
-  provenance attestations:
+- Overfull is not published to npm. Release downloads and the Docker image
+  carry GitHub build provenance attestations:
   `gh attestation verify overfull-linux-x64 --repo amet13/overfull` or
   `gh attestation verify oci://ghcr.io/amet13/overfull:3 --repo amet13/overfull`.
   Each release also lists `SHA256SUMS`.

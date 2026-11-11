@@ -221,44 +221,6 @@ jobs:
           fi
           echo "$major → $GITHUB_SHA"
 
-  # The npm package `overfull`: the single-file overfull.cjs (no dependencies), with
-  # provenance. Skipped, with a notice, until the repository has an NPM_TOKEN secret.
-  npm:
-    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
-    needs: [version, github-release]
-    runs-on: ubuntu-26.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: assets-cli-linux-x64
-          path: assets
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 26
-          registry-url: https://registry.npmjs.org
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          VERSION: ${{ needs.version.outputs.version }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::notice::No NPM_TOKEN secret: the npm package was not published."
-            exit 0
-          fi
-          node packaging/npm.mjs --version "$VERSION" --cjs assets/overfull.cjs --out dist-npm
-          if npm view "overfull@$VERSION" version > /dev/null 2>&1; then
-            echo "overfull@$VERSION is already on npm."
-            exit 0
-          fi
-          npm publish ./dist-npm --provenance --access public
-
   # A tag pushed by hand starts image.yml itself; a release made with Run
   # workflow calls it here.
   image:
