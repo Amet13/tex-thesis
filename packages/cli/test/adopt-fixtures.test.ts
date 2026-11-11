@@ -138,9 +138,13 @@ describe('init --here: Makefile and flags', () => {
     expect(await main(['init', '--here', 'paper'], b)).toBe(2);
   });
 
-  it('the top-level help lists adopt', async () => {
+  it('the top-level help shows init --here once, and init --help names the adopt alias', async () => {
     const io = memIo(tempCopy('adopt/neurips-style'));
     await main(['--help'], io);
-    expect(io.stdoutText()).toMatch(/^ {2}adopt /m);
+    expect(io.stdoutText()).toMatch(/^ {2}init --here /m);
+    expect(io.stdoutText()).not.toMatch(/^ {2}adopt /m);
+    const init = memIo(tempCopy('adopt/neurips-style'));
+    await main(['init', '--help'], init);
+    expect(init.stdoutText()).toContain('alias: overfull adopt');
   });
 });

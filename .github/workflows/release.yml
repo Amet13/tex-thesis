@@ -150,6 +150,9 @@ jobs:
           else
             cp dist-standalone/overfull "assets/overfull-${{ matrix.target }}"
           fi
+          # A gzip copy of each executable (about a third of the size): install.sh and
+          # install.ps1 download it when SHA256SUMS lists it, and check both files.
+          for f in assets/overfull-*; do gzip -9 -k -n "$f"; done
           if [ "${{ matrix.target }}" = linux-x64 ]; then cp dist-standalone/overfull.cjs assets/; fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -19,8 +19,8 @@ export const mainHelp = `overfull ${VERSION} — preflight for LaTeX papers and 
 Usage: overfull <command> [options]
 
 Commands:
+  init --here                        Add Overfull to the LaTeX project in this folder
   init [thesis|paper|slides] [dir]   Create a project from a template
-  adopt                              Add Overfull to the LaTeX project in this folder (init --here)
   build [main.tex]                   Compile with latexmk (local or Docker) and check the log
   check                              Check log, PDF, references, accessibility, venue rules
   cite <doi | arXiv:id | "title">    Add a verified BibTeX entry; prints its key

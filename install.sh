@@ -68,12 +68,24 @@ fi
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
-printf 'Downloading %s from %s\n' "$asset" "$base"
-fetch "$base/$asset" "$tmp/$asset" || err "download of $asset failed"
 fetch "$base/SHA256SUMS" "$tmp/SHA256SUMS" || err "download of SHA256SUMS failed"
-
-want="$(awk -v f="$asset" '{ n = $2; sub(/^\*/, "", n); if (n == f) { print $1; exit } }' "$tmp/SHA256SUMS")"
+sum_of() { awk -v f="$1" '{ n = $2; sub(/^\*/, "", n); if (n == f) { print $1; exit } }' "$tmp/SHA256SUMS"; }
+want="$(sum_of "$asset")"
 [ -n "$want" ] || err "SHA256SUMS has no entry for $asset"
+
+# Releases since 3.2 also ship each executable gzip-compressed (about a third of the
+# size). Both the compressed download and the unpacked file are checked.
+want_gz="$(sum_of "$asset.gz")"
+if [ -n "$want_gz" ] && command -v gzip >/dev/null 2>&1; then
+  printf 'Downloading %s.gz from %s\n' "$asset" "$base"
+  fetch "$base/$asset.gz" "$tmp/$asset.gz" || err "download of $asset.gz failed"
+  got="$(hash_of "$tmp/$asset.gz")"
+  [ "$got" = "$want_gz" ] || err "checksum mismatch for $asset.gz (expected $want_gz, got $got); nothing installed"
+  gzip -dc "$tmp/$asset.gz" > "$tmp/$asset" || err "could not unpack $asset.gz"
+else
+  printf 'Downloading %s from %s\n' "$asset" "$base"
+  fetch "$base/$asset" "$tmp/$asset" || err "download of $asset failed"
+fi
 got="$(hash_of "$tmp/$asset")"
 [ "$got" = "$want" ] || err "checksum mismatch for $asset (expected $want, got $got); nothing installed"
 
