@@ -1,5 +1,10 @@
 # Overfull: improvement plan (after 3.1.0)
 
+> **Status:** implemented in one pull request, including the items listed under
+> "Not in this round" (skills trimmed, unused exports removed, ECCV 2026 and
+> AISTATS 2027 added, npm publishing behind an `NPM_TOKEN` secret). F1 (the first
+> published benchmark) runs after the release; F2 (evals) is the owner's call.
+
 Written on 2026-11-11 from an audit of `main` at 76c95ff (3.1.0 plus the CodeQL
 fixes). Every finding below was reproduced; the evidence is given with it. Work is
 grouped into seven pull requests, in the order they should land. Each item names
