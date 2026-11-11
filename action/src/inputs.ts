@@ -8,7 +8,7 @@ export function input(env: Record<string, string | undefined>, name: string): st
   return t ? t : undefined;
 }
 
-export function boolInput(
+function boolInput(
   env: Record<string, string | undefined>,
   name: string,
   fallback: boolean,

@@ -14,7 +14,7 @@ import { ambiguousMainError, detectMain } from './project.js';
 import { safeImage, safeJobname, safeRelPath } from './safety.js';
 
 export const DEFAULT_IMAGE = 'ghcr.io/amet13/overfull:3';
-export const CONFIG_FILE = 'overfull.yml';
+const CONFIG_FILE = 'overfull.yml';
 
 export type Engine = 'auto' | 'local' | 'docker';
 
@@ -216,7 +216,7 @@ export function parseChecks(v: unknown, file: string, field = 'checks'): CheckId
 }
 
 /** Bibliography files named in the main file, or every *.bib in the root. */
-export function discoverBib(root: string, main: string): string[] {
+function discoverBib(root: string, main: string): string[] {
   const mainPath = join(root, main);
   if (existsSync(mainPath)) {
     const src = readFileSync(mainPath, 'utf8').replace(/(^|[^\\])%.*$/gm, '$1');

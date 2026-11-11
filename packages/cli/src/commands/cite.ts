@@ -61,7 +61,7 @@ function doiOf(e: BibEntry): string | undefined {
 }
 
 /** An existing entry for the same work: same DOI, or same key with a matching title. */
-export function findExisting(entries: BibEntry[], entry: BibEntry): BibEntry | undefined {
+function findExisting(entries: BibEntry[], entry: BibEntry): BibEntry | undefined {
   const doi = doiOf(entry);
   if (doi) {
     const byDoi = entries.find((e) => doiOf(e) === doi);
@@ -91,7 +91,7 @@ const SOURCE_NAMES: Record<string, string> = {
 };
 
 /** Which reference indexes a lookup actually reached, and which failed (and why). */
-export class SourceTracker {
+class SourceTracker {
   private readonly ok = new Set<string>();
   private readonly failed = new Map<string, string>();
   /** What core's lookup says answered: authoritative (a 202 bot wall is a failure there). */
@@ -170,7 +170,7 @@ const list = (xs: string[]) =>
   xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
 
 /** Citation keys that BibTeX, biber and \\cite all read as one plain token. */
-export const SAFE_KEY = /^[A-Za-z0-9_:.+\-/]+$/;
+const SAFE_KEY = /^[A-Za-z0-9_:.+\-/]+$/;
 
 /** A generated key reduced to SAFE_KEY characters (index metadata is untrusted). */
 export function sanitizeKey(key: string): string {

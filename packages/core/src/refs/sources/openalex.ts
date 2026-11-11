@@ -13,7 +13,7 @@ interface OpenAlexWork {
   primary_location?: { source?: { display_name?: string } | null; landing_page_url?: string };
 }
 
-export function openalexSearchUrl(title: string, apiKey?: string, mailto?: string): string {
+function openalexSearchUrl(title: string, apiKey?: string, mailto?: string): string {
   const params = new URLSearchParams({ search: title, 'per-page': '5' });
   if (apiKey) params.set('api_key', apiKey);
   if (mailto) params.set('mailto', mailto);

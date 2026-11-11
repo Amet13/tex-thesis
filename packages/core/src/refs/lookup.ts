@@ -109,7 +109,7 @@ function matchesHint(r: WorkRecord, hint: LookupHint | undefined): boolean {
   return true;
 }
 
-export function toCandidate(r: WorkRecord): LookupCandidate {
+function toCandidate(r: WorkRecord): LookupCandidate {
   return {
     title: r.title,
     authors: r.authors.map((a) => (a.given ? `${a.given} ${a.family}` : a.family)),
@@ -293,7 +293,7 @@ async function lookupEuropePmc(
 }
 
 /** Total time a title lookup may spend across sources before it reports (ms). */
-export const TITLE_LOOKUP_BUDGET_MS = 10_000;
+const TITLE_LOOKUP_BUDGET_MS = 10_000;
 
 async function lookupTitle(
   ctx: Ctx,

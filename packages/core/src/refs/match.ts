@@ -13,7 +13,7 @@ import { foldName, namesMatch, stripMarkup, titleSimilarity } from './normalize.
 import type { RefDifference, WorkRecord } from './types.js';
 
 export const STRONG_TITLE = 0.9;
-export const SIMILAR_TITLE = 0.75;
+const SIMILAR_TITLE = 0.75;
 /** Below this, a record reached through the entry's own DOI is a different work. */
 const DIFFERENT_WORK_TITLE = 0.6;
 

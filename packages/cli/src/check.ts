@@ -120,7 +120,7 @@ const rel = (root: string, abs: string) => relative(root, abs).split('\\').join(
  * A file named explicitly (CLI flag, Action input) that does not exist is a
  * usage error, never a silent skip: a typo would otherwise pass CI.
  */
-export function missingInputError(
+function missingInputError(
   what: 'pdf' | 'log' | 'aux' | 'bib',
   given: string,
   config: Config,

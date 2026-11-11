@@ -20,7 +20,7 @@ import { run, which } from '../tools.js';
  * plus an initial commit when user.name and user.email are configured.
  * Returns a line for the user, or undefined when nothing was done.
  */
-export async function initGit(
+async function initGit(
   target: string,
   template: string,
   env: Io['env'],

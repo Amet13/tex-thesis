@@ -79,6 +79,6 @@ export function isFileToken(token: string): boolean {
 }
 
 /** True for files that live in a TeX distribution (packages, classes, fonts). */
-export function isDistributionPath(path: string): boolean {
+function isDistributionPath(path: string): boolean {
   return DISTRIBUTION_DIR.test(path.replace(/\\/g, '/'));
 }

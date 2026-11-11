@@ -456,7 +456,7 @@ function summaryOf(results: RefResult[], stats: Record<string, number>): string 
 const COLLAPSE_AT = 3;
 
 /** Hosts that could not be reached (network error, timeout, bot wall) in a lookup-failure reason. */
-export function unreachableHosts(reason: string | undefined): string[] {
+function unreachableHosts(reason: string | undefined): string[] {
   const hosts: string[] = [];
   for (const part of (reason ?? '').replace(/^lookup incomplete: /, '').split('; ')) {
     const m =

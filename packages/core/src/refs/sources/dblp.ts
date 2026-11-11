@@ -21,7 +21,7 @@ interface DblpResponse {
   result?: { hits?: { hit?: { info?: DblpInfo }[] } };
 }
 
-export function dblpSearchUrl(title: string): string {
+function dblpSearchUrl(title: string): string {
   const params = new URLSearchParams({ q: title, format: 'json', h: '5' });
   return `https://dblp.org/search/publ/api?${params}`;
 }

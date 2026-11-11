@@ -74,7 +74,7 @@ type EmbeddedTemplates = Record<string, string | { link: string }>;
 declare const __OVERFULL_TEMPLATES__: EmbeddedTemplates | undefined;
 
 /** Templates compiled into the standalone build, if this is one. */
-export function embeddedTemplates(): EmbeddedTemplates | undefined {
+function embeddedTemplates(): EmbeddedTemplates | undefined {
   return typeof __OVERFULL_TEMPLATES__ === 'object' ? __OVERFULL_TEMPLATES__ : undefined;
 }
 

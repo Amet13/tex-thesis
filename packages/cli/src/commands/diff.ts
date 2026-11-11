@@ -59,7 +59,7 @@ export async function defaultBase(
 }
 
 /** Where latexmk writes the diff build (aux, log, PDF) so the project root stays clean. */
-export const DIFF_DIR = join('.overfull', 'diff');
+const DIFF_DIR = join('.overfull', 'diff');
 
 export async function diffCommand(args: string[], io: Io): Promise<number> {
   const { values } = parse(

@@ -27,8 +27,8 @@
  */
 import { type ToolDef, toolList, validateArgs } from './tools.js';
 
-export const MODERN_VERSIONS = ['2026-07-28'] as const;
-export const LEGACY_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'] as const;
+const MODERN_VERSIONS = ['2026-07-28'] as const;
+const LEGACY_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'] as const;
 /** The newest legacy revision: what `initialize` falls back to for a version we do not know. */
 const LEGACY_LATEST = LEGACY_VERSIONS[0];
 
@@ -64,7 +64,7 @@ export interface McpServerOptions {
 const isObject = (v: unknown): v is Json =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-export const INSTRUCTIONS =
+const INSTRUCTIONS =
   'Overfull checks a LaTeX project before it is submitted. Run `check` after every build and fix ' +
   'what it reports; add references only with `cite` (never write BibTeX by hand), look at pages ' +
   'with `pages`, and use `explain` for what a rule id means. Tools work on the project folder the server was started in.';

@@ -28,7 +28,7 @@ export interface AccessibilityOptions {
 }
 
 /** First line of main.tex that makes LaTeX produce a tagged PDF/UA-2 file. */
-export const DOCUMENT_METADATA_LINE =
+const DOCUMENT_METADATA_LINE =
   '\\DocumentMetadata{lang=en, pdfstandard=ua-2, pdfversion=2.0, tagging=on}';
 
 const FIGURE_ALT_FIX =

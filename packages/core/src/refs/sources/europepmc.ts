@@ -79,11 +79,11 @@ function searchUrl(query: string): string {
   return `https://www.ebi.ac.uk/europepmc/webservices/rest/search?${params}`;
 }
 
-export const europepmcPmidUrl = (pmid: string) => searchUrl(`EXT_ID:${pmid} AND SRC:MED`);
-export const europepmcPmcidUrl = (pmcid: string) => searchUrl(`PMCID:${pmcid}`);
+const europepmcPmidUrl = (pmid: string) => searchUrl(`EXT_ID:${pmid} AND SRC:MED`);
+const europepmcPmcidUrl = (pmcid: string) => searchUrl(`PMCID:${pmcid}`);
 
 /** Words only: Europe PMC's query syntax treats quotes, brackets and colons specially. */
-export function europepmcTitleUrl(title: string): string {
+function europepmcTitleUrl(title: string): string {
   const words = title.replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
   return searchUrl(`TITLE:"${words}"`);
 }
@@ -111,7 +111,7 @@ function authorsOf(r: EpmcResult): WorkRecord['authors'] {
     .map((family) => ({ family }));
 }
 
-export function fromEuropePmc(r: EpmcResult): WorkRecord | null {
+function fromEuropePmc(r: EpmcResult): WorkRecord | null {
   const trimmed = r.title?.trim();
   const title = trimmed?.endsWith('.') ? trimmed.slice(0, -1).trimEnd() : trimmed;
   if (!title) return null;

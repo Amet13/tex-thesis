@@ -310,7 +310,7 @@ export const TIKZ_KEYS = list(`
 `);
 
 /** Levenshtein distance, giving up (returning max+1) once it exceeds `max`. */
-export function editDistance(a: string, b: string, max = 3): number {
+function editDistance(a: string, b: string, max = 3): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
   let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {

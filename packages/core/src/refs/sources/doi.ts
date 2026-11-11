@@ -18,7 +18,7 @@ export function parseDoi(input: string): string | null {
   return doi.replace(/[.,;]+$/, '').toLowerCase();
 }
 
-export function doiUrl(doi: string): string {
+function doiUrl(doi: string): string {
   return `https://doi.org/${encodeURIComponent(doi).replace(/%2F/gi, '/')}`;
 }
 

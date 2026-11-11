@@ -296,7 +296,7 @@ const ENGINE_FLAG: Record<TexEngine, string> = {
 };
 
 /** latexmk arguments that build the project with the detected engine. */
-export function latexmkCommand(d: Detected): string {
+function latexmkCommand(d: Detected): string {
   return [
     'latexmk',
     ...(d.engineFromLatexmkrc ? [] : [ENGINE_FLAG[d.engine]]),
@@ -423,7 +423,7 @@ ${T}$(RUN_LATEXMK) -c -jobname=$(JOB) $(MAIN)
 }
 
 /** Lines to add to a Makefile that already exists. */
-export function makefileSnippet(d: Detected): string {
+function makefileSnippet(d: Detected): string {
   const T = '\t';
   return `.PHONY: preflight
 preflight: ## Overfull: build log, PDF, references, accessibility

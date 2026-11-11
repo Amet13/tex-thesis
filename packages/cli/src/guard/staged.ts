@@ -50,7 +50,7 @@ export interface StagedReport {
   blocked: GuardBlocked[];
 }
 
-export const AUTHOR_PROVIDED_LINE = 'note = {overfull: author-provided}';
+const AUTHOR_PROVIDED_LINE = 'note = {overfull: author-provided}';
 
 const MAX_BLOB_BYTES = 32 * 1024 * 1024;
 

@@ -62,7 +62,7 @@ export function sourceName(s: RefSource): string {
   return SOURCE_NAMES[s];
 }
 
-export function toMatched(r: WorkRecord): MatchedRecord {
+function toMatched(r: WorkRecord): MatchedRecord {
   const m: MatchedRecord = {
     title: stripTags(r.title),
     authors: r.authors.map((a) => (a.given ? `${a.given} ${a.family}` : a.family)),
@@ -415,7 +415,7 @@ function noMatch(
 }
 
 /** Verifies one entry. Never throws for network problems (they become `error`). */
-export async function verifyEntry(
+async function verifyEntry(
   entry: BibEntry,
   ctx: Ctx,
   ignore: Set<string>,
