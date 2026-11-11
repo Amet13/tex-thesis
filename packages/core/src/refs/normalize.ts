@@ -52,15 +52,27 @@ const ENTITIES: Record<string, string> = {
   nbsp: ' ',
 };
 
-/** Removes HTML/JATS/MathML tags and decodes entities (CrossRef titles contain `<i>`, `<sub>`…). */
+/**
+ * Removes tags (`<i>`, `<sub>`, …) until none is left: one pass can leave a tag behind
+ * when tags are nested inside each other (`<<b>i>`).
+ */
+export function stripTags(s: string): string {
+  let out = s;
+  for (let prev = ''; prev !== out; ) {
+    prev = out;
+    out = out.replace(/<[^<>]*>/g, '');
+  }
+  return out;
+}
+
+/** Decodes entities and removes HTML/JATS/MathML tags (CrossRef titles contain `<i>`, `<sub>`…). */
 export function stripMarkup(s: string): string {
-  return s
-    .replace(/<[^>]+>/g, '')
+  // Entities first, so an encoded tag (`&lt;i&gt;`) is removed like a written one.
+  const decoded = s
     .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) => String.fromCodePoint(Number.parseInt(h, 16)))
     .replace(/&#(\d+);/g, (_m, d: string) => String.fromCodePoint(Number(d)))
-    .replace(/&([a-z]+);/gi, (m, name: string) => ENTITIES[name.toLowerCase()] ?? m)
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/&([a-z]+);/gi, (m, name: string) => ENTITIES[name.toLowerCase()] ?? m);
+  return stripTags(decoded).replace(/\s+/g, ' ').trim();
 }
 
 /** ASCII-folds plain text: strips diacritics, spells out Greek, lowercases. */

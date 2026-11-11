@@ -1,5 +1,6 @@
 import {
   closeSync,
+  constants,
   existsSync,
   fstatSync,
   lstatSync,
@@ -93,24 +94,29 @@ export function readTexFiles(
   for (const path of files) {
     if (!/\.(tex|sty|cls)$/i.test(path) || isDiffArtifact(path)) continue;
     const abs = join(root, path);
-    let st: ReturnType<typeof statSync>;
+    // Check and read through one descriptor, so the file cannot change in between.
+    // O_NONBLOCK: opening a named pipe must not wait for a writer (it is then skipped).
+    let fd: number;
     try {
-      st = statSync(abs);
+      fd = openSync(abs, constants.O_RDONLY | (constants.O_NONBLOCK ?? 0));
     } catch {
       continue;
     }
-    if (!st.isFile()) {
-      skipped.push({ path, reason: 'not a regular file' });
-      continue;
-    }
-    if (st.size > MAX_TEX_BYTES) {
-      skipped.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
-      continue;
-    }
     try {
-      out.push({ path, content: readFileSync(abs, 'utf8') });
+      const st = fstatSync(fd);
+      if (!st.isFile()) {
+        skipped.push({ path, reason: 'not a regular file' });
+        continue;
+      }
+      if (st.size > MAX_TEX_BYTES) {
+        skipped.push({ path, reason: `larger than ${MAX_TEX_BYTES / 1024 / 1024} MB` });
+        continue;
+      }
+      out.push({ path, content: readFileSync(fd, 'utf8') });
     } catch (err) {
       skipped.push({ path, reason: err instanceof Error ? err.message : String(err) });
+    } finally {
+      closeSync(fd);
     }
   }
   return out;

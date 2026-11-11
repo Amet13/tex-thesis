@@ -31,12 +31,16 @@ const fakeFetch = (async (input: Parameters<typeof fetch>[0], init?: RequestInit
   return new Response('', { status: 404 });
 }) as typeof fetch;
 
-function setup(cwd: string, fetchImpl?: typeof fetch) {
+function setup(
+  cwd: string,
+  fetchImpl?: typeof fetch,
+  env: Record<string, string | undefined> = { PATH: process.env.PATH },
+) {
   const server = createMcpServer({
     version: '9.9.9',
     tools: createTools({
       cwd,
-      env: { PATH: process.env.PATH },
+      env,
       run: main,
       ...(fetchImpl ? { fetch: fetchImpl } : {}),
     }),
@@ -61,8 +65,12 @@ function setup(cwd: string, fetchImpl?: typeof fetch) {
   return { server, send, call };
 }
 
-async function ready(cwd: string, fetchImpl?: typeof fetch) {
-  const s = setup(cwd, fetchImpl);
+async function ready(
+  cwd: string,
+  fetchImpl?: typeof fetch,
+  env?: Record<string, string | undefined>,
+) {
+  const s = setup(cwd, fetchImpl, env);
   await s.send('initialize', {
     protocolVersion: '2025-11-25',
     capabilities: {},
@@ -170,7 +178,10 @@ describe('MCP tools', () => {
 
   it('check on the fixture project returns the same Report as --json', async () => {
     const dir = tempCopy('project');
-    const { call } = await ready(dir);
+    // No tools on PATH: whether Docker answers within its timeout (slow on Windows
+    // runners) decides the veraPDF severity, so both runs must see the same answer.
+    const env = { PATH: '' };
+    const { call } = await ready(dir, undefined, env);
     const res = await call('check', { offline: true });
     expect(res.isError).toBeUndefined();
     const report = JSON.parse(res.content[0]?.text as string) as {
@@ -183,7 +194,7 @@ describe('MCP tools', () => {
       const out: string[] = [];
       await main(['check', '--json', '--offline'], {
         cwd: dir,
-        env: { PATH: process.env.PATH, NO_COLOR: '1' },
+        env: { ...env, NO_COLOR: '1' },
         isTTY: false,
         stdout: (s) => out.push(s),
         stderr: () => {},

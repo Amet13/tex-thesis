@@ -279,7 +279,7 @@ describe('verifyEntries', () => {
     expect(results.map((r) => r.status)).toEqual(['error', 'error']);
     expect(results[0]?.reason).toMatch(/non-JSON page/);
     // After the first bot wall, dblp is not asked again in this run.
-    expect(f.calls.filter((c) => c.includes('dblp.org'))).toHaveLength(1);
+    expect(f.calls.filter((c) => new URL(c).hostname === 'dblp.org')).toHaveLength(1);
   });
 
   it('a DOI that does not exist is not-found when no title matches', async () => {
@@ -528,8 +528,8 @@ describe('verifyEntries', () => {
     const bib = parseBib(`${RAFT}\n${CLOCKS}`);
     const results = await verifyEntries(bib, { fetch: f.fetch, cache, ...fast });
     expect(results.map((r) => r.status)).toEqual(['verified', 'verified']);
-    expect(f.calls.some((c) => c.includes('doi.org'))).toBe(true);
-    expect(f.calls.some((c) => c.includes('dblp.org'))).toBe(true);
+    expect(f.calls.some((c) => new URL(c).hostname === 'doi.org')).toBe(true);
+    expect(f.calls.some((c) => new URL(c).hostname === 'dblp.org')).toBe(true);
     const stored = map.get(doiKey) as { kind: string; cachedAt: number };
     expect(stored.kind).toBe('found');
     expect(Math.abs(stored.cachedAt - Date.now())).toBeLessThan(60_000);
@@ -544,7 +544,7 @@ describe('verifyEntries', () => {
     const f = router({ ...allEmpty, 'doi.org': () => json(clocksCsl) });
     const [fresh] = await verifyEntries(parseBib(CLOCKS), { fetch: f.fetch, cache, ...fast });
     expect(fresh?.status).toBe('not-found');
-    expect(f.calls.some((c) => c.includes('doi.org'))).toBe(false);
+    expect(f.calls.some((c) => new URL(c).hostname === 'doi.org')).toBe(false);
     // With a 6-hour limit the same 12-hour-old answer is stale.
     const [refetched] = await verifyEntries(parseBib(CLOCKS), {
       fetch: f.fetch,
@@ -847,7 +847,7 @@ describe('sources allow-list', () => {
     });
     expect(r?.status).toBe('unverifiable');
     expect(r?.reason).toBe('could not be checked here (arXiv and dblp were not searched)');
-    expect(f.calls.every((c) => c.includes('api.crossref.org'))).toBe(true);
+    expect(f.calls.every((c) => new URL(c).hostname === 'api.crossref.org')).toBe(true);
     const problems = refsCheck(r ? [r] : [], { entries }).problems;
     expect(problems.map((p) => p.severity)).toEqual(['info']);
     expect(problems.map((p) => p.rule)).not.toContain('reference-not-found');

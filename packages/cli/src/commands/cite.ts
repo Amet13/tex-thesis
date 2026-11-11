@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import {
   AmbiguousLookupError,
   type BibEntry,
@@ -223,7 +223,13 @@ export async function citeCommand(
   const config = loadConfig(io.cwd, str(values.config), io.env);
   const bibRel = str(values.bib) ?? config.bib[0] ?? 'references.bib';
   const bibPath = insideRootForWrite(config.root, bibRel, 'Bibliography file');
-  const text = existsSync(bibPath) ? readFileSync(bibPath, 'utf8') : '';
+  // Read without checking for the file first: a missing file is an empty bibliography.
+  let text = '';
+  try {
+    text = readFileSync(bibPath, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+  }
   const entries = parseBib(text);
 
   const mailto = str(values.mailto) ?? config.references.mailto;

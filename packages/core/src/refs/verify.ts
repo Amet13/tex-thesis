@@ -10,6 +10,7 @@ import {
   notIndexedReason,
 } from './kind.js';
 import { type Assessment, assess, type BibFacts, bestAssessment, bibFacts } from './match.js';
+import { stripTags } from './normalize.js';
 import { attachRetractions } from './retraction.js';
 import {
   aclByIdCached,
@@ -44,7 +45,7 @@ export function sourceName(s: RefSource): string {
 
 export function toMatched(r: WorkRecord): MatchedRecord {
   const m: MatchedRecord = {
-    title: r.title.replace(/<[^>]+>/g, ''),
+    title: stripTags(r.title),
     authors: r.authors.map((a) => (a.given ? `${a.given} ${a.family}` : a.family)),
   };
   const year = r.years.length ? Math.min(...r.years) : undefined;
