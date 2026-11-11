@@ -2,7 +2,7 @@
 
 Written on 2026-11-11 from an audit of `main` at 76c95ff (3.1.0 plus the CodeQL
 fixes). Every finding below was reproduced; the evidence is given with it. Work is
-grouped into six pull requests, in the order they should land. Each item names
+grouped into seven pull requests, in the order they should land. Each item names
 its files and says how to know it is done.
 
 ## What the audit found
@@ -251,7 +251,73 @@ reference source; knip reports no unused files.
   the result decides whether the skills need trimming: without it, any trim is
   guesswork.
 
-Release: after PR 1 to PR 5 merge, `autorelease` proposes 3.2.0 on the 1st of
+## PR 7: Keep the outside data current
+
+Overfull depends on four kinds of outside data. Pinned tools (TeX Live image,
+Node, veraPDF, pnpm, npm packages, Actions) already update on their own
+(Dependabot, `update-pins.yml`). The reference indexes are queried live, so
+their data is always current, but nothing notices when one stops answering:
+dblp's bot challenge went unseen. Venue profiles are updated by hand from an
+issue that only says "look at this". This PR closes those gaps. It reuses
+`.github/scripts/automation-pr.sh` and `issue.sh`, and every workflow reports
+failures through `watchdog.yml` like the others. G1 does not depend on the
+other PRs and can land first.
+
+- **G1. Weekly source health** (`.github/workflows/sources-health.yml`,
+  `scripts/sources-health.mjs`). For each reference source, two fixed queries
+  through the core's own source modules: one that must match (a known DOI,
+  arXiv id, ACL id, PMID or title) and one that must not (an invented title).
+  It records for each source: answered or not, HTTP status, JSON or not, and
+  whether the expected match came back. One issue, "Reference sources need a
+  look", lists sources that stopped answering, return HTML (a bot wall) or no
+  longer find the known record; the issue closes itself when all pass. It
+  never fails because of one slow answer: a source counts as broken after two
+  failed attempts a minute apart.
+- **G2. Monthly refresh of the recorded responses** (`.github/workflows/
+  refresh-recordings.yml`). Re-record the fixtures the offline tests replay
+  (`packages/core/test/fixtures/refs/http*.json`, through the existing
+  `record.mjs` and `record-sources.mjs`) and open a pull request when they
+  changed. CI runs the tests against the new recordings, so a changed API
+  format shows up as a red pull request, not as a silent difference between
+  tests and the live service. Strip `Set-Cookie`, dates and request ids from
+  the recordings first so a refresh with no real change produces no diff. The
+  benchmark dataset (`bench/refs/dataset/`) stays fixed on purpose: months
+  must stay comparable.
+- **G3. Style files follow the official kit** (`scripts/venues-kits.mjs`, run
+  from `venues-watch.yml`). For each profile with `styleFiles`, download the
+  author kit from its `source` list (the `.zip` or `.sty` URL), compute each
+  file's SHA-256 and the text block from the geometry, and open a pull request
+  "Venue kit changed: <id>" when a hash or `textBlock` differs, with the kit's
+  file date in the body. The kit is the authority, so this update is
+  mechanical. It does not touch `checkedOn`: that date still means a person
+  read the rules.
+- **G4. Venue pages: show what changed** (`venues/.fingerprints.json`,
+  `scripts/venues-watch.mjs`). For each `source` page, store a hash and a
+  plain-text copy of the main content (navigation and dates removed). When a
+  page's text changes, the monthly issue shows the changed paragraphs as a diff
+  under the profile's name, so the person reviewing reads the change, not the
+  whole call for papers. When the person updates the profile, they refresh the
+  fingerprints with `node scripts/venues-watch.mjs --accept <id>` in the same
+  pull request.
+- **G5. arXiv's build environment.** Add arXiv's own help pages on the TeX Live
+  version and the build process to the watched pages (G4), so a change in
+  arXiv's TeX Live year or processing rules reaches the person maintaining
+  `venue/arxiv.ts`.
+
+What stays with a person, deliberately: page limits, what counts toward them,
+anonymity and disclosure rules. These are prose; extracting them by script or
+by a language model could produce a wrong limit that rejects a correct paper.
+The automation detects and shows the change; a person decides
+(CONTRIBUTING.md, "Adding a venue"). Update `MAINTAINING.md`'s table with the
+three new schedules and this boundary.
+
+Done when: G1 run against a test branch where one source URL points to an HTML
+page opens the issue naming that source, and closes it on the next good run;
+G2 opens no pull request when nothing changed; G3 opens a pull request after a
+profile's `sha256` is edited by hand to a wrong value; G4's issue shows a diff
+for a page whose stored copy was edited.
+
+Release: after PR 1 to PR 5 and PR 7 merge, `autorelease` proposes 3.2.0 on the 1st of
 the month, or start it by hand (CONTRIBUTING.md, "Cutting a release"). B1 is a
 behaviour change; give it its own CHANGELOG line under "Changed".
 
