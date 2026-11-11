@@ -80,6 +80,12 @@ To do it by hand, download your file from
 `overfull-win-x64.exe`), check it with `sha256sum -c --ignore-missing SHA256SUMS`,
 rename it to `overfull`, and make it executable.
 
+Each executable is about 150 MB, almost all of it the Node.js runtime it carries.
+Since 3.2 every release also has a gzip copy (`overfull-linux-x64.gz` and so on,
+about 50 MB, also listed in `SHA256SUMS`); the installers download that one and
+check both the compressed file and the unpacked executable. By hand:
+`gzip -d overfull-linux-x64.gz`.
+
 ## Release download
 
 Each release includes a single-file `overfull` download on
@@ -90,9 +96,10 @@ Each release includes a single-file `overfull` download on
 `overfull build` uses a local `latexmk` if one is installed and falls back to
 Docker otherwise. Force one with `--engine local` or `--engine docker`.
 
-Reference lookups go to CrossRef, doi.org, arXiv, DBLP and, if the
-`OPENALEX_API_KEY` environment variable is set, OpenAlex. They need network
-access. Use `overfull check --offline` to skip them.
+Reference lookups go to CrossRef, doi.org, arXiv, DBLP, OpenAlex, Semantic
+Scholar, the ACL Anthology and Europe PMC (see
+[References](./references.md)). They need network access. Use
+`overfull check --offline` to skip them.
 
 ## Dev Container and VS Code
 

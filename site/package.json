@@ -14,7 +14,7 @@
     "@fontsource/libertinus-sans": "5.3.0",
     "@fontsource/libertinus-serif": "5.3.0",
     "@overfull/core": "workspace:*",
-    "astro": "7.4.7",
+    "astro": "7.4.8",
     "pdfjs-dist": "6.5.438"
   },
   "devDependencies": {
@@ -22,6 +22,7 @@
     "@astrojs/sitemap": "3.7.4",
     "@axe-core/playwright": "4.14.0",
     "playwright": "1.65.0",
+    "shiki": "4.6.0",
     "typescript": "6.0.3"
   }
 }

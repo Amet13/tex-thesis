@@ -77,7 +77,7 @@ export function mergeHookSettings(
   return changed ? { text: `${JSON.stringify(merged, null, 2)}\n` } : {};
 }
 
-export const PRE_COMMIT_SCRIPT = `#!/bin/sh
+const PRE_COMMIT_SCRIPT = `#!/bin/sh
 # Installed by \`overfull init --here --hooks\`: blocks hand-written .bib entries.
 # Does nothing when overfull is not installed.
 command -v overfull >/dev/null 2>&1 || exit 0
@@ -85,7 +85,7 @@ exec overfull guard --staged
 `;
 
 /** The line that adds the guard to a pre-commit hook that already exists. */
-export const PRE_COMMIT_LINE = 'overfull guard --staged || exit 1';
+const PRE_COMMIT_LINE = 'overfull guard --staged || exit 1';
 
 export interface GitHookResult {
   status: 'written' | 'would-write' | 'exists' | 'no-git' | 'elsewhere';

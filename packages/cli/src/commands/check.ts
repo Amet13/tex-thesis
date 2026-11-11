@@ -13,7 +13,7 @@ import { parseChecks } from '../config.js';
 import { type Io, progressLine, UsageError, useColor } from '../io.js';
 import { isCI } from '../safety.js';
 
-export const checkHelp = `Usage: overfull check [file...] [options]
+const checkHelp = `Usage: overfull check [file...] [options]
 
 Check the built document: build log, PDF output, references, accessibility, venue rules.
 Reads <jobname>.log / .pdf / .aux and the .bib files named in overfull.yml.
@@ -28,7 +28,8 @@ are the same as --bib, --log, --pdf and --aux. Only .bib files: check references
 Options:
   --main file         Main .tex file (default from overfull.yml, else detected)
   --checks a,b        Only these checks (build, output, references, accessibility, venue)
-  --profile name      Venue profile: generic, thesis, paper, arxiv, double-blind
+  --profile name      Venue profile: generic, thesis, paper, arxiv, double-blind, or a
+                      venue id such as neurips-2026 (an unknown name lists them all)
   --offline           Do not look references up online
   --refresh           Ignore cached reference answers and look everything up again
                       (the new answers are still cached)
@@ -182,7 +183,11 @@ export async function checkCommand(args: string[], io: Io): Promise<number> {
       engine: engine as 'auto' | 'local' | 'docker',
       ...(str(values.image) ? { image: str(values.image) } : {}),
     });
-    if (!machine && report.assumed) {
+    if (!machine && report.assumed?.mainSource === 'default' && report.status === 'skipped') {
+      io.stderr(
+        `No ${report.assumed.main} here and no other LaTeX document found. Run in the project folder, or name the main file: \`overfull check paper.tex\`.\n`,
+      );
+    } else if (!machine && report.assumed) {
       const a = report.assumed;
       io.stderr(
         `No overfull.yml: assuming main ${a.main}${a.mainSource === 'detected' ? ' (the only document here)' : ''}, profile ${a.profile}. Run \`overfull init --here\` to save these settings.\n`,

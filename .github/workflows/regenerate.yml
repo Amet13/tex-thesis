@@ -34,6 +34,7 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - name: Rebuild
         run: |
           pnpm build

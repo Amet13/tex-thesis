@@ -25,7 +25,7 @@ const stem = (path: string) => path.replace(/\.[^./]+$/, '');
 const dirOf = (path: string) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
 
 /** True when the source has a \documentclass that is not commented out. */
-export function hasDocumentclass(text: string): boolean {
+function hasDocumentclass(text: string): boolean {
   return /^[^%\n]*\\documentclass\b/m.test(text.replace(/\\%/g, ''));
 }
 

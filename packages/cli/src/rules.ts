@@ -1,7 +1,7 @@
 import { allRules, getRule, type RuleInfo } from '@overfull/core';
 
 /** Rules the CLI itself emits beyond @overfull/core's registry (currently none; all live in core). */
-export const cliRules: RuleInfo[] = [];
+const cliRules: RuleInfo[] = [];
 
 /** Every rule: core's plus the CLI's own, without duplicates. */
 export function everyRule(): RuleInfo[] {

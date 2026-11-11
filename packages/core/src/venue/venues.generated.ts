@@ -82,6 +82,42 @@ export const venueProfileData: Record<string, VenueProfileData> = {
     },
     notes: "Each ACM conference sets its own page limit and review rules; set them in overfull.yml (`venue:`) from the call for papers, and use the class option `anonymous` for double-blind review. Layout from acmart v2.21 (2026/11/01): the sigconf format is US Letter with 54 pt inner and outer margins, so the text block is 8.5 in minus 108 pt wide. acmart.cls is generated from acmart.dtx, so no hash is recorded. ACM's own pages (acm.org/publications) could not be read from the build machine.",
   },
+  "aistats-2027": {
+    id: "aistats-2027",
+    name: "AISTATS 2027",
+    extends: "double-blind",
+    year: 2027,
+    source: [
+      "https://virtual.aistats.org/Conferences/2027/CallForPapers",
+      "https://aistats.org/aistats2027/AISTATS2027PaperPack.zip",
+    ],
+    checkedOn: "2026-11-11",
+    paper: "letter",
+    pageLimit: {
+      max: 8,
+      endLabel: "overfull:main-end",
+      counts: "Main text",
+      excludes: [
+        "References",
+        "AI Use Statement",
+        "Reproducibility checklist",
+        "Appendices",
+      ],
+    },
+    anonymous: true,
+    disclosure: "required",
+    styleFiles: [
+      {
+        name: "aistats2027.sty",
+        sha256: "33ab38f8aac4b2f1df9fe67e354928598200584e9568385f32deb889e1b81d42",
+      },
+    ],
+    textBlock: {
+      widthMm: 171.5,
+      leftMm: 22.2,
+    },
+    notes: "The call requires an AI Use Statement in every submission, in the ICLR format, and allows generative AI tools otherwise. Papers whose main text is over the limit are desk-rejected; the camera-ready limit is 9 pages. Submissions may use author-year or numeric citations; camera-ready papers must use author-year. Paper size is US Letter (the article class default, emitted by the style file). The hash is of aistats2027.sty (2026/09/02) from AISTATS2027PaperPack.zip downloaded on 2026-11-11. Text block: 6.75 in wide, 0.875 in from the left edge (aistats2027.sty).",
+  },
   "cvpr-2027": {
     id: "cvpr-2027",
     name: "CVPR 2027",
@@ -114,6 +150,45 @@ export const venueProfileData: Record<string, VenueProfileData> = {
       widthMm: 174.6,
     },
     notes: "Every submission needs a section titled \"LLM Usage Statement\" after the main text and before the references; it states \"No LLMs or generative AI tools were used in this work\" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10. Text block: 6.875 in wide, centred on US Letter (cvpr.sty).",
+  },
+  "eccv-2026": {
+    id: "eccv-2026",
+    name: "ECCV 2026",
+    extends: "double-blind",
+    year: 2026,
+    source: [
+      "https://eccv.ecva.net/Conferences/2026/SubmissionPolicies",
+      "https://eccv.ecva.net/Conferences/2026/CallForPapers",
+    ],
+    checkedOn: "2026-11-11",
+    paper: "any",
+    pageLimit: {
+      max: 14,
+      endLabel: "overfull:main-end",
+      counts: "Main paper including figures and tables",
+      excludes: [
+        "References",
+      ],
+    },
+    anonymous: true,
+    disclosure: "off",
+    styleFiles: [
+      {
+        name: "eccv.sty",
+        sha256: "07785f87dd4741a761e5064d6752e59dbca308b7999de35df983e70dc0a33d80",
+      },
+      {
+        name: "llncs.cls",
+        sha256: "8152fe7afa929cbd3f3679d6f7c1d562525414ed9c5940a69e86cd923416cb2b",
+      },
+    ],
+    textBlock: {
+      widthMm: 122,
+      heightMm: 193,
+      leftMm: 12,
+      topMm: 12,
+    },
+    notes: "Papers over 14 pages (excluding references), not anonymized, or not in the ECCV 2026 template are desk-rejected, and so are submissions whose margins, formatting or font were changed (the 2026 template's font differs from CVPR's). The LLM policy allows any tools but makes authors responsible for the content; papers citing non-existent material are rejected. No AI-use statement is asked for. The kit is the one the submission policies link (github.com/paolo-favaro/paper-template, tag Latest, commit da8c09c of 2026-01-23); its own llncs.cls differs from Springer's current one. The review option crops the page to 146 x 217 mm around a 122 x 193 mm text block 12 mm from the left and top edges (eccv.sty), hence no standard paper size.",
   },
   "emnlp-2026": {
     id: "emnlp-2026",

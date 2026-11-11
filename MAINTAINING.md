@@ -17,7 +17,9 @@ is still yours.
 | 1st of the month | `autorelease.yml` (propose) | When shipped files changed since the last release, opens "Release vX.Y.Z+1": version bump, a CHANGELOG section from the commit subjects, rebuilt `action/dist`. |
 | Daily | `autorelease.yml` (publish) | When `package.json` holds a version that has no tag yet and CI passed on `main`, starts `release.yml` with publish: tag, GitHub release with executables, Homebrew and Scoop files, and the three images. |
 | 3rd of the month | `bench.yml` | Runs the reference-check benchmark against the live indexes and opens a pull request with `bench/refs/results.json`; the accuracy page renders it. |
-| 5th of the month | `venues-watch.yml` | Checks every venue profile's official pages, looks for the next edition's call for papers, and flags profiles not checked for a year, in one issue: "Venue profiles need a look". |
+| Wednesdays | `sources-health.yml` | Asks every reference source (doi.org, CrossRef, dblp, arXiv, OpenAlex, Semantic Scholar, ACL Anthology, Europe PMC) for one known work and one invented title. Sources that stop answering, answer with a bot wall, or no longer find the known work are listed in one issue: "Reference sources need a look". |
+| 5th of the month | `venues-watch.yml` | Compares every venue profile's official pages (and arXiv's build pages) with the text stored when a person last read them, and puts the changed lines, the next edition's call for papers, and profiles not checked for a year in one issue: "Venue profiles need a look". Also checks each style file against the venue's official kit and opens a pull request when a hash changed. |
+| 9th of the month | `refresh-recordings.yml` | Records again the live answers that the offline reference tests replay, and opens a pull request: green is merged, red means a source changed its answers or format. |
 | After any of the above | `watchdog.yml` | Opens "Automation failed: <workflow>" when a run on `main`, a scheduled run or an automation branch fails, and closes it when that workflow next succeeds. |
 
 Every pull request goes through the same CI as a person's: lint, types, unit
@@ -29,9 +31,17 @@ merged on a red or missing check.
 
 - **Major updates.** Dependabot's major-version pull requests are not labelled
   `automerge`. Review the changelog of the dependency, then merge or close.
-- **Venue rules.** `venues-watch.yml` only reports. Read the venue's official
-  pages and update or add the profile by hand (CONTRIBUTING.md, "Adding a
-  venue"); the rules are never copied automatically.
+- **Venue rules.** `venues-watch.yml` reports which official pages changed and
+  shows the changed lines. Read the venue's pages and update or add the profile by
+  hand (CONTRIBUTING.md, "Adding a venue"), then run
+  `node scripts/venues-watch.mjs --accept <id>` in the same pull request. Page
+  limits, what counts toward them, anonymity and disclosure rules are prose: no
+  script and no language model extracts them, because a wrong limit would reject a
+  correct paper. Only style-file hashes follow the official kit automatically.
+- **Reference sources.** When "Reference sources need a look" is open, read the
+  source module in `packages/core/src/refs/sources/` and the API documentation it
+  links. A bot wall or a new response format needs a code change; an outage needs
+  nothing.
 - **Issues the automation opens.** Each links the failing run. Fix the cause in a
   pull request; the issue closes itself on the next successful run.
 - **Agent evals.** They cost money and run only when you start them

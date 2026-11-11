@@ -86,7 +86,7 @@ export function foldText(plain: string): string {
 }
 
 /** Normalized word list for a title written in TeX (bib) or markup (records). */
-export function titleWords(title: string, isTex = true): string[] {
+function titleWords(title: string, isTex = true): string[] {
   const plain = isTex ? texToPlain(title) : stripMarkup(title);
   return foldText(plain)
     .replace(/[^a-z0-9]+/g, ' ')
@@ -116,7 +116,7 @@ function dice(a: string[], b: string[]): number {
 }
 
 /** The part of a title before its subtitle separator (`:`, `?`, `.`, ` - `, em dash). */
-export function mainTitle(plain: string): string {
+function mainTitle(plain: string): string {
   const m = /^(.+?)(?:\s*[:?!.]\s+|\s+[-–—]+\s+|\s*—\s*)\S/.exec(plain);
   return m ? (m[1] as string) : plain;
 }

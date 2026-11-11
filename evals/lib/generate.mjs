@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const FIXTURE_BIB = 'packages/core/test/fixtures/refs/real.bib';
+const FIXTURE_BIB = 'packages/core/test/fixtures/refs/real.bib';
 
 /** Minimal BibTeX reader for the fixture files: `{…}` values with nested braces, one entry per `@type{key,`. */
 export function parseSimpleBib(text) {
@@ -45,12 +45,12 @@ export function parseSimpleBib(text) {
 }
 
 let cache;
-export function fixtureEntries(root) {
+function fixtureEntries(root) {
   cache ??= parseSimpleBib(readFileSync(join(root, FIXTURE_BIB), 'utf8'));
   return cache;
 }
 
-export function entryOf(root, key) {
+function entryOf(root, key) {
   const e = fixtureEntries(root)[key];
   if (!e) throw new Error(`no entry "${key}" in ${FIXTURE_BIB}`);
   return e;

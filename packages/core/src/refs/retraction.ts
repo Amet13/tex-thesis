@@ -63,7 +63,7 @@ export function retractionOf(work: WorkUpdates): RetractionNotice | undefined {
   return notice;
 }
 
-export function crossrefUpdatesUrl(dois: string[], mailto?: string): string {
+function crossrefUpdatesUrl(dois: string[], mailto?: string): string {
   const params = new URLSearchParams({
     filter: dois.map((d) => `doi:${d}`).join(','),
     select: 'DOI,updated-by',

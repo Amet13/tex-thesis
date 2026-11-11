@@ -9,6 +9,7 @@
   "scripts": {
     "build": "pnpm --filter @overfull/core build && pnpm --filter overfull build && pnpm --filter overfull-action build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "pnpm -r run typecheck",
     "lint": "biome check . && markdownlint-cli2 && node scripts/check-portable-paths.mjs",
     "fmt": "biome check --write .",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
     "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "5.1.0",
     "esbuild": "0.28.2",
     "fast-check": "4.10.2",
     "markdownlint-cli2": "0.24.0",

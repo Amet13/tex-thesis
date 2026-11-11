@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+### Changed
+
+- **References: "not found" no longer needs dblp.** An invented title is reported
+  as not found when CrossRef and one more general index (OpenAlex, Semantic
+  Scholar or dblp) answered and none knows it. dblp now answers automated
+  requests with a bot check, so in 3.1 nearly every invented title ended as
+  "could not be checked". A title that other works share is "could not tell",
+  never "not found". On the recorded responses, 17 of 17 fabricated entries are
+  detected (was 13) and no real one is called not found. The browser check also
+  asks OpenAlex.
+- **Nothing checked is not a pass.** When every check is skipped (no log, PDF or
+  `.bib` found), the status is `skipped` ("NOTHING CHECKED"), the report says
+  why, and `overfull check` and the Action fail unless `--fail-on never`. With
+  no main file and no PDF, the venue check is skipped too.
+- A cited key with no `.bib` entry is reported once (`citation-key-missing`), not
+  also as `undefined-citation`.
+- Offline, problems found without the network decide the references status and
+  lead its summary. Counts are pluralised; page limits read "The main text is 10
+  pages; the limit is 9".
+- `overfull cite` writes the published version when the arXiv record names its
+  DOI, keeping the arXiv id; it never writes the non-standard `collection` field.
+- `overfull --help` lists `init --here` (`adopt` stays an alias).
+- Many lookup failures caused by a bot wall fold into one warning.
+
+### Added
+
+- Venue profiles: ECCV 2026 and AISTATS 2027.
+- Releases ship a gzip copy of each executable (about 50 MB instead of 150 MB);
+  the installers use it and check both files.
+- Automation: a weekly health check of every reference source, a monthly refresh
+  of the recorded answers the tests replay, style-file hashes that follow each
+  venue's official kit (new `kit` field), and venue-page change diffs in the
+  monthly venue issue (`node scripts/venues-watch.mjs --accept <id>`).
+
+### Fixed
+
+- CI no longer depends on Ubuntu's package mirrors for the website tests, and
+  every install step has a time limit.
+- Tests for the bibliography error attribution, the Semantic Scholar source and
+  the MCP framing; coverage floors are enforced in CI.
+- Cleanup: 87 declarations that only their own file used are no longer
+  exported, two dead functions and the improvement plan are removed, and the
+  DOI and arXiv checks share their assessment and failure handling.
+
 ## [v3.1.0] - Any project first
 
 Overfull now starts from the paper you already have: one command checks any

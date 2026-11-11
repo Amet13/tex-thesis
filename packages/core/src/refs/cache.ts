@@ -20,7 +20,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * Default lifetimes: a record stays valid 30 days; a "does not exist" answer only 1 day,
  * because new DOIs and new indexing appear quickly. Transport errors are never cached.
  */
-export const DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 1, positive: 30 } as const;
+const DEFAULT_CACHE_MAX_AGE_DAYS = { negative: 1, positive: 30 } as const;
 
 export interface CacheMaxAge {
   /** Days a negative answer (DOI missing, no arXiv paper, empty search) stays valid. */

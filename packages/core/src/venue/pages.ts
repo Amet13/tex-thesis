@@ -9,16 +9,18 @@ const PAPER = {
 const TOLERANCE_MM = 3;
 
 /** Last page of the main text: the page of the end label from the .aux, when it is a number. */
-export function mainTextPages(profile: VenueProfile, ctx: VenueContext): number | undefined {
+function mainTextPages(profile: VenueProfile, ctx: VenueContext): number | undefined {
   const endLabel = profile.pageLimit?.endLabel;
   if (!endLabel || !ctx.aux) return undefined;
   const entry = parseAuxLabels(ctx.aux).get(endLabel);
   return entry && /^\d+$/.test(entry.page) ? Number(entry.page) : undefined;
 }
 
+const pages = (n: number) => `${n} page${n === 1 ? '' : 's'}`;
+
 /**
- * The page-limit line used in messages and the venue summary:
- * "main text 7 of 8 pages (12 total)", or "12 of 8 pages" when all pages count.
+ * The page-limit line used in the venue summary: "main text 7 pages, limit 8 (12 in
+ * total)", or "12 pages, limit 8" when all pages count.
  */
 export function pageLimitText(profile: VenueProfile, ctx: VenueContext): string | undefined {
   const max = profile.pageLimit?.max;
@@ -26,11 +28,9 @@ export function pageLimitText(profile: VenueProfile, ctx: VenueContext): string 
   const total = ctx.facts?.pageCount;
   const main = mainTextPages(profile, ctx);
   if (main !== undefined)
-    return `main text ${main} of ${max} pages${total !== undefined ? ` (${total} total)` : ''}`;
-  return total !== undefined ? `${total} of ${max} pages` : undefined;
+    return `main text ${pages(main)}, limit ${max}${total !== undefined ? ` (${total} in total)` : ''}`;
+  return total !== undefined ? `${pages(total)}, limit ${max}` : undefined;
 }
-
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Page-limit problems. Counts all pages, or up to the page of the end label. */
 export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Problem[] {
@@ -47,7 +47,7 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
           rule: 'page-limit-exceeded',
           check: 'venue',
           severity: 'error',
-          message: `${cap(pageLimitText(profile, ctx) as string)}: the main text ends on page ${page}`,
+          message: `The main text is ${pages(page)}; the limit is ${max}${ctx.facts?.pageCount !== undefined ? ` (${ctx.facts.pageCount} pages in total)` : ''}`,
           location: { page },
           detail: `Counted up to \`\\label{${endLabel}}\`. Partial pages count as full pages.`,
           fix: `Cut ${page - max === 1 ? 'about a page' : `about ${page - max} pages`} before \`\\label{${endLabel}}\`, or move material to the appendix`,
@@ -84,7 +84,7 @@ export function pageLimitProblems(profile: VenueProfile, ctx: VenueContext): Pro
       rule: 'page-limit-exceeded',
       check: 'venue',
       severity: 'error',
-      message: `${cap(pageLimitText(profile, ctx) as string)} (all pages counted)`,
+      message: `The paper is ${pages(total)}; the limit is ${max} (all pages counted)`,
       fix: endLabel
         ? `Cut ${total - max} page(s), or fix \`\\label{${endLabel}}\` so only the main text is counted`
         : `Cut ${total - max} page(s), or set \`venue.pageLimit.endLabel\` if references/appendix do not count`,

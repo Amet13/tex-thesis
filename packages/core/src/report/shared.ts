@@ -7,7 +7,7 @@ import {
   type Severity,
 } from '../types.js';
 
-export const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
+const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
 
 export function formatLocation(loc: Location | undefined): string {
   if (!loc) return '';
@@ -81,6 +81,16 @@ export function checkLine(c: CheckResult): string {
   const n = c.problems.filter((p) => p.severity !== 'info').length;
   if (n === 0) return 'no problems';
   return `${n} problem${n === 1 ? '' : 's'}`;
+}
+
+/**
+ * When every check was skipped, one sentence that says so and why (the first check's
+ * reason), so "nothing was checked" is never mistaken for a pass. Undefined otherwise.
+ */
+export function nothingCheckedLine(report: Report): string | undefined {
+  if (report.status !== 'skipped') return undefined;
+  const reason = report.checks.find((c) => c.skippedReason)?.skippedReason;
+  return `Nothing was checked${reason ? `: ${reason}` : ''}.`;
 }
 
 export function tallyLine(t: Tally): string {

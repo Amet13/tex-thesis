@@ -49,12 +49,17 @@ A venue profile is one YAML file in `venues/`, named `<id>.yml` (for example
    worse than none.
 2. Put the official page URLs under `source` and the day you read them under
    `checkedOn` (`YYYY-MM-DD`). Both are required. Add `sha256` for a style file
-   only if you computed it from the official kit (`sha256sum neurips_2027.sty`).
+   only if you computed it from the official kit (`sha256sum neurips_2027.sty`),
+   and `kit` with the URL of that official download (the `.zip`, or the file
+   itself), so `scripts/venues-kits.mjs` can keep the hash current.
 3. Run `node scripts/build-venues.mjs`. It validates every file and rewrites
    `packages/core/src/venue/venues.generated.ts`; commit that file. Never edit it by hand.
 4. Try it on a real paper: `profile: <id>` in `overfull.yml`, then `overfull check`.
 5. Add a test in `packages/core/test/` if the profile needs behaviour that is not
    data. Run `pnpm venues:check` and `pnpm test`.
+6. Store the text of the pages you read: `node scripts/venues-watch.mjs --accept <id>`
+   (it updates `venues/.fingerprints.json`). The monthly watch then shows you only
+   what changed on those pages since.
 
 CI runs `pnpm venues:check`, which fails on an invalid file, a missing `source` or
 `checkedOn`, or a stale generated module. Profiles older than 14 months show a

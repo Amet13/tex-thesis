@@ -329,6 +329,12 @@ export function entryFromPublisherBibtex(bibtex: string, doi: string): BibEntry 
   }
   fields.doi = doi;
   if (fields.url && isDoiOrgUrl(fields.url)) delete fields.url;
+  // `collection` is not a BibTeX or biblatex field (some publishers' BibTeX has it,
+  // often next to a `series` with the same value): keep it only as `series`.
+  if (fields.collection) {
+    fields.series ??= fields.collection;
+    delete fields.collection;
+  }
   const entry: BibEntry = { key: '', type: parsed.type, fields, line: 0, raw: '' };
   entry.key = generateKey(entry);
   return entry;

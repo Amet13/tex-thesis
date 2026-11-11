@@ -20,7 +20,7 @@ import { run, which } from '../tools.js';
  * plus an initial commit when user.name and user.email are configured.
  * Returns a line for the user, or undefined when nothing was done.
  */
-export async function initGit(
+async function initGit(
   target: string,
   template: string,
   env: Io['env'],
@@ -51,7 +51,7 @@ export async function initGit(
     : `Initialized a git repository (branch main). Commit with:\n    ${commitCmd}`;
 }
 
-export const initHelp = `Usage: overfull init [thesis|paper|slides] [dir] [options]
+const initHelp = `Usage: overfull init [thesis|paper|slides] [dir] [options]
        overfull init --here [options]          (alias: overfull adopt)
 
 Create a new project from a template: accessible LaTeX (LuaLaTeX, tagged PDF),
@@ -94,7 +94,7 @@ On a terminal, with none of --agents/--ci/--make/--hooks/--all, agents, ci and m
 Existing files are never overwritten without --force. Safe to run again.
 `;
 
-export const adoptHelp = `Usage: overfull adopt [options]
+const adoptHelp = `Usage: overfull adopt [options]
 
 Add Overfull to the LaTeX project in the current folder. Same as
 \`overfull init --here\`; see \`overfull init --help\` for the options.

@@ -56,6 +56,9 @@ describe('A2: cite writes clean, escaped values (recorded doi.org responses)', (
     expect(booktitle).toContain('Knowledge Discovery \\& Data Mining');
     expect(booktitle).not.toContain('&amp;');
     expect(formatBibEntry(r?.entry as NonNullable<typeof r>['entry'])).not.toMatch(/[^\\]&/);
+    // ACM's BibTeX has `collection` (not a BibTeX field) next to `series`: only `series` stays.
+    expect(r?.entry.fields.collection).toBeUndefined();
+    expect(r?.entry.fields.series).toBeDefined();
   });
 
   it('FAccT: the parrot emoji is dropped without a trailing space', async () => {

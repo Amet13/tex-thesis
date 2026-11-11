@@ -68,7 +68,7 @@ overfull paper.pdf  WARN
   ! output         1 × overfull-box
   ✓ references     12 of 12 references verified
   ✓ accessibility  Tagged, PDF/UA valid (veraPDF)
-  ✓ venue          profile paper, main text 7 of 8 pages (8 total)
+  ✓ venue          profile paper, main text 7 pages, limit 8 (8 in total)
 
   ! sections/method.tex:31  Text sticks 14.2pt into the margin (lines 31–33)  overfull-box
 ```

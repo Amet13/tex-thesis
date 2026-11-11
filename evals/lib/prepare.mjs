@@ -16,7 +16,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { generate } from './generate.mjs';
 import { AGENT_PATHS } from './tasks.mjs';
 
-export function deepMerge(a, b) {
+function deepMerge(a, b) {
   if (typeof a !== 'object' || typeof b !== 'object' || !a || !b || Array.isArray(b)) return b;
   const out = { ...a };
   for (const [k, v] of Object.entries(b)) out[k] = deepMerge(a[k], v);
@@ -90,7 +90,7 @@ function readOrUndefined(path) {
 }
 
 /** Applies setup (YAML merge), edits (literal replace, exactly once) and write (files) of a task. */
-export function applyTaskSetup(root, dir, task) {
+function applyTaskSetup(root, dir, task) {
   for (const [file, patch] of Object.entries(task.setup ?? {})) {
     const path = join(dir, file);
     const current = parseYaml(readOrUndefined(path) ?? '') ?? {};

@@ -155,8 +155,12 @@ export function validateProfile(raw, file) {
           return { name: String(item?.name ?? '') };
         }
         for (const k of Object.keys(item))
-          if (!['name', 'sha256'].includes(k)) err(`styleFiles[${i}]: unknown field "${k}"`);
+          if (!['name', 'sha256', 'kit'].includes(k)) err(`styleFiles[${i}]: unknown field "${k}"`);
         const o = { name: item.name };
+        // `kit`: the official download that contains the file (scripts/venues-kits.mjs
+        // checks the hash against it). Not part of the generated profile.
+        if (item.kit !== undefined && !(isStr(item.kit) && /^https:\/\/\S+$/.test(item.kit)))
+          err(`styleFiles[${i}].kit must be an https URL`);
         if (item.sha256 !== undefined) {
           if (typeof item.sha256 !== 'string' || !/^[0-9a-fA-F]{64}$/.test(item.sha256))
             err(`styleFiles[${i}].sha256 must be 64 hex digits`);

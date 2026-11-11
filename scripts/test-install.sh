@@ -1,6 +1,7 @@
 #!/bin/sh
 # Tests install.sh against a local fake release served over HTTP.
-# Cases: a good download installs a working file; a tampered one installs nothing.
+# Cases: a good download installs a working file; a tampered one installs nothing; a
+# release with gzip copies installs from the .gz; a tampered .gz installs nothing.
 set -eu
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -60,6 +61,29 @@ if OVERFULL_BASE_URL="http://127.0.0.1:$port" OVERFULL_INSTALL_DIR="$work/out2/b
   exit 1
 fi
 [ ! -e "$work/out2/bin/overfull" ] || { echo "FAIL: a file was installed" >&2; exit 1; }
+stop
+
+echo "case 3: a release with a .gz copy installs from it"
+gz="$work/gz"
+mkdir -p "$gz"
+printf '#!/bin/sh\necho "overfull 0.0.0-gz"\n' > "$gz/$asset"
+gzip -9 -c "$gz/$asset" > "$gz/$asset.gz"
+printf '%s  %s\n%s  %s\n' "$(sum "$gz/$asset")" "$asset" "$(sum "$gz/$asset.gz")" "$asset.gz" > "$gz/SHA256SUMS"
+mv "$gz/$asset" "$work/plain-not-served"
+serve "$gz" "$port"
+OVERFULL_BASE_URL="http://127.0.0.1:$port" OVERFULL_INSTALL_DIR="$work/out3/bin" sh "$root/install.sh"
+out="$("$work/out3/bin/overfull" --version)"
+[ "$out" = "overfull 0.0.0-gz" ] || { echo "FAIL: unexpected version output: $out" >&2; exit 1; }
+stop
+
+echo "case 4: a .gz that does not match its checksum installs nothing"
+gzip -9 -c "$bad/$asset" > "$gz/$asset.gz"
+serve "$gz" "$port"
+if OVERFULL_BASE_URL="http://127.0.0.1:$port" OVERFULL_INSTALL_DIR="$work/out4/bin" sh "$root/install.sh"; then
+  echo "FAIL: install.sh succeeded on a tampered .gz" >&2
+  exit 1
+fi
+[ ! -e "$work/out4/bin/overfull" ] || { echo "FAIL: a file was installed" >&2; exit 1; }
 stop
 
 echo "test-install: ok"

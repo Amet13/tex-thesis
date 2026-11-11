@@ -98,11 +98,11 @@ async function query(client: HttpClient, url: string): Promise<WorkRecord[]> {
   return parseArxivFeed(res.body);
 }
 
-export function arxivIdUrl(id: string): string {
+function arxivIdUrl(id: string): string {
   return `${API}?id_list=${encodeURIComponent(id)}&max_results=1`;
 }
 
-export function arxivTitleUrl(title: string): string {
+function arxivTitleUrl(title: string): string {
   const phrase = normalizeTitle(title, false);
   const params = new URLSearchParams({ search_query: `ti:"${phrase}"`, max_results: '5' });
   return `${API}?${params}`;

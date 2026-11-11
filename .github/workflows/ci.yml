@@ -32,10 +32,11 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm test:coverage
       - name: Templates are in sync with skills/ and shared/
         run: pnpm templates:check
       - name: Venue profiles are valid and the generated module is current
@@ -78,6 +79,7 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - run: pnpm build
       - run: pnpm test
       - name: Standalone CLI runs and creates a project
@@ -207,10 +209,29 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - run: pnpm --filter @overfull/core build
       - run: pnpm --filter site check
       - run: pnpm --filter site build
-      - run: pnpm --filter site exec playwright install --with-deps chromium
+      # Only the browser, not Ubuntu packages: --with-deps needs the Ubuntu mirrors, and a
+      # mirror outage once kept this job hanging for 20 minutes. The runner image already
+      # has Chromium's libraries; if a Playwright update needs one more, the next step adds it.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm --filter site exec playwright install chromium
+        timeout-minutes: 5
+      - name: Chromium starts (system libraries present)
+        id: chromium
+        continue-on-error: true
+        timeout-minutes: 2
+        working-directory: site
+        run: node -e "require('playwright').chromium.launch().then((b) => b.close())"
+      - name: Install Chromium's system libraries (only when the check above failed)
+        if: steps.chromium.outcome == 'failure'
+        timeout-minutes: 10
+        run: pnpm --filter site exec playwright install-deps chromium
       - run: pnpm --filter site test:e2e
 
   installers:

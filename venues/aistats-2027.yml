@@ -1,0 +1,31 @@
+id: aistats-2027
+name: AISTATS 2027
+year: 2027
+source:
+  - https://virtual.aistats.org/Conferences/2027/CallForPapers
+  - https://aistats.org/aistats2027/AISTATS2027PaperPack.zip
+checkedOn: 2026-11-11
+extends: double-blind
+paper: letter
+pageLimit:
+  max: 8
+  endLabel: overfull:main-end
+  counts: Main text
+  excludes: [References, AI Use Statement, Reproducibility checklist, Appendices]
+anonymous: true
+disclosure: required
+styleFiles:
+  - name: aistats2027.sty
+    sha256: 33ab38f8aac4b2f1df9fe67e354928598200584e9568385f32deb889e1b81d42
+    kit: https://aistats.org/aistats2027/AISTATS2027PaperPack.zip
+textBlock:
+  widthMm: 171.5
+  leftMm: 22.2
+notes: >-
+  The call requires an AI Use Statement in every submission, in the ICLR format, and
+  allows generative AI tools otherwise. Papers whose main text is over the limit are
+  desk-rejected; the camera-ready limit is 9 pages. Submissions may use author-year or
+  numeric citations; camera-ready papers must use author-year. Paper size is US Letter
+  (the article class default, emitted by the style file). The hash is of aistats2027.sty
+  (2026/09/02) from AISTATS2027PaperPack.zip downloaded on 2026-11-11.
+  Text block: 6.75 in wide, 0.875 in from the left edge (aistats2027.sty).

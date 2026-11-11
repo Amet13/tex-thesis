@@ -31,6 +31,7 @@ const STAMP: Record<Report['status'], string> = {
   pass: 'OK to print',
   warn: 'OK with corrections',
   fail: 'Revised proof required',
+  skipped: 'Nothing to proof',
 };
 
 const STATUS_WORD: Record<string, string> = {
@@ -41,7 +42,7 @@ const STATUS_WORD: Record<string, string> = {
 };
 const SEV_WORD: Record<Severity, string> = { error: 'error', warning: 'warning', info: 'note' };
 
-export function locationText(p: Problem): string {
+function locationText(p: Problem): string {
   const l = p.location;
   if (!l) return '';
   const parts: string[] = [];

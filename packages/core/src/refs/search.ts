@@ -87,7 +87,7 @@ export async function arxivByIdCached(ctx: Ctx, id: string): Promise<WorkRecord 
 }
 
 /** Most sources that answer a title search for one entry before the fallbacks stop. */
-export const MAX_TITLE_ANSWERS = 3;
+const MAX_TITLE_ANSWERS = 3;
 
 /** An ACL Anthology paper by id (cached); null when the Anthology has no such paper. */
 export async function aclByIdCached(ctx: Ctx, id: string): Promise<WorkRecord | null> {
@@ -241,7 +241,7 @@ export async function titleSearch(
     (ctx.deadline === undefined || Date.now() <= ctx.deadline) &&
     !ctx.opts.openalexKey &&
     sourceAllowed(ctx.opts, 'openalex') &&
-    outcome.failures.some((f) => f.source === 'dblp')
+    !outcome.searched.includes('dblp')
   ) {
     const plain = q.isTex ? texToPlain(q.title) : q.title;
     try {

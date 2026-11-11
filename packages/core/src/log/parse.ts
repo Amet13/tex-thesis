@@ -446,7 +446,7 @@ class Parser {
 }
 
 /** Assigns a kind and extracts facts from a warning message. */
-export function classifyWarning(
+function classifyWarning(
   source: string,
   message: string,
 ): { kind: LogWarningKind; data: Record<string, unknown> } {

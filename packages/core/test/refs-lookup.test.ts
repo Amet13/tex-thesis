@@ -106,3 +106,57 @@ describe('lookup', () => {
     ).rejects.toThrow(/lookup failed/);
   });
 });
+
+describe('lookup: published version of an arXiv preprint', () => {
+  const feed = (doi: string) =>
+    new Response(
+      `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+<entry><id>http://arxiv.org/abs/1807.06209v4</id><published>2018-07-17T17:59:58Z</published>
+<title>Planck 2018 results. VI. Cosmological parameters</title><author><name>Planck Collaboration</name></author>
+${doi ? `<arxiv:doi>${doi}</arxiv:doi>` : ''}</entry></feed>`,
+      { headers: { 'content-type': 'application/atom+xml' } },
+    );
+  const bibtex = `@article{x, title = {Planck 2018 results: VI. Cosmological parameters},
+  author = {{Planck Collaboration}}, journal = {Astronomy \\& Astrophysics}, volume = {641},
+  pages = {A6}, year = {2020}, doi = {10.1051/0004-6361/201833910}}`;
+  const csl = JSON.stringify({
+    DOI: '10.1051/0004-6361/201833910',
+    type: 'journal-article',
+    title: 'Planck 2018 results: VI. Cosmological parameters',
+    author: [{ literal: 'Planck Collaboration' }],
+    issued: { 'date-parts': [[2020]] },
+    'container-title': 'Astronomy & Astrophysics',
+  });
+  const fetchWith = (doi: string) =>
+    handlerFetch((u, accept) => {
+      if (u.host === 'export.arxiv.org') return feed(doi);
+      if (u.host === 'doi.org')
+        return accept.includes('bibtex')
+          ? new Response(bibtex, { headers: { 'content-type': 'application/x-bibtex' } })
+          : new Response(csl, {
+              headers: { 'content-type': 'application/vnd.citationstyles.csl+json' },
+            });
+      throw new TypeError(`fetch failed: ${u.host}`);
+    });
+
+  it('writes the published article and keeps the arXiv id', async () => {
+    const f = fetchWith('10.1051/0004-6361/201833910');
+    const r = await lookup('arXiv:1807.06209', { fetch: f.fetch, arxivIntervalMs: 0 });
+    expect(r?.source).toBe('arxiv');
+    expect(r?.entry.type).toBe('article');
+    expect(r?.entry.fields).toMatchObject({
+      doi: '10.1051/0004-6361/201833910',
+      journal: 'Astronomy \\& Astrophysics',
+      eprint: '1807.06209',
+      archiveprefix: 'arXiv',
+    });
+  });
+
+  it('keeps the preprint when arXiv names no published DOI', async () => {
+    const f = fetchWith('');
+    const r = await lookup('arXiv:1807.06209', { fetch: f.fetch, arxivIntervalMs: 0 });
+    expect(r?.entry.fields.doi).toBeUndefined();
+    expect(r?.entry.fields.eprint).toBe('1807.06209');
+    expect(f.calls.some((c) => new URL(c).hostname === 'doi.org')).toBe(false);
+  });
+});

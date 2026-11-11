@@ -4,7 +4,7 @@ import { HOOK_HARNESSES, type HookHarness, MAX_PAYLOAD_BYTES, runHook } from '..
 import { guardStaged } from '../guard/staged.js';
 import { type Io, UsageError } from '../io.js';
 
-export const guardHelp = `Usage: overfull guard --staged [--offline] [--json]
+const guardHelp = `Usage: overfull guard --staged [--offline] [--json]
        overfull guard --hook [claude|gemini|codex]
 
 Blocks hand-written bibliography entries at the moment they happen.
@@ -36,7 +36,7 @@ the hook settings, \`--hooks\` installs a git pre-commit hook.
 `;
 
 /** Reads stdin to the end, up to the payload limit (more than that is returned as too large). */
-export async function readProcessStdin(): Promise<string> {
+async function readProcessStdin(): Promise<string> {
   if (process.stdin.isTTY) return '';
   const chunks: Buffer[] = [];
   let size = 0;

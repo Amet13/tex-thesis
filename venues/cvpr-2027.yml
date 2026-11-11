@@ -17,6 +17,7 @@ disclosure: required
 styleFiles:
   - name: cvpr.sty
     sha256: 1cd7f434b13d41c475df4a1901a5d82d9ca8b80b8cf6205dc4602a5c164286b4
+    kit: https://media.eventhosts.cc/Conferences/CVPR2027/author-kit-CVPR2027-v1-latex.zip
 textBlock:
   widthMm: 174.6
 notes: >-

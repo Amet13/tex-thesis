@@ -22,7 +22,7 @@ interface Store {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-export function fixturePath(name: string): string {
+function fixturePath(name: string): string {
   return join(here, name);
 }
 

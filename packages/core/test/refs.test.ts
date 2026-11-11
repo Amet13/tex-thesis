@@ -12,6 +12,7 @@ import {
   identifiersOf,
   markCited,
   missingKeys,
+  notFoundQuorum,
   parseArxivFeed,
   parseArxivId,
   parseDoi,
@@ -660,7 +661,7 @@ describe('refsCheck', () => {
     const check = refsCheck([{ key: 'a', status: 'verified' }]);
     expect(check).toMatchObject({
       status: 'pass',
-      summary: '1 of 1 references verified',
+      summary: '1 of 1 reference verified',
       problems: [],
     });
   });
@@ -825,6 +826,44 @@ describe('provenance guardrail', () => {
     );
   });
 
+  it('calls an invented title not-found when CrossRef and OpenAlex answered, dblp walled', async () => {
+    const f = router({ ...dblpWall, 'api.openalex.org': () => json({ results: [] }) });
+    const bib = `@inproceedings{x, author = {Smith, John and Lee, Ann},
+  title = {Quantum Gradient Folding for Self-Supervised Hypergraph Transformers},
+  booktitle = {NeurIPS}, year = {2021}}`;
+    const [r] = await verifyEntries(parseBib(bib), { fetch: f.fetch, ...fast });
+    expect(r?.status).toBe('not-found');
+    expect(r?.searched).toEqual(expect.arrayContaining(['crossref', 'openalex']));
+  });
+
+  it('a title other works share is never not-found', async () => {
+    const other = {
+      results: [
+        {
+          display_name: 'Generative Adversarial Nets',
+          publication_year: 2023,
+          type: 'book-chapter',
+          authorships: [{ author: { display_name: 'Raphael Labaca-Castro' } }],
+        },
+      ],
+    };
+    const f = router({ ...dblpWall, 'api.openalex.org': () => json(other) });
+    const bib = `@inproceedings{g, author = {Goodfellow, Ian and Bengio, Yoshua},
+  title = {Generative Adversarial Nets}, booktitle = {NeurIPS}, year = {2014}}`;
+    const [r] = await verifyEntries(parseBib(bib), { fetch: f.fetch, ...fast });
+    expect(r?.status).toBe('unverifiable');
+    expect(r?.reason).toMatch(/other works share this title/);
+  });
+
+  it('needs CrossRef and one more general index for not-found', () => {
+    expect(notFoundQuorum(['crossref', 'openalex'])).toBe(true);
+    expect(notFoundQuorum(['crossref', 'semanticscholar'])).toBe(true);
+    expect(notFoundQuorum(['crossref', 'dblp'])).toBe(true);
+    expect(notFoundQuorum(['crossref'])).toBe(false);
+    expect(notFoundQuorum(['crossref', 'arxiv', 'europepmc'])).toBe(false);
+    expect(notFoundQuorum(['openalex', 'dblp', 'semanticscholar'])).toBe(false);
+  });
+
   it('does not ask OpenAlex without a key when dblp answered', async () => {
     const f = router(allEmpty);
     await verifyEntries(parseBib(RAFT), { fetch: f.fetch, ...fast });
@@ -837,7 +876,7 @@ describe('sources allow-list', () => {
   author = {Smith, John}, title = {Quantum Consensus for Everyone}, booktitle = {SOSP}, year = {2099},
   eprint = {2401.99999}}`;
 
-  it('without dblp and arXiv, no match is unverifiable (info), not reference-not-found', async () => {
+  it('with CrossRef alone allowed, no match is unverifiable (info), not reference-not-found', async () => {
     const f = router({ 'api.crossref.org': () => json(emptyCrossref) });
     const entries = parseBib(FAKE);
     const [r] = await verifyEntries(entries, {
@@ -846,11 +885,27 @@ describe('sources allow-list', () => {
       ...fast,
     });
     expect(r?.status).toBe('unverifiable');
-    expect(r?.reason).toBe('could not be checked here (arXiv and dblp were not searched)');
+    expect(r?.reason).toBe('could not be checked here (OpenAlex and dblp were not searched)');
     expect(f.calls.every((c) => new URL(c).hostname === 'api.crossref.org')).toBe(true);
     const problems = refsCheck(r ? [r] : [], { entries }).problems;
     expect(problems.map((p) => p.severity)).toEqual(['info']);
     expect(problems.map((p) => p.rule)).not.toContain('reference-not-found');
+  });
+
+  it('in the browser (CrossRef and OpenAlex), an invented title can be not-found', async () => {
+    const f = router({
+      'api.crossref.org': () => json(emptyCrossref),
+      'api.openalex.org': () => json({ results: [] }),
+    });
+    const bib = `@inproceedings{smith2099fake, author = {Smith, John},
+  title = {Quantum Consensus for Everyone}, booktitle = {SOSP}, year = {2099}}`;
+    const [r] = await verifyEntries(parseBib(bib), {
+      fetch: f.fetch,
+      sources: ['crossref', 'doi.org', 'openalex'],
+      ...fast,
+    });
+    expect(r?.status).toBe('not-found');
+    expect(f.calls.some((c) => new URL(c).hostname === 'dblp.org')).toBe(false);
   });
 
   it('an own DOI that does not resolve stays not-found with restricted sources', async () => {

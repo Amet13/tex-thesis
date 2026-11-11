@@ -43,7 +43,7 @@ function rulesOf(meta: Record<string, unknown>, id: string): string[] {
 }
 
 /** Lines of a log around the first line mentioning `needle`, trimmed for display. */
-export function logExcerpt(log: string, rules: string[]): string {
+function logExcerpt(log: string, rules: string[]): string {
   const lines = log.split(/\r?\n/);
   try {
     const { build, output } = analyzeLog(log);
@@ -69,7 +69,7 @@ export function logExcerpt(log: string, rules: string[]): string {
 
 let cache: CorpusCase[] | null = null;
 
-export function corpusCases(): CorpusCase[] {
+function corpusCases(): CorpusCase[] {
   if (cache) return cache;
   const cases: CorpusCase[] = [];
   for (const id of listDirs('corpus')) {

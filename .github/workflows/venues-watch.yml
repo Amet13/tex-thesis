@@ -1,7 +1,10 @@
-# Monthly: checks every venue profile's official pages and looks for the next edition's
-# call. Findings go into one issue ("Venue profiles need a look"), closed again when a
-# later run finds nothing. Venue rules are never changed automatically: a person reads the
-# official pages and updates the profile (CONTRIBUTING.md, "Adding a venue").
+# Monthly: checks every venue profile's official pages (and arXiv's build pages) for
+# changes since a person last read them, and looks for the next edition's call. Findings,
+# with the changed lines, go into one issue ("Venue profiles need a look"), closed again
+# when a later run finds nothing. Venue rules are never changed automatically: a person
+# reads the official pages and updates the profile (CONTRIBUTING.md, "Adding a venue").
+# The one mechanical update: a style file's hash follows the official kit, in a pull
+# request that automerge.yml merges when CI passes.
 name: venues-watch
 
 on:
@@ -17,8 +20,10 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
-      contents: read
+      contents: write
       issues: write
+      pull-requests: write
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,6 +34,7 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - name: Check the venues' official pages
         run: node scripts/venues-watch.mjs | tee "$RUNNER_TEMP/report.md"
       - name: Open, update or close the issue
@@ -36,3 +42,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: bash .github/scripts/issue.sh "Venue profiles need a look" "$RUNNER_TEMP/report.md"
+      - name: Check style files against the official kits
+        run: |
+          node scripts/venues-kits.mjs --write | tee "$RUNNER_TEMP/kits.md"
+          node scripts/build-venues.mjs
+      - name: Open a pull request with new style-file hashes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            cat "$RUNNER_TEMP/kits.md"
+            echo
+            echo "The hashes come from the files in each venue's official author kit (the \`kit\` URL"
+            echo "in its profile). Nothing else in the profiles changed; \`checkedOn\` still means a"
+            echo "person read the venue's rules."
+          } > "$RUNNER_TEMP/kits-body.md"
+          bash .github/scripts/automation-pr.sh venue-kits "Update style-file hashes from the official kits" "$RUNNER_TEMP/kits-body.md"

@@ -22,7 +22,7 @@ export interface TitleQuery {
   year?: number;
 }
 
-export function crossrefSearchUrl(q: TitleQuery, mailto?: string): string {
+function crossrefSearchUrl(q: TitleQuery, mailto?: string): string {
   const text = [q.title, q.firstAuthor, q.year].filter(Boolean).join(' ');
   const params = new URLSearchParams({ 'query.bibliographic': text, rows: '5', select: SELECT });
   if (mailto) params.set('mailto', mailto);

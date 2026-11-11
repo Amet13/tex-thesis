@@ -59,7 +59,7 @@ export function parseAclId(input: string): string | null {
   return OLD_ONLY.test(id) ? id.toUpperCase() : id;
 }
 
-export function aclBibUrl(id: string): string {
+function aclBibUrl(id: string): string {
   return `https://aclanthology.org/${id}.bib`;
 }
 

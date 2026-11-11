@@ -1,0 +1,38 @@
+id: eccv-2026
+name: ECCV 2026
+year: 2026
+source:
+  - https://eccv.ecva.net/Conferences/2026/SubmissionPolicies
+  - https://eccv.ecva.net/Conferences/2026/CallForPapers
+checkedOn: 2026-11-11
+extends: double-blind
+paper: any
+pageLimit:
+  max: 14
+  endLabel: overfull:main-end
+  counts: Main paper including figures and tables
+  excludes: [References]
+anonymous: true
+disclosure: off
+styleFiles:
+  - name: eccv.sty
+    sha256: 07785f87dd4741a761e5064d6752e59dbca308b7999de35df983e70dc0a33d80
+    kit: https://github.com/paolo-favaro/paper-template/archive/refs/tags/Latest.zip
+  - name: llncs.cls
+    sha256: 8152fe7afa929cbd3f3679d6f7c1d562525414ed9c5940a69e86cd923416cb2b
+    kit: https://github.com/paolo-favaro/paper-template/archive/refs/tags/Latest.zip
+textBlock:
+  widthMm: 122
+  heightMm: 193
+  leftMm: 12
+  topMm: 12
+notes: >-
+  Papers over 14 pages (excluding references), not anonymized, or not in the ECCV 2026
+  template are desk-rejected, and so are submissions whose margins, formatting or font
+  were changed (the 2026 template's font differs from CVPR's). The LLM policy allows
+  any tools but makes authors responsible for the content; papers citing non-existent
+  material are rejected. No AI-use statement is asked for. The kit is the one the
+  submission policies link (github.com/paolo-favaro/paper-template, tag Latest, commit
+  da8c09c of 2026-01-23); its own llncs.cls differs from Springer's current one. The
+  review option crops the page to 146 x 217 mm around a 122 x 193 mm text block 12 mm
+  from the left and top edges (eccv.sty), hence no standard paper size.

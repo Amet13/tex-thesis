@@ -1,0 +1,38 @@
+# Weekly: asks every reference source (doi.org, CrossRef, dblp, arXiv, OpenAlex, Semantic
+# Scholar, ACL Anthology, Europe PMC) for one known work and one invented title, through
+# the core's own source modules. Sources that stop answering, answer with a bot wall, or
+# no longer find the known work are listed in one issue ("Reference sources need a
+# look"), closed again when every source is healthy.
+name: sources-health
+
+on:
+  schedule:
+    - cron: "37 7 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+      - name: Probe the reference sources
+        # Keyless, like most users: a 429 from OpenAlex or Semantic Scholar (a shared
+        # budget used up) is listed as a note, not as a broken source.
+        run: node scripts/sources-health.mjs | tee "$RUNNER_TEMP/report.md"
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/issue.sh "Reference sources need a look" "$RUNNER_TEMP/report.md"

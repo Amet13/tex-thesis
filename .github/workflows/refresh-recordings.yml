@@ -1,0 +1,51 @@
+# Monthly: records again the live answers that the offline reference tests replay
+# (packages/core/test/fixtures/refs/http*.json) and opens a pull request when they
+# changed. CI runs the tests against the new recordings, so a source that changed its
+# response format, or an index whose answers changed, shows up as a red pull request
+# for a person, not as a silent gap between the tests and the live services. A green
+# one is merged by automerge.yml. bench/refs/dataset/ is not touched: the monthly
+# benchmark must stay comparable from month to month.
+name: refresh-recordings
+
+on:
+  schedule:
+    - cron: "23 6 9 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-recordings
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+      - name: Record the reference sources again
+        run: |
+          node packages/core/test/fixtures/refs/record.mjs
+          node packages/core/test/fixtures/refs/record-sources.mjs
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "The live answers of the reference sources, recorded again (run $GITHUB_RUN_ID)."
+            echo
+            echo "If CI fails here, a source changed its answers or its format: compare the test"
+            echo "failures with the diff of the recordings before changing any expectation."
+          } > "$RUNNER_TEMP/body.md"
+          bash .github/scripts/automation-pr.sh recordings "Refresh recorded reference-source answers" "$RUNNER_TEMP/body.md"

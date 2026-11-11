@@ -9,7 +9,7 @@
 
 import { SPACED_PATH_SOURCE } from './paths.js';
 
-export const MAX_PRINT_LINE = 79;
+const MAX_PRINT_LINE = 79;
 
 export type EngineFamily = 'pdftex' | 'luatex' | 'xetex' | 'unknown';
 
@@ -20,7 +20,7 @@ const STARTS_FRESH =
 /** A `-file-line-error` line whose path contains spaces (`./sub dir/a.tex:4: …`). */
 const SPACED_FILE_LINE = new RegExp(`^${SPACED_PATH_SOURCE}:\\d+: `, 'i');
 
-export function engineFamily(firstLine: string): EngineFamily {
+function engineFamily(firstLine: string): EngineFamily {
   if (/^This is (?:Lua(?:HB|HBJIT|JIT)?TeX)/.test(firstLine)) return 'luatex';
   if (/^This is XeTeX/.test(firstLine)) return 'xetex';
   if (/^This is (?:pdf|e-|)TeX/.test(firstLine)) return 'pdftex';
@@ -47,7 +47,7 @@ function isAscii(text: string): boolean {
 }
 
 /** True when a physical line filled the whole print width, so TeX continued it on the next line. */
-export function isFullWidth(line: string, engine: EngineFamily): boolean {
+function isFullWidth(line: string, engine: EngineFamily): boolean {
   if (line.length < MAX_PRINT_LINE - 4 * 4) return false;
   if (isAscii(line)) {
     if (line.length === MAX_PRINT_LINE) return true;

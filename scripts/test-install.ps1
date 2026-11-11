@@ -1,5 +1,6 @@
 # Tests install.ps1 against a local fake release served over HTTP (no Pester).
-# Cases: a good download installs the file; a tampered one fails and installs nothing.
+# Cases: a good download installs the file; a tampered one fails and installs nothing;
+# a release with a .gz copy installs from it; a tampered .gz installs nothing.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $work = Join-Path ([System.IO.Path]::GetTempPath()) ("overfull-test-" + [System.Guid]::NewGuid().ToString('N'))
@@ -49,6 +50,37 @@ try {
   $failed = $false
   try { & (Join-Path $root 'install.ps1') } catch { $failed = $true; Write-Host "expected failure: $($_.Exception.Message)" }
   if (-not $failed) { throw 'FAIL: install.ps1 succeeded on a tampered download' }
+  if (Test-Path -LiteralPath (Join-Path $env:OVERFULL_INSTALL_DIR 'overfull.exe')) { throw 'FAIL: a file was installed' }
+
+  Stop-Process -Id $server.Id -Force; $server = $null
+
+  function Write-Gz([string]$From, [string]$To) {
+    $in = [System.IO.File]::OpenRead($From)
+    $out = [System.IO.File]::Create($To)
+    $gz = New-Object System.IO.Compression.GZipStream($out, [System.IO.Compression.CompressionMode]::Compress)
+    try { $in.CopyTo($gz) } finally { $gz.Dispose(); $out.Dispose(); $in.Dispose() }
+  }
+
+  Write-Host 'case 3: a release with a .gz copy installs from it'
+  $gzDir = Join-Path $work 'gz'
+  New-Item -ItemType Directory -Path $gzDir | Out-Null
+  Write-Gz $real (Join-Path $gzDir "$asset.gz")
+  "$(Sha $real)  $asset`n$(Sha (Join-Path $gzDir "$asset.gz"))  $asset.gz" | Set-Content -Encoding ascii (Join-Path $gzDir 'SHA256SUMS')
+  $server = Start-Server $gzDir $port
+  $env:OVERFULL_INSTALL_DIR = Join-Path $work 'out3\bin'
+  & (Join-Path $root 'install.ps1')
+  $installed = Join-Path $env:OVERFULL_INSTALL_DIR 'overfull.exe'
+  if (-not (Test-Path -LiteralPath $installed)) { throw 'FAIL: overfull.exe was not installed from the .gz' }
+  if ((Sha $installed) -ne (Sha $real)) { throw 'FAIL: the file unpacked from the .gz differs from the release file' }
+  Stop-Process -Id $server.Id -Force; $server = $null
+
+  Write-Host 'case 4: a .gz that does not match its checksum installs nothing'
+  Write-Gz (Join-Path $env:SystemRoot 'System32\whoami.exe') (Join-Path $gzDir "$asset.gz")
+  $server = Start-Server $gzDir $port
+  $env:OVERFULL_INSTALL_DIR = Join-Path $work 'out4\bin'
+  $failed = $false
+  try { & (Join-Path $root 'install.ps1') } catch { $failed = $true; Write-Host "expected failure: $($_.Exception.Message)" }
+  if (-not $failed) { throw 'FAIL: install.ps1 succeeded on a tampered .gz' }
   if (Test-Path -LiteralPath (Join-Path $env:OVERFULL_INSTALL_DIR 'overfull.exe')) { throw 'FAIL: a file was installed' }
 
   Write-Host 'test-install: ok'

@@ -53,7 +53,7 @@ export type HookHarness = (typeof HOOK_HARNESSES)[number];
 /** Payloads larger than this are not parsed (and are allowed). */
 export const MAX_PAYLOAD_BYTES = 1024 * 1024;
 
-export const DENY_REASON =
+const DENY_REASON =
   'Direct edits to .bib files are blocked in this project, because a hand-written reference can be wrong or invented. ' +
   'Add a reference with `overfull cite <doi | arXiv:id | "title">`, which looks it up and writes a verified entry. ' +
   'If the author wants an entry the indexes do not know, they add it by hand outside the agent.';
@@ -110,7 +110,7 @@ const PATCH_FILE_MARKERS = [
 ];
 
 /** Files a Codex apply_patch text adds, deletes, updates or moves to. */
-export function patchPaths(patch: string): string[] {
+function patchPaths(patch: string): string[] {
   const out: string[] = [];
   for (const raw of patch.split('\n')) {
     const line = raw.trim();
@@ -143,7 +143,7 @@ export function detectHarness(payload: unknown): HookHarness | undefined {
 }
 
 /** True for a path whose extension is .bib, in any letter case. */
-export function isBibPath(path: string): boolean {
+function isBibPath(path: string): boolean {
   return extname(path).toLowerCase() === '.bib';
 }
 
@@ -179,13 +179,13 @@ export function decide(
  * The text to print for a decision: nothing for allow, one JSON line for deny.
  * The exit code is 0 either way.
  */
-export function hookOutput(decision: HookDecision, harness: HookHarness): string {
+function hookOutput(decision: HookDecision, harness: HookHarness): string {
   if (decision.allow) return '';
   return `${JSON.stringify(ADAPTERS[harness].deny(decision.reason))}\n`;
 }
 
 /** Parses stdin text; undefined when it is too large or not JSON. */
-export function parsePayload(text: string): unknown {
+function parsePayload(text: string): unknown {
   if (Buffer.byteLength(text, 'utf8') > MAX_PAYLOAD_BYTES) return undefined;
   try {
     return JSON.parse(text);

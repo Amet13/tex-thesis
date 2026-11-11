@@ -14,7 +14,7 @@ import {
 } from '../tools.js';
 import { resolveEngine } from './build.js';
 
-export const diffHelp = `Usage: overfull diff [options]
+const diffHelp = `Usage: overfull diff [options]
 
 Build a PDF that marks what changed since a git revision (latexdiff), so a
 supervisor or co-author can review changes. Prints the path of the PDF.
@@ -59,7 +59,7 @@ export async function defaultBase(
 }
 
 /** Where latexmk writes the diff build (aux, log, PDF) so the project root stays clean. */
-export const DIFF_DIR = join('.overfull', 'diff');
+const DIFF_DIR = join('.overfull', 'diff');
 
 export async function diffCommand(args: string[], io: Io): Promise<number> {
   const { values } = parse(

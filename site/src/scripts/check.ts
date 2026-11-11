@@ -17,6 +17,7 @@ import {
   extractPdfFacts,
   formatJson,
   formatMarkdown,
+  mergeDuplicateFindings,
   missingKeys,
   type PdfFacts,
   type PdfjsLike,
@@ -688,7 +689,7 @@ export function initCheck(): void {
             // only the sources a browser can reach are asked. (Core calls
             // fetch detached from globalThis, so window.fetch needs no wrapper.)
             const opts: RefsOptions = {
-              sources: ['crossref', 'doi.org'],
+              sources: ['crossref', 'doi.org', 'openalex'],
               cache,
               signal,
               concurrency: chunk,
@@ -757,6 +758,7 @@ export function initCheck(): void {
       (c) =>
         results.get(c) ?? { check: c, status: 'skipped', problems: [], skippedReason: reasons[c] },
     );
+    mergeDuplicateFindings(checks);
     report = {
       tool: 'overfull',
       version: VERSION,

@@ -27,6 +27,7 @@ jobs:
           cache: pnpm
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - run: pnpm --filter @overfull/core build
       - run: pnpm --filter site build
       # Served at https://amet13.github.io/overfull/install.sh and install.ps1.

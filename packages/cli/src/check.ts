@@ -11,6 +11,7 @@ import {
   type CheckResult,
   citedKeys,
   citesAll,
+  mergeDuplicateFindings,
   missingKeys,
   outputSummary,
   type PdfFacts,
@@ -119,7 +120,7 @@ const rel = (root: string, abs: string) => relative(root, abs).split('\\').join(
  * A file named explicitly (CLI flag, Action input) that does not exist is a
  * usage error, never a silent skip: a typo would otherwise pass CI.
  */
-export function missingInputError(
+function missingInputError(
   what: 'pdf' | 'log' | 'aux' | 'bib',
   given: string,
   config: Config,
@@ -491,6 +492,10 @@ async function accessibility(
 
 function venue(inp: Inputs): CheckResult {
   const { config } = inp;
+  // Without the PDF and without the main file there is no document to judge: .tex files
+  // lying around (a folder of templates, a parent directory) are not this project.
+  if (!inp.facts && !existsSync(join(config.root, config.main)))
+    return skipped('venue', missingPdfReason(inp));
   const { files, texFiles, skipped: skippedFiles } = sourcesOf(inp);
   const result = venueCheck(config.profile, {
     ...(inp.facts ? { facts: inp.facts } : {}),
@@ -542,6 +547,7 @@ export async function runCheck(opts: CheckOptions = {}): Promise<Report> {
     results.push(await accessibility(inp, { ...opts, env }, results));
   if (wanted.has('venue')) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
+  mergeDuplicateFindings(results);
   for (const r of results) r.problems = sortProblems(r.problems);
   const target = existsSync(join(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
   return {
@@ -582,10 +588,10 @@ export function sarifFallbackFile(
   }
 }
 
-/** Exit code for a report: 1 when it fails the `failOn` threshold. */
+/** Exit code for a report: 1 when it fails the `failOn` threshold or nothing was checked. */
 export function exitCodeFor(report: Report, failOn: 'error' | 'warning' | 'never'): number {
   if (failOn === 'never') return 0;
-  if (report.status === 'fail') return 1;
+  if (report.status === 'fail' || report.status === 'skipped') return 1;
   if (failOn === 'warning' && report.status === 'warn') return 1;
   return 0;
 }

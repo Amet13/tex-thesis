@@ -4,6 +4,7 @@ export {
   escapeProperty,
   githubAnnotations,
 } from './annotations.js';
+export { mergeDuplicateFindings } from './dedupe.js';
 export { formatHuman, type HumanOptions } from './human.js';
 export { formatJson } from './json.js';
 export { escapeMarkdown, formatMarkdown } from './markdown.js';

@@ -37,7 +37,7 @@ description: Diagnose and fix LaTeX build failures and problems that reach the P
 | `&amp;` or `&lt;` in source | HTML escaping | Replace with `\&` or `<` in math. |
 | File not found (`missing-file`, `missing-figure`) | Wrong path or case | Use the real path; paths are case-sensitive in CI. |
 | Undefined reference `??` (`undefined-reference`) | Missing or misspelled `\label` | Fix the label or the `\cref`. |
-| Undefined citation `[?]` (`undefined-citation`) | Key not in the bib | See the `add-citation` skill. Never write BibTeX by hand. |
+| Undefined citation `[?]` (`undefined-citation`) | Bibliography not rebuilt, or the key is not in the bib (`citation-key-missing`) | Rebuild; for a missing key see the `add-citation` skill. Never write BibTeX by hand. |
 | Rerun / stale bibliography (`rerun-needed`, `bibliography-stale`) | Build stopped early | Rebuild with `overfull build`. |
 | Duplicate label (`duplicate-label`) | Copied figure or section | Rename one label and its references. |
 | Overfull box > 10pt (`overfull-box`) | Long word, URL, table or formula | Rephrase, allow a break (`\url`, `\allowbreak`), resize the table to `\linewidth`, split the formula. |

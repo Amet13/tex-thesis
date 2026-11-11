@@ -3,6 +3,7 @@ import {
   checkLine,
   formatLocation,
   neutralizeWorkflowCommands,
+  nothingCheckedLine,
   oneLine,
   sortedProblems,
   tally,
@@ -45,7 +46,10 @@ function problemItem(p: Problem): string {
 export function formatMarkdown(report: Report): string {
   const out: string[] = [];
   const target = report.target ? ` — ${escapeMarkdown(report.target)}` : '';
-  out.push(`## Overfull preflight: ${report.status.toUpperCase()}${target}`, '');
+  const word = report.status === 'skipped' ? 'NOTHING CHECKED' : report.status.toUpperCase();
+  out.push(`## Overfull preflight: ${word}${target}`, '');
+  const why = nothingCheckedLine(report);
+  if (why) out.push(inline(why), '');
   out.push('| Check | Status | Summary |', '| --- | --- | --- |');
   for (const c of report.checks) {
     out.push(`| ${c.check} | ${STATUS_TEXT[c.status]} | ${inline(checkLine(c))} |`);

@@ -9228,9 +9228,9 @@ async function JBig2(moduleArg = {}) {
   var alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
   var growMemory = (size) => {
     var oldHeapSize = wasmMemory.buffer.byteLength;
-    var pages = (size - oldHeapSize + 65535) / 65536 | 0;
+    var pages2 = (size - oldHeapSize + 65535) / 65536 | 0;
     try {
-      wasmMemory.grow(pages);
+      wasmMemory.grow(pages2);
       updateMemoryViews();
       return 1;
     } catch (e) {
@@ -9437,9 +9437,9 @@ async function OpenJPEG(moduleArg = {}) {
   var alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
   var growMemory = (size) => {
     var oldHeapSize = wasmMemory.buffer.byteLength;
-    var pages = (size - oldHeapSize + 65535) / 65536 | 0;
+    var pages2 = (size - oldHeapSize + 65535) / 65536 | 0;
     try {
-      wasmMemory.grow(pages);
+      wasmMemory.grow(pages2);
       updateMemoryViews();
       return 1;
     } catch (e) {
@@ -64054,9 +64054,9 @@ var init_pdf_worker = __esm({
         if (!this.pages) {
           await this._createPages();
         }
-        const pages = this.pages;
+        const pages2 = this.pages;
         this.pages = null;
-        return pages;
+        return pages2;
       }
       serializeData(storage) {
         return this.dataHandler.serialize(storage);
@@ -69159,8 +69159,8 @@ var init_pdf_worker = __esm({
         }
         if (root instanceof Dict) {
           try {
-            const pages = root.get("Pages");
-            if (pages instanceof Dict) {
+            const pages2 = root.get("Pages");
+            if (pages2 instanceof Dict) {
               this.root = root;
               return;
             }
@@ -73902,18 +73902,18 @@ var init_pdf_worker = __esm({
       }
       #makePageTree() {
         const {
-          newPages: pages,
+          newPages: pages2,
           rootDict,
           pagesRef,
           pagesDict
         } = this;
         rootDict.set("Pages", pagesRef);
         pagesDict.setIfName("Type", "Pages");
-        pagesDict.set("Count", pages.length);
+        pagesDict.set("Count", pages2.length);
         const maxLeaves = false ? 0 : MAX_LEAVES_PER_PAGES_NODE;
         const stack = [{
           dict: pagesDict,
-          kids: pages,
+          kids: pages2,
           parentRef: pagesRef
         }];
         while (stack.length > 0) {
@@ -108915,6 +108915,7 @@ function statusOf(problems) {
   return "pass";
 }
 function reportStatus(checks) {
+  if (checks.length > 0 && checks.every((c) => c.status === "skipped")) return "skipped";
   if (checks.some((c) => c.status === "fail")) return "fail";
   if (checks.some((c) => c.status === "warn")) return "warn";
   return "pass";
@@ -111894,10 +111895,10 @@ function fontProblems(facts, sev) {
     }
   ];
 }
-function pagesText(pages) {
-  if (!pages.length) return "";
-  const shown = pages.slice(0, 8).join(", ");
-  return ` on ${pages.length === 1 ? "page" : "pages"} ${shown}${pages.length > 8 ? ", \u2026" : ""}`;
+function pagesText(pages2) {
+  if (!pages2.length) return "";
+  const shown = pages2.slice(0, 8).join(", ");
+  return ` on ${pages2.length === 1 ? "page" : "pages"} ${shown}${pages2.length > 8 ? ", \u2026" : ""}`;
 }
 function veraPdfProblems(v, sev) {
   if (v.error) {
@@ -111957,16 +111958,16 @@ function veraPdfProblems(v, sev) {
     ];
   }
   return [...groups.values()].map((g) => {
-    const pages = [...g.pages].sort((a, b) => a - b);
+    const pages2 = [...g.pages].sort((a, b) => a - b);
     const p = g.problem;
-    p.message = `${g.spec} \xA7${g.clause}: ${g.desc} (${plural2(g.count, "failed check")}${pagesText(pages)})`;
-    if (pages.length) p.location = { page: pages[0] };
+    p.message = `${g.spec} \xA7${g.clause}: ${g.desc} (${plural2(g.count, "failed check")}${pagesText(pages2)})`;
+    if (pages2.length) p.location = { page: pages2[0] };
     p.data = {
       specification: g.spec,
       clause: g.clause,
       count: g.count,
       tests: g.tests,
-      ...pages.length ? { pages } : {}
+      ...pages2.length ? { pages: pages2 } : {}
     };
     return p;
   });
@@ -112202,7 +112203,7 @@ async function extractPdfFacts(data, pdfjs) {
     const xmp = readXmp(metadata);
     const markInfo = await doc.getMarkInfo().catch(() => null);
     const prefs = doc.getViewerPreferences ? await doc.getViewerPreferences().catch(() => null) : void 0;
-    const pages = [];
+    const pages2 = [];
     const figures = [];
     let hasStructTree = false;
     for (let i = 1; i <= doc.numPages; i++) {
@@ -112213,7 +112214,7 @@ async function extractPdfFacts(data, pdfjs) {
       if ((page.rotate ?? 0) % 180 !== 0) [w, h] = [h, w];
       const content = await page.getTextContent();
       const box = (page.rotate ?? 0) % 360 === 0 ? textBoxOf(content.items, page.view) : void 0;
-      pages.push({
+      pages2.push({
         number: i,
         text: pageText(content.items),
         widthMm: Math.round(w * 10) / 10,
@@ -112232,7 +112233,7 @@ async function extractPdfFacts(data, pdfjs) {
     const display = pick(prefs, "DisplayDocTitle");
     const facts = {
       pageCount: doc.numPages,
-      pages,
+      pages: pages2,
       info: pdfInfo,
       xmp,
       tagged: pick(markInfo, "Marked") === true,
@@ -112439,12 +112440,12 @@ function contextPage(context) {
   return m ? Number(m[1]) + 1 : void 0;
 }
 function pagesOf(contexts) {
-  const pages = contexts.map(contextPage).filter((p) => p !== void 0);
-  return [...new Set(pages)].sort((a, b) => a - b);
+  const pages2 = contexts.map(contextPage).filter((p) => p !== void 0);
+  return [...new Set(pages2)].sort((a, b) => a - b);
 }
 function withPages(f, all) {
-  const pages = pagesOf(all);
-  if (pages.length) f.pages = pages;
+  const pages2 = pagesOf(all);
+  if (pages2.length) f.pages = pages2;
   return f;
 }
 function mergeByClause(failures) {
@@ -112455,8 +112456,8 @@ function mergeByClause(failures) {
     if (prev) {
       prev.failedChecks += f.failedChecks;
       prev.contexts = [...prev.contexts, ...f.contexts].slice(0, MAX_CONTEXTS);
-      const pages = [.../* @__PURE__ */ new Set([...prev.pages ?? [], ...f.pages ?? []])].sort((a, b) => a - b);
-      if (pages.length) prev.pages = pages;
+      const pages2 = [.../* @__PURE__ */ new Set([...prev.pages ?? [], ...f.pages ?? []])].sort((a, b) => a - b);
+      if (pages2.length) prev.pages = pages2;
     } else byKey.set(key, { ...f });
   }
   return [...byKey.values()];
@@ -114231,7 +114232,7 @@ async function titleSearch(ctx, q, visit) {
       }
     }
   }
-  if ((ctx.deadline === void 0 || Date.now() <= ctx.deadline) && !ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
+  if ((ctx.deadline === void 0 || Date.now() <= ctx.deadline) && !ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && !outcome.searched.includes("dblp")) {
     const plain2 = q.isTex ? texToPlain(q.title) : q.title;
     try {
       const records = await searchOne(
@@ -114281,7 +114282,10 @@ var SOURCE_NAMES = {
   acl: "ACL Anthology",
   europepmc: "Europe PMC"
 };
-var REQUIRED_FOR_NOT_FOUND = ["crossref", "dblp"];
+var SECOND_OPINION = ["openalex", "semanticscholar", "dblp"];
+function notFoundQuorum(searched) {
+  return searched.includes("crossref") && searched.some((s) => SECOND_OPINION.includes(s));
+}
 function sourceName(s) {
   return SOURCE_NAMES[s];
 }
@@ -114330,20 +114334,26 @@ async function checkDoi(ctx, doi, facts, ev) {
     ev.searched.add("doi.org");
     if (res.kind === "missing") ev.doiMissing = true;
     if (res.kind !== "found") return null;
-    const a = assess(facts, res.record, true);
-    if (a.differentWork) {
-      a.differences = [
-        { field: "doi", bib: doi, record: `resolves to \u201C${a.record.title}\u201D` },
-        ...a.differences.filter((d) => d.field !== "title")
-      ];
-    }
-    ev.assessments.push(a);
-    return a;
+    return assessIdentified(facts, res.record, ev, "doi", doi, "resolves to");
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source: "doi.org", reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, "doi.org", err);
   }
+}
+function assessIdentified(facts, record, ev, field, id, verb) {
+  const a = assess(facts, record, true);
+  if (a.differentWork) {
+    a.differences = [
+      { field, bib: id, record: `${verb} \u201C${record.title}\u201D` },
+      ...a.differences.filter((d) => d.field !== "title")
+    ];
+  }
+  ev.assessments.push(a);
+  return a;
+}
+function sourceFailed(ctx, ev, source, err) {
+  if (ctx.opts.signal?.aborted) throw err;
+  ev.failures.push({ source, reason: failureReason(err) });
+  return null;
 }
 async function checkArxiv(ctx, id, facts, ev) {
   ev.queries.push(arxivCacheKey(id));
@@ -114354,19 +114364,9 @@ async function checkArxiv(ctx, id, facts, ev) {
       ev.arxivMissing = true;
       return null;
     }
-    const a = assess(facts, record, true);
-    if (a.differentWork) {
-      a.differences = [
-        { field: "eprint", bib: id, record: `is \u201C${record.title}\u201D` },
-        ...a.differences.filter((d) => d.field !== "title")
-      ];
-    }
-    ev.assessments.push(a);
-    return a;
+    return assessIdentified(facts, record, ev, "eprint", id, "is");
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source: "arxiv", reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, "arxiv", err);
   }
 }
 async function checkOtherId(ctx, source, label, fetchRecord, facts, ev) {
@@ -114379,9 +114379,7 @@ async function checkOtherId(ctx, source, label, fetchRecord, facts, ev) {
     ev.assessments.push(a);
     return a;
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source, reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, source, err);
   }
 }
 async function checkOtherIds(ctx, ids, facts, ev) {
@@ -114473,8 +114471,7 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
   const opts = ctx.opts;
-  const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
-  const skipped3 = ["crossref", "arxiv", "dblp"].filter(
+  const skipped3 = ["crossref", "openalex", "dblp"].filter(
     (s) => !sourceAllowed(opts, s)
   );
   const skippedNote = skipped3.length ? `(${sourcesText(skipped3).replace(/ or /, " and ")} ${skipped3.length === 1 ? "was" : "were"} not searched)` : "";
@@ -114513,20 +114510,28 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
       reason: `no match found, but ${why2}${failed}`
     };
   }
-  if (failedRequired.length || !searched.length) {
+  if (!notFoundQuorum(searched)) {
+    if (skipped3.length && !ev.failures.length) {
+      return {
+        ...withSearched,
+        status: "unverifiable",
+        reason: `could not be checked here ${skippedNote}`
+      };
+    }
     const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
       ...failed.length ? { failed, failures: lastFailures(ev.failures) } : {},
       status: "error",
-      reason: `lookup incomplete: ${failuresText(ev.failures) || "no source answered"}`
+      reason: `lookup incomplete: ${failuresText(ev.failures) || "too few indexes answered"}`
     };
   }
-  if (skipped3.length) {
+  const sameTitle = ev.assessments.find((a) => a.titleScore >= STRONG_TITLE);
+  if (sameTitle) {
     return {
       ...withSearched,
       status: "unverifiable",
-      reason: `could not be checked here ${skippedNote}`
+      reason: `other works share this title (such as \u201C${stripTags(sameTitle.record.title)}\u201D, ${sameTitle.record.years[0] ?? "year unknown"}), and the indexes did not single out this one; add its DOI or arXiv id to check it`
     };
   }
   if (ids.openreviewId) {
@@ -114944,6 +114949,9 @@ function missingKeys(cited, entries, texFiles) {
     };
   });
 }
+function plural3(n, noun) {
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
 function summaryOf(results, stats) {
   const parts = [];
   if (stats.notFound) parts.push(`${stats.notFound} not found`);
@@ -114953,14 +114961,16 @@ function summaryOf(results, stats) {
     parts.push(`${stats.wrongWork} with an identifier that points to another work`);
   if (stats.error) parts.push(`${stats.error} could not be checked`);
   if (stats.unverifiable) parts.push(`${stats.unverifiable} not checkable automatically`);
-  const head = `${stats.verified} of ${results.length} references verified`;
+  const head = `${stats.verified} of ${plural3(results.length, "reference")} verified`;
   return parts.length ? `${head} (${parts.join(", ")})` : head;
 }
 var COLLAPSE_AT = 3;
 function unreachableHosts(reason) {
   const hosts = [];
   for (const part of (reason ?? "").replace(/^lookup incomplete: /, "").split("; ")) {
-    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,}): (?:network error|timed out)/.exec(part);
+    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,})(?:: (?:network error|timed out)| returned a non-JSON page)/.exec(
+      part
+    );
     if (m?.[1]) hosts.push(m[1]);
   }
   return hosts;
@@ -115027,12 +115037,24 @@ function refsCheck(results, opts = {}) {
   }
   if (results.some((r) => r.reason === "offline") && results.every((r) => r.reason === "offline" || r.reason === "skipped by author")) {
     const blocking = problems.filter((p) => p.rule !== "reference-unverifiable");
+    const notChecked = `${plural3(results.length, "reference")} not checked (offline)`;
+    const missing = blocking.filter((p) => p.rule === "citation-key-missing").length;
+    if (blocking.some((p) => p.severity !== "info")) {
+      const lead = missing ? `${plural3(missing, "cited key")} with no .bib entry` : plural3(blocking.filter((p) => p.severity !== "info").length, "problem");
+      return {
+        check: "references",
+        status: statusOf(blocking),
+        problems: blocking,
+        summary: `${lead}; ${notChecked}`,
+        stats
+      };
+    }
     return {
       check: "references",
       status: "skipped",
       skippedReason: "offline: references were not looked up",
       problems: blocking,
-      summary: `${results.length} references not checked (offline)`,
+      summary: notChecked,
       stats
     };
   }
@@ -115087,6 +115109,11 @@ function checkLine(c) {
   const n = c.problems.filter((p) => p.severity !== "info").length;
   if (n === 0) return "no problems";
   return `${n} problem${n === 1 ? "" : "s"}`;
+}
+function nothingCheckedLine(report) {
+  if (report.status !== "skipped") return void 0;
+  const reason = report.checks.find((c) => c.skippedReason)?.skippedReason;
+  return `Nothing was checked${reason ? `: ${reason}` : ""}.`;
 }
 function tallyLine(t) {
   const parts = [`${t.errors} to fix`, `${t.warnings} to review`];
@@ -115143,6 +115170,27 @@ function githubAnnotations(report, opts = {}) {
   return opts.limit ? list3.slice(0, opts.limit) : list3;
 }
 
+// ../packages/core/src/report/dedupe.ts
+function mergeDuplicateFindings(checks) {
+  const refs = checks.find((c) => c.check === "references");
+  const output = checks.find((c) => c.check === "output");
+  if (!refs || !output) return checks;
+  const missing = new Set(
+    refs.problems.filter((p) => p.rule === "citation-key-missing").map((p) => String(p.data?.key))
+  );
+  if (!missing.size) return checks;
+  const kept = output.problems.filter(
+    (p) => !(p.rule === "undefined-citation" && missing.has(String(p.data?.key)))
+  );
+  if (kept.length === output.problems.length) return checks;
+  output.problems = kept;
+  if (output.status !== "skipped") {
+    output.status = statusOf(kept);
+    output.summary = outputSummary(kept);
+  }
+  return checks;
+}
+
 // ../packages/core/src/report/human.ts
 function palette(color) {
   const wrap = (open, close) => (s) => color ? `\x1B[${open}m${s}\x1B[${close}m` : s;
@@ -115170,7 +115218,7 @@ function formatHuman(report, opts = {}) {
   };
   const sevPaint = { error: c.red, warning: c.yellow, info: c.cyan };
   const lines = [];
-  const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL" }[report.status];
+  const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL", skipped: "NOTHING CHECKED" }[report.status];
   const target = report.target ? ` ${oneLine(report.target)}` : "";
   lines.push(`${c.bold(`overfull${target}`)}  ${statusPaint[report.status](c.bold(statusWord))}`);
   const nameWidth = Math.max(...report.checks.map((ch2) => ch2.check.length), 5) + 2;
@@ -115192,6 +115240,8 @@ function formatHuman(report, opts = {}) {
       lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
   }
   lines.push("");
+  const why2 = nothingCheckedLine(report);
+  if (why2) lines.push(why2);
   lines.push(tallyLine(tally(report)));
   if (!opts.verbose && problems.some((p) => p.fix || p.detail)) {
     lines.push(c.dim("Run with --verbose for fixes, or `overfull explain <rule>`."));
@@ -115287,7 +115337,10 @@ function problemItem(p) {
 function formatMarkdown(report) {
   const out = [];
   const target = report.target ? ` \u2014 ${escapeMarkdown(report.target)}` : "";
-  out.push(`## Overfull preflight: ${report.status.toUpperCase()}${target}`, "");
+  const word = report.status === "skipped" ? "NOTHING CHECKED" : report.status.toUpperCase();
+  out.push(`## Overfull preflight: ${word}${target}`, "");
+  const why2 = nothingCheckedLine(report);
+  if (why2) out.push(inline(why2), "");
   out.push("| Check | Status | Summary |", "| --- | --- | --- |");
   for (const c of report.checks) {
     out.push(`| ${c.check} | ${STATUS_TEXT[c.status]} | ${inline(checkLine(c))} |`);
@@ -115874,16 +115927,16 @@ function mainTextPages(profile, ctx) {
   const entry = parseAuxLabels(ctx.aux).get(endLabel);
   return entry && /^\d+$/.test(entry.page) ? Number(entry.page) : void 0;
 }
+var pages = (n) => `${n} page${n === 1 ? "" : "s"}`;
 function pageLimitText(profile, ctx) {
   const max = profile.pageLimit?.max;
   if (max === void 0) return void 0;
   const total = ctx.facts?.pageCount;
   const main3 = mainTextPages(profile, ctx);
   if (main3 !== void 0)
-    return `main text ${main3} of ${max} pages${total !== void 0 ? ` (${total} total)` : ""}`;
-  return total !== void 0 ? `${total} of ${max} pages` : void 0;
+    return `main text ${pages(main3)}, limit ${max}${total !== void 0 ? ` (${total} in total)` : ""}`;
+  return total !== void 0 ? `${pages(total)}, limit ${max}` : void 0;
 }
-var cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 function pageLimitProblems(profile, ctx) {
   const limit = profile.pageLimit;
   if (!limit) return [];
@@ -115898,7 +115951,7 @@ function pageLimitProblems(profile, ctx) {
           rule: "page-limit-exceeded",
           check: "venue",
           severity: "error",
-          message: `${cap(pageLimitText(profile, ctx))}: the main text ends on page ${page}`,
+          message: `The main text is ${pages(page)}; the limit is ${max}${ctx.facts?.pageCount !== void 0 ? ` (${ctx.facts.pageCount} pages in total)` : ""}`,
           location: { page },
           detail: `Counted up to \`\\label{${endLabel}}\`. Partial pages count as full pages.`,
           fix: `Cut ${page - max === 1 ? "about a page" : `about ${page - max} pages`} before \`\\label{${endLabel}}\`, or move material to the appendix`,
@@ -115932,7 +115985,7 @@ function pageLimitProblems(profile, ctx) {
       rule: "page-limit-exceeded",
       check: "venue",
       severity: "error",
-      message: `${cap(pageLimitText(profile, ctx))} (all pages counted)`,
+      message: `The paper is ${pages(total)}; the limit is ${max} (all pages counted)`,
       fix: endLabel ? `Cut ${total - max} page(s), or fix \`\\label{${endLabel}}\` so only the main text is counted` : `Cut ${total - max} page(s), or set \`venue.pageLimit.endLabel\` if references/appendix do not count`,
       data: { pages: total, max }
     });
@@ -116159,6 +116212,42 @@ var venueProfileData = {
     },
     notes: "Each ACM conference sets its own page limit and review rules; set them in overfull.yml (`venue:`) from the call for papers, and use the class option `anonymous` for double-blind review. Layout from acmart v2.21 (2026/11/01): the sigconf format is US Letter with 54 pt inner and outer margins, so the text block is 8.5 in minus 108 pt wide. acmart.cls is generated from acmart.dtx, so no hash is recorded. ACM's own pages (acm.org/publications) could not be read from the build machine."
   },
+  "aistats-2027": {
+    id: "aistats-2027",
+    name: "AISTATS 2027",
+    extends: "double-blind",
+    year: 2027,
+    source: [
+      "https://virtual.aistats.org/Conferences/2027/CallForPapers",
+      "https://aistats.org/aistats2027/AISTATS2027PaperPack.zip"
+    ],
+    checkedOn: "2026-11-11",
+    paper: "letter",
+    pageLimit: {
+      max: 8,
+      endLabel: "overfull:main-end",
+      counts: "Main text",
+      excludes: [
+        "References",
+        "AI Use Statement",
+        "Reproducibility checklist",
+        "Appendices"
+      ]
+    },
+    anonymous: true,
+    disclosure: "required",
+    styleFiles: [
+      {
+        name: "aistats2027.sty",
+        sha256: "33ab38f8aac4b2f1df9fe67e354928598200584e9568385f32deb889e1b81d42"
+      }
+    ],
+    textBlock: {
+      widthMm: 171.5,
+      leftMm: 22.2
+    },
+    notes: "The call requires an AI Use Statement in every submission, in the ICLR format, and allows generative AI tools otherwise. Papers whose main text is over the limit are desk-rejected; the camera-ready limit is 9 pages. Submissions may use author-year or numeric citations; camera-ready papers must use author-year. Paper size is US Letter (the article class default, emitted by the style file). The hash is of aistats2027.sty (2026/09/02) from AISTATS2027PaperPack.zip downloaded on 2026-11-11. Text block: 6.75 in wide, 0.875 in from the left edge (aistats2027.sty)."
+  },
   "cvpr-2027": {
     id: "cvpr-2027",
     name: "CVPR 2027",
@@ -116191,6 +116280,45 @@ var venueProfileData = {
       widthMm: 174.6
     },
     notes: 'Every submission needs a section titled "LLM Usage Statement" after the main text and before the references; it states "No LLMs or generative AI tools were used in this work" if none were. The camera-ready version must disclose AI-generated content in the Acknowledgments. Paper size is from the check in the official cvpr.sty. The hash is of cvpr.sty from author-kit-CVPR2027-v1-latex.zip downloaded on 2026-11-10. Text block: 6.875 in wide, centred on US Letter (cvpr.sty).'
+  },
+  "eccv-2026": {
+    id: "eccv-2026",
+    name: "ECCV 2026",
+    extends: "double-blind",
+    year: 2026,
+    source: [
+      "https://eccv.ecva.net/Conferences/2026/SubmissionPolicies",
+      "https://eccv.ecva.net/Conferences/2026/CallForPapers"
+    ],
+    checkedOn: "2026-11-11",
+    paper: "any",
+    pageLimit: {
+      max: 14,
+      endLabel: "overfull:main-end",
+      counts: "Main paper including figures and tables",
+      excludes: [
+        "References"
+      ]
+    },
+    anonymous: true,
+    disclosure: "off",
+    styleFiles: [
+      {
+        name: "eccv.sty",
+        sha256: "07785f87dd4741a761e5064d6752e59dbca308b7999de35df983e70dc0a33d80"
+      },
+      {
+        name: "llncs.cls",
+        sha256: "8152fe7afa929cbd3f3679d6f7c1d562525414ed9c5940a69e86cd923416cb2b"
+      }
+    ],
+    textBlock: {
+      widthMm: 122,
+      heightMm: 193,
+      leftMm: 12,
+      topMm: 12
+    },
+    notes: "Papers over 14 pages (excluding references), not anonymized, or not in the ECCV 2026 template are desk-rejected, and so are submissions whose margins, formatting or font were changed (the 2026 template's font differs from CVPR's). The LLM policy allows any tools but makes authors responsible for the content; papers citing non-existent material are rejected. No AI-use statement is asked for. The kit is the one the submission policies link (github.com/paolo-favaro/paper-template, tag Latest, commit da8c09c of 2026-01-23); its own llncs.cls differs from Springer's current one. The review option crops the page to 146 x 217 mm around a 122 x 193 mm text block 12 mm from the left and top edges (eccv.sty), hence no standard paper size."
   },
   "emnlp-2026": {
     id: "emnlp-2026",
@@ -117946,6 +118074,8 @@ async function accessibility(inp, opts, results) {
 }
 function venue(inp) {
   const { config } = inp;
+  if (!inp.facts && !existsSync4(join5(config.root, config.main)))
+    return skipped2("venue", missingPdfReason(inp));
   const { files, texFiles, skipped: skippedFiles } = sourcesOf(inp);
   const result = venueCheck(config.profile, {
     ...inp.facts ? { facts: inp.facts } : {},
@@ -117994,6 +118124,7 @@ async function runCheck(opts = {}) {
     results.push(await accessibility(inp, { ...opts, env }, results));
   if (wanted.has("venue")) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
+  mergeDuplicateFindings(results);
   for (const r of results) r.problems = sortProblems(r.problems);
   const target = existsSync4(join5(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
   return {
@@ -118023,7 +118154,7 @@ function sarifFallbackFile(cwd, env, configPath, main3) {
 }
 function exitCodeFor(report, failOn) {
   if (failOn === "never") return 0;
-  if (report.status === "fail") return 1;
+  if (report.status === "fail" || report.status === "skipped") return 1;
   if (failOn === "warning" && report.status === "warn") return 1;
   return 0;
 }
@@ -118051,8 +118182,8 @@ var mainHelp = `overfull ${VERSION} \u2014 preflight for LaTeX papers and theses
 Usage: overfull <command> [options]
 
 Commands:
+  init --here                        Add Overfull to the LaTeX project in this folder
   init [thesis|paper|slides] [dir]   Create a project from a template
-  adopt                              Add Overfull to the LaTeX project in this folder (init --here)
   build [main.tex]                   Compile with latexmk (local or Docker) and check the log
   check                              Check log, PDF, references, accessibility, venue rules
   cite <doi | arXiv:id | "title">    Add a verified BibTeX entry; prints its key

@@ -118,7 +118,7 @@ an input you give explicitly that points to a missing file fails the step.
 
 | Output | Meaning |
 | --- | --- |
-| `status` | `pass`, `warn` or `fail`. |
+| `status` | `pass`, `warn`, `fail`, or `skipped` when nothing could be checked (no log, PDF or `.bib` found). A `skipped` run fails the step unless `fail-on: never`. |
 | `report` | Path to the JSON report file, written to `$RUNNER_TEMP`. The content has the same schema as `overfull check --json`. |
 | `sarif` | Path to the SARIF file. Set only when the `sarif` input is set. |
 

@@ -3,9 +3,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { expandPlaceholders, GENERATORS } from './generate.mjs';
 
-export const VARIANTS = ['bare', 'instructions', 'guard'];
+const VARIANTS = ['bare', 'instructions', 'guard'];
 /** `kit` was the name of the template-as-shipped variant before `guard` existed. */
-export const VARIANT_ALIASES = { kit: 'instructions' };
+const VARIANT_ALIASES = { kit: 'instructions' };
 export const STATUSES = ['pass', 'warn', 'fail', 'skipped'];
 
 /** Files and folders that tell an agent how to work, removed in the `bare` variant. */
