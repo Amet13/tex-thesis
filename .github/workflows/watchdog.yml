@@ -26,7 +26,10 @@ permissions:
 
 jobs:
   report:
+    # Only conclusions that open or close an issue start a runner (most automerge runs are
+    # skipped, and cancelled runs say nothing).
     if: >-
+      contains(fromJSON('["failure","timed_out","startup_failure","success"]'), github.event.workflow_run.conclusion) &&
       github.event.workflow_run.event != 'pull_request' &&
       (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.event == 'schedule' ||
        startsWith(github.event.workflow_run.head_branch, 'automation/'))

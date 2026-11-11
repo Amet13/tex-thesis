@@ -34,6 +34,7 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - name: Run the benchmark (live network)
         # Optional secrets: without them the keyless OpenAlex and Semantic Scholar budgets,
         # shared by every job on the runner's IP address, may run out mid-run.

@@ -130,6 +130,7 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
       - run: node scripts/build-standalone.mjs --sea
       - name: Smoke test
         shell: bash
