@@ -415,11 +415,7 @@ function noMatch(
 }
 
 /** Verifies one entry. Never throws for network problems (they become `error`). */
-async function verifyEntry(
-  entry: BibEntry,
-  ctx: Ctx,
-  ignore: Set<string>,
-): Promise<RefResult> {
+async function verifyEntry(entry: BibEntry, ctx: Ctx, ignore: Set<string>): Promise<RefResult> {
   const base: RefResult = { key: entry.key, status: 'unverifiable' };
   if (entry.line) base.location = { line: entry.line, ...(entry.file ? { file: entry.file } : {}) };
   if (isSkipped(entry, ignore)) return { ...base, reason: 'skipped by author' };

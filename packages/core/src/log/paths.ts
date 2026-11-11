@@ -78,7 +78,3 @@ export function isFileToken(token: string): boolean {
   return /^[\w-][\w.\-/]*$/.test(token) && TEX_EXTENSIONS.test(token);
 }
 
-/** True for files that live in a TeX distribution (packages, classes, fonts). */
-function isDistributionPath(path: string): boolean {
-  return DISTRIBUTION_DIR.test(path.replace(/\\/g, '/'));
-}
