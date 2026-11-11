@@ -74,7 +74,7 @@ describe('overfull check', () => {
     expect(rules).toContain('figure-missing-alt');
     expect(rules).toContain('page-limit-exceeded');
     expect(problems.find((p) => p.rule === 'page-limit-exceeded')?.message).toMatch(
-      /^Main text 2 of 1 pages \(\d+ total\): the main text ends on page 2$/,
+      /^The main text is 2 pages; the limit is 1 \(\d+ pages in total\)$/,
     );
     for (const p of problems) {
       expect(typeof p.message).toBe('string');
@@ -115,12 +115,28 @@ describe('overfull check', () => {
       ['check', '--json', '--offline', '--checks', 'build,accessibility'],
       io,
     );
-    expect(code).toBe(0);
+    // Nothing was checked: that is not a pass.
+    expect(code).toBe(1);
     const report = JSON.parse(io.stdoutText()) as Report;
+    expect(report.status).toBe('skipped');
     expect(report.checks.map((c) => [c.check, c.status, c.skippedReason])).toEqual([
       ['build', 'skipped', 'No main.log — run `overfull build` first'],
       ['accessibility', 'skipped', 'No main.pdf — run `overfull build` first'],
     ]);
+  });
+
+  it('says "nothing checked" in an empty folder, and --fail-on never still exits 0', async () => {
+    const dir = tempDir();
+    const io = memIo(dir);
+    expect(await main(['check', '--offline'], io)).toBe(1);
+    expect(io.stdoutText()).toContain('NOTHING CHECKED');
+    expect(io.stdoutText()).toContain('Nothing was checked: No main.log');
+    expect(io.stdoutText()).not.toContain('PASS');
+    expect(io.stderrText()).toContain('No main.tex here and no other LaTeX document found');
+    const md = memIo(dir);
+    expect(await main(['check', '--offline', '--markdown'], md)).toBe(1);
+    expect(md.stdoutText()).toContain('## Overfull preflight: NOTHING CHECKED');
+    expect(await main(['check', '--offline', '--fail-on', 'never'], memIo(dir))).toBe(0);
   });
 
   it('rejects bad option values with exit 2', async () => {

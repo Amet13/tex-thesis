@@ -9228,9 +9228,9 @@ async function JBig2(moduleArg = {}) {
   var alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
   var growMemory = (size) => {
     var oldHeapSize = wasmMemory.buffer.byteLength;
-    var pages = (size - oldHeapSize + 65535) / 65536 | 0;
+    var pages2 = (size - oldHeapSize + 65535) / 65536 | 0;
     try {
-      wasmMemory.grow(pages);
+      wasmMemory.grow(pages2);
       updateMemoryViews();
       return 1;
     } catch (e) {
@@ -9437,9 +9437,9 @@ async function OpenJPEG(moduleArg = {}) {
   var alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
   var growMemory = (size) => {
     var oldHeapSize = wasmMemory.buffer.byteLength;
-    var pages = (size - oldHeapSize + 65535) / 65536 | 0;
+    var pages2 = (size - oldHeapSize + 65535) / 65536 | 0;
     try {
-      wasmMemory.grow(pages);
+      wasmMemory.grow(pages2);
       updateMemoryViews();
       return 1;
     } catch (e) {
@@ -64054,9 +64054,9 @@ var init_pdf_worker = __esm({
         if (!this.pages) {
           await this._createPages();
         }
-        const pages = this.pages;
+        const pages2 = this.pages;
         this.pages = null;
-        return pages;
+        return pages2;
       }
       serializeData(storage) {
         return this.dataHandler.serialize(storage);
@@ -69159,8 +69159,8 @@ var init_pdf_worker = __esm({
         }
         if (root instanceof Dict) {
           try {
-            const pages = root.get("Pages");
-            if (pages instanceof Dict) {
+            const pages2 = root.get("Pages");
+            if (pages2 instanceof Dict) {
               this.root = root;
               return;
             }
@@ -73902,18 +73902,18 @@ var init_pdf_worker = __esm({
       }
       #makePageTree() {
         const {
-          newPages: pages,
+          newPages: pages2,
           rootDict,
           pagesRef,
           pagesDict
         } = this;
         rootDict.set("Pages", pagesRef);
         pagesDict.setIfName("Type", "Pages");
-        pagesDict.set("Count", pages.length);
+        pagesDict.set("Count", pages2.length);
         const maxLeaves = false ? 0 : MAX_LEAVES_PER_PAGES_NODE;
         const stack = [{
           dict: pagesDict,
-          kids: pages,
+          kids: pages2,
           parentRef: pagesRef
         }];
         while (stack.length > 0) {
@@ -108915,6 +108915,7 @@ function statusOf(problems) {
   return "pass";
 }
 function reportStatus(checks) {
+  if (checks.length > 0 && checks.every((c) => c.status === "skipped")) return "skipped";
   if (checks.some((c) => c.status === "fail")) return "fail";
   if (checks.some((c) => c.status === "warn")) return "warn";
   return "pass";
@@ -111894,10 +111895,10 @@ function fontProblems(facts, sev) {
     }
   ];
 }
-function pagesText(pages) {
-  if (!pages.length) return "";
-  const shown = pages.slice(0, 8).join(", ");
-  return ` on ${pages.length === 1 ? "page" : "pages"} ${shown}${pages.length > 8 ? ", \u2026" : ""}`;
+function pagesText(pages2) {
+  if (!pages2.length) return "";
+  const shown = pages2.slice(0, 8).join(", ");
+  return ` on ${pages2.length === 1 ? "page" : "pages"} ${shown}${pages2.length > 8 ? ", \u2026" : ""}`;
 }
 function veraPdfProblems(v, sev) {
   if (v.error) {
@@ -111957,16 +111958,16 @@ function veraPdfProblems(v, sev) {
     ];
   }
   return [...groups.values()].map((g) => {
-    const pages = [...g.pages].sort((a, b) => a - b);
+    const pages2 = [...g.pages].sort((a, b) => a - b);
     const p = g.problem;
-    p.message = `${g.spec} \xA7${g.clause}: ${g.desc} (${plural2(g.count, "failed check")}${pagesText(pages)})`;
-    if (pages.length) p.location = { page: pages[0] };
+    p.message = `${g.spec} \xA7${g.clause}: ${g.desc} (${plural2(g.count, "failed check")}${pagesText(pages2)})`;
+    if (pages2.length) p.location = { page: pages2[0] };
     p.data = {
       specification: g.spec,
       clause: g.clause,
       count: g.count,
       tests: g.tests,
-      ...pages.length ? { pages } : {}
+      ...pages2.length ? { pages: pages2 } : {}
     };
     return p;
   });
@@ -112202,7 +112203,7 @@ async function extractPdfFacts(data, pdfjs) {
     const xmp = readXmp(metadata);
     const markInfo = await doc.getMarkInfo().catch(() => null);
     const prefs = doc.getViewerPreferences ? await doc.getViewerPreferences().catch(() => null) : void 0;
-    const pages = [];
+    const pages2 = [];
     const figures = [];
     let hasStructTree = false;
     for (let i = 1; i <= doc.numPages; i++) {
@@ -112213,7 +112214,7 @@ async function extractPdfFacts(data, pdfjs) {
       if ((page.rotate ?? 0) % 180 !== 0) [w, h] = [h, w];
       const content = await page.getTextContent();
       const box = (page.rotate ?? 0) % 360 === 0 ? textBoxOf(content.items, page.view) : void 0;
-      pages.push({
+      pages2.push({
         number: i,
         text: pageText(content.items),
         widthMm: Math.round(w * 10) / 10,
@@ -112232,7 +112233,7 @@ async function extractPdfFacts(data, pdfjs) {
     const display = pick(prefs, "DisplayDocTitle");
     const facts = {
       pageCount: doc.numPages,
-      pages,
+      pages: pages2,
       info: pdfInfo,
       xmp,
       tagged: pick(markInfo, "Marked") === true,
@@ -112439,12 +112440,12 @@ function contextPage(context) {
   return m ? Number(m[1]) + 1 : void 0;
 }
 function pagesOf(contexts) {
-  const pages = contexts.map(contextPage).filter((p) => p !== void 0);
-  return [...new Set(pages)].sort((a, b) => a - b);
+  const pages2 = contexts.map(contextPage).filter((p) => p !== void 0);
+  return [...new Set(pages2)].sort((a, b) => a - b);
 }
 function withPages(f, all) {
-  const pages = pagesOf(all);
-  if (pages.length) f.pages = pages;
+  const pages2 = pagesOf(all);
+  if (pages2.length) f.pages = pages2;
   return f;
 }
 function mergeByClause(failures) {
@@ -112455,8 +112456,8 @@ function mergeByClause(failures) {
     if (prev) {
       prev.failedChecks += f.failedChecks;
       prev.contexts = [...prev.contexts, ...f.contexts].slice(0, MAX_CONTEXTS);
-      const pages = [.../* @__PURE__ */ new Set([...prev.pages ?? [], ...f.pages ?? []])].sort((a, b) => a - b);
-      if (pages.length) prev.pages = pages;
+      const pages2 = [.../* @__PURE__ */ new Set([...prev.pages ?? [], ...f.pages ?? []])].sort((a, b) => a - b);
+      if (pages2.length) prev.pages = pages2;
     } else byKey.set(key, { ...f });
   }
   return [...byKey.values()];
@@ -114231,7 +114232,7 @@ async function titleSearch(ctx, q, visit) {
       }
     }
   }
-  if ((ctx.deadline === void 0 || Date.now() <= ctx.deadline) && !ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && outcome.failures.some((f) => f.source === "dblp")) {
+  if ((ctx.deadline === void 0 || Date.now() <= ctx.deadline) && !ctx.opts.openalexKey && sourceAllowed(ctx.opts, "openalex") && !outcome.searched.includes("dblp")) {
     const plain2 = q.isTex ? texToPlain(q.title) : q.title;
     try {
       const records = await searchOne(
@@ -114281,7 +114282,10 @@ var SOURCE_NAMES = {
   acl: "ACL Anthology",
   europepmc: "Europe PMC"
 };
-var REQUIRED_FOR_NOT_FOUND = ["crossref", "dblp"];
+var SECOND_OPINION = ["openalex", "semanticscholar", "dblp"];
+function notFoundQuorum(searched) {
+  return searched.includes("crossref") && searched.some((s) => SECOND_OPINION.includes(s));
+}
 function sourceName(s) {
   return SOURCE_NAMES[s];
 }
@@ -114473,8 +114477,7 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
   const opts = ctx.opts;
-  const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
-  const skipped3 = ["crossref", "arxiv", "dblp"].filter(
+  const skipped3 = ["crossref", "openalex", "dblp"].filter(
     (s) => !sourceAllowed(opts, s)
   );
   const skippedNote = skipped3.length ? `(${sourcesText(skipped3).replace(/ or /, " and ")} ${skipped3.length === 1 ? "was" : "were"} not searched)` : "";
@@ -114513,20 +114516,28 @@ function noMatch(ctx, base, entry, kind, ids, ev) {
       reason: `no match found, but ${why2}${failed}`
     };
   }
-  if (failedRequired.length || !searched.length) {
+  if (!notFoundQuorum(searched)) {
+    if (skipped3.length && !ev.failures.length) {
+      return {
+        ...withSearched,
+        status: "unverifiable",
+        reason: `could not be checked here ${skippedNote}`
+      };
+    }
     const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
       ...failed.length ? { failed, failures: lastFailures(ev.failures) } : {},
       status: "error",
-      reason: `lookup incomplete: ${failuresText(ev.failures) || "no source answered"}`
+      reason: `lookup incomplete: ${failuresText(ev.failures) || "too few indexes answered"}`
     };
   }
-  if (skipped3.length) {
+  const sameTitle = ev.assessments.find((a) => a.titleScore >= STRONG_TITLE);
+  if (sameTitle) {
     return {
       ...withSearched,
       status: "unverifiable",
-      reason: `could not be checked here ${skippedNote}`
+      reason: `other works share this title (such as \u201C${stripTags(sameTitle.record.title)}\u201D, ${sameTitle.record.years[0] ?? "year unknown"}), and the indexes did not single out this one; add its DOI or arXiv id to check it`
     };
   }
   if (ids.openreviewId) {
@@ -114944,6 +114955,9 @@ function missingKeys(cited, entries, texFiles) {
     };
   });
 }
+function plural3(n, noun) {
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
 function summaryOf(results, stats) {
   const parts = [];
   if (stats.notFound) parts.push(`${stats.notFound} not found`);
@@ -114953,14 +114967,16 @@ function summaryOf(results, stats) {
     parts.push(`${stats.wrongWork} with an identifier that points to another work`);
   if (stats.error) parts.push(`${stats.error} could not be checked`);
   if (stats.unverifiable) parts.push(`${stats.unverifiable} not checkable automatically`);
-  const head = `${stats.verified} of ${results.length} references verified`;
+  const head = `${stats.verified} of ${plural3(results.length, "reference")} verified`;
   return parts.length ? `${head} (${parts.join(", ")})` : head;
 }
 var COLLAPSE_AT = 3;
 function unreachableHosts(reason) {
   const hosts = [];
   for (const part of (reason ?? "").replace(/^lookup incomplete: /, "").split("; ")) {
-    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,}): (?:network error|timed out)/.exec(part);
+    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,})(?:: (?:network error|timed out)| returned a non-JSON page)/.exec(
+      part
+    );
     if (m?.[1]) hosts.push(m[1]);
   }
   return hosts;
@@ -115027,12 +115043,24 @@ function refsCheck(results, opts = {}) {
   }
   if (results.some((r) => r.reason === "offline") && results.every((r) => r.reason === "offline" || r.reason === "skipped by author")) {
     const blocking = problems.filter((p) => p.rule !== "reference-unverifiable");
+    const notChecked = `${plural3(results.length, "reference")} not checked (offline)`;
+    const missing = blocking.filter((p) => p.rule === "citation-key-missing").length;
+    if (blocking.some((p) => p.severity !== "info")) {
+      const lead = missing ? `${plural3(missing, "cited key")} with no .bib entry` : plural3(blocking.filter((p) => p.severity !== "info").length, "problem");
+      return {
+        check: "references",
+        status: statusOf(blocking),
+        problems: blocking,
+        summary: `${lead}; ${notChecked}`,
+        stats
+      };
+    }
     return {
       check: "references",
       status: "skipped",
       skippedReason: "offline: references were not looked up",
       problems: blocking,
-      summary: `${results.length} references not checked (offline)`,
+      summary: notChecked,
       stats
     };
   }
@@ -115087,6 +115115,11 @@ function checkLine(c) {
   const n = c.problems.filter((p) => p.severity !== "info").length;
   if (n === 0) return "no problems";
   return `${n} problem${n === 1 ? "" : "s"}`;
+}
+function nothingCheckedLine(report) {
+  if (report.status !== "skipped") return void 0;
+  const reason = report.checks.find((c) => c.skippedReason)?.skippedReason;
+  return `Nothing was checked${reason ? `: ${reason}` : ""}.`;
 }
 function tallyLine(t) {
   const parts = [`${t.errors} to fix`, `${t.warnings} to review`];
@@ -115143,6 +115176,27 @@ function githubAnnotations(report, opts = {}) {
   return opts.limit ? list3.slice(0, opts.limit) : list3;
 }
 
+// ../packages/core/src/report/dedupe.ts
+function mergeDuplicateFindings(checks) {
+  const refs = checks.find((c) => c.check === "references");
+  const output = checks.find((c) => c.check === "output");
+  if (!refs || !output) return checks;
+  const missing = new Set(
+    refs.problems.filter((p) => p.rule === "citation-key-missing").map((p) => String(p.data?.key))
+  );
+  if (!missing.size) return checks;
+  const kept = output.problems.filter(
+    (p) => !(p.rule === "undefined-citation" && missing.has(String(p.data?.key)))
+  );
+  if (kept.length === output.problems.length) return checks;
+  output.problems = kept;
+  if (output.status !== "skipped") {
+    output.status = statusOf(kept);
+    output.summary = outputSummary(kept);
+  }
+  return checks;
+}
+
 // ../packages/core/src/report/human.ts
 function palette(color) {
   const wrap = (open, close) => (s) => color ? `\x1B[${open}m${s}\x1B[${close}m` : s;
@@ -115170,7 +115224,7 @@ function formatHuman(report, opts = {}) {
   };
   const sevPaint = { error: c.red, warning: c.yellow, info: c.cyan };
   const lines = [];
-  const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL" }[report.status];
+  const statusWord = { pass: "PASS", warn: "WARN", fail: "FAIL", skipped: "NOTHING CHECKED" }[report.status];
   const target = report.target ? ` ${oneLine(report.target)}` : "";
   lines.push(`${c.bold(`overfull${target}`)}  ${statusPaint[report.status](c.bold(statusWord))}`);
   const nameWidth = Math.max(...report.checks.map((ch2) => ch2.check.length), 5) + 2;
@@ -115192,6 +115246,8 @@ function formatHuman(report, opts = {}) {
       lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
   }
   lines.push("");
+  const why2 = nothingCheckedLine(report);
+  if (why2) lines.push(why2);
   lines.push(tallyLine(tally(report)));
   if (!opts.verbose && problems.some((p) => p.fix || p.detail)) {
     lines.push(c.dim("Run with --verbose for fixes, or `overfull explain <rule>`."));
@@ -115287,7 +115343,10 @@ function problemItem(p) {
 function formatMarkdown(report) {
   const out = [];
   const target = report.target ? ` \u2014 ${escapeMarkdown(report.target)}` : "";
-  out.push(`## Overfull preflight: ${report.status.toUpperCase()}${target}`, "");
+  const word = report.status === "skipped" ? "NOTHING CHECKED" : report.status.toUpperCase();
+  out.push(`## Overfull preflight: ${word}${target}`, "");
+  const why2 = nothingCheckedLine(report);
+  if (why2) out.push(inline(why2), "");
   out.push("| Check | Status | Summary |", "| --- | --- | --- |");
   for (const c of report.checks) {
     out.push(`| ${c.check} | ${STATUS_TEXT[c.status]} | ${inline(checkLine(c))} |`);
@@ -115874,16 +115933,16 @@ function mainTextPages(profile, ctx) {
   const entry = parseAuxLabels(ctx.aux).get(endLabel);
   return entry && /^\d+$/.test(entry.page) ? Number(entry.page) : void 0;
 }
+var pages = (n) => `${n} page${n === 1 ? "" : "s"}`;
 function pageLimitText(profile, ctx) {
   const max = profile.pageLimit?.max;
   if (max === void 0) return void 0;
   const total = ctx.facts?.pageCount;
   const main3 = mainTextPages(profile, ctx);
   if (main3 !== void 0)
-    return `main text ${main3} of ${max} pages${total !== void 0 ? ` (${total} total)` : ""}`;
-  return total !== void 0 ? `${total} of ${max} pages` : void 0;
+    return `main text ${pages(main3)}, limit ${max}${total !== void 0 ? ` (${total} in total)` : ""}`;
+  return total !== void 0 ? `${pages(total)}, limit ${max}` : void 0;
 }
-var cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 function pageLimitProblems(profile, ctx) {
   const limit = profile.pageLimit;
   if (!limit) return [];
@@ -115898,7 +115957,7 @@ function pageLimitProblems(profile, ctx) {
           rule: "page-limit-exceeded",
           check: "venue",
           severity: "error",
-          message: `${cap(pageLimitText(profile, ctx))}: the main text ends on page ${page}`,
+          message: `The main text is ${pages(page)}; the limit is ${max}${ctx.facts?.pageCount !== void 0 ? ` (${ctx.facts.pageCount} pages in total)` : ""}`,
           location: { page },
           detail: `Counted up to \`\\label{${endLabel}}\`. Partial pages count as full pages.`,
           fix: `Cut ${page - max === 1 ? "about a page" : `about ${page - max} pages`} before \`\\label{${endLabel}}\`, or move material to the appendix`,
@@ -115932,7 +115991,7 @@ function pageLimitProblems(profile, ctx) {
       rule: "page-limit-exceeded",
       check: "venue",
       severity: "error",
-      message: `${cap(pageLimitText(profile, ctx))} (all pages counted)`,
+      message: `The paper is ${pages(total)}; the limit is ${max} (all pages counted)`,
       fix: endLabel ? `Cut ${total - max} page(s), or fix \`\\label{${endLabel}}\` so only the main text is counted` : `Cut ${total - max} page(s), or set \`venue.pageLimit.endLabel\` if references/appendix do not count`,
       data: { pages: total, max }
     });
@@ -117946,6 +118005,8 @@ async function accessibility(inp, opts, results) {
 }
 function venue(inp) {
   const { config } = inp;
+  if (!inp.facts && !existsSync4(join5(config.root, config.main)))
+    return skipped2("venue", missingPdfReason(inp));
   const { files, texFiles, skipped: skippedFiles } = sourcesOf(inp);
   const result = venueCheck(config.profile, {
     ...inp.facts ? { facts: inp.facts } : {},
@@ -117994,6 +118055,7 @@ async function runCheck(opts = {}) {
     results.push(await accessibility(inp, { ...opts, env }, results));
   if (wanted.has("venue")) results.push(venue(inp));
   results.sort((a, b) => CHECK_IDS.indexOf(a.check) - CHECK_IDS.indexOf(b.check));
+  mergeDuplicateFindings(results);
   for (const r of results) r.problems = sortProblems(r.problems);
   const target = existsSync4(join5(config.root, inp.pdfPath)) ? inp.pdfPath : config.main;
   return {
@@ -118023,7 +118085,7 @@ function sarifFallbackFile(cwd, env, configPath, main3) {
 }
 function exitCodeFor(report, failOn) {
   if (failOn === "never") return 0;
-  if (report.status === "fail") return 1;
+  if (report.status === "fail" || report.status === "skipped") return 1;
   if (failOn === "warning" && report.status === "warn") return 1;
   return 0;
 }

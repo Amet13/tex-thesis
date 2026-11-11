@@ -13,7 +13,7 @@ inputs:
     description: Comma-separated checks to run (build, output, references, accessibility, venue). Default from overfull.yml, else all.
     required: false
   profile:
-    description: Venue profile (generic, thesis, paper, arxiv, double-blind). Default from overfull.yml.
+    description: Venue profile, built in (generic, thesis, paper, arxiv, double-blind) or a venue id such as neurips-2026 (see the Venues page of the guide). Default from overfull.yml.
     required: false
   pdf:
     description: PDF to check, relative to working-directory. Default <jobname>.pdf.
@@ -28,7 +28,7 @@ inputs:
     description: .aux file. Default <jobname>.aux.
     required: false
   fail-on:
-    description: Fail the step on `error` (default), `warning`, or `never`.
+    description: Fail the step on `error` (default), `warning`, or `never`. A run that checked nothing also fails unless this is `never`.
     required: false
     default: error
   offline:
@@ -52,7 +52,7 @@ inputs:
     default: ''
 outputs:
   status:
-    description: 'Overall status: pass, warn or fail.'
+    description: 'Overall status: pass, warn, fail, or skipped when nothing could be checked (no log, PDF or .bib found; the step fails unless fail-on is never).'
   report:
     description: Path to the JSON report (in $RUNNER_TEMP).
   sarif:

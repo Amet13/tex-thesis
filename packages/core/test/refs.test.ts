@@ -11,8 +11,8 @@ import {
   generateKey,
   identifiersOf,
   markCited,
-  notFoundQuorum,
   missingKeys,
+  notFoundQuorum,
   parseArxivFeed,
   parseArxivId,
   parseDoi,
@@ -661,7 +661,7 @@ describe('refsCheck', () => {
     const check = refsCheck([{ key: 'a', status: 'verified' }]);
     expect(check).toMatchObject({
       status: 'pass',
-      summary: '1 of 1 references verified',
+      summary: '1 of 1 reference verified',
       problems: [],
     });
   });

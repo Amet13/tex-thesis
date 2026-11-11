@@ -434,6 +434,11 @@ export interface RefsCheckOptions {
   citedKeys?: string[];
 }
 
+/** `1 reference`, `2 references`. */
+function plural(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
+}
+
 function summaryOf(results: RefResult[], stats: Record<string, number>): string {
   const parts: string[] = [];
   if (stats.notFound) parts.push(`${stats.notFound} not found`);
@@ -443,7 +448,7 @@ function summaryOf(results: RefResult[], stats: Record<string, number>): string 
     parts.push(`${stats.wrongWork} with an identifier that points to another work`);
   if (stats.error) parts.push(`${stats.error} could not be checked`);
   if (stats.unverifiable) parts.push(`${stats.unverifiable} not checkable automatically`);
-  const head = `${stats.verified} of ${results.length} references verified`;
+  const head = `${stats.verified} of ${plural(results.length, 'reference')} verified`;
   return parts.length ? `${head} (${parts.join(', ')})` : head;
 }
 
@@ -543,12 +548,28 @@ export function refsCheck(results: RefResult[], opts: RefsCheckOptions = {}): Ch
     results.every((r) => r.reason === 'offline' || r.reason === 'skipped by author')
   ) {
     const blocking = problems.filter((p) => p.rule !== 'reference-unverifiable');
+    const notChecked = `${plural(results.length, 'reference')} not checked (offline)`;
+    const missing = blocking.filter((p) => p.rule === 'citation-key-missing').length;
+    // Problems found without the network (a cited key with no entry, a parse error, a
+    // duplicate) still decide the status; the summary names them first.
+    if (blocking.some((p) => p.severity !== 'info')) {
+      const lead = missing
+        ? `${plural(missing, 'cited key')} with no .bib entry`
+        : plural(blocking.filter((p) => p.severity !== 'info').length, 'problem');
+      return {
+        check: 'references',
+        status: statusOf(blocking),
+        problems: blocking,
+        summary: `${lead}; ${notChecked}`,
+        stats,
+      };
+    }
     return {
       check: 'references',
       status: 'skipped',
       skippedReason: 'offline: references were not looked up',
       problems: blocking,
-      summary: `${results.length} references not checked (offline)`,
+      summary: notChecked,
       stats,
     };
   }

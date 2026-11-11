@@ -3,6 +3,7 @@ import {
   checkLine,
   formatLocation,
   neutralizeWorkflowCommands,
+  nothingCheckedLine,
   oneLine,
   safeLines,
   sortedProblems,
@@ -50,7 +51,9 @@ export function formatHuman(report: Report, opts: HumanOptions = {}): string {
   };
   const sevPaint: Record<Severity, Paint> = { error: c.red, warning: c.yellow, info: c.cyan };
   const lines: string[] = [];
-  const statusWord = { pass: 'PASS', warn: 'WARN', fail: 'FAIL' }[report.status];
+  const statusWord = { pass: 'PASS', warn: 'WARN', fail: 'FAIL', skipped: 'NOTHING CHECKED' }[
+    report.status
+  ];
   const target = report.target ? ` ${oneLine(report.target)}` : '';
   lines.push(`${c.bold(`overfull${target}`)}  ${statusPaint[report.status](c.bold(statusWord))}`);
   const nameWidth = Math.max(...report.checks.map((ch) => ch.check.length), 5) + 2;
@@ -72,6 +75,8 @@ export function formatHuman(report: Report, opts: HumanOptions = {}): string {
       lines.push(...problemLines(p, locWidth, opts.verbose ?? false, c, sevPaint));
   }
   lines.push('');
+  const why = nothingCheckedLine(report);
+  if (why) lines.push(why);
   lines.push(tallyLine(tally(report)));
   if (!opts.verbose && problems.some((p) => p.fix || p.detail)) {
     lines.push(c.dim('Run with --verbose for fixes, or `overfull explain <rule>`.'));

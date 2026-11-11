@@ -136,7 +136,7 @@ added  vaswani2017attention → references.bib</span></pre>
 <span class="t-out">&#123; "status": "fail", "checks": [ …
   &#123; "check": "venue", "status": "fail", "problems": [
     &#123; "rule": "page-limit-exceeded", "severity": "error",
-      "message": "Main text runs to page 10; the limit is 9",
+      "message": "The main text is 10 pages; the limit is 9 (11 pages in total)",
       "location": &#123; "page": 10 &#125; &#125; ] &#125; ] &#125;</span></pre>
       <p class="t-agent"><span class="t-who">agent</span><span class="t-say">Over by about half a page. Table 3 floats onto page 10. I’ll move the per-dataset rows to the appendix and keep the summary row in the main text.</span></p>
       <pre class="t-cmd" tabindex="0"><span class="t-ps">$</span> overfull build && overfull check
@@ -144,7 +144,7 @@ added  vaswani2017attention → references.bib</span></pre>
 output         pass
 references     pass   32 of 32 verified
 accessibility  pass   tagged, PDF/UA-2
-venue          pass   main text 9 of 9 pages (11 total)</span></pre>
+venue          pass   main text 9 pages, limit 9 (11 in total)</span></pre>
       <p class="t-agent"><span class="t-who">agent</span><span class="t-say">All five checks pass. Opened pull request #42, “Cite Vaswani et al.; move Table 3 detail to appendix”, with the report and a PDF showing the changes.</span></p>
     </figure>
   </section>

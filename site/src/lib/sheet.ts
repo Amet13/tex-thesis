@@ -31,6 +31,7 @@ const STAMP: Record<Report['status'], string> = {
   pass: 'OK to print',
   warn: 'OK with corrections',
   fail: 'Revised proof required',
+  skipped: 'Nothing to proof',
 };
 
 const STATUS_WORD: Record<string, string> = {

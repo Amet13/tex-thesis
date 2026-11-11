@@ -17,6 +17,7 @@ import {
   extractPdfFacts,
   formatJson,
   formatMarkdown,
+  mergeDuplicateFindings,
   missingKeys,
   type PdfFacts,
   type PdfjsLike,
@@ -757,6 +758,7 @@ export function initCheck(): void {
       (c) =>
         results.get(c) ?? { check: c, status: 'skipped', problems: [], skippedReason: reasons[c] },
     );
+    mergeDuplicateFindings(checks);
     report = {
       tool: 'overfull',
       version: VERSION,

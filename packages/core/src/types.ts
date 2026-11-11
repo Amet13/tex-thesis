@@ -70,7 +70,8 @@ export interface Report {
     profile: string;
     bib: string[];
   };
-  status: Exclude<CheckStatus, 'skipped'>;
+  /** `skipped`: every check was skipped, so nothing was checked (never a pass). */
+  status: CheckStatus;
   checks: CheckResult[];
 }
 
@@ -95,8 +96,12 @@ export function statusOf(problems: Problem[]): Exclude<CheckStatus, 'skipped'> {
   return 'pass';
 }
 
-/** Computes the overall report status (skipped checks are ignored). */
+/**
+ * Computes the overall report status. Skipped checks are ignored, unless every check
+ * was skipped: then nothing was checked and the status is `skipped`, not `pass`.
+ */
 export function reportStatus(checks: CheckResult[]): Report['status'] {
+  if (checks.length > 0 && checks.every((c) => c.status === 'skipped')) return 'skipped';
   if (checks.some((c) => c.status === 'fail')) return 'fail';
   if (checks.some((c) => c.status === 'warn')) return 'warn';
   return 'pass';

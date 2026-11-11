@@ -668,6 +668,9 @@ section.block::after {
 .stamp-fail {
   color: var(--error);
 }
+.stamp-skipped {
+  color: var(--ink-2);
+}
 .sheet-check {
   border-bottom: 1px solid var(--hair);
   padding: 0.8rem 1.1rem 0.6rem;
