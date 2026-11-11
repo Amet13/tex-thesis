@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [v3.1.1] - 2026-11-11
+
+Changes merged since v3.1.0, each after the full test suite and the template
+builds passed. Released automatically by autorelease.yml.
+
+### Changed
+
+- Fix the slow trailing-punctuation regex in parseDoi (CodeQL js/polynomial-redos)
+- Cleanup: remove the plan, unexport 32 more declarations, share the identifier checks
+- Automation runs without API keys or repository secrets
+- Format log/paths.ts
+- Drop npm publishing: Overfull ships only through GitHub
+- Revert "npm: publish the single-file CLI as `overfull` when an NPM_TOKEN secret exists"
+- Rebuild the bundled Action
+- Changelog for the next release; plan status
+- npm: publish the single-file CLI as `overfull` when an NPM_TOKEN secret exists
+- Venue profiles: ECCV 2026 and AISTATS 2027, from the official pages and kits
+- Remove an unused log helper; format
+- Export only what other modules use (55 declarations were exported for nothing)
+- Skills: trim add-citation, fix outdated sources and rules
+- Keep outside data current: source health, recording refresh, venue kits and page changes
+- Rewrite ARCHITECTURE.md from the code as it is; --profile help names venue ids
+- Smaller downloads, one name per command, declared dependencies
+- CI survives mirror outages; tests for bibliography attribution, Semantic Scholar, MCP framing
+- cite: write the published version when arXiv names one; never write collection
+- Reports: nothing checked is not a pass; one finding per missing key; clearer summaries
+- References: call an invented title not found when CrossRef and one more index agree
+- Plan: keep outside data current (source health, recordings, venue kits and pages)
+- Add an improvement plan from a fresh audit of 3.1.0
+- Fix the open CodeQL findings
+
 ### Changed
 
 - **References: "not found" no longer needs dblp.** An invented title is reported
