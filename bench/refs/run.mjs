@@ -8,7 +8,8 @@
 // Options: --real, --fabricated (bib files), --out (default bench/refs/results.json),
 //   --limit N (first N entries of each class; marks the run partial), --seed N (order of entries),
 //   --summary file (append a Markdown table, e.g. $GITHUB_STEP_SUMMARY), --timeout-ms.
-// OVERFULL_MAILTO adds a contact address for CrossRef's polite pool.
+// OVERFULL_MAILTO adds a contact address for CrossRef's polite pool; OPENALEX_API_KEY and
+// SEMANTIC_SCHOLAR_API_KEY are passed on like the CLI does.
 // Exit code: 0 whenever a run completed (misses are results, not failures); 1 or 2 if the harness itself failed.
 //
 // Entries are verified one at a time, in a seeded shuffled order that mixes real and fabricated entries,
@@ -184,6 +185,10 @@ const results = await verifyEntries(
   {
     fetch: countingFetch,
     mailto: process.env.OVERFULL_MAILTO || undefined,
+    ...(process.env.OPENALEX_API_KEY ? { openalexKey: process.env.OPENALEX_API_KEY } : {}),
+    ...(process.env.SEMANTIC_SCHOLAR_API_KEY
+      ? { semanticScholarKey: process.env.SEMANTIC_SCHOLAR_API_KEY }
+      : {}),
     concurrency: 1,
     timeoutMs: Number(values['timeout-ms']),
     ...(values.replay ? { arxivIntervalMs: 0, retryDelayMs: 0 } : {}),

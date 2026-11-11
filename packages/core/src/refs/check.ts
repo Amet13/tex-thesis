@@ -450,11 +450,14 @@ function summaryOf(results: RefResult[], stats: Record<string, number>): string 
 /** Entries whose lookups failed for network reasons before they are folded into one problem. */
 const COLLAPSE_AT = 3;
 
-/** Hosts that could not be reached (network error, timeout) in a lookup-failure reason. */
+/** Hosts that could not be reached (network error, timeout, bot wall) in a lookup-failure reason. */
 export function unreachableHosts(reason: string | undefined): string[] {
   const hosts: string[] = [];
   for (const part of (reason ?? '').replace(/^lookup incomplete: /, '').split('; ')) {
-    const m = /^([A-Za-z0-9.-]+\.[A-Za-z]{2,}): (?:network error|timed out)/.exec(part);
+    const m =
+      /^([A-Za-z0-9.-]+\.[A-Za-z]{2,})(?:: (?:network error|timed out)| returned a non-JSON page)/.exec(
+        part,
+      );
     if (m?.[1]) hosts.push(m[1]);
   }
   return hosts;

@@ -2,9 +2,9 @@
  * Calibration benchmark on recorded real responses (fixtures/refs/http.json,
  * recorded with record.mjs on 2026-11-08). During recording dblp.org answered
  * every request with a bot challenge, so these numbers are for "dblp
- * unavailable": entries only dblp could confirm come out as `error`
- * (lookup incomplete), never as `not-found`, unless the keyless OpenAlex
- * fallback (responses topped up on 2026-11-09) confirms them.
+ * unavailable". CrossRef and the keyless OpenAlex fallback (responses topped
+ * up on 2026-11-09) answered, which meets the not-found quorum
+ * (`notFoundQuorum`): dblp is no longer required.
  */
 import { describe, expect, it } from 'vitest';
 import { parseBib } from '../src/bib/index.js';
@@ -42,17 +42,23 @@ describe('real references (51 entries)', () => {
     for (const k of ['lamport2001paxos', 'ongaro2014search', 'krizhevsky2012imagenet']) {
       expect(get(k), k).toMatchObject({ status: 'verified', source: 'openalex' });
     }
-    // Only dblp indexes this one (no DOI, not on arXiv, not found by OpenAlex either).
-    expect(s.error).toEqual(['goodfellow2014generative']);
+    // No DOI, not on arXiv, and OpenAlex's top answers for this short title are other
+    // works with the same title: it is "could not tell", never "not found".
+    expect(s.error).toEqual([]);
     expect(s.mismatch).toEqual([]);
-    expect(s.unverifiable).toEqual([
-      'knuth1997art',
-      'ongaro2014consensus',
-      'rfc9110nodoi',
-      'numpy',
-      'ctan',
-      'nakamoto2008bitcoin',
-    ]);
+    expect(get('goodfellow2014generative')).toMatchObject({ status: 'unverifiable' });
+    expect(get('goodfellow2014generative')?.reason).toMatch(/other works share this title/);
+    expect([...(s.unverifiable ?? [])].sort()).toEqual(
+      [
+        'knuth1997art',
+        'ongaro2014consensus',
+        'rfc9110nodoi',
+        'numpy',
+        'ctan',
+        'nakamoto2008bitcoin',
+        'goodfellow2014generative',
+      ].sort(),
+    );
     expect(s.verified).toHaveLength(44);
   });
 
@@ -86,7 +92,8 @@ describe('real references (51 entries)', () => {
   it('produces a check with an honest summary', async () => {
     const { results } = await run('real.bib');
     const check = refsCheck(results);
-    expect(check.status).toBe('warn');
+    // Only notes remain (entries that cannot be checked automatically).
+    expect(check.status).toBe('pass');
     expect(check.summary).toMatch(/^44 of 51 references verified/);
     expect(check.problems.some((p) => p.severity === 'error')).toBe(false);
   });
@@ -100,16 +107,11 @@ describe('fabricated references (17 entries)', () => {
     const s = byStatus(results);
     expect(s.verified).toEqual([]);
     expect(s.unverifiable).toEqual([]);
-    // Detected (not-found or mismatch): 13 of 17 = 76%. The other 4 have no DOI or arXiv id
-    // and only dblp could rule them out, so they are reported as lookup failures (warning).
-    expect([...(s['not-found'] ?? []), ...(s.mismatch ?? [])]).toHaveLength(13);
+    // Detected (not-found or mismatch): 17 of 17, with dblp behind a bot wall. Until 3.1
+    // the four title-only entries were "could not be checked" because dblp was required.
+    expect([...(s['not-found'] ?? []), ...(s.mismatch ?? [])]).toHaveLength(17);
     expect(s.mismatch).toEqual(['lamport2003byzantine', 'mendes2020protein']);
-    expect(s.error).toEqual([
-      'liu2023sparse',
-      'wang2024graph',
-      'hughes2018lattice',
-      'brown2021scaling',
-    ]);
+    expect(s.error).toEqual([]);
   });
 
   it('explains a DOI that belongs to another paper', async () => {

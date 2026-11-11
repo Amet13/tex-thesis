@@ -27,8 +27,19 @@ neither exists, every entry is checked):
    OpenAlex when the `OPENALEX_API_KEY` environment variable is set). When none
    of them finds the work, Semantic Scholar and then Europe PMC are asked, one at
    a time, and at most three title searches answer for one entry. When DBLP
-   cannot be reached and no OpenAlex key is set, OpenAlex is asked without a key.
+   gives no answer (it often refuses automated requests) and no OpenAlex key is
+   set, OpenAlex is asked without a key.
 5. Compare the best candidate's title, authors and year with your entry.
+
+An entry is reported as **not found** only when CrossRef and at least one more
+general index (OpenAlex, Semantic Scholar or DBLP) answered and none of them has
+a record with a similar title. No single index is required, so one that is down
+or refuses automated requests does not stop the check. When fewer indexes
+answered, the entry "could not be checked" (a warning, never an error). When an
+index knows other works with the same title (by other authors or from another
+year), the entry is "could not tell" instead: short titles are often shared,
+and the right record may be further down the index's list. Add the DOI or arXiv
+id to settle it.
 
 OpenReview is not asked: it answers automated requests with a browser check.
 A paper that no index has yet but whose entry links to its OpenReview page
@@ -201,6 +212,13 @@ reliable. You can also set it with the `OVERFULL_MAILTO` environment variable or
 OpenAlex on. OpenAlex title search runs only when the `OPENALEX_API_KEY`
 environment variable is set; it is not an `overfull.yml` key, so the key stays out
 of your repository.
+
+Keys are free and worth setting in CI. Without a key, OpenAlex counts requests
+against a daily budget shared by every machine behind the same IP address, and
+shared CI runners use it up quickly; the check then has one index fewer and
+reports more entries as "could not be checked". Get a key at
+[help.openalex.org/api/authentication](https://help.openalex.org/api/authentication/)
+and pass it as a secret (see [GitHub Action](./action.md)).
 
 `SEMANTIC_SCHOLAR_API_KEY`, when set, is sent to Semantic Scholar for a higher
 rate limit; without it the shared public limit applies. Like the OpenAlex key,

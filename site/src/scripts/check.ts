@@ -688,7 +688,7 @@ export function initCheck(): void {
             // only the sources a browser can reach are asked. (Core calls
             // fetch detached from globalThis, so window.fetch needs no wrapper.)
             const opts: RefsOptions = {
-              sources: ['crossref', 'doi.org'],
+              sources: ['crossref', 'doi.org', 'openalex'],
               cache,
               signal,
               concurrency: chunk,

@@ -241,7 +241,7 @@ export async function titleSearch(
     (ctx.deadline === undefined || Date.now() <= ctx.deadline) &&
     !ctx.opts.openalexKey &&
     sourceAllowed(ctx.opts, 'openalex') &&
-    outcome.failures.some((f) => f.source === 'dblp')
+    !outcome.searched.includes('dblp')
   ) {
     const plain = q.isTex ? texToPlain(q.title) : q.title;
     try {

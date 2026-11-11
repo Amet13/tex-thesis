@@ -46,4 +46,4 @@ export type {
   RetractionNotice,
   WorkRecord,
 } from './types.js';
-export { hasValidProvenance, verifyEntries } from './verify.js';
+export { hasValidProvenance, notFoundQuorum, verifyEntries } from './verify.js';

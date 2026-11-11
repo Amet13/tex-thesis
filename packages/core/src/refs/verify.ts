@@ -9,7 +9,14 @@ import {
   identifiersOf,
   notIndexedReason,
 } from './kind.js';
-import { type Assessment, assess, type BibFacts, bestAssessment, bibFacts } from './match.js';
+import {
+  type Assessment,
+  assess,
+  type BibFacts,
+  bestAssessment,
+  bibFacts,
+  STRONG_TITLE,
+} from './match.js';
 import { stripTags } from './normalize.js';
 import { attachRetractions } from './retraction.js';
 import {
@@ -36,8 +43,20 @@ const SOURCE_NAMES: Record<RefSource, string> = {
   europepmc: 'Europe PMC',
 };
 
-/** Sources whose answer is needed before "no match" may become `not-found`. */
-const REQUIRED_FOR_NOT_FOUND: RefSource[] = ['crossref', 'dblp'];
+/** General indexes that can confirm CrossRef's "no match" (any one is enough). */
+const SECOND_OPINION: RefSource[] = ['openalex', 'semanticscholar', 'dblp'];
+
+/**
+ * True when enough indexes answered for "no similar title anywhere" to mean
+ * `not-found`: CrossRef, plus at least one other general index (OpenAlex, Semantic
+ * Scholar or dblp). One index alone misses too much; any single source may be down
+ * or behind a bot wall (dblp often is), so none of the others is required.
+ * arXiv, Europe PMC and the ACL Anthology add coverage but are not general enough
+ * to count. Failures of sources outside the quorum do not block the verdict.
+ */
+export function notFoundQuorum(searched: readonly RefSource[]): boolean {
+  return searched.includes('crossref') && searched.some((s) => SECOND_OPINION.includes(s));
+}
 
 export function sourceName(s: RefSource): string {
   return SOURCE_NAMES[s];
@@ -302,9 +321,8 @@ function noMatch(
   const searched = [...ev.searched];
   const withSearched = { ...base, searched };
   const opts = ctx.opts;
-  const failedRequired = ev.failures.filter((f) => REQUIRED_FOR_NOT_FOUND.includes(f.source));
   // Indexes left out by the `sources` allow-list were not asked; say so in the reason.
-  const skipped = (['crossref', 'arxiv', 'dblp'] as RefSource[]).filter(
+  const skipped = (['crossref', 'openalex', 'dblp'] as RefSource[]).filter(
     (s) => !sourceAllowed(opts, s),
   );
   const skippedNote = skipped.length
@@ -350,22 +368,34 @@ function noMatch(
       reason: `no match found, but ${why}${failed}`,
     };
   }
-  if (failedRequired.length || !searched.length) {
+  if (!notFoundQuorum(searched)) {
+    // Indexes were left out on purpose (the `sources` allow-list) and nothing failed:
+    // absence here proves nothing, so the entry is unverifiable, not missing.
+    if (skipped.length && !ev.failures.length) {
+      return {
+        ...withSearched,
+        status: 'unverifiable',
+        reason: `could not be checked here ${skippedNote}`,
+      };
+    }
     const failed = [...new Set(ev.failures.map((f) => f.source))];
     return {
       ...withSearched,
       ...(failed.length ? { failed, failures: lastFailures(ev.failures) } : {}),
       status: 'error',
-      reason: `lookup incomplete: ${failuresText(ev.failures) || 'no source answered'}`,
+      reason: `lookup incomplete: ${failuresText(ev.failures) || 'too few indexes answered'}`,
     };
   }
-  // Indexes that a not-found verdict relies on were left out (the browser cannot reach
-  // arXiv or dblp): absence here proves nothing, so the entry is unverifiable, not missing.
-  if (skipped.length) {
+  // An index knows a work with (nearly) this exact title, by other authors or from another
+  // year. The search ranks by relevance, so the entry's own record may simply be further
+  // down the list (a short title such as "Generative Adversarial Nets" is shared by many
+  // works). That is no evidence of absence.
+  const sameTitle = ev.assessments.find((a) => a.titleScore >= STRONG_TITLE);
+  if (sameTitle) {
     return {
       ...withSearched,
       status: 'unverifiable',
-      reason: `could not be checked here ${skippedNote}`,
+      reason: `other works share this title (such as “${stripTags(sameTitle.record.title)}”, ${sameTitle.record.years[0] ?? 'year unknown'}), and the indexes did not single out this one; add its DOI or arXiv id to check it`,
     };
   }
   // A paper known only from its OpenReview page (often under review or just accepted) may
