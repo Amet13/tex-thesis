@@ -16,7 +16,7 @@ import { loadConfig } from '../config.js';
 import { type Io, UsageError } from '../io.js';
 import { insideRootForWrite } from '../safety.js';
 
-export const citeHelp = `Usage: overfull cite <doi | arXiv:id | ACL id | PMID | PMCID | "title"> [options]
+const citeHelp = `Usage: overfull cite <doi | arXiv:id | ACL id | PMID | PMCID | "title"> [options]
 
 Look a reference up in CrossRef / doi.org / arXiv / dblp / ACL Anthology / Europe PMC
 (and Semantic Scholar as a title fallback) and append a clean

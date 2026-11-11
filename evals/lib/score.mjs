@@ -5,10 +5,10 @@ import { expandPlaceholders } from './generate.mjs';
 import { matchesAny } from './tasks.mjs';
 
 /** Files whose added lines count as prose for the "added where it was not asked" bound. */
-export const PROSE_FILE = /\.(tex|md|txt|rst|bib)$/i;
+const PROSE_FILE = /\.(tex|md|txt|rst|bib)$/i;
 
 /** Build products that are not the agent's work (projects without a .gitignore leave them untracked). */
-export const BUILD_ARTIFACTS = [
+const BUILD_ARTIFACTS = [
   '**/*.pdf',
   '**/*.aux',
   '**/*.log',

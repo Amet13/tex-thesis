@@ -46,6 +46,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
   every install step has a time limit.
 - Tests for the bibliography error attribution, the Semantic Scholar source and
   the MCP framing; coverage floors are enforced in CI.
+- Cleanup: 87 declarations that only their own file used are no longer
+  exported, two dead functions and the improvement plan are removed, and the
+  DOI and arXiv checks share their assessment and failure handling.
 
 ## [v3.1.0] - Any project first
 

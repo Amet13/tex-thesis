@@ -4,7 +4,7 @@ import { closest } from '../config.js';
 import { type Io, UsageError, useColor } from '../io.js';
 import { everyRule, findRule } from '../rules.js';
 
-export const explainHelp = `Usage: overfull explain <rule> [--json]
+const explainHelp = `Usage: overfull explain <rule> [--json]
 
 Explain a rule: what it means and how to fix it. Rule ids appear in every
 problem Overfull reports. \`overfull explain --list\` lists all rules.

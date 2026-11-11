@@ -9,7 +9,7 @@ const PAPER = {
 const TOLERANCE_MM = 3;
 
 /** Last page of the main text: the page of the end label from the .aux, when it is a number. */
-export function mainTextPages(profile: VenueProfile, ctx: VenueContext): number | undefined {
+function mainTextPages(profile: VenueProfile, ctx: VenueContext): number | undefined {
   const endLabel = profile.pageLimit?.endLabel;
   if (!endLabel || !ctx.aux) return undefined;
   const entry = parseAuxLabels(ctx.aux).get(endLabel);

@@ -5,7 +5,7 @@ import type { TexFile, VenueContext, VenueProfile } from './types.js';
 const baseName = (path: string) => path.split('/').pop() ?? path;
 
 /** Profiles that get the layout check: a page limit or a named style file, never generic/thesis. */
-export function layoutCheckApplies(profile: VenueProfile): boolean {
+function layoutCheckApplies(profile: VenueProfile): boolean {
   if (profile.id === 'generic' || profile.id === 'thesis') return false;
   return profile.pageLimit !== undefined || (profile.styleFiles?.length ?? 0) > 0;
 }

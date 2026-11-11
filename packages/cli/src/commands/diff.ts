@@ -14,7 +14,7 @@ import {
 } from '../tools.js';
 import { resolveEngine } from './build.js';
 
-export const diffHelp = `Usage: overfull diff [options]
+const diffHelp = `Usage: overfull diff [options]
 
 Build a PDF that marks what changed since a git revision (latexdiff), so a
 supervisor or co-author can review changes. Prints the path of the PDF.

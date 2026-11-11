@@ -48,7 +48,7 @@ function bodyAfterHeading(f: TexFile, line: number): string {
 }
 
 /** Locates the AI-use disclosure: a `\label{overfull:disclosure}` or a heading that names it. */
-export function findDisclosure(ctx: VenueContext): Found | null {
+function findDisclosure(ctx: VenueContext): Found | null {
   const files = ctx.texFiles ?? [];
   const label = grepTex(files, /\\label\s*\{overfull:disclosure\}/)[0];
   const heading = findCommands(files, HEADINGS).find((h) => isDisclosureTitle(h.arg));

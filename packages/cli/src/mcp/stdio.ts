@@ -3,7 +3,7 @@ import type { Readable } from 'node:stream';
 import { ERR } from './protocol.js';
 
 /** A single incoming message may be at most this many bytes. */
-export const MAX_MESSAGE_BYTES = 4 * 1024 * 1024;
+const MAX_MESSAGE_BYTES = 4 * 1024 * 1024;
 
 export type LineEvent = { line: string } | { tooLarge: true };
 

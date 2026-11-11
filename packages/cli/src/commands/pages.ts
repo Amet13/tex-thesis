@@ -7,7 +7,7 @@ import { loadPdfjs } from '../pdf.js';
 import { insideRootForWrite } from '../safety.js';
 import { dockerAvailable, dockerRunArgs, run, which } from '../tools.js';
 
-export const pagesHelp = `Usage: overfull pages <range> [options]
+const pagesHelp = `Usage: overfull pages <range> [options]
 
 Render PDF pages to PNG so you (or an agent) can look at them.
 Range: "3", "2-5", "1,4,7", "8-" (to the end). Prints the written paths.

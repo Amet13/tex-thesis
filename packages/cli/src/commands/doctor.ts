@@ -10,7 +10,7 @@ import {
 } from '../tools.js';
 import { VERSION } from '../version.js';
 
-export const doctorHelp = `Usage: overfull doctor [--json]
+const doctorHelp = `Usage: overfull doctor [--json]
 
 Show which tools Overfull can use on this machine and whether the project
 config is valid. Exits 1 when nothing can build the document (no local

@@ -8,7 +8,7 @@ import { serveStream } from '../mcp/stdio.js';
 import { createTools, type Runner } from '../mcp/tools.js';
 import { VERSION } from '../version.js';
 
-export const mcpHelp = `Usage: overfull mcp [--cwd dir]
+const mcpHelp = `Usage: overfull mcp [--cwd dir]
 
 Run Overfull as a Model Context Protocol (MCP) server on stdin/stdout, for AI
 tools that have no shell (desktop apps, cloud editors). An MCP client starts it;

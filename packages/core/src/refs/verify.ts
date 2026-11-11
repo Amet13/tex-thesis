@@ -125,20 +125,40 @@ async function checkDoi(
     ev.searched.add('doi.org');
     if (res.kind === 'missing') ev.doiMissing = true;
     if (res.kind !== 'found') return null;
-    const a = assess(facts, res.record, true);
-    if (a.differentWork) {
-      a.differences = [
-        { field: 'doi', bib: doi, record: `resolves to “${a.record.title}”` },
-        ...a.differences.filter((d) => d.field !== 'title'),
-      ];
-    }
-    ev.assessments.push(a);
-    return a;
+    return assessIdentified(facts, res.record, ev, 'doi', doi, 'resolves to');
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source: 'doi.org', reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, 'doi.org', err);
   }
+}
+
+/**
+ * Assesses the record an entry's own identifier points to. When it is another work,
+ * the identifier itself is the first difference (the title difference is implied).
+ */
+function assessIdentified(
+  facts: BibFacts,
+  record: WorkRecord,
+  ev: Evidence,
+  field: 'doi' | 'eprint',
+  id: string,
+  verb: string,
+): Assessment {
+  const a = assess(facts, record, true);
+  if (a.differentWork) {
+    a.differences = [
+      { field, bib: id, record: `${verb} “${record.title}”` },
+      ...a.differences.filter((d) => d.field !== 'title'),
+    ];
+  }
+  ev.assessments.push(a);
+  return a;
+}
+
+/** Records a source failure (rethrowing when the run was aborted); the entry goes on. */
+function sourceFailed(ctx: Ctx, ev: Evidence, source: RefSource, err: unknown): null {
+  if (ctx.opts.signal?.aborted) throw err;
+  ev.failures.push({ source, reason: failureReason(err) });
+  return null;
 }
 
 async function checkArxiv(
@@ -155,19 +175,9 @@ async function checkArxiv(
       ev.arxivMissing = true;
       return null;
     }
-    const a = assess(facts, record, true);
-    if (a.differentWork) {
-      a.differences = [
-        { field: 'eprint', bib: id, record: `is “${record.title}”` },
-        ...a.differences.filter((d) => d.field !== 'title'),
-      ];
-    }
-    ev.assessments.push(a);
-    return a;
+    return assessIdentified(facts, record, ev, 'eprint', id, 'is');
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source: 'arxiv', reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, 'arxiv', err);
   }
 }
 
@@ -193,9 +203,7 @@ async function checkOtherId(
     ev.assessments.push(a);
     return a;
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source, reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, source, err);
   }
 }
 

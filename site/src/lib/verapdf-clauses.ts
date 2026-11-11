@@ -8,7 +8,7 @@ import { getRule, type RuleInfo, veraPdfClauses } from '@overfull/core';
  */
 
 /** `8.2.5.26` → `8-2-5-26`, as in rule ids. */
-export function clauseSlug(clause: string): string {
+function clauseSlug(clause: string): string {
   return clause
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

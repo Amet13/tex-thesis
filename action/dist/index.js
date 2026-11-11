@@ -114334,20 +114334,26 @@ async function checkDoi(ctx, doi, facts, ev) {
     ev.searched.add("doi.org");
     if (res.kind === "missing") ev.doiMissing = true;
     if (res.kind !== "found") return null;
-    const a = assess(facts, res.record, true);
-    if (a.differentWork) {
-      a.differences = [
-        { field: "doi", bib: doi, record: `resolves to \u201C${a.record.title}\u201D` },
-        ...a.differences.filter((d) => d.field !== "title")
-      ];
-    }
-    ev.assessments.push(a);
-    return a;
+    return assessIdentified(facts, res.record, ev, "doi", doi, "resolves to");
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source: "doi.org", reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, "doi.org", err);
   }
+}
+function assessIdentified(facts, record, ev, field, id, verb) {
+  const a = assess(facts, record, true);
+  if (a.differentWork) {
+    a.differences = [
+      { field, bib: id, record: `${verb} \u201C${record.title}\u201D` },
+      ...a.differences.filter((d) => d.field !== "title")
+    ];
+  }
+  ev.assessments.push(a);
+  return a;
+}
+function sourceFailed(ctx, ev, source, err) {
+  if (ctx.opts.signal?.aborted) throw err;
+  ev.failures.push({ source, reason: failureReason(err) });
+  return null;
 }
 async function checkArxiv(ctx, id, facts, ev) {
   ev.queries.push(arxivCacheKey(id));
@@ -114358,19 +114364,9 @@ async function checkArxiv(ctx, id, facts, ev) {
       ev.arxivMissing = true;
       return null;
     }
-    const a = assess(facts, record, true);
-    if (a.differentWork) {
-      a.differences = [
-        { field: "eprint", bib: id, record: `is \u201C${record.title}\u201D` },
-        ...a.differences.filter((d) => d.field !== "title")
-      ];
-    }
-    ev.assessments.push(a);
-    return a;
+    return assessIdentified(facts, record, ev, "eprint", id, "is");
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source: "arxiv", reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, "arxiv", err);
   }
 }
 async function checkOtherId(ctx, source, label, fetchRecord, facts, ev) {
@@ -114383,9 +114379,7 @@ async function checkOtherId(ctx, source, label, fetchRecord, facts, ev) {
     ev.assessments.push(a);
     return a;
   } catch (err) {
-    if (ctx.opts.signal?.aborted) throw err;
-    ev.failures.push({ source, reason: failureReason(err) });
-    return null;
+    return sourceFailed(ctx, ev, source, err);
   }
 }
 async function checkOtherIds(ctx, ids, facts, ev) {

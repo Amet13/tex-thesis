@@ -42,7 +42,7 @@ const STATUS_WORD: Record<string, string> = {
 };
 const SEV_WORD: Record<Severity, string> = { error: 'error', warning: 'warning', info: 'note' };
 
-export function locationText(p: Problem): string {
+function locationText(p: Problem): string {
   const l = p.location;
   if (!l) return '';
   const parts: string[] = [];

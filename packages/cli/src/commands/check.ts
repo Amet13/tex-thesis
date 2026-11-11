@@ -13,7 +13,7 @@ import { parseChecks } from '../config.js';
 import { type Io, progressLine, UsageError, useColor } from '../io.js';
 import { isCI } from '../safety.js';
 
-export const checkHelp = `Usage: overfull check [file...] [options]
+const checkHelp = `Usage: overfull check [file...] [options]
 
 Check the built document: build log, PDF output, references, accessibility, venue rules.
 Reads <jobname>.log / .pdf / .aux and the .bib files named in overfull.yml.

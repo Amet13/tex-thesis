@@ -7,7 +7,7 @@ import {
   type Severity,
 } from '../types.js';
 
-export const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
+const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
 
 export function formatLocation(loc: Location | undefined): string {
   if (!loc) return '';
